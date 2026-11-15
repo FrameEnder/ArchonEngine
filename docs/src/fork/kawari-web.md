@@ -54,7 +54,7 @@ over the database, so direct edits only happen while the character is logged out
 
 Home, How to Connect, Feed (called Community in the top bar from 2.19.0) and profiles (character tile boards, private by default), Notifications, Settings,
 **Shop**, and the admin **Dashboard**: server control, config editor, database health/migrations, backups, accounts,
-Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Drop rates (2.27.0, redone 2.32.0), Events (2.33.0, 2.33.1), World bots (2.28.0), Diagnostics, Battle replay (2.25.0), Updates (which fork/forge/commit the server is
+Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Drop rates (2.27.0, redone 2.32.0), Events (2.33.0 to 2.33.2), World bots (2.28.0), Diagnostics, Battle replay (2.25.0), Updates (which fork/forge/commit the server is
 built from), container logs.
 
 ## Auracite backups (2.22.0)
@@ -447,7 +447,7 @@ Checked with Flask's view on a made-up index (two expansions, a dungeon, a trial
 rendered and looked at in Chromium; a form saved as format 2 with the right placeholders after; a format 1 file read;
 what the page can't show kept. Not used against the running server.
 
-## Events (Dashboard → Events, 2.33.1)
+## Events (Dashboard → Events, 2.33.2)
 
 `kawari_core/events.py` (the file and the rule), `kawari_web/events.py`, `templates/dashboard/events.html`. Turns the
 seasonal and special events the fork has built on, off, or on for a time ([Events](events.md): an event is a festival
@@ -458,6 +458,12 @@ the server puts in every ZoneInit while it's on.)
   said the build had no events, Bob's screenshots of 2026-11-15). An event's name is its `label` there, its quests'
   names come from `quest-index.json` and its duties' from `content-index.json` (numbers when those haven't been
   made). A build without the file (`f9e4b0f` or older) lists nothing and says to build again.
+* **A list to pick from** (2.33.2; Bob, 2026-11-15: "I should be able to choose an event to enable it looks all or
+  nothing right now": with one event built, 2.33.0's three radio buttons and a Save read as one switch for
+  everything). One row an event with a **tick** beside its name (`pick|key`), the heading counting how many are built
+  and chosen, and a line saying a later event is another row. Beside a ticked event, *Runs* (`when|key`) is "until I
+  untick it" (`mode: on`) or "between dates" (`scheduled`), which shows the two date boxes. An unticked event is left
+  out of the file. Bob chose this over listing all 156 of the game's festivals or switching an event's parts.
 * **Each event**: Off, On, or Scheduled with a start and an end (datetime boxes, **UTC**; the page says what time it
   is in UTC); what it's doing now (On, Off, "Starts …", "Ended …", "On until …"); when retail ran it, with a button
   that fills the boxes with retail's dates. A schedule whose end isn't after its start isn't saved (it would never be
