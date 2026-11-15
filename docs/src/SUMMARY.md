@@ -69,6 +69,7 @@
   - [Grand Companies](fork/grand-company.md)
   - [Chocobo Companion](fork/chocobo.md)
   - [The Gold Saucer](fork/gold-saucer.md)
+  - [Events](fork/events.md)
   - [Fork Opcodes](fork/opcodes.md)
   - [Packet Layouts from the Client](fork/packet-layouts.md)
   - [Networking: Where the Time Goes](fork/networking.md)

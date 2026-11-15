@@ -1342,7 +1342,8 @@ impl GameData {
         }
     }
 
-    /// The duty a ContentEntry event (its handler ID) enters, for the GATEs that have one (see `gate_content`.)
+    /// The duty a ContentEntry event (its handler ID) enters, for the GATEs that have one (see `gate_content`) and the
+    /// events' (`fork_events.json`'s `content_entries`.)
     pub fn content_entry_duty(&mut self, handler: u32) -> Option<u16> {
         let ride_shooting = icarus::GFateRideShooting::GFateRideShootingSheet::read_from(
             &mut self.resource,
@@ -1364,7 +1365,10 @@ impl GameData {
             .find(|(_, row)| row.ContentEntry == handler)
             .map(|(place, _)| (crate::gate::KIND_LEAP_OF_FAITH, place))
         });
-        let (kind, place) = found?;
+        let Some((kind, place)) = found else {
+            // An event's (`server/game_events.rs`.)
+            return crate::server::game_events::content_entry_duty(handler & 0xFFFF);
+        };
         self.gate_content(kind, place).map(|(_, duty)| duty)
     }
 

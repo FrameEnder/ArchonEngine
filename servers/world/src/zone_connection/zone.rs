@@ -215,8 +215,11 @@ impl ZoneConnection {
             self.send_ipc_self(ipc).await;
         }
 
-        let mut game_festival_ids = self.config.active_festivals.map(FestivalId);
-        let mut game_festival_phases = [0; 8];
+        // The configured festivals and the events that are on now (`server/game_events.rs`.)
+        let (festival_ids, festival_phases) =
+            crate::server::game_events::festivals(self.config.active_festivals);
+        let mut game_festival_ids = festival_ids.map(FestivalId);
+        let mut game_festival_phases = festival_phases;
 
         // Set up ocean fishing
         if bound_by_duty {
@@ -292,7 +295,8 @@ impl ZoneConnection {
                 content_finder_condition_id,
                 game_festival_ids,
                 game_festival_phases,
-                ui_festival_ids: self.config.active_festivals.map(FestivalId),
+                ui_festival_ids: festival_ids.map(FestivalId),
+                ui_festival_phases: festival_phases,
                 unk1: 8.59375,
                 // Where the player comes in: retail fills it in every ZoneInit, out in the world and in duties (Bob's
                 // Chronofoil capture b23b91ef: Trial by Wind's start spot, the East Shroud's arrivals); Kawari sent

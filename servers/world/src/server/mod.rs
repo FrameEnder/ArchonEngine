@@ -82,6 +82,7 @@ pub mod drop_rates;
 pub mod duty_finder;
 mod effect;
 mod fall;
+pub mod game_events;
 mod gate;
 mod glamour;
 mod instance;
@@ -1768,6 +1769,12 @@ fn server_logic_tick(
             fate_tick(network.clone(), instance, game_data.clone());
             // The Gold Saucer's GATEs: their entrances, screens and set pieces.
             gate::gate_tick(network.clone(), instance, game_data.clone());
+        }
+        // An event the owner turned on or off, or whose schedule came or went: everyone is told the festivals
+        // (`game_events.rs`; a zone's layers follow at the next zone change.)
+        if let Some((ids, phases)) = game_events::changed(get_config().world.active_festivals) {
+            tracing::info!("The festivals are now {ids:?} (phases {phases:?})");
+            send_festivals(&mut network.lock(), ids, phases);
         }
         // Ensure the rested EXP counter only happens every 10 seconds.
         data.rested_exp_counter += 1;
@@ -4170,20 +4177,8 @@ pub async fn server_main_loop(
                     // TODO: This would override festivals in special zones that use this for content (like Ocean fishing) currently
                     // TODO: what about the latter 4 festivals?
                     let mut network = network.lock();
-                    let config = get_config();
-                    let clients: Vec<ClientId> = network.clients.keys().copied().collect();
-                    for id in clients {
-                        network.send_to(
-                            id,
-                            FromServer::ActorControlSelf(ActorControlCategory::SetFestival {
-                                festival1: config.world.active_festivals[0] as u32,
-                                festival2: config.world.active_festivals[1] as u32,
-                                festival3: config.world.active_festivals[2] as u32,
-                                festival4: config.world.active_festivals[3] as u32,
-                            }),
-                            DestinationNetwork::ZoneClients,
-                        );
-                    }
+                    let (ids, phases) = game_events::festivals(get_config().world.active_festivals);
+                    send_festivals(&mut network, ids, phases);
                 }
                 ToServer::SpawnBattleNpc(bnpc_base_id) => {
                     // Currently spawns it on the first player we find
@@ -4270,4 +4265,22 @@ pub async fn server_main_loop(
         }
     }
     Ok(())
+}
+
+/// Tells everyone online the festivals that are on (SetFestival: the first four, each with its phase in its upper
+/// half, as retail packs them.)
+fn send_festivals(network: &mut NetworkState, ids: [u16; 8], phases: [u16; 8]) {
+    let clients: Vec<ClientId> = network.clients.keys().copied().collect();
+    for id in clients {
+        network.send_to(
+            id,
+            FromServer::ActorControlSelf(ActorControlCategory::SetFestival {
+                festival1: game_events::packed(ids[0], phases[0]),
+                festival2: game_events::packed(ids[1], phases[1]),
+                festival3: game_events::packed(ids[2], phases[2]),
+                festival4: game_events::packed(ids[3], phases[3]),
+            }),
+            DestinationNetwork::ZoneClients,
+        );
+    }
 }

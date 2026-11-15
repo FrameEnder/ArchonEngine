@@ -3,6 +3,24 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Events and Keybound Brawler (2026-11-15)
+
+None of it played yet.
+
+* **Keybound Brawler's duty isn't built**: the registrar puts it in the Duty Finder and the arena (territory 1359)
+  loads with nothing in it; leave through the Duty menu. 223 retail runs and four of Bob's Recorder runs are at hand
+  (`events.md`, `notes/keybound-brawler.md` in kawari-diagnostics.)
+* **The registrar's client script** (CustomTalk 986) hasn't been dumped: its script is from retail's packets alone, and
+  what its scene shows when the duty can't be entered (a party member without the quest, say) isn't known.
+* **The magitype master's explanation** (PreHandler 135) plays its Description without the DefaultTalk retail nested
+  first (601295, argument 8): `events/generic/PreHandler.lua` starts a PreHandler's target only.
+* **An event's quest and duty aren't refused while it's off**; its NPCs aren't out then, so there's nobody to offer
+  them, but a quest accepted while it was on can be finished from the journal's state afterwards only if its NPCs
+  are out again.
+* **A player online as an event comes or goes** gets SetFestival (the first four festivals); whether the client
+  brings a festival's layers out without a zone change wasn't seen on retail (no capture spans an event's start.)
+* ZoneInit's and SetFestival's **festivals past the eighth** (or fourth, for SetFestival) aren't sent.
+
 ## The owner's rates (2026-11-15)
 
 None of it played yet; the page not used against the running server.

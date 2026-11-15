@@ -1057,10 +1057,17 @@ async fn process_packet(
                                             .cleared_misc_content
                                             .data_truncated(),
                                         can_do_triple_triad_matches: true,
-                                        ui_festival_ids: connection
-                                            .config
-                                            .active_festivals
-                                            .map(FestivalId),
+                                        // The configured festivals and the events on now, with their phases
+                                        // (`server/game_events.rs`.)
+                                        ui_festival_ids: kawari_world::game_events::festivals(
+                                            connection.config.active_festivals,
+                                        )
+                                        .0
+                                        .map(FestivalId),
+                                        ui_festival_phases: kawari_world::game_events::festivals(
+                                            connection.config.active_festivals,
+                                        )
+                                        .1,
                                         quest_special_flags,
                                         companion_name: connection.player_data.buddy.name.clone(),
                                         buddy_levels: connection

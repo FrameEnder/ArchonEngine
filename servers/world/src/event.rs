@@ -204,21 +204,25 @@ pub fn quest_script_path(
 
     let script_folder = folder_from_script_id(script_id);
     let path = format!("events/quest/{script_folder}/{script_name}.lua");
+    Some(script_by_number("quest", &script_folder, script_id, path))
+}
+
+/// `path` when a script is there; otherwise a script for the same number under another name in `events/<kind>/<folder>`:
+/// one written from a retail capture before the client's script (and so its name) was dumped, e.g. a quest or custom
+/// talk newer than the references (`Capture_05466.lua`, `Capture_00986.lua`.) `path` again when there's neither.
+fn script_by_number(kind: &str, script_folder: &str, script_id: u32, path: String) -> String {
     let config = get_config();
     if std::fs::exists(config.filesystem.locate_script_file(&path)).unwrap_or_default() {
-        return Some(path);
+        return path;
     }
-
-    // Otherwise a script for the same quest number under another name: one written from a retail capture before
-    // the client's script (and so its name) was dumped, e.g. a quest newer than the references.
     let suffix = format!("_{script_id:05}.lua");
     let folders = config
         .filesystem
         .additional_resource_paths
         .iter()
-        .map(|x| format!("{x}/scripts/events/quest/{script_folder}"))
+        .map(|x| format!("{x}/scripts/events/{kind}/{script_folder}"))
         .chain(std::iter::once(format!(
-            "resources/scripts/events/quest/{script_folder}"
+            "resources/scripts/events/{kind}/{script_folder}"
         )));
     for folder in folders {
         let Ok(entries) = std::fs::read_dir(folder) else {
@@ -227,12 +231,11 @@ pub fn quest_script_path(
         for entry in entries.flatten() {
             let file_name = entry.file_name().to_string_lossy().to_string();
             if file_name.ends_with(&suffix) {
-                return Some(format!("events/quest/{script_folder}/{file_name}"));
+                return format!("events/{kind}/{script_folder}/{file_name}");
             }
         }
     }
-
-    Some(path)
+    path
 }
 
 /// Finds and creates the relevant `EventHandler` for this event.
@@ -311,7 +314,12 @@ pub fn dispatch_event(
             let script_folder = folder_from_script_id(script_id);
             let script_path = format!("events/custom/{script_folder}/{script_name}.lua");
 
-            generic_lua_event(&script_path)
+            generic_lua_event(&script_by_number(
+                "custom",
+                &script_folder,
+                script_id,
+                script_path,
+            ))
         }
         HandlerType::GimmickAccessor => Some(Box::new(GimmickAccessorEventHandler::new())),
         HandlerType::ContentNpc => Some(Box::new(ContentNpcEventHandler::new())),
