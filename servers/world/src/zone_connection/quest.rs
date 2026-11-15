@@ -8,7 +8,8 @@ use crate::{
     common::adjust_quest_id,
     event::quest_script_path,
     inventory::{CurrencyKind, Item, Storage},
-    lua::{KawariLua, LuaPlayer},
+    lua::{KawariLua, LuaPlayer, LuaTask},
+    server::drop_rates,
     zone_connection::PersistentQuest,
 };
 use kawari::{
@@ -258,12 +259,15 @@ impl ZoneConnection {
         }
 
         // Grant rewards
-        let rewards;
+        let mut rewards;
         {
             let mut game_data = self.game_data.lock();
             let level = self.current_level(&game_data);
             rewards = game_data.get_quest_rewards(id, level);
         }
+        // At the owner's rates (`server/drop_rates.rs`.)
+        rewards.0 = drop_rates::exp(rewards.0, "quests");
+        rewards.1 = drop_rates::gil(rewards.1, "quests");
 
         // The log lines for the rewards come first, as retail (Bob's Chronofoil captures): the gil (LogMessage 1605),
         // then each item given (1606, or 1607 with a count.)
@@ -837,6 +841,8 @@ impl ZoneConnection {
         if self.unsynced_unrestricted() {
             exp = 0;
         }
+        // At the owner's rate (`server/drop_rates.rs`.)
+        exp = drop_rates::exp_signed(exp, "kills");
         // Only enemies at or above your level count towards a chain.
         let chain = self.exp_chain_bonus(!in_duty && level as u16 >= player_level);
         if let Some((index, window, _)) = chain {
@@ -886,7 +892,23 @@ impl ZoneConnection {
 
         // No drops from enemies for an unrestricted party without Level Sync (coffers still give theirs.)
         if !self.unsynced_unrestricted() {
+            let before = lua_player.queued_tasks.len();
             roll_drops(lua_player, name_id, level);
+            // Each drop at the owner's rate for its kind of item here (`server/drop_rates.rs`.)
+            let place = {
+                let mut game_data = self.game_data.lock();
+                game_data.drop_place(
+                    self.player_data.volatile.zone_id as u16,
+                    self.content_finder_condition_id,
+                )
+            };
+            let game_data = self.game_data.clone();
+            scale_drops(
+                &mut lua_player.queued_tasks,
+                before,
+                |item| drop_rates::item_percent(&place, &game_data.lock().item_class(item)),
+                fastrand::f32,
+            );
         }
 
         self.process_lua_player(lua_player, events).await;
@@ -977,6 +999,12 @@ impl ZoneConnection {
         else {
             return;
         };
+        // At the owner's rates (`server/drop_rates.rs`.)
+        let (clear_exp, bonus_exp, bonus_gil) = (
+            drop_rates::exp(clear_exp, "duties"),
+            drop_rates::exp(bonus_exp, "duties"),
+            drop_rates::gil(bonus_gil, "duties"),
+        );
         let handler_id = HandlerId::new(HandlerType::InstanceContent, content_id);
         tracing::info!(
             "Duty {content_id} cleared (first clear {first_clear}, a newcomer there {newcomer_here}): {clear_exp} EXP, bonus {bonus_exp} EXP and {bonus_gil} gil"
@@ -1044,6 +1072,10 @@ impl ZoneConnection {
             let (_, modifier_90) = at(&mut game_data, 90);
             crate::server::duty_finder::roulette_bonus(roulette, scaled, modifier, modifier_90)
         };
+        let (exp, gil) = (
+            drop_rates::exp(exp, "duties"),
+            drop_rates::gil(gil, "duties"),
+        );
         tracing::info!("Roulette {roulette}'s first clear today: {exp} EXP, {gil} gil");
         if gil > 0 {
             self.send_reward_log(QUEST_REWARD_GIL_LOG, vec![gil]).await;
@@ -1067,6 +1099,7 @@ impl ZoneConnection {
         let Some((exp, gil)) = self.game_data.lock().get_fate_rewards(fate_id) else {
             return;
         };
+        let (exp, gil) = (drop_rates::exp(exp, "fates"), drop_rates::gil(gil, "fates"));
         self.player_data.inventory.currency.get_slot_mut(0).quantity = self
             .player_data
             .inventory
@@ -1154,6 +1187,30 @@ fn kill_exp_percent(difference: i32) -> i32 {
     }
 }
 
+/// What an enemy dropped (the items a script queued from `from` on) at the owner's rates: each item's count at the
+/// rate for its kind (`drop_rates::scale_count`: below 100 % it comes less often, above it more of it comes), and
+/// one that comes to nothing isn't given.
+fn scale_drops(
+    tasks: &mut Vec<LuaTask>,
+    from: usize,
+    mut percent: impl FnMut(u32) -> u32,
+    mut roll: impl FnMut() -> f32,
+) {
+    let mut index = 0;
+    tasks.retain_mut(|task| {
+        index += 1;
+        if index <= from {
+            return true;
+        }
+        let LuaTask::AddItem { id, quantity, .. } = task else {
+            return true;
+        };
+        let count = drop_rates::scale_count((*quantity).max(0) as u32, percent(*id), roll());
+        *quantity = count.min(i32::MAX as u32) as i32;
+        count > 0
+    });
+}
+
 /// Runs `battle/Drops.lua`'s `onBNpcKill`, which gives the player whatever the defeated battle NPC dropped.
 fn roll_drops(lua_player: &mut LuaPlayer, name_id: u32, level: u8) {
     let file_name = get_config()
@@ -1197,6 +1254,44 @@ mod exp_tests {
         assert_eq!(kill_exp_percent(-5), 60);
         assert_eq!(kill_exp_percent(-7), 40);
         assert_eq!(kill_exp_percent(-20), 0);
+    }
+
+    /// An enemy's drops at the owner's rates: half as often at 50 %, twice as much at 200 %, never at 0, and what
+    /// was queued before the drops (a quest's own) is left alone.
+    #[test]
+    fn drops_at_the_owner_s_rates() {
+        let item = |id, quantity| LuaTask::AddItem {
+            id,
+            quantity,
+            send_client_update: true,
+        };
+        let counts = |tasks: &[LuaTask]| -> Vec<(u32, i32)> {
+            tasks
+                .iter()
+                .filter_map(|task| match task {
+                    LuaTask::AddItem { id, quantity, .. } => Some((*id, *quantity)),
+                    _ => None,
+                })
+                .collect()
+        };
+        let rates = |id| match id {
+            5291 => 200,
+            4758 => 50,
+            5492 => 0,
+            _ => 100,
+        };
+        let mut tasks = vec![
+            item(7, 1),
+            item(5291, 2),
+            item(4758, 1),
+            item(5492, 3),
+            item(12, 1),
+        ];
+        scale_drops(&mut tasks, 1, rates, || 0.4);
+        assert_eq!(counts(&tasks), [(7, 1), (5291, 4), (4758, 1), (12, 1)]);
+        let mut tasks = vec![item(4758, 1)];
+        scale_drops(&mut tasks, 0, rates, || 0.6);
+        assert!(tasks.is_empty());
         // Retail: a level 6 conjurer got 38 of 55 for a level 2 enemy.
         assert_eq!(55 * kill_exp_percent(2 - 6) / 100, 38);
     }

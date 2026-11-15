@@ -3,6 +3,19 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## The owner's rates (2026-11-15)
+
+None of it played yet; the page not used against the running server.
+
+* **An enemy's drop over 100 %** comes in a larger amount, not more often: `Drops.lua` has already rolled whether it
+  drops when the rate is applied. Below 100 % it does come less often.
+* **Not covered**: gathering, fishing and crafting yields, the items a quest gives, and gil from vendors, the
+  marketboard and retainers.
+* **The groups' names** on the ControlPanel's page (Arms, Tools, Armor, ...) are a reading of ItemUICategory's
+  OrderMajor not checked against the sheet; the list under the tables shows what each really holds.
+* **A duty's expansion** is its territory's ExVersion on the server and the content index's on the page; where the
+  two differ the placeholder shows the wrong inherited rate (the server's is what counts.)
+
 ## Story copies of open-world territories (2026-11-14)
 
 * Unplayed: Castrum Centri as Escape from Castrum Centri has it (335) with no battle NPCs, gathering points or FATEs

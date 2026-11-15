@@ -41,7 +41,7 @@ spec as `/mnt/c/...`; the pages render). Not run on Windows yet; the PowerShell 
 | The active server image | runs throwaway containers | `kawari-questdump` (Quest Lab, Progress index, Shop item list) |
 | `<data>/quest-dumps/` | written by questdump | `quest-index.json`, `item-index.json`, `marketboard-categories.json`, `class-index.json`, `action-index.json`, per-quest dumps |
 | `<data>/data/glamours.txt` | read/write | Bot glamours (the party bots' list; the server reads it from `/kawari/data`) |
-| `<data>/data/drop-rates.json` | read/write | Drop rates (mounts and minions per duty; the server reads it from `/kawari/data`) |
+| `<data>/data/drop-rates.json` | read/write | Drop rates (items, gil and EXP; the server reads it from `/kawari/data`) |
 | `<data>/data/world-bots.json` | read/write | World bots (on or off, how many where; the server reads it from `/kawari/data`) |
 | `<data>/captures/` | read | Diagnostics bundles |
 | The web app's own SQLite db | read/write | feed, notifications, settings, shop tables |
@@ -53,7 +53,7 @@ over the database, so direct edits only happen while the character is logged out
 
 Home, How to Connect, Feed (called Community in the top bar from 2.19.0) and profiles (character tile boards, private by default), Notifications, Settings,
 **Shop**, and the admin **Dashboard**: server control, config editor, database health/migrations, backups, accounts,
-Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Drop rates (2.27.0), World bots (2.28.0), Diagnostics, Battle replay (2.25.0), Updates (which fork/forge/commit the server is
+Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Drop rates (2.27.0, redone 2.32.0), World bots (2.28.0), Diagnostics, Battle replay (2.25.0), Updates (which fork/forge/commit the server is
 built from), container logs.
 
 ## Auracite backups (2.22.0)
@@ -405,25 +405,46 @@ for that address (an optional host permission), which also spares the API any CO
 client (no token 401, a non-admin's 403, a list written with its backup) and with the extension in Chromium against a
 test server (connect, the dropdown from the class list, send, load).
 
-## Drop rates (Dashboard → Drop rates, 2.27.0)
+## Drop rates (Dashboard → Drop rates, 2.32.0)
 
-On `UI-Redesign`: `kawari_web/droprates.py`, `templates/dashboard/drop_rates.html`. How often each dungeon's and
-trial's mounts and minions drop from its coffers ([Coffers and Loot](loot.md#mounts-and-minions-2026-11-10)).
+`kawari_core/droprates.py` (the file's format and rule), `kawari_web/droprates.py`,
+`templates/dashboard/drop_rates.html`. Redone in 2.32.0 (Bob, 2026-11-15: every content, every expansion, every
+category of item, and gil and EXP); 2.27.0's page set only each dungeon's and trial's mounts and minions. What the
+rates do is the server's ([Coffers and Loot](loot.md#the-owners-rates-2026-11-15)); it needs a fork build of
+2026-11-15 on.
 
-* **The file** is `drop-rates.json` in `settings.db_dir` (the container's `/kawari/data`), written beside the old one
-  and renamed over it, so the server never reads half a file; the server notices the new modification time, so no
-  restart. `{"format": 1, "default": {"mounts_minions": N}, "duties": {"<ContentFinderCondition>": {"mounts_minions":
-  N}}}`, whole percents 0-100 (more is taken as 100; a blank or nonsense duty value is left out, a nonsense default is
-  90.)
-* **The page**: the default (90 to start with, the server's own without the file), and every dungeon (ContentType 2)
-  and trial (4) from `content-index.json` (`kawari-questdump content`, Content → Duties & zones builds it), by
-  expansion and level, with a box for its own rate (blank takes the default, shown as its placeholder), whether the
-  active build has its script (`content_progress`: only those have coffers), and a filter by name. No game text is
-  kept: names come from the index.
+* **The file** is `drop-rates.json` (format 2) in `settings.db_dir` (the container's `/kawari/data`), written beside
+  the old one and renamed over it, so the server never reads half a file; the server notices the new modification
+  time, so no restart. A format 1 file is read and saved as format 2. Rates are whole percents, 0 to 1000 (0 to 100
+  for mounts and minions); a blank or nonsense one is left out.
+* **Gil and EXP**: a row for everything and one for each source the server has (`GIL_SOURCES`, `EXP_SOURCES`, the
+  server's own lists).
+* **Items, broadly**: rows for everywhere, each expansion, each kind of duty (ContentType) in the content index and
+  the open world; columns for all items, each group of item categories, and mounts and minions.
+* **Items, by category**: rules of a place (any of the scopes, down to one duty or zone), an ItemUICategory and a
+  rate; clearing the rate removes the rule.
+* **Items, each duty and zone**: every duty and open-world zone of `content-index.json` (`kawari-questdump content`)
+  by expansion, the duties by kind, with the same columns (zones without mounts and minions); a filter by name and
+  "only those with a rate of their own". A duty without a script and a zone without enemies are greyed: a rate set
+  there applies once they drop something.
+* **A blank box** shows what it comes to as its placeholder, worked out as the server does (`droprates.chain`,
+  `effective`).
+* **The categories** are `item-categories.json` (`kawari-questdump items`, from this version: every ItemUICategory's
+  `id`, `name`, `major`, `minor`); the page has a button that runs it when the file isn't there (disabled when the
+  active build's questdump doesn't know the file), and has only the *All items* column until then. The groups' names
+  are the page's own words for OrderMajor 1 to 7 (`GROUP_LABELS`: Arms, Tools, Armor, Accessories, Medicines & meals,
+  Materials, Other), **not checked against the game's sheet**; what each group holds is listed under the tables from
+  the game, so a wrong label shows.
+* **A save** writes every rate on the page, and keeps what the page couldn't show (`_unshown`: a place the content
+  index doesn't have, a group the categories don't have, the rules by category while the categories aren't read.)
+  Blank boxes aren't sent (the page's script disables them), which keeps the form small with every duty and zone on
+  it.
+* The table's class is `ratetable`: the stylesheet's `.rates` is a grid of its own (the Marketboard's), and using it
+  on a table broke the layout.
 
-Checked with Flask's test client (an index of a dungeon, a trial and a guildhest: the guildhest left out; a save with
-a default of 75 and one duty's 100 written as above; a default of "abc" saved as 90 and "150%" as 100, shown again in
-its box.)
+Checked with Flask's view on a made-up index (two expansions, a dungeon, a trial, two zones) and categories: the page
+rendered and looked at in Chromium; a form saved as format 2 with the right placeholders after; a format 1 file read;
+what the page can't show kept. Not used against the running server.
 
 ## World bots (Dashboard → World bots, 2.28.0)
 

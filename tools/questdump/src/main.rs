@@ -944,6 +944,28 @@ fn item_index(resolver: &mut ResourceResolver) -> Result<Vec<Value>, String> {
     Ok(items)
 }
 
+/// item-categories.json: every ItemUICategory with its name and its place in the game's own order (OrderMajor, the
+/// group: arms, tools, armour, accessories, medicines and meals, materials, the rest; OrderMinor within it), for
+/// ArchonEngine ControlPanel's Drop rates, whose rates are by category and by group (`server/drop_rates.rs`.)
+fn item_categories(resolver: &mut ResourceResolver) -> Result<Vec<Value>, String> {
+    let sheet = ItemUICategorySheet::read_from(resolver, get_config().world.language())
+        .map_err(|err| format!("couldn't read the ItemUICategory sheet: {err:?}"))?;
+    let mut categories = Vec::new();
+    for (id, row) in sheet.into_iter().flatten_subrows() {
+        let name = row.Name.to_string();
+        if name.is_empty() {
+            continue;
+        }
+        categories.push(json!({
+            "id": id,
+            "name": name,
+            "major": row.OrderMajor,
+            "minor": row.OrderMinor,
+        }));
+    }
+    Ok(categories)
+}
+
 /// The marketboard's search categories: ID, name, tab (Category: 1 weapons, 2 armor, 3 items, 4 housing), order in
 /// the tab, icon and class/job.
 fn marketboard_categories(resolver: &mut ResourceResolver) -> Result<Vec<Value>, String> {
@@ -1252,6 +1274,15 @@ fn run(args: &[String]) -> Result<(), String> {
             std::fs::write(&destination, serde_json::to_string(&items).unwrap())
                 .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
             println!("Wrote {count} items to {}", destination.display());
+            let destination = options.out.join("item-categories.json");
+            let categories = item_categories(&mut data.resolver)?;
+            std::fs::write(&destination, serde_json::to_string(&categories).unwrap())
+                .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
+            println!(
+                "Wrote {} item categories to {}",
+                categories.len(),
+                destination.display()
+            );
             let destination = options.out.join("marketboard-categories.json");
             let categories = marketboard_categories(&mut data.resolver)?;
             std::fs::write(&destination, serde_json::to_string(&categories).unwrap())

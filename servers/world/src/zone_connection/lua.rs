@@ -445,7 +445,8 @@ impl ZoneConnection {
                     self.player_data.content.unlocked_misc_content.set_all();
                 }
                 LuaTask::AddExp { amount } => {
-                    self.add_exp(*amount).await;
+                    self.add_exp(crate::server::drop_rates::exp_signed(*amount, "other"))
+                        .await;
                 }
                 LuaTask::StartEvent {
                     event_id,

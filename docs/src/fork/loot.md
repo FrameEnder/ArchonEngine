@@ -129,17 +129,57 @@ A coffer's mounts and minions (an item whose ItemAction's type is 1322 or 853, r
 `GameData::is_mount_or_minion`) are set apart from its pick (`loot::set_apart`: from its recorded openings and its
 list; an opening that held only one of them goes), and each one it may hold drops on its own after the rest, at the
 duty's rate: 90 % unless the server's owner says otherwise (Bob, 2026-11-10). The rates are `drop-rates.json` in the
-server's data folder (`$KAWARI_DATA`, beside `glamours.txt`), read again whenever it changes (`drop_rates.rs`):
-
-```json
-{"format": 1, "default": {"mounts_minions": 90}, "duties": {"57": {"mounts_minions": 100}}}
-```
-
-`duties` is by ContentFinderCondition ID; a duty not in it takes `default`, and without the file (or a value) it's 90.
-ArchonEngine ControlPanel's Dashboard → Drop rates writes it ([ArchonEngine ControlPanel](kawari-web.md#drop-rates-dashboard--drop-rates-2270)).
+server's data folder (`$KAWARI_DATA`, beside `glamours.txt`), read again whenever it changes (`drop_rates.rs`), as
+`mounts_minions` in the rates below (the one rate there that's a chance, 0 to 100, and not a multiplier.)
 None of the scripts' pools (Sastasha, the Tam-Tara Deepcroft, Copperbell Mines) holds a mount or minion yet: a script
 adds one with `director:treasure_pool` (or `treasure_loot`) as any other item. Tests `mounts_and_minions_are_set_apart`
-and `a_duty_its_own_then_the_default_then_ninety`.
+and `mounts_and_minions_are_a_chance_and_format_1_is_still_read`.
+
+## The owner's rates (2026-11-15)
+
+Bob, 2026-11-15: the server's owner sets how often and how much items drop "as broadly and finely as we want", and
+gil and EXP too. `drop-rates.json` (above; `server/drop_rates.rs`), format 2:
+
+```json
+{"format": 2,
+ "items": {"all":        {"all": 100, "group:6": 150, "cat:58": 50, "mounts_minions": 90},
+           "expansions": {"0": {"all": 120}},
+           "types":      {"2": {"group:3": 200}, "world": {"all": 80}},
+           "duties":     {"4": {"all": 300, "mounts_minions": 100}},
+           "zones":      {"148": {"cat:45": 0}}},
+ "gil": {"all": 100, "kills": 150},
+ "exp": {"all": 200, "quests": 100}}
+```
+
+Every rate but `mounts_minions` is a multiplier in percent of the server's own (100: as it is; 0 to 1000,
+`MOST_PERCENT`; more is taken as 1000). Format 1 (`default`, `duties`, mounts and minions only) is still read.
+
+* **Where** (`DropPlace`, from `GameData::drop_place`): `expansions` by TerritoryType.ExVersion, `types` by the
+  duty's ContentType row (`world` for anything outside a duty), `duties` by ContentFinderCondition, `zones` by
+  TerritoryType (outside a duty only).
+* **What** (`ItemClass`, from `GameData::item_class`): `cat:N` an ItemUICategory, `group:N` that category's
+  OrderMajor (the game's own grouping of its categories), `all`.
+* **The nearest setting wins** (`item_percent_in`): the duty's or zone's own, then its content type's, then its
+  expansion's, then `all`; in the first of those that says anything for the item, its category's rate, else its
+  group's, else that place's `all`. A place that only sets other categories (or only `mounts_minions`) is passed over.
+  `mounts_minions` is looked up through the same places on its own.
+* **A coffer** (`loot::roll_contents`, `at_rates`): each item of the pick stays as often as its rate says, and for
+  each whole 100 % over, one more of what that coffer may hold comes with it (one whose own rate is over 100 too, of a
+  kind of item not in the coffer yet, while there is one). Mounts and minions are rolled apart as before.
+* **An enemy's drops** (`zone_connection/quest.rs`: `scale_drops`, on what `battle/Drops.lua` queued): each item's
+  count at its rate (`scale_count`: the whole part of count × rate, and one more as often as the rest says), so below
+  100 % it comes less often and above it more of it comes; one that comes to nothing isn't given.
+* **Gil** (`drop_rates::gil(amount, source)`): `kills` (an enemy's gil, `server/actor.rs`), `quests` (a quest's
+  reward), `duties` (a duty's clear and a roulette's bonus), `fates`; a source without a rate takes `all`.
+* **EXP** (`drop_rates::exp`): those four and `gathering`, `crafting` (`synthesis_exp`), `hunting_log`, and `other`
+  (a script's `AddExp`). It scales the server's amount before rested and chain bonuses, which apply as they did.
+
+Not changed: gathering, fishing and crafting yields; the items a quest gives; gil from vendors, the marketboard and
+retainers. ArchonEngine ControlPanel's Dashboard → Drop rates writes the file
+([ArchonEngine ControlPanel](kawari-web.md#drop-rates-dashboard--drop-rates-2320)). Tests `the_nearest_setting_wins`,
+`mounts_and_minions_are_a_chance_and_format_1_is_still_read`, `gil_and_exp_by_source`, `a_count_at_a_rate`
+(`drop_rates.rs`), `a_coffer_s_pick_at_the_owner_s_rates` (`loot.rs`), `drops_at_the_owner_s_rates` (`quest.rs`). Not
+played.
 
 ## Party bots
 

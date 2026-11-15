@@ -78,7 +78,7 @@ pub use companion::{
 pub mod daily;
 mod director;
 mod dodge;
-mod drop_rates;
+pub mod drop_rates;
 pub mod duty_finder;
 mod effect;
 mod fall;

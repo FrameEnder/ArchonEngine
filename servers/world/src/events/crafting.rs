@@ -453,7 +453,9 @@ impl CraftingEventHandler {
         let below = (level as f64 - recipe.class_job_level as f64 - 5.0).max(0.0);
         let penalty = (1.0 - below * 0.041).max(0.05);
         let quality = quality.clamp(0, max_quality.max(1)) as f64 / max_quality.max(1) as f64;
-        (to_next * 0.007_235_6 * penalty * (1.0 + 2.125 * quality)).round() as i32
+        let exp = (to_next * 0.007_235_6 * penalty * (1.0 + 2.125 * quality)).round() as i32;
+        // At the owner's rate (`server/drop_rates.rs`.)
+        crate::server::drop_rates::exp_signed(exp, "crafting")
     }
 
     /// Back to the Crafting Log: its conditions, LiveEvent 11, scene 4, CP full and the statuses off.

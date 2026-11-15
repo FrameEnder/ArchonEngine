@@ -203,24 +203,104 @@ fn loot_message(network: &mut NetworkState, instance: &Instance, kind: u32, para
 /// minion it may hold, each at the duty's rate (`drop_rates::mounts_minions_percent`, 90 % unless ArchonEngine
 /// ControlPanel's Drop rates says otherwise: Bob, 2026-11-10.)
 fn roll_contents(instance: &Instance, game_data: &mut GameData, base_id: u32) -> Vec<u32> {
-    let percent = drop_rates::mounts_minions_percent(instance.content_finder_condition_id);
+    let place = game_data.drop_place(instance.zone.id, instance.content_finder_condition_id);
+    let percent = drop_rates::mounts_minions_percent(&place);
     let (pools, wiki, extras) = set_apart(
         &instance.loot_pools,
         &instance.loot_wiki_pools,
         base_id,
         |item| game_data.is_mount_or_minion(item),
     );
-    let mut items = contents(
+    let items = contents(
         &pools,
         &wiki,
         base_id,
         |item| item_kind(game_data, item),
         |n| fastrand::usize(..n),
     );
+    // The pick at the owner's rates for each kind of item here (`drop_rates.rs`.)
+    let rates: HashMap<u32, u32> = candidates_of(&pools, &wiki, base_id)
+        .into_iter()
+        .chain(items.iter().copied())
+        .map(|item| {
+            (
+                item,
+                drop_rates::item_percent(&place, &game_data.item_class(item)),
+            )
+        })
+        .collect();
+    let mut items = at_rates(
+        items,
+        &candidates_of(&pools, &wiki, base_id),
+        |item| item_kind(game_data, item),
+        |item| rates.get(&item).copied().unwrap_or(100),
+        fastrand::f32,
+        |n| fastrand::usize(..n),
+    );
     for extra in extras {
         if fastrand::u8(..100) < percent {
             items.push(extra);
         }
+    }
+    items
+}
+
+/// Everything this coffer may hold: what was recorded in it and its list.
+fn candidates_of(
+    pools: &HashMap<u32, Vec<Vec<u32>>>,
+    wiki: &HashMap<u32, Vec<u32>>,
+    base_id: u32,
+) -> Vec<u32> {
+    let mut candidates: Vec<u32> = Vec::new();
+    for item in pools
+        .get(&base_id)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .chain(wiki.get(&base_id).into_iter().flatten())
+    {
+        if !candidates.contains(item) {
+            candidates.push(*item);
+        }
+    }
+    candidates
+}
+
+/// A coffer's pick at the owner's rates (`percent(item)`, 100 being as picked): each item stays as often as its rate
+/// says (`drop_rates::scale_count`), and for each whole 100 % over, one more of what the coffer may hold comes with
+/// it: one whose own rate is over 100 too, of a kind not in the coffer yet (`kind`), while there is one.
+fn at_rates(
+    picked: Vec<u32>,
+    candidates: &[u32],
+    mut kind: impl FnMut(u32) -> u32,
+    mut percent: impl FnMut(u32) -> u32,
+    mut roll: impl FnMut() -> f32,
+    mut pick: impl FnMut(usize) -> usize,
+) -> Vec<u32> {
+    let mut items: Vec<u32> = Vec::new();
+    let mut more = 0;
+    for item in picked {
+        let count = drop_rates::scale_count(1, percent(item), roll());
+        if count > 0 {
+            items.push(item);
+            more += count - 1;
+        }
+    }
+    let mut kinds: Vec<u32> = items.iter().map(|item| kind(*item)).collect();
+    for _ in 0..more {
+        let left: Vec<(u32, u32)> = candidates
+            .iter()
+            .map(|item| (*item, kind(*item)))
+            .filter(|(item, of)| {
+                !items.contains(item) && !kinds.contains(of) && percent(*item) > 100
+            })
+            .collect();
+        if left.is_empty() {
+            break;
+        }
+        let (item, of) = left[pick(left.len())];
+        items.push(item);
+        kinds.push(of);
     }
     items
 }
@@ -956,6 +1036,51 @@ mod tests {
 
     /// Mounts and minions are set apart from a coffer's pick, to drop at their own rate; an opening that held only
     /// one goes.
+    /// A coffer's pick at the owner's rates (Bob, 2026-11-15: "adjust the balance of item drops on the fly"): at
+    /// 50 % an item stays half the time, at 0 never; at 200 % another of what the coffer may hold comes with it, one
+    /// whose own rate is over 100 and of a kind not in it yet.
+    #[test]
+    fn a_coffer_s_pick_at_the_owner_s_rates() {
+        // Items 1 to 3 are bodies (kind 4), 10 and 11 materia (kind 1058), 20 a ring (kind 12).
+        let kind = |item: u32| match item {
+            1..=3 => 4,
+            10 | 11 => 1058,
+            _ => 12,
+        };
+        let candidates = [1, 2, 3, 10, 11, 20];
+        // As picked.
+        assert_eq!(
+            at_rates(vec![1, 10], &candidates, kind, |_| 100, || 0.5, |_| 0),
+            [1, 10]
+        );
+        // Armour at 50 %: gone when the roll says so, there when it doesn't; materia never.
+        let rates = |item: u32| match item {
+            1..=3 => 50,
+            10 | 11 => 0,
+            _ => 100,
+        };
+        assert_eq!(
+            at_rates(vec![1, 10, 20], &candidates, kind, rates, || 0.7, |_| 0),
+            [20]
+        );
+        assert_eq!(
+            at_rates(vec![1, 10, 20], &candidates, kind, rates, || 0.2, |_| 0),
+            [1, 20]
+        );
+        // Rings at 200 %: one more comes, but only something whose rate is over 100 and of another kind: nothing
+        // here (the other candidates are at 100 or less.)
+        let rates = |item: u32| if item == 20 { 200 } else { 100 };
+        assert_eq!(
+            at_rates(vec![20], &candidates, kind, rates, || 0.5, |_| 0),
+            [20]
+        );
+        // Everything at 300 %: two more, of kinds not in it yet (a body and a materia; not a second ring.)
+        assert_eq!(
+            at_rates(vec![20], &candidates, kind, |_| 300, || 0.5, |_| 0),
+            [20, 1, 10]
+        );
+    }
+
     #[test]
     fn mounts_and_minions_are_set_apart() {
         let pools = HashMap::from([

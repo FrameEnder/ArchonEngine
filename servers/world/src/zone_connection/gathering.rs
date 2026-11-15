@@ -470,6 +470,8 @@ impl ZoneConnection {
             }
 
             let gathering_exp = self.game_data.lock().get_gathering_exp(level as u32);
+            // At the owner's rate (`server/drop_rates.rs`.)
+            let gathering_exp = crate::server::drop_rates::exp_signed(gathering_exp, "gathering");
             let exp = gathering::gather_exp(gathering_exp, level, item.level);
             let bonus = if pending.boon { 100 } else { 0 } + gathering::chain_bonus(chain);
             self.add_exp_with_bonus(exp, bonus).await;

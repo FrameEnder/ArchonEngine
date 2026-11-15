@@ -685,7 +685,8 @@ fn credit_battle_npc_kill(
     let drops_gil = drops_gil(instance, actor_id);
     for player_id in credited.iter().copied() {
         let gil = if drops_gil {
-            kill_gil(spawn.common.level, fastrand::f32())
+            // At the owner's rate (`drop_rates.rs`.)
+            crate::server::drop_rates::gil(kill_gil(spawn.common.level, fastrand::f32()), "kills")
         } else {
             0
         };

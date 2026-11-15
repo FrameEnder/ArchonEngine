@@ -1633,6 +1633,55 @@ impl GameData {
         row.IsAetheryte
     }
 
+    /// Where a drop happens, for the owner's rates (`server/drop_rates.rs`): the territory, its expansion
+    /// (TerritoryType.ExVersion) and, in a duty, its ContentFinderCondition and that row's ContentType.
+    pub fn drop_place(
+        &mut self,
+        zone_id: u16,
+        content_finder_condition: u16,
+    ) -> crate::server::drop_rates::DropPlace {
+        let expansion = self
+            .territory_type_sheet
+            .row(zone_id as u32)
+            .map(|row| row.ExVersion)
+            .unwrap_or(0);
+        let duty = (content_finder_condition != 0).then(|| {
+            let content_type = self
+                .content_finder_condition_sheet
+                .row(content_finder_condition as u32)
+                .map(|row| row.ContentType as u16)
+                .unwrap_or(0);
+            (content_finder_condition, content_type)
+        });
+        crate::server::drop_rates::DropPlace {
+            expansion,
+            duty,
+            zone: zone_id,
+        }
+    }
+
+    /// What kind of item this is, for the owner's rates: its ItemUICategory and that category's group
+    /// (ItemUICategory.OrderMajor, the game's own grouping: arms, tools, armour, accessories, medicines and meals,
+    /// materials, the rest.)
+    pub fn item_class(&mut self, item_id: u32) -> crate::server::drop_rates::ItemClass {
+        let category = self
+            .item_sheet
+            .row(item_id)
+            .map(|row| row.ItemUICategory)
+            .unwrap_or(0);
+        let group = self
+            .kept_sheet(|resource| {
+                icarus::ItemUICategory::ItemUICategorySheet::read_from(
+                    resource,
+                    get_config().world.language(),
+                )
+            })
+            .and_then(|sheet| sheet.row(category as u32))
+            .map(|row| row.OrderMajor)
+            .unwrap_or(0);
+        crate::server::drop_rates::ItemClass { category, group }
+    }
+
     /// Retrieves a zone's internal name, place name or parent region name.
     pub fn get_territory_name(&mut self, zone_id: u32, which: TerritoryNameKind) -> Option<String> {
         let row = self.territory_type_sheet.row(zone_id)?;

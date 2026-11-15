@@ -201,7 +201,10 @@ impl ZoneConnection {
         }
         match company {
             Some(company) => self.give_company_seals(company as u32, reward).await,
-            None => self.add_exp(reward as i32).await,
+            None => {
+                self.add_exp(crate::server::drop_rates::exp(reward, "hunting_log") as i32)
+                    .await
+            }
         }
     }
 }
