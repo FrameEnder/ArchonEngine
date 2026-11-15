@@ -89,6 +89,10 @@ QUEST_SEQUENCE_AFTER_WIN = 3
 FINISH_SCENE = 11
 CUTSCENE_SCENE = 6
 CUTSCENE_FLAGS = 0xF8402EFB
+-- The weather retail forced as the cutscene began (WeatherId 19, forced, a 20 s fade; one run), until the battle was
+-- won, when the zone's own came back (not sent: the battle ends 4 s later.)
+CUTSCENE_WEATHER = 19
+CUTSCENE_WEATHER_FADE = 20
 -- Where the cutscene leaves you, as retail's ActorSetPos put it.
 AFTER_CUTSCENE_POSITION = { x = 658.91, y = 9.56, z = 489.72 }
 AFTER_CUTSCENE_ROTATION = -0.046
@@ -303,6 +307,7 @@ function onUpdate(director, health, player_health, info)
             BATTLE:clearSteps()
             director:set_sequence(6)
             clearFirstHalf(director)
+            director:set_weather(CUTSCENE_WEATHER, CUTSCENE_WEATHER_FADE, true)
             director:play_scene(CUTSCENE_SCENE, CUTSCENE_FLAGS)
         end
         return

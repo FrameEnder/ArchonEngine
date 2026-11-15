@@ -54,6 +54,8 @@ TALK_86_AFTER = 16
 TALK_87_AFTER = 5
 SHIVER_AFTER = 1
 NAILS_AFTER = 1
+NAIL_APPEAR_TIMELINE = 142
+NAIL_APPEAR_DELAY = 0.7
 LOG_NAILS_AFTER = 6
 SEQUENCE_5_AFTER = 20
 
@@ -135,9 +137,13 @@ function onUpdate(director, health, player_health, info)
         after(NAILS_AFTER, function(d)
             nails_standing = #NAILS
             BATTLE:spawn(d, NAILS)
-            -- They stand where they come out and never act.
+            -- They stand where they come out and never act. They spawn unseen (their display flags, from Bob's
+            -- Recorder run) and nothing brought them into view, so they couldn't be fought (found by battle-sim's
+            -- check of 2026-11-14). The run doesn't have how retail did; the trial's nails (`w1fa_re.lua`, from the
+            -- Chronofoil captures) come with timeline 142, 0.7 s after they spawn, and these are taken to.
             for _, layout in ipairs(NAILS) do
                 d:hold_bnpc(layout)
+                d:appear_bnpc(layout, NAIL_APPEAR_TIMELINE, NAIL_APPEAR_DELAY)
             end
             d:use_action(BNPC_EGI, ACTION_RADIANT_SHIELD)
         end)

@@ -481,6 +481,18 @@ can, for the territory the fixture's NPCs are in. `battle-sim` fails when:
   later) with another state or argument than retail's (`director:spawn_eobj(eobj, position, args2, state)`).
   Escape from Castrum Centri's two by the bound Scions, 2026-11-14.
 
+* a battle NPC whose drop-in has **INVISIBLE** in its display flags (retail's spawn of it) is spawned and never
+  brought into view (`director:appear_bnpc`): 65's three field generators and, found by the check, 79's three
+  crimson nails. 2026-11-14.
+
+**Events only some fixtures have** (`OPTIONAL_KINDS`; the script is held to a kind where the fixture has any of it):
+`[t, "yell", NpcYell]`, `[t, "weather", id]` (a WeatherId that's forced; the script's `set_weather` with `forced`)
+and `[t, "warp"]` (PrepareZoning, then ActorSetPos on the player; `warp_players`), before the battle is won. A
+fixture made from a Chronofoil run has them from 2026-11-14 on (`chronofoil_battle` reads the two packets;
+`fixture_from_run`); a Recorder file has none. The fixtures made before weren't remade: 65's two won Chronofoil
+runs had theirs added by hand, and the other battles' forced weather (12, 36, 38, 56) is in their scripts without
+a fixture holding it.
+
 A fixture can say **when the battle is lost**: an event `[t, "lost"]` is the script setting sequence 0xFE. Retail's
 lost runs don't have one (a run's end isn't one of its events), so it's for a made-up fixture of a rule no run
 shows (`"made_up": true`, its `source` saying so: `65-biggs-falls.json`).

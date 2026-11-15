@@ -1647,6 +1647,29 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
 
 ### Quest battle 65 — Escape from Castrum Centri (`content/questbattle/65.lua`)
 
+* **Bob's mark of 2026-11-14, 21:33** (on `4ac0154`, through the harness: "something is causing loading issues
+  during this quest battle"), and the whole battle gone over against retail's packets (every packet kind of the won
+  run of `d1c46dff`, then the other four runs for each thing found).
+  * *The loading screen that never lifted.* The cutscene (scene 8) ended, the second part began around a client
+    that sent nothing but keep-alives for 100 s, and the connection timed out. **Retail ends the cutscene with a
+    warp**: PrepareZoning with the scene's end, ActorSetPos 1.5 s later to (-486.64, -3.22, -262.44) facing 0.689,
+    then the client's "finished" (trigger 201); the scene's flags leave the client waiting for it. The same in all
+    five runs that got that far, and what To Guard a Guardian's and the other two battles with such a cutscene
+    already did (`director:warp_players`). No other quest battle in the captures has one its script lacks.
+  * *The field generators couldn't be seen or hit.* They spawn unseen and untargetable (their display flags,
+    0x40028) and retail brings each into view 0.8 s after its spawn (Appear with timeline 142, SetTargetable; 1.1 s
+    after sequences 9 and 11, three runs). The script never did, so a vanguard's shield could never come down and
+    the second part couldn't be won. `director:appear_bnpc` now.
+  * *Two NpcYells in the first part*, the same in three runs: 1693 by one of the bound Scions (4278277) 8.1 s after
+    the battle commences, 1694 by Wedge 11.0 s after.
+  * *The weather*: fair skies (2), forced, a 20 s fade, as the cutscene begins (three runs). What a run starts
+    with is the zone's own (17 each time; one run's change to 2 at 15 s was the zone's too, unforced).
+  * *Who's left as the cutscene begins* fades (FadeOut 607 on Wedge, Biggs, the optio's body and the signifer if
+    it's up) and is deleted 1.3 s later; the script despawned them at once.
+  * Not built: the enemy and friendly thaumaturges gain status 3870 now and then (five times in the won run, on
+    Papalymo and two of the enemies), from one of their spells; and ActorControl 503 on the player as each enemy
+    turns on them (a combat packet, every battle's; `known-issues.md`).
+
 * **Bob's marks of 2026-11-14** (on `58b722d`, read through the harness: Biggs fell 63 s in, Wedge 145 s in, and
   the battle went on).
   * *"biggs was also taking too much damage"*: all three enemies were on him from 3 s in, the eques and the

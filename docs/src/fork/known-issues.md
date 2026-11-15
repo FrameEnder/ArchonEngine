@@ -1842,6 +1842,17 @@ yet; all unseen on retail (where they go is a recorded ride's).
   sequence 3 (which two of the three speak), and the scenes that are more than a talk, whose flags are a guess from
   like scenes: 1005's sequences 9 and 10, 1190's Kuplo Kopp in 4, 1358's private and corpses, 3874's F'lhaminn.
 * 3872's privates have a line for after the salute that may never be seen: their salute's scene walks them off.
+* Quest battles, from going over 65 against every packet of its retail runs (2026-11-14), unplayed:
+  * 79's crimson nails spawned unseen and were never brought into view; they are now with the trial's nails'
+    numbers (timeline 142, 0.7 s), since the one Recorder run of 79 doesn't have retail's.
+  * The weather retail forced in 12, 36 and 38 (19 as their cutscene begins) and 56 (10 with sequence 3, 1 with 5)
+    is set now; that the zone's own comes back as each is won (and as 65 is left) isn't sent.
+  * In nine battles (13, 29, 35, 36, 44, 45, 48, 60, 61) retail sent Appear to NPCs that have no layout ID (pets or
+    summons, most likely), which the scripts can't be checked for: not looked into.
+  * Thaumaturge NPCs gain status 3870 from one of their spells on retail (65's Papalymo and signifers); ActorControl
+    503 `[n, enemy]` goes to the player as each enemy turns on them. Neither is sent.
+  * The fixtures made before 2026-11-14 have no yell, weather or warp events (`questkit.md`): a battle with a
+    Chronofoil run could be remade to hold its script to them.
 * Escape from Castrum Centri's battle (65): that Biggs or Wedge falling loses it is Bob's, from the story, with no
   retail run of it; Urianger and Papalymo falling in the second part doesn't lose it (not known either way). Its two
   event objects by the bound Scions are spawned as retail's were, unseen in game: if they aren't in the instance's

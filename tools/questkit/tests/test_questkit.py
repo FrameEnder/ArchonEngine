@@ -589,6 +589,35 @@ class BattleSimLineUpTest(unittest.TestCase):
         self.assertEqual(len(problems), 1, problems)
         self.assertIn("event state 1 and second argument 4285063", problems[0])
 
+    def test_an_unseen_npc_is_brought_into_view(self):
+        # Escape from Castrum Centri's field generators (Bob's mark of 2026-11-14): their drop-in has retail's
+        # display flags, INVISIBLE among them, and the script spawned them and never brought them into view.
+        fixture = {"npcs": {"4286888": {}}, "events": [[60.0, "won"]]}
+        calls = [(5.0, "spawn_bnpc", (4286888,)), (5.0, "hold_bnpc", (4286888,))]
+        problems = battle_sim.line_up_problems(fixture, calls, {}, invisible={4286888})
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("spawns unseen", problems[0])
+        calls.append((5.0, "appear_bnpc", (4286888, 142, 0.8)))
+        self.assertEqual(battle_sim.line_up_problems(fixture, calls, {}, invisible={4286888}), [])
+        self.assertIn(4286888, battle_sim.dropin_invisible())
+
+    def test_yells_weather_and_warps_where_a_fixture_has_them(self):
+        # The same battle: its cutscene ended on a loading screen that never lifted (retail warps the player as it
+        # ends), and it had neither retail's yells nor the weather forced with the cutscene. A fixture from a
+        # Chronofoil run has the three; one without them (a Recorder file) doesn't hold a script to them.
+        result = battle_sim.SimResult(65, None)
+        calls = [(1.0, "set_sequence", (2,)), (9.0, "yell", (4278277, 1693)),
+                 (37.0, "set_weather", (2, 20, True)), (40.5, "warp_players", (-486.64, -3.22, -262.44, 0.689))]
+        chronofoil = {"npcs": {}, "events": [[1.0, "sequence", 2], [8.08, "yell", 1693], [36.21, "weather", 2],
+                                             [41.18, "warp"]]}
+        self.assertEqual(battle_sim.compare(chronofoil, calls, result), [])
+        problems = battle_sim.compare(chronofoil, calls[:1], result)
+        self.assertEqual([p.split(" at ")[0] for p in problems], ["yell 1693", "weather 2", "warp"])
+        recorder = {"npcs": {}, "events": [[1.0, "sequence", 2]]}
+        self.assertEqual(battle_sim.compare(recorder, calls, result), [])
+        # A weather that isn't forced is the zone's own, and not an event.
+        self.assertEqual(battle_sim.script_events([(5.0, "set_weather", (3, 20, False))]), [])
+
     def test_still_role_holds(self):
         # The framework's `still = true`: held as it comes out, never sent after anyone.
         script = repo.ROOT / "resources" / "scripts" / "content" / "questbattle" / "64.lua"

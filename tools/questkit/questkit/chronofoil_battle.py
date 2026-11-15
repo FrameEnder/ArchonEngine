@@ -38,6 +38,10 @@ def _rotation(value: int) -> float:
     return round(value / 65535 * 2 * 3.141592653589793 - 3.141592653589793, 3)
 
 
+# An ActorSetPos this soon after a PrepareZoning is its warp.
+WARP_WITHIN = 5.0
+
+
 def _effects(raw: bytes) -> list[list[int]]:
     out = []
     for k in range(0, len(raw) - 7, 8):
@@ -59,6 +63,7 @@ def run_from_visit(capture: Capture, tables: dict, visit: Visit) -> dict:
     enmity: list[dict] = []
     hp: dict[int, int] = {}
     you = None
+    zoning = None
     yours: list = []
     start = visit.start
 
@@ -130,6 +135,15 @@ def run_from_visit(capture: Capture, tables: dict, visit: Visit) -> dict:
                 sample(t, src, P=[_packed(x), _packed(y), _packed(z)], R=_rotation(rotation))
             elif name == "ActorSetPos" and len(data) >= 20:
                 sample(t, src, P=[round(v, 2) for v in struct.unpack_from("<fff", data, 8)])
+                # You, put somewhere else in the instance through a loading screen (after a PrepareZoning: a
+                # cutscene that ends with one leaves the client waiting for it.)
+                if src == you and zoning is not None and t - zoning < WARP_WITHIN:
+                    events.append({"S": at(t), "Kind": "warp", "Id": 0, "Text": "warp"})
+            elif name == "PrepareZoning":
+                zoning = t
+            elif name == "WeatherId" and len(data) >= 8:
+                events.append({"S": at(t), "Kind": "weather", "Id": 0,
+                               "Text": f"weather {data[0]} forced {data[1]}"})
             elif name == "UpdateHpMpTp" and len(data) >= 4:
                 hp[src], = struct.unpack_from("<I", data, 0)
                 sample(t, src, Hp=hp[src])

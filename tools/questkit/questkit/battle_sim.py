@@ -71,6 +71,14 @@ SCENE_COMMENCE = 60000
 CONTROL_SET_STATUS = 2  # ActorControl category: the actor's status (2: dead)
 STATUS_DEAD = 2
 SCENE_COMPLETE = 60001
+# Events only some fixtures have: "lost" (a made-up fixture's), and what a Chronofoil run has that a Recorder file
+# doesn't: "yell" (NpcYell), "weather" (a WeatherId that's forced) and "warp" (PrepareZoning, then ActorSetPos on
+# you). Escape from Castrum Centri's battle had none of the three in its script and passed (Bob's mark of
+# 2026-11-14: its cutscene ended on a loading screen that never lifted.)
+OPTIONAL_KINDS = ("lost", "yell", "weather", "warp")
+# INVISIBLE of a spawn's display flags (`common_spawn.rs`): such an NPC is there and unseen until it's brought into
+# view (`director:appear_bnpc`).
+INVISIBLE = 0x20
 LOST_SEQUENCE = 0xFE
 DONE_SEQUENCES = (LOST_SEQUENCE, 0xFF)  # set by the server once a battle is over, not by the script
 DEFAULT_TOLERANCE = 2.0
@@ -222,6 +230,18 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
     won = next((t for t, n in scenes if n == SCENE_COMPLETE), None)
     if won is not None:
         events.append([rel(won), "won"])
+    # What a Chronofoil run also has (`OPTIONAL_KINDS`): the NPCs' yells, the weather the battle forces, and you
+    # being put somewhere else in the instance. Before the battle is won only: leaving has its own.
+    for t, text in _director_events(run, "npc chat"):
+        if _number_after(text, "NpcYell") is not None and rel(t) >= 0.0:
+            events.append([rel(t), "yell", _number_after(text, "NpcYell")])
+    for t, text in _director_events(run, "weather"):
+        if _number_after(text, "forced") and rel(t) >= 0.0 and (won is None or t < won):
+            events.append([rel(t), "weather", _number_after(text, "weather")])
+    for t, _ in _director_events(run, "warp"):
+        if rel(t) >= 0.0 and (won is None or t < won):
+            events.append([rel(t), "warp"])
+    events.sort(key=lambda event: event[0])
 
     # The NPCs' casts (ActorCast: "action N ..."), by layout ID.
     casts = []
@@ -302,6 +322,21 @@ def _position_then(path: list | None, t: float) -> tuple[float, float, float]:
             break
         position = (x, y, z)
     return position
+
+
+def dropin_invisible() -> set[int]:
+    """The drop-in battle NPCs that spawn unseen (INVISIBLE in the display flags retail spawned them with.)"""
+    layouts = set()
+    for path in DROPINS.glob("*.json"):
+        try:
+            data = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            continue
+        for layer in data.get("layers", []):
+            for obj in layer.get("objects", []):
+                if obj.get("data", {}).get("display_flags", 0) & INVISIBLE:
+                    layouts.add(obj.get("layout_id"))
+    return layouts
 
 
 def dropin_layouts() -> set[int]:
@@ -537,7 +572,8 @@ def retail_line_up(fixture: dict, registry: dict | None = None) -> tuple[dict[in
     return standing, still
 
 
-def line_up_problems(fixture: dict, calls: list[tuple], registry: dict | None = None) -> list[str]:
+def line_up_problems(fixture: dict, calls: list[tuple], registry: dict | None = None,
+                     invisible: set[int] | None = None) -> list[str]:
     """The script against `retail_line_up`: every event NPC brought out, every battle NPC that never moved or acted
     held (`director:hold_bnpc`, which a role's `still = true` does) and not let go."""
     standing, still = retail_line_up(fixture, registry)
@@ -564,6 +600,13 @@ def line_up_problems(fixture: dict, calls: list[tuple], registry: dict | None = 
         if layout in out and layout not in held:
             problems.append(f"retail's {layout} never moved or acted ({runs} runs): the script doesn't hold it "
                             "(director:hold_bnpc, or `still = true` in its role)")
+    # An NPC that spawns unseen (its drop-in's display flags) has to be brought into view: Escape from Castrum
+    # Centri's three field generators never were, so nothing could bring the vanguards' shields down.
+    unseen = dropin_invisible() if invisible is None else invisible
+    shown = {int(args[0]) for _, name, args in calls if name == "appear_bnpc" and args}
+    for layout in sorted(unseen & out - shown):
+        problems.append(f"{layout} spawns unseen (INVISIBLE in its drop-in's display flags) and the script never "
+                        "brings it into view (director:appear_bnpc)")
     # The battle's own event objects (the registry's kind 7), brought out as retail's SpawnObject had them: with
     # their event state and second argument. Escape from Castrum Centri's two by the bound Scions weren't at all
     # (Bob's mark of 2026-11-14.)
@@ -643,6 +686,12 @@ def script_events(calls: list[tuple]) -> list[list]:
         elif name == "complete_quest_battle" and not (len(args) >= 6 and args[5] is False):
             # "won" is "Duty Complete" (scene 60001), which a battle won without the fanfare doesn't play.
             events.append([t, "won"])
+        elif name == "yell" and len(args) >= 2:
+            events.append([t, "yell", int(args[1])])
+        elif name == "set_weather" and len(args) >= 3 and args[2]:
+            events.append([t, "weather", int(args[0])])
+        elif name == "warp_players":
+            events.append([t, "warp"])
     return events
 
 
@@ -657,10 +706,12 @@ def compare(fixture: dict, calls: list[tuple], result: SimResult) -> list[str]:
             if not (e[1] == "spawn" and e[2] in standing)]
     initial = {int(k) for k, v in fixture["npcs"].items() if v.get("spawn") is None}
     mine = [e for e in mine if not (e[1] == "spawn" and e[2] in initial and e[0] <= 0.0)]
-    # When the script lost it is checked where a fixture says when (a retail run's own end isn't one of its events,
-    # so the fixtures made from lost runs don't.)
-    if not any(event[1] == "lost" for event in fixture["events"]):
-        mine = [e for e in mine if e[1] != "lost"]
+    # Kinds a fixture has only when its run could tell (`OPTIONAL_KINDS`): the script is held to each where the
+    # fixture has any of it. (When the script lost it: a retail run's own end isn't one of its events, so the
+    # fixtures made from lost runs don't say.)
+    for kind in OPTIONAL_KINDS:
+        if not any(event[1] == kind for event in fixture["events"]):
+            mine = [e for e in mine if e[1] != kind]
     used = [False] * len(mine)
     problems = []
     for event in fixture["events"]:

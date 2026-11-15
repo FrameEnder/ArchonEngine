@@ -139,6 +139,17 @@ TALKS_SECOND_WAVE = { { 20, SPEAKER_PAPALYMO, 268 }, { 30, SPEAKER_URIANGER, 269
 TALKS_LAST_WAVE = { { 21, SPEAKER_OPTIO, 270 }, { 31, SPEAKER_BIGGS, 271 }, { 41, SPEAKER_MINFILIA, 272 } }
 TALKS_LAST_WAVE_ON = { { 10, SPEAKER_URIANGER, 273 } }
 SECOND_PART_AFTER = 1
+SECOND_PART_POSITION = { x = -486.64, y = -3.22, z = -262.44 }
+SECOND_PART_ROTATION = 0.689
+-- NpcYells of the first part, the same in three runs: one of the bound Scions 8.1 s after the battle commences,
+-- Wedge 11.0 s after.
+YELLS_FIRST_PART = { { 17, 4278277, 1693 }, { 23, BNPC_WEDGE, 1694 } }
+-- The weather retail forced as the cutscene began (WeatherId 2, forced, a 20 s fade; three runs.)
+CUTSCENE_WEATHER = 2
+CUTSCENE_WEATHER_FADE = 20
+LEAVE_AFTER_FADE = 3
+GENERATOR_APPEAR_TIMELINE = 142
+GENERATOR_APPEAR_DELAY = 0.8
 CARBUNCLE_AFTER_CAST = 15
 LAST_WAVE_AFTER = 2
 WON_AFTER_DEATH = 3
@@ -225,10 +236,13 @@ function bringOut(director, layouts)
     end
     BATTLE:spawn(director, layouts)
     -- A generator only stands: retail's three never moved or acted in five runs (waiting, they'd have fought back
-    -- once hit.)
+    -- once hit.) It spawns unseen and untargetable (its display flags) and comes into view a moment later: Appear
+    -- with timeline 142 and SetTargetable 1.1 s after the sequence in three runs, 0.8 s after its spawn. The script
+    -- never did, so no shield could be brought down.
     for _, layout in ipairs(layouts) do
         if GENERATORS[layout] then
             director:hold_bnpc(layout)
+            director:appear_bnpc(layout, GENERATOR_APPEAR_TIMELINE, GENERATOR_APPEAR_DELAY)
         end
     end
     -- A vanguard takes no damage while one of its generators stands.
@@ -262,6 +276,9 @@ function onCommence(director)
     BATTLE:spawn(director, { BNPC_WEDGE, BNPC_BIGGS })
     bringOut(director, FIRST_PART)
     talks(TALKS_FIRST_PART)
+    for _, yell in ipairs(YELLS_FIRST_PART) do
+        after(yell[1], function(d) d:yell(yell[2], yell[3]) end)
+    end
 end
 
 -- Urianger's Summon II brings his Amber Carbuncle.
@@ -347,13 +364,24 @@ function onActorDeath(director, layout_id, position)
     if layout_id == BNPC_FIRST_OPTIO and phase == SEQUENCE_FIRST_PART then
         timers = {}
         sequence(director, SEQUENCE_CUTSCENE)
-        for _, layout in ipairs({ BNPC_WEDGE, BNPC_BIGGS, 4278235, 4278234 }) do
-            if standing[layout] or layout == BNPC_WEDGE or layout == BNPC_BIGGS then
-                director:despawn_bnpc(layout)
-                BATTLE:died(director, layout)
+        -- Whoever is left fades (FadeOut, with the scene) and is gone 1.3 s later, the optio's body with them.
+        local leaving = {}
+        for _, layout in ipairs({ BNPC_WEDGE, BNPC_BIGGS, BNPC_FIRST_OPTIO, 4278235, 4278234 }) do
+            if standing[layout] or layout == BNPC_WEDGE or layout == BNPC_BIGGS or layout == BNPC_FIRST_OPTIO then
+                director:fade_out_bnpc(layout)
+                table.insert(leaving, layout)
+                if layout ~= BNPC_FIRST_OPTIO then
+                    BATTLE:died(director, layout)
+                end
             end
             standing[layout] = nil
         end
+        after(LEAVE_AFTER_FADE, function(d)
+            for _, layout in ipairs(leaving) do
+                d:despawn_bnpc(layout)
+            end
+        end)
+        director:set_weather(CUTSCENE_WEATHER, CUTSCENE_WEATHER_FADE, true)
         director:play_scene(CUTSCENE, CUTSCENE_FLAGS)
         return
     end
@@ -404,6 +432,11 @@ function onSceneFinished(director, scene)
         return
     end
     sequence(director, SEQUENCE_SECOND_PART)
+    -- Retail ends the cutscene with a loading screen into where the second part starts (PrepareZoning with the
+    -- scene's end, ActorSetPos 1.5 s later; all five runs that got this far); the client waits for it. The script
+    -- didn't, and the screen never came back (Bob's mark of 2026-11-14: "something is causing loading issues").
+    director:warp_players(SECOND_PART_POSITION.x, SECOND_PART_POSITION.y, SECOND_PART_POSITION.z,
+        SECOND_PART_ROTATION)
     -- The three watching the second part, out as the cutscene ends (0.3 s after it in Bob's run of 2026-11-12.)
     for _, layout in ipairs(ENPCS_SECOND_PART) do
         director:spawn_bnpc(layout)

@@ -64,6 +64,9 @@ SECOND_WAVE_HEALTH = 80
 SECOND_WAVE_LATEST = 80
 THIRD_WAVE_HEALTH = 65
 STRAGGLER_EVERY = 70
+WEATHER_SECOND_WAVE = 10
+WEATHER_SEQUENCE_5 = 1
+WEATHER_FADE = 20
 SEQUENCE_5_AFTER = 12
 SEQUENCE_6_AFTER = 30
 LAST_ARRIVAL_AFTER = 11
@@ -158,6 +161,9 @@ function secondWave(director)
     phase = 2
     since_second = 0
     director:set_sequence(3)
+    -- The weather retail forced with each of these two sequences (WeatherId 10 with 3, 1 with 5; forced, a 20 s
+    -- fade; three runs.)
+    director:set_weather(WEATHER_SECOND_WAVE, WEATHER_FADE, true)
     arrive(director, SECOND_WAVE)
     after(10, function(d) talk(d, SPEAKER_SYLPHIE, 105) end)
     after(30, function(d) talk(d, SPEAKER_SYLPHIE, 106) end)
@@ -171,6 +177,7 @@ function thirdWave(director)
     after(20, function(d) talk(d, SPEAKER_SYLPHIE, 107) end)
     after(SEQUENCE_5_AFTER, function(d)
         d:set_sequence(5)
+        d:set_weather(WEATHER_SEQUENCE_5, WEATHER_FADE, true)
         after(SEQUENCE_6_AFTER, function(d6)
             d6:set_sequence(6)
             after(LAST_ARRIVAL_AFTER, function(d7) arrive(d7, LAST_ARRIVAL) end)
