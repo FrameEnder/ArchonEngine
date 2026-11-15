@@ -127,7 +127,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `dismount_bnpc(npc)` | The NPC (actor ID or layout ID) gets off its mount where it is: ActorControl 930 (PlayDismountAnimation) with where it stands and faces packed as for a player's (x, y, then rotation and z), to everyone around, and its spawn on foot from then on. One that rides in has the drop-in's `mount` (CommonSpawn's current_mount): In the Eyes of Gods and Men's Haurchefant (mount 10), off as he speaks (since 2026-11-10). |
 | `kill_bnpc(npc)` | The NPC (actor ID or layout ID) dies where it stands, its health at 0 (`actor::kill_actor`, so `onActorDeath` follows): the Thousand Maws of Toto-Rak's eggs, gone 2.1 s after their burst. A death a task causes has its own tasks run the next tick (the director's task list used to be cleared after each tick, losing them.) |
 | `objective(done, next)` | The duty's objectives (InstanceContent's ObjectiveStart to ObjectiveEnd, as the Duty Information shows them): ContentDirector event 0x80000016 `[done, 1]`, then 0x80000015 `[next, 0]` if `next` is given (`ContentDirectorEvent::ObjectiveDone`, `SetObjective`; upstream's `UnknownDirector16`, `15` with one parameter). Retail's in the Thousand Maws of Toto-Rak, which counts its progress with them instead of DirectorVars. |
-| `set_weather(id, fade, forced)` | The instance's weather (WeatherId to everyone, fading in over `fade` seconds; `forced` is the second byte, Kawari's `disables_override`): the Thousand Maws of Toto-Rak's last room, 19 (forced, 20 s) from its cutscene until the boss's death, then 2 (4 s). |
+| `set_weather(id, fade, forced)` | A forced weather is the zone's own again as the battle is won or lost (`director::restore_weather`, since 2026-11-14: retail's WeatherId, unforced, 20 s). The instance's weather (WeatherId to everyone, fading in over `fade` seconds; `forced` is the second byte, Kawari's `disables_override`): the Thousand Maws of Toto-Rak's last room, 19 (forced, 20 s) from its cutscene until the boss's death, then 2 (4 s). |
 
 ## The battle framework (`content/lib/Battle.lua`)
 
@@ -1666,9 +1666,12 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
     with is the zone's own (17 each time; one run's change to 2 at 15 s was the zone's too, unforced).
   * *Who's left as the cutscene begins* fades (FadeOut 607 on Wedge, Biggs, the optio's body and the signifer if
     it's up) and is deleted 1.3 s later; the script despawned them at once.
-  * Not built: the enemy and friendly thaumaturges gain status 3870 now and then (five times in the won run, on
-    Papalymo and two of the enemies), from one of their spells; and ActorControl 503 on the player as each enemy
-    turns on them (a combat packet, every battle's; `known-issues.md`).
+  * Built the same day (Bob: "I thought there was a directive to implement missing mechanics"), each for every
+    battle and the open world, in [Combat](combat.md): the thaumaturge NPCs' Thunderhead (status 3870 as a spell
+    puts them into Astral Fire or Umbral Ice, gone with a Thunder: Papalymo and the signifers here), ActorControl
+    503 to the player as each enemy puts them on its list, a summoned pet coming into view 0.8 s after its spawn
+    (the Appears to NPCs without a layout ID that nine other battles' runs had), and the zone's own weather back
+    once a battle that forced one is over.
 
 * **Bob's marks of 2026-11-14** (on `58b722d`, read through the harness: Biggs fell 63 s in, Wedge 145 s in, and
   the battle went on).

@@ -936,8 +936,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   wave 71 s after he appeared).
 * The second captain's gate fight and the clams' loop are untested in game (2026-10-23). Whether the four corsairs are
   in Sastasha's layout as Kawari reads it isn't known (Bob's earlier Kawari run never spawned them); if not, the
-  server logs that it couldn't find them. ActorControl 503 and 11 (retail's, putting them on the enemy list) aren't
-  sent.
+  server logs that it couldn't find them. ActorControl 11 (retail's, with 503, which is sent since 2026-11-14)
+  isn't sent.
 * Boss Mod lists action 835 (no cast, on a player) for the last boss's adds (BNpcBase 418); `DennAdd_418.json` never
   uses it (`questkit sources --audit`, 2026-11-10). Not looked for in a capture yet.
 
@@ -1846,11 +1846,14 @@ yet; all unseen on retail (where they go is a recorded ride's).
   * 79's crimson nails spawned unseen and were never brought into view; they are now with the trial's nails'
     numbers (timeline 142, 0.7 s), since the one Recorder run of 79 doesn't have retail's.
   * The weather retail forced in 12, 36 and 38 (19 as their cutscene begins) and 56 (10 with sequence 3, 1 with 5)
-    is set now; that the zone's own comes back as each is won (and as 65 is left) isn't sent.
-  * In nine battles (13, 29, 35, 36, 44, 45, 48, 60, 61) retail sent Appear to NPCs that have no layout ID (pets or
-    summons, most likely), which the scripts can't be checked for: not looked into.
-  * Thaumaturge NPCs gain status 3870 from one of their spells on retail (65's Papalymo and signifers); ActorControl
-    503 `[n, enemy]` goes to the player as each enemy turns on them. Neither is sent.
+    is set now, and the zone's own comes back as a battle is won or lost: with "Duty Complete", which is when
+    retail's did in 12, 36 and 38 and about 4 s before it did in 56 and 65 (as the player left).
+  * A thaumaturge NPC's Astral Fire or Umbral Ice doesn't run out (`thunderhead.rs`): 48 of 8,637 of retail's
+    spells went otherwise, most looking like an element that had. What the client does with ActorControl 503 isn't
+    known, nor whether retail numbers an enemy again when it comes back onto the list (Kawari does). ActorControl 11
+    (a player, `[enemy, 1 or 2]`; a handful in the captures) still isn't sent.
+  * A summoned pet's coming into view is from other players' and Bob's own summonings in the captures; a party
+    bot's pet and Urianger's carbuncle in 65 (a battle NPC of the layout) come as they did.
   * The fixtures made before 2026-11-14 have no yell, weather or warp events (`questkit.md`): a battle with a
     Chronofoil run could be remade to hold its script to them.
 * Escape from Castrum Centri's battle (65): that Biggs or Wedge falling loses it is Bob's, from the story, with no

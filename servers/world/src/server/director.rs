@@ -582,7 +582,15 @@ pub struct PendingAppearance {
     pub at: std::time::Instant,
     pub layout_id: u32,
     pub action_timeline: u32,
+    /// The actor itself, for one with no layout ID (a player's pet as it's summoned, `PET_APPEARS_AFTER`.)
+    pub actor: Option<ObjectId>,
 }
+
+/// A summoned pet comes into view like an ambusher: retail spawned it unseen (display flags 0x40028) and sent Appear
+/// with this timeline and SetTargetable 0.58 to 0.98 s later (median 0.8; 338 summonings of the five pets, BNpcBases
+/// 13498 to 13502, in Bob's and Connor's Chronofoil captures).
+pub const PET_APPEAR_TIMELINE: u32 = 142;
+pub const PET_APPEARS_AFTER: f32 = 0.8;
 
 /// How long after its spawn retail brought an ambushing gigas into view: 0.58-0.94 s in six ambushes (Bob's Copperbell
 /// Mines captures of 2026-10-25.)
@@ -677,6 +685,41 @@ pub fn keep_attached(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance
     }
 }
 
+/// The weather a battle's director forced is the zone's own again once the battle is over: retail sent the zone's
+/// weather, unforced, with its 20 s fade, as To Guard a Guardian's battle and the two like it were won (with "Duty
+/// Complete") and as the others were left, won or lost (0.2 s after sequence 254 in Trial by Wind's and Escape from
+/// Castrum Centri's; Bob's Chronofoil captures). Kawari sends it as the battle is won or lost, which is some 4 s
+/// early for those last two when won.
+pub fn restore_weather(
+    network: &Arc<Mutex<NetworkState>>,
+    game_data: &Arc<Mutex<GameData>>,
+    instance: &mut Instance,
+) {
+    if !std::mem::take(&mut instance.weather_forced) {
+        return;
+    }
+    let own = game_data
+        .lock()
+        .get_weather(instance.zone.id as u32)
+        .map(|weather| weather as u16)
+        .unwrap_or(instance.weather_id);
+    instance.weather_id = own;
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::WeatherId(WeatherChange {
+        weather_id: own as u8,
+        disables_override: false,
+        fade_length: RESTORED_WEATHER_FADE,
+        ..Default::default()
+    }));
+    network.lock().send_to_instance(
+        ObjectId::default(),
+        instance,
+        FromServer::PacketSegment(ipc, ObjectId::default()),
+        DestinationNetwork::ZoneClients,
+    );
+}
+
+const RESTORED_WEATHER_FADE: f32 = 20.0;
+
 /// Brings the BNpcs whose time has come into view: `Appear` and `SetTargetable` to everyone around, and INVISIBLE
 /// dropped from their spawn, so whoever sees them spawn later sees them at once.
 pub fn update_appearances(
@@ -693,15 +736,26 @@ pub fn update_appearances(
             .partition(|pending| pending.at <= now);
     instance.pending_appearances = later;
     for pending in due {
-        let Some((actor_id, _)) = instance.find_npc(pending.layout_id) else {
-            tracing::warn!(
-                "Failed to find bnpc {} to bring into view!",
-                pending.layout_id
-            );
+        let found = match pending.actor {
+            Some(actor) => instance.find_actor(actor).map(|_| actor),
+            None => instance.find_npc(pending.layout_id).map(|(actor, _)| actor),
+        };
+        let Some(actor_id) = found else {
+            // (A pet dismissed before it came into view is simply gone.)
+            if pending.actor.is_none() {
+                tracing::warn!(
+                    "Failed to find bnpc {} to bring into view!",
+                    pending.layout_id
+                );
+            }
             continue;
         };
         if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(actor_id) {
             spawn.common.display_flags.remove(DisplayFlag::INVISIBLE);
+            // A pet out already had no display flags when retail spawned it for someone arriving.
+            if pending.actor.is_some() {
+                spawn.common.display_flags = DisplayFlag::empty();
+            }
         }
         instance.untargetable_npcs.remove(&actor_id);
         network.send_ac_in_range_instance(
@@ -2880,6 +2934,7 @@ pub fn director_tick(
             } => {
                 let quest_id = instance.directors.first().unwrap().quest_battle_quest_id;
                 let exit = instance.quest_battle_win_exit;
+                let self_network = network.clone();
                 let mut network = network.lock();
                 // Won: no one fights on through "Duty Complete" and the closing scene.
                 crate::server::npc_behavior::end_fight(instance, &mut network);
@@ -2900,6 +2955,8 @@ pub fn director_tick(
                     ),
                     DestinationNetwork::ZoneClients,
                 );
+                drop(network);
+                restore_weather(&self_network, &game_data, instance);
             }
             LuaDirectorTask::EndFight => {
                 let mut network = network.lock();
@@ -2963,13 +3020,16 @@ pub fn director_tick(
                 }
             }
             LuaDirectorTask::LeaveQuestBattle => {
-                let mut network = network.lock();
-                network.send_to_instance(
-                    ObjectId::default(),
-                    instance,
-                    FromServer::LeaveQuestBattle(director_id),
-                    DestinationNetwork::ZoneClients,
-                );
+                {
+                    let mut network = network.lock();
+                    network.send_to_instance(
+                        ObjectId::default(),
+                        instance,
+                        FromServer::LeaveQuestBattle(director_id),
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
+                restore_weather(&network, &game_data, instance);
             }
             LuaDirectorTask::UseAction {
                 layout_id,
@@ -3177,13 +3237,16 @@ pub fn director_tick(
                 }
             }
             LuaDirectorTask::FailQuestBattle => {
-                let mut network = network.lock();
-                network.send_to_instance(
-                    ObjectId::default(),
-                    instance,
-                    FromServer::QuestBattleFailed,
-                    DestinationNetwork::ZoneClients,
-                );
+                {
+                    let mut network = network.lock();
+                    network.send_to_instance(
+                        ObjectId::default(),
+                        instance,
+                        FromServer::QuestBattleFailed,
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
+                restore_weather(&network, &game_data, instance);
             }
             LuaDirectorTask::SetNotice { layout_id, notices } => {
                 if *notices {
@@ -3744,6 +3807,7 @@ pub fn director_tick(
             }
             LuaDirectorTask::SetWeather { id, fade, forced } => {
                 instance.weather_id = *id as u16;
+                instance.weather_forced = *forced;
                 let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::WeatherId(WeatherChange {
                     weather_id: *id,
                     disables_override: *forced,
@@ -3911,6 +3975,7 @@ pub fn director_tick(
                     at: std::time::Instant::now() + Duration::from_secs_f32(delay.max(0.0)),
                     layout_id: *layout_id,
                     action_timeline: *action_timeline,
+                    actor: None,
                 });
             }
             LuaDirectorTask::EObjControl {

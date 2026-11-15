@@ -1969,6 +1969,10 @@ pub fn execute_action(
                                         pet_id,
                                         owner_id: from_actor_id,
                                         object_kind: ObjectKind::BattleNpc(BattleNpcSubKind::Pet),
+                                        // Unseen until it's brought into view (below), as retail's.
+                                        display_flags: kawari::ipc::zone::DisplayFlag::INVISIBLE
+                                            | kawari::ipc::zone::DisplayFlag::UNK2
+                                            | kawari::ipc::zone::DisplayFlag::UNK1,
                                         level: actor.get_common_spawn().level,
                                         position: actor.position(),
                                         rotation: actor.rotation(),
@@ -1978,6 +1982,18 @@ pub fn execute_action(
                                 },
                                 &config,
                                 &mut game_data,
+                            );
+                            instance.untargetable_npcs.insert(pet_actor_id);
+                            instance.pending_appearances.push(
+                                crate::server::director::PendingAppearance {
+                                    at: std::time::Instant::now()
+                                        + Duration::from_secs_f32(
+                                            crate::server::director::PET_APPEARS_AFTER,
+                                        ),
+                                    layout_id: 0,
+                                    action_timeline: crate::server::director::PET_APPEAR_TIMELINE,
+                                    actor: Some(pet_actor_id),
+                                },
                             );
 
                             network.send_to_by_actor_id(
@@ -2500,6 +2516,19 @@ pub fn execute_action(
                         process_effects_list(network.clone(), instance, id);
                     }
                 }
+            }
+        }
+
+        // A thaumaturge NPC's Thunderhead (`thunderhead.rs`.)
+        if matches!(request.action_type, ActionType::Action) {
+            let mut data = data.lock();
+            if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
+                crate::server::thunderhead::after_action(
+                    &network,
+                    instance,
+                    from_actor_id,
+                    request.action_id,
+                );
             }
         }
 

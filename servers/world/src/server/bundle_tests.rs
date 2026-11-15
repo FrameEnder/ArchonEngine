@@ -899,3 +899,110 @@ fn slafborn_takes_you_back_in_before_the_quest_is_accepted() {
     assert_eq!(slafborn["scenes"]["0"], 2, "before it's accepted");
     assert_eq!(slafborn["move"][1], 156, "into Cid's workshop (Mor Dhona)");
 }
+
+/// Going over Escape from Castrum Centri's battle against retail's packets (2026-11-14): ActorControl 503 went to
+/// the player as each enemy put them on its list, numbered from 0 (the signifer as the battle commenced, the eques
+/// 1.15 s after the player's first hit on it, the optio...), before the HaterList that had it; Kawari sent none. The
+/// count goes round after 25, and an enemy still on the list isn't told again.
+#[test]
+fn each_enemy_that_joins_the_list_is_numbered() {
+    use kawari::ipc::zone::{Hater, HaterList};
+    let list = |actors: &[u32]| HaterList {
+        count: actors.len() as u32,
+        list: actors
+            .iter()
+            .map(|actor| Hater {
+                actor_id: ObjectId(*actor),
+                enmity: 100,
+            })
+            .collect(),
+    };
+    let mut next = 0;
+    let first = list(&[ENEMY]);
+    assert_eq!(
+        super::enemy_list_joins(None, &first, &mut next),
+        [(0, ObjectId(ENEMY))]
+    );
+    let second = list(&[ENEMY, ENEMY + 1, ENEMY + 2]);
+    assert_eq!(
+        super::enemy_list_joins(Some(&first), &second, &mut next),
+        [(1, ObjectId(ENEMY + 1)), (2, ObjectId(ENEMY + 2))]
+    );
+    assert!(super::enemy_list_joins(Some(&second), &second, &mut next).is_empty());
+    // One that left and comes back joins again; 25 is followed by 0.
+    next = 25;
+    assert_eq!(
+        super::enemy_list_joins(Some(&list(&[])), &first, &mut next),
+        [(25, ObjectId(ENEMY))]
+    );
+    assert_eq!(next, 0);
+    // As it goes out: [503, index, enemy].
+    let mut bytes = std::io::Cursor::new(Vec::new());
+    binrw::BinWrite::write_le(
+        &ActorControlCategory::EnemyListJoin {
+            index: 3,
+            enemy: ObjectId(0x4001_BF39),
+        },
+        &mut bytes,
+    )
+    .unwrap();
+    assert_eq!(
+        bytes.into_inner()[..12],
+        [0xF7, 0x01, 0, 0, 3, 0, 0, 0, 0x39, 0xBF, 0x01, 0x40]
+    );
+}
+
+/// The same going-over: a player's pet came into view 0.8 s after it was summoned in retail (spawned with display
+/// flags 0x40028, then Appear with timeline 142 and SetTargetable; 338 summonings), and Kawari's was simply there.
+/// One with no layout ID is brought into view by its actor.
+#[test]
+fn a_summoned_pet_comes_into_view() {
+    use crate::server::director::{PET_APPEAR_TIMELINE, PendingAppearance, update_appearances};
+    use kawari::ipc::zone::DisplayFlag;
+    use std::time::Instant;
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let pet = world.enemy(ENEMY, [1.0, 0.0, 1.0], 500);
+    if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(pet) {
+        spawn.common.display_flags = DisplayFlag::INVISIBLE | DisplayFlag::UNK2 | DisplayFlag::UNK1;
+    }
+    world.instance.untargetable_npcs.insert(pet);
+    let summoned = Instant::now();
+    world.instance.pending_appearances.push(PendingAppearance {
+        at: summoned + Duration::from_millis(800),
+        layout_id: 0,
+        action_timeline: PET_APPEAR_TIMELINE,
+        actor: Some(pet),
+    });
+    world.sent(player);
+    // Not yet.
+    update_appearances(
+        &mut world.network.lock(),
+        &mut world.instance,
+        summoned + Duration::from_millis(500),
+    );
+    assert!(world.sent(player).is_empty());
+    update_appearances(
+        &mut world.network.lock(),
+        &mut world.instance,
+        summoned + Duration::from_millis(800),
+    );
+    let sent = world.sent(player);
+    assert!(sent.iter().any(|message| control_from(message, pet, |c| {
+        matches!(
+            c,
+            ActorControlCategory::Appear {
+                fade_in: true,
+                action_timeline: 142
+            }
+        )
+    })));
+    assert!(sent.iter().any(|message| control_from(message, pet, |c| {
+        matches!(c, ActorControlCategory::SetTargetable { targetable: true })
+    })));
+    assert!(!world.instance.untargetable_npcs.contains(&pet));
+    let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor(pet) else {
+        panic!("the pet is there");
+    };
+    assert!(spawn.common.display_flags.is_empty());
+}

@@ -126,6 +126,7 @@ mod status_floor;
 mod sweep;
 #[cfg(test)]
 mod test_world;
+mod thunderhead;
 mod wipe;
 // Stage 2 of the world bots, being wired into `world_bots` (docs/src/fork/world-bots.md.)
 #[allow(dead_code)]
@@ -563,6 +564,29 @@ fn gp_regen(level: u8) -> u16 {
 /// How often queued tasks (finished casts, event actions, despawns...) are checked, in milliseconds. Much finer than
 /// the logic tick, so a cast resolves when its cast bar ends rather than up to half a second later.
 const TASK_TICK_MILLISECONDS: u32 = 20;
+
+/// The enemies newly on a player's HaterList, each with its number (`ActorControlCategory::EnemyListJoin`): `next`
+/// counts on from the player's arrival and goes round after `ENEMY_LIST_JOINS - 1`.
+fn enemy_list_joins(
+    last: Option<&HaterList>,
+    now: &HaterList,
+    next: &mut u32,
+) -> Vec<(u32, ObjectId)> {
+    now.list
+        .iter()
+        .filter(|hater| {
+            !last.is_some_and(|last| last.list.iter().any(|old| old.actor_id == hater.actor_id))
+        })
+        .map(|hater| {
+            let index = *next;
+            *next = (*next + 1) % ENEMY_LIST_JOINS;
+            (index, hater.actor_id)
+        })
+        .collect()
+}
+
+/// Retail's count of them went 0 to 25 and round again (82 times in the captures.)
+const ENEMY_LIST_JOINS: u32 = 26;
 
 /// A player's enmity on an enemy's list as a percentage of the top (floor), as the HaterList shows it.
 fn enmity_percent(enemy: &NetworkedActor, player: ObjectId) -> u32 {
@@ -1254,6 +1278,21 @@ fn server_logic_tick(
                 let enmity_changed = last.is_none_or(|(_, enmity)| *enmity != enmity_list)
                     && !(last.is_none() && enmity_list.list.is_empty());
                 let mut network = network.lock();
+                // Each enemy that has just put them on its list, before the list that has it (as retail.)
+                let mut next = instance.enemies_joined.get(&id).copied().unwrap_or(0);
+                for (index, enemy) in
+                    enemy_list_joins(last.map(|(haters, _)| haters), &hater_list, &mut next)
+                {
+                    network.send_to_by_actor_id(
+                        id,
+                        FromServer::ActorControl(
+                            id,
+                            ActorControlCategory::EnemyListJoin { index, enemy },
+                        ),
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
+                instance.enemies_joined.insert(id, next);
                 if hater_changed {
                     let ipc =
                         ServerZoneIpcSegment::new(ServerZoneIpcData::HaterList(hater_list.clone()));

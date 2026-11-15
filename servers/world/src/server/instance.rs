@@ -183,8 +183,15 @@ pub struct Instance {
     pub zone: Zone,
     /// The zone's current weather.
     pub weather_id: u16,
+    /// Whether a director has forced `weather_id` (`set_weather`'s `forced`), to be given back when its battle is over
+    /// (`director::restore_weather`.)
+    pub weather_forced: bool,
     /// The 1400 s weather window `weather_id` was worked out for (Unix time / 1400.)
     pub weather_window: u32,
+    /// Each thaumaturge NPC's Astral Fire or Umbral Ice (`thunderhead.rs`.)
+    pub npc_elements: HashMap<ObjectId, crate::server::thunderhead::Element>,
+    /// How many enemies have had each player on their list since the player came (`enemy_list_joins`.)
+    pub enemies_joined: HashMap<ObjectId, u32>,
     /// The HaterList and EnmityList last sent to each player, so they're only sent when they change.
     pub last_enmity_lists:
         HashMap<ObjectId, (kawari::ipc::zone::HaterList, kawari::ipc::zone::EnmityList)>,
@@ -1096,6 +1103,7 @@ pub fn remove_actor_from_instance(
     while let Some(current_instance) = data.find_actor_instance_mut(actor_id) {
         network.remove_actor(current_instance, actor_id);
         current_instance.last_enmity_lists.remove(&actor_id);
+        current_instance.enemies_joined.remove(&actor_id);
 
         // Take down the zone's FATEs first, as retail does: 2352 for each FATE's start NPC, then every FATE's context
         // (RemoveFateContext, for all the zone's FATEs, running or not), then the FATE director below. Without the

@@ -108,7 +108,7 @@ FINISH_SCENE = 11
 CUTSCENE_SCENE = 6
 CUTSCENE_FLAGS = 0xF8402EFB
 -- The weather retail forced as the cutscene began (WeatherId 19, forced, a 20 s fade; one run), until the battle was
--- won, when the zone's own came back (not sent: the battle ends 4 s later.)
+-- won, when the zone's own came back (the server's, as a battle is won or lost: `director::restore_weather`.)
 CUTSCENE_WEATHER = 19
 CUTSCENE_WEATHER_FADE = 20
 -- Where the cutscene leaves you, as retail's ActorSetPos put it.

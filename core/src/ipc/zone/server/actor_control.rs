@@ -751,8 +751,13 @@ pub enum ActorControlCategory {
         from_actor_id: ObjectId,
     },
 
+    /// An enemy has just put the player on its enmity list (sent from the player, to the player): `index` counts
+    /// them from 0 as the player arrives in a zone and goes round after 25. 5,384 of them in Bob's and Connor's
+    /// Chronofoil captures: 1.15 s after the player's first hit on an enemy (as the hit's result lands), or as an
+    /// enemy turns on them, before the HaterList that has it. What the client does with it isn't known (upstream's
+    /// `Unk503`.)
     #[brw(magic = 503u32)]
-    Unk503 { unk1: u32, unk2: ObjectId },
+    EnemyListJoin { index: u32, enemy: ObjectId },
 
     #[brw(magic = 504u32)]
     SetStatusIcon { icon: OnlineStatus },

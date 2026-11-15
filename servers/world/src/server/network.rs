@@ -109,6 +109,7 @@ impl NetworkState {
     /// Inform clients that have spawned this actor, that it should be deleted.
     pub fn remove_actor(&mut self, instance: &mut Instance, actor_id: ObjectId) {
         instance.actors.remove(&actor_id);
+        instance.npc_elements.remove(&actor_id);
 
         for (id, (handle, state)) in &mut self.clients {
             let id = *id;
