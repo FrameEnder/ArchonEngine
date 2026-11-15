@@ -1427,6 +1427,7 @@ pub fn player_action(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use kawari::ipc::zone::ServerZoneIpcData;
 
     #[test]
     fn the_waves_read() {
@@ -1567,6 +1568,144 @@ mod tests {
                 109, 2147737257, 268435464, 1073811051, 0, 2000010, 352, 138, 100, 0
             ]
         );
+    }
+
+    /// A word typed at an enemy, through to its fall, as each player's client is told it (retail's order: the blow,
+    /// the score, the enemy's next words; at 0 its fall, the words gone for the one whose word did it, the count.)
+    #[test]
+    fn a_typed_word_hits_and_the_third_fells() {
+        use crate::server::test_world::{TestWorld, packet_from};
+        let mut world = TestWorld::new();
+        let player = world.player(1, [4.5, 0.0, 26.0]);
+        let target = world.enemy(2, [0.0, 0.0, -18.0], 300);
+        world.instance.content_finder_condition_id = DUTY;
+        let director = HandlerId(0x8003_DEA9);
+        let now = Instant::now();
+        let mut game = Game::new(director, now, 4);
+        game.stage = Stage::Wave { on: true };
+        game.enemies.insert(
+            target,
+            Enemy {
+                base: 19587,
+                hp: 300,
+                words: Some((20, 186)),
+                active_at: None,
+                ready_sent: true,
+                arrived: false,
+                next_attack: None,
+                boss: false,
+                fallen: None,
+                after_fall: 0,
+            },
+        );
+        world.instance.keybound = Some(game);
+        world.sent(player);
+
+        let request = |action_id, target: ObjectId| ActionRequest {
+            action_id,
+            action_type: ActionType::Action,
+            sequence: 7,
+            target: ObjectTypeId {
+                object_id: target,
+                object_type: ObjectTypeKind::None,
+            },
+            ..Default::default()
+        };
+        let commands = |messages: &[FromServer]| -> Vec<(u32, Vec<u32>)> {
+            messages
+                .iter()
+                .filter_map(|message| match message {
+                    FromServer::ActorControlSelf(ActorControlCategory::DirectorEvent {
+                        event: DirectorEvent::Raw { id, args },
+                        ..
+                    }) => Some((*id, args.to_vec())),
+                    _ => None,
+                })
+                .collect()
+        };
+
+        // The first word: 100 off, 100 scored, and its next word moves up.
+        assert!(player_action(
+            &world.network,
+            &mut world.instance,
+            player,
+            &request(ACTION_HITS[1], target)
+        ));
+        let sent = world.sent(player);
+        assert!(
+            sent.iter()
+                .any(|message| packet_from(message, player, |data| {
+                    matches!(data, ServerZoneIpcData::ActionEffect1(effect)
+                if effect.action_id == ACTION_HITS[1] && effect.source_sequence == 7
+                    && matches!(effect.effects[0].0, TargetEffectKind::Damage { amount: 100, .. }))
+                }))
+        );
+        let sent = commands(&sent);
+        assert_eq!(sent[0], (SCORE, vec![100, 0, 0, 0, 0, 0, 0]));
+        assert_eq!(sent[1].0, WORDS);
+        assert_eq!(sent[1].1[..4], [target.0, 0, WORD_LIST, 186]);
+        assert_eq!(sent[1].1[5], WORDS_LAST);
+        assert_ne!(sent[1].1[4], 186);
+        assert_eq!(
+            world
+                .instance
+                .find_actor(target)
+                .unwrap()
+                .get_common_spawn()
+                .health_points,
+            200
+        );
+
+        // The third fells it: no new words, but its fall and the wave's count.
+        player_action(
+            &world.network,
+            &mut world.instance,
+            player,
+            &request(ACTION_HITS[0], target),
+        );
+        world.sent(player);
+        player_action(
+            &world.network,
+            &mut world.instance,
+            player,
+            &request(ACTION_HITS[1], target),
+        );
+        let sent = commands(&world.sent(player));
+        assert_eq!(
+            sent,
+            vec![
+                (SCORE, vec![300, 0, 0, 0, 0, 0, 0]),
+                (DEFEATED, vec![target.0, 0, 0, 0, 0, 0, 0]),
+                (WORDS_GONE, vec![target.0, 0, 0, 0, 0, 0, 0]),
+                (ENEMY_DOWN, vec![target.0, ENEMY_DOWN_ARG, 0, 0, 0, 0, 0]),
+                (KILLS, vec![1, 0, 0, 0, 0, 0, 0]),
+            ]
+        );
+        let game = world.instance.keybound.as_ref().unwrap();
+        assert_eq!(game.kills, 1);
+        assert!(game.enemies[&target].fallen.is_some());
+
+        // A word at it afterwards lands for nothing, and one nobody carried is only the miss.
+        player_action(
+            &world.network,
+            &mut world.instance,
+            player,
+            &request(ACTION_HITS[0], target),
+        );
+        player_action(
+            &world.network,
+            &mut world.instance,
+            player,
+            &request(ACTION_MISS, player),
+        );
+        assert!(commands(&world.sent(player)).is_empty());
+        // Any other action is the battle's.
+        assert!(!player_action(
+            &world.network,
+            &mut world.instance,
+            player,
+            &request(7, target)
+        ));
     }
 
     #[test]

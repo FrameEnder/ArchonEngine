@@ -175,5 +175,8 @@ director. A lost game (the barrier at 0) pays the MGP and MGC without the coffer
 fewer, never under one hit (`EnemyKind::hp_for`: alone, 19587 falls to one word and the last boss has 3,000).
 
 Tests (`keybound.rs`): `the_waves_read`, `an_enemy_s_hp_by_the_players`, `a_line_up_has_its_wave_s_big_enemy`,
-`the_bonus_gauge_and_its_levels`, `a_score_s_rewards`, `a_command_goes_out_as_retail_s`, `a_word_nobody_carries`. **Not played**, and nothing of it has
+`the_bonus_gauge_and_its_levels`, `a_score_s_rewards`, `a_command_goes_out_as_retail_s`, `a_word_nobody_carries`, and `a_typed_word_hits_and_the_third_fells` (a
+player's three words at a 19587 in the test world: the blow for 100 with the request's sequence, the score, the next
+words; at the third its fall, `DEFEATED`, `WORDS_GONE`, `ENEMY_DOWN`, `KILLS [1]`; a word at it afterwards and a miss
+score nothing; another action stays the battle's). **Not played**, and nothing of it has
 run against a client: what isn't built is in [Known Issues](known-issues.md).
