@@ -1558,6 +1558,10 @@ mod tests {
             game.pending.last(),
             Some((_, Pending::StatusOff { .. }))
         ));
+        // Nothing of the game's follows as the player leaves (Kawari sent `0x10000002` again until 2026-11-15.)
+        world.instance.keybound = Some(game);
+        player_leaves(&mut world.network.lock(), &world.instance, player);
+        assert!(world.sent(player).is_empty());
     }
 
     /// A big enemy's state (retail's 19594: notice `[17837, 5348]` and switch `[3071, 1]`, 28.0 s later `[17838, 5348]`

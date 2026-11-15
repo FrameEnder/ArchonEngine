@@ -292,9 +292,9 @@ const MOST_MGC: u32 = 350;
 pub const ITEM_MGC: u32 = 52_322;
 pub const ITEM_COFFER: u32 = 52_450;
 /// The result's LogMessages: the MGP, the MGC, the coffer (0x2D4E, 0x2D51, 0x2D4B.)
-const LOG_MGP: u32 = 11_598;
-const LOG_MGC: u32 = 11_601;
-const LOG_COFFER: u32 = 11_595;
+pub const LOG_MGP: u32 = 11_598;
+pub const LOG_MGC: u32 = 11_601;
+pub const LOG_COFFER: u32 = 11_595;
 
 /// What a score earns: MGP and MGC.
 pub fn rewards(score: u32) -> (u32, u32) {
@@ -1936,32 +1936,14 @@ impl Game {
         }
     }
 
-    /// Each player's rewards: the director's lines, then the MGP, MGC and coffer themselves (their connection's,
-    /// `FromServer::KeyboundResult`.)
+    /// Each player's rewards, their connection's to give and to say (`FromServer::KeyboundResult`,
+    /// `ZoneConnection::keybound_rewards`: the MGP, the MGC and the coffer, then the director's lines, as retail's.)
     fn send_rewards(&self, network: &mut NetworkState, won: bool) {
         for (id, player) in &self.players {
-            let (mgp, mgc) = rewards(player.bonus.score);
-            let mut logs = vec![(LOG_MGP, vec![mgp, 0]), (LOG_MGC, vec![ITEM_MGC, mgc])];
-            if won {
-                logs.push((LOG_COFFER, vec![ITEM_COFFER, 1]));
-            }
-            for (message_type, params) in logs {
-                let ipc = EventLogMessage {
-                    handler_id: self.director,
-                    message_type,
-                    params,
-                }
-                .package()
-                .unwrap();
-                network.send_to_by_actor_id(
-                    *id,
-                    FromServer::PacketSegment(ipc, *id),
-                    DestinationNetwork::ZoneClients,
-                );
-            }
             network.send_to_by_actor_id(
                 *id,
                 FromServer::KeyboundResult {
+                    director: self.director,
                     score: player.bonus.score,
                     won,
                 },
@@ -2407,12 +2389,13 @@ pub fn player_leaves(network: &mut NetworkState, instance: &Instance, player: Ob
         return;
     }
     if let Some(game) = instance.keybound.as_ref() {
-        command(network, game.director, player, WAVE_OVER, &[]);
-        // Unless the game's own end already sent it. (A guess for a player who leaves early: it is what ends the
-        // game for the client everywhere retail was seen to end it.)
-        if !matches!(game.stage, Stage::Ending { .. }) {
-            duty_end_for(network, player);
+        // Not after the game's own end: retail sent nothing of the game's between the way out and the zone change.
+        if matches!(game.stage, Stage::Ending { .. }) {
+            return;
         }
+        command(network, game.director, player, WAVE_OVER, &[]);
+        // A guess for a player who leaves early: retail sent it wherever it ended the game.
+        duty_end_for(network, player);
     }
 }
 

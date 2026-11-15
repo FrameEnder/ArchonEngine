@@ -57,6 +57,11 @@ impl ZoneConnection {
         for item_id in PLAYER_CURRENCIES {
             self.send_player_currency(item_id).await;
         }
+        // Keybound Brawler's MGC, once the player has any (the client forgets its count at logout; whether retail
+        // sends it at login to a player with none wasn't captured.)
+        if self.player_currency(crate::server::KEYBOUND_MGC) > 0 {
+            self.send_player_currency(crate::server::KEYBOUND_MGC).await;
+        }
     }
 
     /// Sets how many of `item_id` the player has and tells the client as retail does: an InventoryActionAck (sequence

@@ -22,10 +22,12 @@
 use async_trait::async_trait;
 use kawari::{
     common::{
-        ContainerType, DirectorEvent, DirectorTrigger, INVENTORY_ACTION_ACK_SHOP, ObjectTypeId,
-        timestamp_secs,
+        ContainerType, DirectorEvent, DirectorTrigger, HandlerId, INVENTORY_ACTION_ACK_SHOP,
+        ObjectTypeId, timestamp_secs,
     },
-    ipc::zone::{ActorControlCategory, SceneFlags, ServerZoneIpcData, ServerZoneIpcSegment},
+    ipc::zone::{
+        ActorControlCategory, EventLogMessage, SceneFlags, ServerZoneIpcData, ServerZoneIpcSegment,
+    },
 };
 
 use crate::{
@@ -149,35 +151,64 @@ impl ZoneConnection {
         self.change_mgp(mgp as i64).await;
     }
 
-    /// Keybound Brawler's rewards (`server/keybound.rs`): MGP and MGC by the score and, for a win, a Keybound Coffer.
-    /// The game's director has said so already (its LogMessages), so they come without lines of their own.
-    pub async fn keybound_rewards(&mut self, score: u32, won: bool) {
-        use crate::server::{KEYBOUND_COFFER, KEYBOUND_MGC, keybound_rewards};
+    /// Keybound Brawler's rewards (`server/keybound.rs`): MGP and MGC by the score and, for a win, a Keybound Coffer,
+    /// as retail gave them in its 223 runs, each after an InventoryActionAck (0xFFFFFFFF, type 6): the MGP's slot; the
+    /// MGC, which isn't in the inventory but one of the currencies the client counts itself (ActorControlSelf 378
+    /// `[0, 52322, 10000, the new count, 1]`, `player_currency.rs`); a win's coffer, its one slot; then the director's
+    /// lines (LogMessages 11598 `[MGP, 0]`, 11601 `[52322, MGC]` and, for a win, 11595 `[52450, 1]`.)
+    ///
+    /// Until 2026-11-15 the MGC went into the bags as an item and the whole inventory was sent again, lines first
+    /// (Bob, after three games: "nothing noticeable was awarded".)
+    pub async fn keybound_rewards(&mut self, director: HandlerId, score: u32, won: bool) {
+        use crate::server::{
+            KEYBOUND_COFFER, KEYBOUND_LOG_COFFER, KEYBOUND_LOG_MGC, KEYBOUND_LOG_MGP, KEYBOUND_MGC,
+            keybound_rewards,
+        };
         let (mgp, mgc) = keybound_rewards(score);
-        if mgp > 0 {
-            self.change_mgp(mgp as i64).await;
-        }
-        let mut items = vec![(KEYBOUND_MGC, mgc)];
+        self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_SHOP, 0)
+            .await;
+        self.change_mgp(mgp as i64).await;
+        // Retail's 378 gave 10,000 as the most a player holds.
+        let held = self.player_currency(KEYBOUND_MGC);
+        self.set_player_currency(KEYBOUND_MGC, (held + mgc).min(10_000))
+            .await;
+        let mut lines = vec![
+            (KEYBOUND_LOG_MGP, vec![mgp, 0]),
+            (KEYBOUND_LOG_MGC, vec![KEYBOUND_MGC, mgc]),
+        ];
         if won {
-            items.push((KEYBOUND_COFFER, 1));
-        }
-        let mut changed = false;
-        for (id, quantity) in items {
-            if quantity == 0 {
-                continue;
-            }
             let item = self
                 .game_data
                 .lock()
-                .get_item_info(crate::ItemInfoQuery::ById(id))
-                .map(|info| crate::inventory::Item::new(&info, quantity as i32));
-            match item {
-                Some(item) => changed |= self.player_data.inventory.add_obtained_item(item),
-                None => tracing::warn!("Keybound Brawler's item {id} isn't in the game's data"),
+                .get_item_info(crate::ItemInfoQuery::ById(KEYBOUND_COFFER))
+                .map(|info| crate::inventory::Item::new(&info, 1));
+            let placed = match item {
+                Some(item) => self.player_data.inventory.add_obtained_item_at(item),
+                None => {
+                    tracing::warn!(
+                        "The Keybound Coffer ({KEYBOUND_COFFER}) isn't in the game's data"
+                    );
+                    None
+                }
+            };
+            if let Some((container, slot)) = placed {
+                self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_SHOP, 0)
+                    .await;
+                self.send_inventory_slot(container, slot).await;
+                lines.push((KEYBOUND_LOG_COFFER, vec![KEYBOUND_COFFER, 1]));
+            } else {
+                tracing::warn!("No room for the Keybound Coffer");
             }
         }
-        if changed {
-            self.send_inventory().await;
+        for (message_type, params) in lines {
+            let ipc = EventLogMessage {
+                handler_id: director,
+                message_type,
+                params,
+            }
+            .package()
+            .unwrap();
+            self.send_ipc_self(ipc).await;
         }
     }
 

@@ -1320,8 +1320,11 @@ pub enum ServerZoneIpcData {
         gauge: u32,
         time: u64,
     },
-    /// Keybound Brawler's last packet to a player (the same captures, once a run, 223 of 223: 8 zero bytes after the
-    /// way out's EventFinish and Condition, before the zone change's.) What the client does with it isn't known.
+    /// 8 zero bytes retail sends right before the PrepareZoning into Keybound Brawler's duty and out of it (the same
+    /// captures: after the way out's EventFinish and Condition, 223 of 223, and before each zone change into the
+    /// duty). It isn't the game's own: the client hands it to one of its social-list proxies (number 8; 7.58's
+    /// handler at 0x18DB303 calls the same function as the party's and the friend list's packets), so it has
+    /// nothing to do with the HUD. Named before that was known.
     KeyboundOver {
         unk: u64,
     },

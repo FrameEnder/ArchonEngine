@@ -11,9 +11,11 @@ None of it played yet.
   (status 239) doubles the player's HP from the zone-in, not as the battle commences (retail's came with the role
   status, 4 s in), and its damage over time wasn't measured (the hit is doubled, the tick as the script works it
   out). **Lethargy's** second and third on the same player last 12 s, not retail's 6 and 3.
-* **Keybound Brawler's HUD after the duty** (gone three times on 2026-11-15): the ending now has every packet of
-  retail's up to scene 11's end, `RideShootingEnd` among them, but that this is what gives the HUD back hasn't been
-  seen. Retail also sent UnkContentFinder2 (`[duty, 0, …]`, `[duty, 4]` at the zone-in, `[duty, 5]` on the way out)
+* **Keybound Brawler's HUD after the duty** (gone on every build of 2026-11-15, the last `0a95974`): not found. The
+  ending has every packet of retail's up to scene 11's end and the arrival back matches retail's, and the two
+  packets hoped for turned out, in the client's code, to have nothing to do with the HUD (`events.md`). Needs a
+  diagnostics bundle taken while the HUD is gone. The rewards' path (`keybound_rewards`) has no unit test: there is
+  no test harness for a connection. Retail also sent UnkContentFinder2 (`[duty, 0, …]`, `[duty, 4]` at the zone-in, `[duty, 5]` on the way out)
   and PrepareZoning before the zone change, and its Condition during a director's scenes has bit 8, not Kawari's
   bit 7: these are every duty's, not this one's, and Kawari sends them for none (`events.md`).
 * **Keybound Brawler's duty** loads, plays and takes typing on Bob's client (2026-11-15), and nothing more of it

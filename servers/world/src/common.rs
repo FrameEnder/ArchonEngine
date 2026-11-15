@@ -235,6 +235,7 @@ pub enum FromServer {
     DutyCleared(u16, bool),
     /// Keybound Brawler over (`server/keybound.rs`): the player's score, and whether the game was won.
     KeyboundResult {
+        director: HandlerId,
         score: u32,
         won: bool,
     },

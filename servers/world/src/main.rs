@@ -5036,9 +5036,13 @@ async fn process_server_msg(
                     connection.roulette_cleared(roulette).await;
                 }
             }
-            FromServer::KeyboundResult { score, won } => {
+            FromServer::KeyboundResult {
+                director,
+                score,
+                won,
+            } => {
                 // Keybound Brawler's MGP, MGC and coffer (`ZoneConnection::keybound_rewards`.)
-                connection.keybound_rewards(score, won).await;
+                connection.keybound_rewards(director, score, won).await;
             }
             FromServer::LeaveContent => {
                 connection.quest_battle_echo = false;

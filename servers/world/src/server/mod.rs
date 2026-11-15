@@ -91,7 +91,8 @@ mod keybound;
 mod keybound_mechanics;
 pub(crate) use keybound::DUTY as KEYBOUND_DUTY;
 pub(crate) use keybound::{
-    ITEM_COFFER as KEYBOUND_COFFER, ITEM_MGC as KEYBOUND_MGC, rewards as keybound_rewards,
+    ITEM_COFFER as KEYBOUND_COFFER, ITEM_MGC as KEYBOUND_MGC, LOG_COFFER as KEYBOUND_LOG_COFFER,
+    LOG_MGC as KEYBOUND_LOG_MGC, LOG_MGP as KEYBOUND_LOG_MGP, rewards as keybound_rewards,
 };
 mod loot;
 mod modifiers;

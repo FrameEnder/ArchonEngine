@@ -333,6 +333,26 @@ chat"). Retail's runs against his:
   * **`KeyboundOver`** (820 in 7.57, 243 in 7.58 by its place in the client's switch; 8 zero bytes) once a run,
     223 of 223, after scene 11's EventFinish and Condition: sent as the way out ends, before the player is sent back.
 
+  **None of that gave the HUD back** (Bob on `0a95974`, the same day: gone after a win, a loss and leaving
+  mid-game; his capture shows he never moved after coming out, and logged out from the chat). What was looked at
+  next, so it isn't looked at again:
+  * The client's own handlers (7.58's executable, disassembled). `RideShootingEnd` (0xB4EA60) stores its 40 bytes
+    and refreshes one agent (252): not the HUD. `KeyboundOver` (0x18DB303) goes to one of the client's social-list
+    proxies (number 8, the function the party's and friend list's packets go through), and retail also sends it
+    before the zone change *into* the duty: it isn't the game's packet at all.
+  * Retail's arrival in the Gold Saucer after a run against Kawari's, packet by packet: the same ActorControlSelfs
+    after the load (200, 511 `[63]`, 512, 538 `[1]`, 263 `[0]`) and an empty Condition. Two differences, both now
+    built: **retail's ZoneInit after a duty has flag 4** (reset the Duty Finder: 223 of 223, and 0 in the 21 arrivals
+    there that followed no duty; `handle_zone_change`), and **the duty's ZoneInit has no game festival** where
+    Kawari's had the event's 257 (223 of 223; with it Bob's client sent client trigger 1011 `[3818]`, `[3811]` in
+    the duty, the Gold Saucer's, which no retail run has).
+  * Kawari sent `0x10000002` once more as a player left after the game's end (retail: nothing of the game's after
+    the way out). Gone.
+
+  The server's side of the exit now differs from retail's only in what's listed below, so what holds the HUD is
+  most likely in the client's own state, which a capture doesn't show: **a diagnostics bundle taken while the HUD
+  is gone** (Kawari Probe's snapshot has the client's conditions and character mode) is what would say.
+
   Still different from retail on the way out, and not built here because they aren't this duty's: UnkContentFinder2
   (`[1095, 0, …]` and `[1095, 4]` at the zone-in, `[1095, 5]` on the way out: every duty's, and Kawari sends it for
   none) and PrepareZoning before the zone change; while one of the director's scenes plays retail's Condition has
@@ -357,6 +377,15 @@ and MGC, the result's packet again with them, and scene 11.
 **Rewards** (223 results, to the unit): MGP = score × 0.046 (2,800 at most), MGC = score × 0.0058 (350 at most), and
 a Keybound Coffer for a win; LogMessages 11598 `[MGP, 0]`, 11601 `[52322, MGC]`, 11595 `[52450, 1]` from the
 director. A lost game (the barrier at 0) pays the MGP and MGC without the coffer.
+
+How retail hands them over (every run): an InventoryActionAck (`FFFFFFFF`, type 6) and the MGP's slot
+(UpdateInventorySlot, container 2000 slot 9); an ack and **ActorControlSelf 378 `[0, 52322, 10000, the new count,
+1]`** for the MGC, which is not an item in the bags but one of the currencies the client counts itself (as
+Achievement Certificates, `character-windows.md`; 10,000 is the most held); for a win an ack and the coffer's one
+slot; then the three lines. Kawari had put the MGC in the bags as an item and sent the whole inventory again, after
+the lines (Bob, 2026-11-15: "nothing noticeable was awarded"). `ZoneConnection::keybound_rewards` now does retail's,
+keeps the MGC in `unlock.player_currencies`, and sends its count at login once there is any (whether retail does for
+a player with none wasn't captured). No EXP: retail gave none.
 
 **With fewer than four players** an enemy has less HP. Three (three runs) had 100 less on the common enemies and
 1,200-1,800 less on the big ones; one and two weren't seen, and Kawari takes the same off again for each player

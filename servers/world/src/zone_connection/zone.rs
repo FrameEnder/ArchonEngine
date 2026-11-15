@@ -63,6 +63,8 @@ impl ZoneConnection {
         self.spawned_in = false;
         self.fate_motivation_npcs.clear();
         self.content_handler_id = handler_id;
+        // Out of a Duty Finder duty into the world (the ZoneInit's flags below.)
+        let left_duty = self.content_finder_condition_id != 0 && content_finder_condition_id == 0;
         self.content_finder_condition_id = content_finder_condition_id;
         if content_finder_condition_id == 0 {
             self.entered_with = None;
@@ -225,6 +227,14 @@ impl ZoneConnection {
         let mut game_festival_ids = festival_ids.map(FestivalId);
         let mut game_festival_phases = festival_phases;
 
+        // Keybound Brawler's duty has the event's festival for the windows only: retail's ZoneInit there had no game
+        // festival (223 of 223), where the Gold Saucer's has 257. With it the client asked for the Gold Saucer's
+        // things in the duty (client trigger 1011 `[3818]` and `[3811]`, in none of retail's runs.)
+        if content_finder_condition_id == crate::server::KEYBOUND_DUTY {
+            game_festival_ids = Default::default();
+            game_festival_phases = Default::default();
+        }
+
         // Set up ocean fishing
         if bound_by_duty {
             let mut game_data = self.game_data.lock();
@@ -262,6 +272,11 @@ impl ZoneConnection {
                 ZoneInitFlags::INITIAL_LOGIN
             } else if bound_by_duty {
                 ZoneInitFlags::INSTANCED_CONTENT | ZoneInitFlags::UNK5
+            } else if left_duty {
+                // Retail's first ZoneInit after a duty resets the client's Duty Finder (the Gold Saucer's after
+                // Keybound Brawler: flags 4 in 223 of 223, and 0 in the 21 arrivals there that followed no duty.
+                // Other duties' weren't counted.)
+                ZoneInitFlags::RESET_CONTENTS_FINDER_QUEUE
             } else {
                 ZoneInitFlags::default()
             };
