@@ -100,6 +100,19 @@ const APPEAR: u32 = 0x1000_0006;
 const PLAYER: u32 = 0x1000_0007;
 const WORDS: u32 = 0x1000_0008;
 const BEGIN: u32 = 0x1000_0009;
+/// A player in the game: their content ID, its high half first. One for each player as someone comes in, their own
+/// first (Connor's runs: one to four of them right after ZoneInit, 375 different IDs, each the content ID the result's
+/// packet has for a player.)
+const PLAYERS: u32 = 0x1000_0015;
+/// The client's director trigger as it loads, `[0x10000001, 1, 0, a number of its own]`: answered with the set-up's
+/// packet and `BEGIN` (223 of 223: PLAYERS, the trigger, the set-up, BEGIN `[0]`, and only then the client's trigger
+/// 801 for the director's variables, its EnterTerritoryEvent and the opening scene). Unanswered, the client waited
+/// 45 s, never asked for the variables and never played the opening (Bob, 2026-11-15: "infinite loading".)
+const TRIGGER_LOADED: (u32, u32) = (0x1000_0001, 1);
+/// The set-up's numbers that never changed.
+const SETUP: [u32; 3] = [6, 12_743_016, 12_743_021];
+/// The game's places.
+const PLACES: u32 = 4;
 const SCORE: u32 = 0x1000_000A;
 const WORDS_GONE: u32 = 0x1000_000B;
 const BETWEEN: u32 = 0x1000_000C;
@@ -655,6 +668,8 @@ pub struct Game {
     locked: Vec<ObjectId>,
     /// Kinds to take another's place this turn: `(base, x, z)`.
     becoming: Vec<(u32, f32, f32)>,
+    /// The players told who's in the game.
+    listed: Vec<ObjectId>,
 }
 
 fn elapsed(since: Instant, now: Instant) -> f32 {
@@ -944,6 +959,39 @@ impl Game {
             warned: None,
             locked: Vec::new(),
             becoming: Vec::new(),
+            listed: Vec::new(),
+        }
+    }
+
+    /// Each player not yet told gets who's in the game (their own content ID first), and those already told the
+    /// newcomer.
+    fn list_players(&mut self, network: &mut NetworkState, instance: &Instance) {
+        let content_id = |player: ObjectId| match instance.find_actor(player) {
+            Some(NetworkedActor::Player { spawn, .. }) => Some(spawn.content_id),
+            _ => None,
+        };
+        let players = players_in(instance);
+        for player in &players {
+            if self.listed.contains(player) {
+                continue;
+            }
+            let Some(own) = content_id(*player) else {
+                continue;
+            };
+            let entry = |id: u64| [(id >> 32) as u32, id as u32];
+            command(network, self.director, *player, PLAYERS, &entry(own));
+            for other in &players {
+                if other == player {
+                    continue;
+                }
+                if let Some(id) = content_id(*other) {
+                    command(network, self.director, *player, PLAYERS, &entry(id));
+                }
+                if self.listed.contains(other) {
+                    command(network, self.director, *other, PLAYERS, &entry(own));
+                }
+            }
+            self.listed.push(*player);
         }
     }
 
@@ -1079,7 +1127,11 @@ pub fn tick(
                 "Keybound Brawler: the game data has no BNpcBase {BARRIER_BASE}; the duty can't be played"
             );
         }
-        command_all(&mut network.lock(), instance, director, BEGIN, &[]);
+        instance.keybound = Some(game);
+    }
+    // Who's in the game, to each player as they come (`PLAYERS`.)
+    if let Some(mut game) = instance.keybound.take() {
+        game.list_players(&mut network.lock(), instance);
         instance.keybound = Some(game);
     }
     if instance.awaiting_commence {
@@ -2142,13 +2194,54 @@ pub fn scene_finished(
     }
 }
 
-/// A player's director trigger in the duty (`Game::trigger`.)
-pub fn player_trigger(instance: &mut Instance, player: ObjectId, id: u32, value: u32) {
-    if instance.content_finder_condition_id == DUTY
-        && let Some(game) = instance.keybound.as_mut()
-    {
+/// A player's director trigger in the duty: the client's as it loads (`loaded`), or one of the game's
+/// (`Game::trigger`.)
+pub fn player_trigger(
+    network: &mut NetworkState,
+    instance: &mut Instance,
+    player: ObjectId,
+    id: u32,
+    first: u32,
+    value: u32,
+) {
+    if instance.content_finder_condition_id != DUTY {
+        return;
+    }
+    if (id, first) == TRIGGER_LOADED {
+        let director = instance
+            .keybound
+            .as_ref()
+            .map(|game| game.director)
+            .or(instance.directors.first().map(|director| director.id));
+        if let Some(director) = director {
+            loaded(network, instance, director, player);
+        }
+    } else if let Some(game) = instance.keybound.as_mut() {
         game.trigger(player, id, value, Instant::now());
     }
+}
+
+/// The server's answer to a client that has loaded: the set-up's packet (`KeyboundSetup`), then `BEGIN [0]`.
+fn loaded(network: &mut NetworkState, instance: &Instance, director: HandlerId, player: ObjectId) {
+    let players = players_in(instance).len() as u32;
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::KeyboundSetup {
+        empty_places: PLACES.saturating_sub(players),
+        unk1: SETUP[0],
+        first: SETUP[1],
+        last: SETUP[2],
+        seed: fastrand::u32(..),
+        barrier: BARRIER_HP,
+        time: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|since| since.as_millis() as u64)
+            .unwrap_or(0),
+    });
+    network.send_to_by_actor_id(
+        player,
+        FromServer::PacketSegment(ipc, player),
+        DestinationNetwork::ZoneClients,
+    );
+    command(network, director, player, BEGIN, &[]);
 }
 
 /// A player's ActionRequest in the duty: true when it was a word (and so the game's, not the battle's.)

@@ -779,6 +779,15 @@ ServerZoneIpcType:
   size: 24
   found_on: 2026.11.03.0000.0000
   how_to_find: On retail with Chronofoil, type a word in Keybound Brawler - the 24-byte packet right after the director's score (ActorControlSelf 109, 0x1000000A).
+- name: KeyboundSetup
+  comment: Keybound Brawler's set-up as the client loads - the empty places, 6, 12743016, 12743021, the run's number, the barrier's HP and the server's time in milliseconds.
+  # 503 on 2026.10.16 (the same captures: once a run, 48 bytes, after the client's director trigger 0x10000001 [1] and
+  # right before the director's 0x10000009.)
+  # 413 on 2026.11.03 (7.58): by its place in the client's second switch, as KeyboundGauge; no finder yet.
+  opcode: 413
+  size: 48
+  found_on: 2026.11.03.0000.0000
+  how_to_find: On retail with Chronofoil, enter Keybound Brawler - the 48-byte packet right before the director's begin (ActorControlSelf 109, 0x10000009).
 - name: KeyboundResult
   comment: Keybound Brawler's result window - the MGC, the coffer and the MGP won, the four players' places and scores, their content and account IDs.
   # 173 on 2026.10.16 (the same captures: once a run, 240 bytes, with the result's LogMessages.)

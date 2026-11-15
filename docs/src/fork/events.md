@@ -102,7 +102,8 @@ the director's (InstanceContent 57001), as commands in ActorControlSelf 109 `[di
 
 | Command | Numbers | When |
 |---|---|---|
-| 0x10000009 | | as the duty loads (0.8 s) |
+| 0x10000015 | a content ID's high half, its low half | with ZoneInit: one for each player in the game, the player's own first |
+| 0x10000009 | | the answer to a loading client (below) |
 | 0x10000007 | player, 12609, 12610 | once per player 2-3 s after the opening; `player, 708` after each wave |
 | 0x10000006, 0x10000001 | | a wave's enemies appear; 5.0 s later the wave is on |
 | 0x10000013 | 0, 1, 2, 4 | the phase: between waves, enemies appearing, wave on, over |
@@ -272,6 +273,18 @@ scores as for any word, and everyone gets map effect `1, 0x10, 1`. Filled: `0x10
 barrier (998 of 1,001 of the helper's 6,000s came after a 17841; the other three took 18,000 off it): each is map
 effect `1, 0x20, 1` without `0x10000004`. The shield's end is `[17842]` and the barrier's look (`1, 2, 0` whole).
 Words nobody filled go as the cast lands.
+
+**Loading in** (223 of 223 runs, in this order). With ZoneInit, `0x10000015` for each player in the game (their
+content ID, the high half first: 375 different ones, each the content ID the result's packet has for a player). As
+it loads the client sends the director trigger `0x10000001 [1, 0, a number of its own]` (the same number in every
+run of one player's), and the server answers with **`KeyboundSetup`** (opcode 503 in 7.57, 413 in 7.58; 48 bytes:
+the places no player has, i.e. 4 less the players; 6, 12743016 and 12743021 in every one; a number that differs
+each run; the barrier's 40,000; sixteen zeros; the server's time in ms) and `0x10000009 [0]`. Only then does the
+client send trigger 801 (for the director's variables) and its EnterTerritoryEvent, and the opening (scene 1, a
+duty's own, the same bytes as Kawari's) plays. **Bob's infinite loading of 2026-11-15** (build `da8ad1c`, read
+through the harness): Kawari sent `0x10000009` with ZoneInit and nothing for the trigger, so the client waited
+45 s, sent its EnterTerritoryEvent without the 801, got no variables and never played the opening scene it was
+sent. `keybound::player_trigger` → `loaded`, `Game::list_players`; test `a_loading_client_is_answered`.
 
 **The cutscene and the end.** 8.0 s after wave 2 the music is set to 1 (the content director's 0x80000001), at
 10.1 s every player gets scene 3 (GameProgress with argument 1, flags 0x08502401, `[4024, 3, 20301, 0, 0]`), and at

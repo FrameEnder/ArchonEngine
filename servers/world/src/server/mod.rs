@@ -3467,13 +3467,21 @@ pub async fn server_main_loop(
                             trigger,
                         } => {
                             // Keybound Brawler's client asking for its player's lock (`keybound.rs`.)
-                            if let kawari::common::DirectorTrigger::Unknown { id, unk3, .. } =
-                                trigger
+                            if let kawari::common::DirectorTrigger::Unknown {
+                                id, unk1, unk3, ..
+                            } = trigger
                             {
                                 let mut data = data.lock();
                                 if let Some(instance) = data.find_actor_instance_mut(from_actor_id)
                                 {
-                                    keybound::player_trigger(instance, from_actor_id, *id, *unk3);
+                                    keybound::player_trigger(
+                                        &mut network.lock(),
+                                        instance,
+                                        from_actor_id,
+                                        *id,
+                                        *unk1,
+                                        *unk3,
+                                    );
                                 }
                             }
                             handle_director_trigger(

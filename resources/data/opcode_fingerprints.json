@@ -2468,6 +2468,20 @@
     },
     {
       "kind": "ServerZoneIpcType",
+      "name": "KeyboundSetup",
+      "opcode": 413,
+      "case": "9644a2886790068710e705ae",
+      "case_group": 3,
+      "handler_at": 11862656,
+      "end": "9644a2886790068710e705ae",
+      "end_group": 3,
+      "sub": {
+        "end": "4c31035ee175d00ef699f393f699f393f699f393414e10ae62e1a3522e8fcbcde4a1e4199e91f515c75ee4439e91f5155a27609d9e91f51569fd85229e91f5150e8bf2099e91f5150c9c26019e91f515f996eb119e91f515af3ac6e09e91f5153ce460c79e91f51551d967bf2cffbbb2e45acbf36f1c6795637926de2cffbbb2e45acbf3775514e19e91f515ecda91659e91f515e45acbf3d258b151526a6968f44826ab0bca1f0c51e63e26842d13d698f9ae700bca1f0c2b3edff9a470e8d770a8801c38bcb8996cea595cc5e35ac9",
+        "group": 1
+      }
+    },
+    {
+      "kind": "ServerZoneIpcType",
       "name": "KeyboundResult",
       "opcode": 961,
       "case": "9644a2886790068710e705ae",

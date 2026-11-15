@@ -1330,7 +1330,14 @@ mod tests {
     fn a_client_asks_for_its_lock() {
         let (mut world, player, _, now) = world();
         let (id, value) = mechanics().lock_trigger;
-        player_trigger(&mut world.instance, player, id, value);
+        player_trigger(
+            &mut world.network.lock(),
+            &mut world.instance,
+            player,
+            id,
+            0,
+            value,
+        );
         let mut game = world.instance.keybound.take().unwrap();
         assert!(game.pending.is_empty());
 
@@ -1363,6 +1370,53 @@ mod tests {
             [(STATE_NOTICE, vec![17840, 5347]), (WAVE_ON, vec![])]
         );
         assert!(game.locked.is_empty());
+    }
+
+    /// Bob's infinite loading of 2026-11-15 (through the harness: the client's trigger `0x10000001 [1]` 1.3 s after
+    /// ZoneInit, nothing back, its EnterTerritoryEvent 45 s later without the trigger 801 that asks for the director's
+    /// variables, and the opening scene never played; the director's `0x10000009` had gone out with ZoneInit). Retail's
+    /// 223 runs: the players' content IDs (`0x10000015`) with ZoneInit, and the set-up's packet and `0x10000009` only
+    /// in answer to the trigger.
+    #[test]
+    fn a_loading_client_is_answered() {
+        let (mut world, player, _, _) = world();
+        if let Some(NetworkedActor::Player { spawn, .. }) = world.instance.find_actor_mut(player) {
+            spawn.content_id = 0x0040_0017_4C4D_3B08;
+        }
+        let mut game = world.instance.keybound.take().unwrap();
+        game.list_players(&mut world.network.lock(), &world.instance);
+        game.list_players(&mut world.network.lock(), &world.instance);
+        world.instance.keybound = Some(game);
+        // Once, and no begin yet.
+        assert_eq!(
+            commands(&world.sent(player)),
+            [(PLAYERS, vec![0x0040_0017, 0x4C4D_3B08])]
+        );
+
+        player_trigger(
+            &mut world.network.lock(),
+            &mut world.instance,
+            player,
+            TRIGGER_LOADED.0,
+            TRIGGER_LOADED.1,
+            0x3D4B_6AFC,
+        );
+        let sent = world.sent(player);
+        assert!(matches!(
+            &sent[0],
+            FromServer::PacketSegment(segment, _) if matches!(
+                segment.data,
+                ServerZoneIpcData::KeyboundSetup {
+                    empty_places: 3,
+                    unk1: 6,
+                    first: 12_743_016,
+                    last: 12_743_021,
+                    barrier: 40_000,
+                    ..
+                }
+            )
+        ));
+        assert_eq!(commands(&sent), [(BEGIN, vec![])]);
     }
 
     /// A big enemy's state (retail's 19594: notice `[17837, 5348]` and switch `[3071, 1]`, 28.0 s later `[17838, 5348]`

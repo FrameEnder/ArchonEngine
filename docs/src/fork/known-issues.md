@@ -25,8 +25,9 @@ None of it played yet.
   * a cast's ActorControl 1522 has retail's commonest second number (6; 2 to 10 seen, meaning unknown);
   * the barrier's words go to each player after their SpawnNpc; retail's first came 0.3 s before it;
   * the helper (9020) is one actor from the first rotation that needs it; retail spawned three as the last wave began;
-  * commands **0x10000015** `[0x400017, n]` (one per player as the duty loads) and the statuses and ActorControls
-    retail gave the players (183, 123, 1610, 198/199);
+  * the set-up packet's number that differs each run is a random one (what the client does with it isn't known), and
+    the ActorControls retail sent with the answer to a loading client (105, 200, 519, 504) and the statuses and
+    ActorControls it gave the players (183, 123, 1610, 198/199) aren't sent;
   * **HP for one or two players** is extrapolated from three and four; the **MGC cap** (10,000) isn't kept;
   * wave 2's three **19590s** stand at retail's commonest spots, not three of twelve at random; the big enemy gets
     its words at 78 s, where retail's varied (70.6-93.5 s, by something not found);

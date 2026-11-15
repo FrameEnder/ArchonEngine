@@ -1320,6 +1320,21 @@ pub enum ServerZoneIpcData {
         gauge: u32,
         time: u64,
     },
+    /// Keybound Brawler's set-up, the server's answer to the client's director trigger `0x10000001 [1]` as it loads
+    /// (the same captures, once a run, right before the director's `0x10000009`): the places no player has (4 less
+    /// the players), then 6, 12743016 and 12743021 in every one, a number that differs each run, the barrier's HP
+    /// (40,000) and the server's clock in milliseconds. The client asks for the director's variables (client trigger
+    /// 801) only after it.
+    KeyboundSetup {
+        empty_places: u32,
+        unk1: u32,
+        first: u32,
+        last: u32,
+        seed: u32,
+        #[brw(pad_after = 16)]
+        barrier: u32,
+        time: u64,
+    },
     /// Keybound Brawler's result window (the same captures, once a run): what the player won, each of the four
     /// players' place (1 the highest score) and score, then their content IDs and account IDs (as SpawnPlayer's);
     /// places without a player are zeros.
