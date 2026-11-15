@@ -7,9 +7,25 @@ add one when something is found.
 
 None of it played yet.
 
-* **Keybound Brawler's duty isn't built**: the registrar puts it in the Duty Finder and the arena (territory 1359)
-  loads with nothing in it; leave through the Duty menu. 223 retail runs and four of Bob's Recorder runs are at hand
-  (`events.md`, `notes/keybound-brawler.md` in kawari-diagnostics.)
+* **Keybound Brawler's duty has never run against a client.** It's built from retail's packets (`events.md`), with
+  unit tests for its rules, but whether the client shows the game from Kawari's commands hasn't been seen. Not built:
+  * the **bonus gauge's packet** (opcode 330 in 7.57; 7.58's isn't known): the gauge on screen won't move, though the
+    levels are counted;
+  * the **big enemies' own attacks and summons** (19593's 49533/50651/49538, 19594's 49541/49547, 19595's
+    49550/49554, the last boss's 49699-49713 and 50652, the adds 19824-19829, 19923, 9020) and the **casters'
+    spells** (19590's 49526/49527, 19589's 49524, 19592's 49531): interruptible casts, Letterlock, Cryptic
+    Communications, the 3,000 and 6,000 blows;
+  * **Impassioned Inputs** (commands 0x10000011 and 0x10000017, ten times the bonus) and the **words over the
+    barrier** (20079, list 2000013, command 0x10000018);
+  * the **cutscene before wave 3** (EventScene 3 `[4024, 3, 20301]`), the music changes, DirectorMapEffects, the
+    **result window** (opcode 173 in 7.57, EventScene 3 `[4025, 1, 20302]` and scene 11) and the commands at the end
+    (0x10000005 `[12782296, 12782297]`): a win is the duty's ordinary completion, a loss puts the players out;
+  * commands **0x10000015** `[0x400017, n]` (one per player as the duty loads) and the statuses and ActorControls
+    retail gave the players (183, 123, 1610, 198/199);
+  * **HP for one or two players** is extrapolated from three and four; the **MGC cap** (10,000) isn't kept;
+  * wave 2's three **19590s** stand at retail's commonest spots, not three of twelve at random; the big enemy gets
+    its words at 78 s, where retail's varied (70.6-93.5 s, by something not found);
+  * the server doesn't check that a word's enemy is one the player could have typed: the client says which.
 * **The registrar's client script** (CustomTalk 986) hasn't been dumped: its script is from retail's packets alone, and
   what its scene shows when the duty can't be entered (a party member without the quest, say) isn't known.
 * **The magitype master's explanation** (PreHandler 135) plays its Description without the DefaultTalk retail nested

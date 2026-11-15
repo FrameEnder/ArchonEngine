@@ -87,6 +87,10 @@ mod gate;
 mod glamour;
 mod instance;
 mod job_gauge;
+mod keybound;
+pub(crate) use keybound::{
+    ITEM_COFFER as KEYBOUND_COFFER, ITEM_MGC as KEYBOUND_MGC, rewards as keybound_rewards,
+};
 mod loot;
 mod modifiers;
 use job_gauge::CLASSJOB_WHITE_MAGE;
@@ -1769,6 +1773,8 @@ fn server_logic_tick(
             fate_tick(network.clone(), instance, game_data.clone());
             // The Gold Saucer's GATEs: their entrances, screens and set pieces.
             gate::gate_tick(network.clone(), instance, game_data.clone());
+            // Keybound Brawler's duty: its waves, enemies and barrier.
+            keybound::tick(network.clone(), instance, game_data.clone());
         }
         // An event the owner turned on or off, or whose schedule came or went: everyone is told the festivals
         // (`game_events.rs`; a zone's layers follow at the next zone change.)

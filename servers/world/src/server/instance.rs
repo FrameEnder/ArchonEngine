@@ -243,6 +243,8 @@ pub struct Instance {
     pub walled_ticks: HashMap<ObjectId, u32>,
     /// NPCs a director spawned hidden that come into view a little later (`director:appear_bnpc`.)
     pub pending_appearances: Vec<crate::server::director::PendingAppearance>,
+    /// Keybound Brawler's game, in its duty (`server/keybound.rs`.)
+    pub keybound: Option<crate::server::keybound::Game>,
     /// The GATE the Gold Saucer is showing (its screens, its entrance's NPC), see `server/gate.rs`.
     pub gate_shown: Option<crate::gate::GateShown>,
     /// NPCs a director holds (`director:hold_bnpc`): `npc_behavior` leaves them alone, so they do only what the

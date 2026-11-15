@@ -308,6 +308,10 @@ pub enum DirectorEvent {
         arg3: u32,
         arg4: u32,
     },
+    /// A director's command as numbers, with up to seven arguments (an ActorControlSelf holds no more): for a
+    /// director whose commands have no names yet, such as Keybound Brawler's (`0x10000008 [enemy, group, list, word,
+    /// next word, 100]`, six). Only written: read, such an event is `Unknown` (FrameEnder fork.)
+    Raw { id: u32, args: [u32; 7] },
 }
 
 /// Used by descendants of the `Client::Game::InstanceContent::ContentDirector` class.

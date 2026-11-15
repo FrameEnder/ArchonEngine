@@ -233,6 +233,11 @@ pub enum FromServer {
     /// The duty the player is in was cleared: its InstanceContent ID, and whether someone there hadn't cleared it
     /// before (`Instance::newcomers`: the first-timer bonus is everyone's then.)
     DutyCleared(u16, bool),
+    /// Keybound Brawler over (`server/keybound.rs`): the player's score, and whether the game was won.
+    KeyboundResult {
+        score: u32,
+        won: bool,
+    },
     /// Request the client to finish their current event.
     FinishEvent,
     /// When a fish bites.

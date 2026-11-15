@@ -855,6 +855,19 @@ pub fn execute_action(
     from_actor_id: ObjectId,
     request: ActionRequest,
 ) {
+    // A word typed in Keybound Brawler is the game's (`keybound.rs`), not a fight's.
+    if request.action_type == ActionType::Action
+        && (crate::server::keybound::ACTION_HITS.contains(&request.action_id)
+            || request.action_id == crate::server::keybound::ACTION_MISS)
+    {
+        let mut data = data.lock();
+        if let Some(instance) = data.find_actor_instance_mut(from_actor_id)
+            && crate::server::keybound::player_action(&network, instance, from_actor_id, &request)
+        {
+            return;
+        }
+    }
+
     // Who's at war with the players' side (`area_side`.)
     let players_enemies = game_data.lock().get_battalion_enemies(PLAYER_BATTALION);
     let mut lua_player = LuaPlayer {

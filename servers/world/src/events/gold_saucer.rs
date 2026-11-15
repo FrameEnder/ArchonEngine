@@ -149,6 +149,38 @@ impl ZoneConnection {
         self.change_mgp(mgp as i64).await;
     }
 
+    /// Keybound Brawler's rewards (`server/keybound.rs`): MGP and MGC by the score and, for a win, a Keybound Coffer.
+    /// The game's director has said so already (its LogMessages), so they come without lines of their own.
+    pub async fn keybound_rewards(&mut self, score: u32, won: bool) {
+        use crate::server::{KEYBOUND_COFFER, KEYBOUND_MGC, keybound_rewards};
+        let (mgp, mgc) = keybound_rewards(score);
+        if mgp > 0 {
+            self.change_mgp(mgp as i64).await;
+        }
+        let mut items = vec![(KEYBOUND_MGC, mgc)];
+        if won {
+            items.push((KEYBOUND_COFFER, 1));
+        }
+        let mut changed = false;
+        for (id, quantity) in items {
+            if quantity == 0 {
+                continue;
+            }
+            let item = self
+                .game_data
+                .lock()
+                .get_item_info(crate::ItemInfoQuery::ById(id))
+                .map(|info| crate::inventory::Item::new(&info, quantity as i32));
+            match item {
+                Some(item) => changed |= self.player_data.inventory.add_obtained_item(item),
+                None => tracing::warn!("Keybound Brawler's item {id} isn't in the game's data"),
+            }
+        }
+        if changed {
+            self.send_inventory().await;
+        }
+    }
+
     /// MGP won, with the InventoryActionAck retail sent between the log line and the MGP after a Mini Cactpot line and
     /// Air Force One.
     pub async fn win_mgp_acknowledged(&mut self, mgp: u32) {
