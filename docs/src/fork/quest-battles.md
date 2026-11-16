@@ -1842,6 +1842,44 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
   6 s each time on retail), Regen, Divine Seal and Holy; 1704's slow walk (about 1.9 yalms a second). Not played in
   game yet.
 
+### Cape Westwind (InstanceContent 5060) — retail's run, not built yet
+
+Operation Archon's (4521) battle isn't a QuestBattle: the quest's QUESTBATTLE0 is **InstanceContent 5060** (director
+0x800313C4, territory 1049, duty 865), a solo duty. One retail run: Bob's Chronofoil capture 667a68c5 of 2026-11-16
+(`--battle 0.16`, won, 527 s; a level 50 White Mage). What it showed, for whoever builds it:
+
+* **Entering.** The prompt is client trigger 9003 with command **11** (a QuestBattle's is 10), answered `[0, 11, 5060,
+  0]` (answered so since 2026-11-16). `join_quest_battle(5060, 1049)` makes a QuestBattle director today, which is
+  wrong for it: it needs the InstanceContent's (ActorControlSelf 100 `[0x800313C4, 5060]`). On arrival: DirectorVars
+  sequence 1, DirectorSetupMapEffects, ActorControlSelf 109 `[director, 0x10000002, 33420]`, EventStart (0x0f, the
+  territory) and **scene 1 with flags 0x0C002001** and a duty's parameters (BGM 151, 0, 0, 5, 14400, …, 3600,
+  0x40008), answered 0.2 s later; then 109 `[0x40000001, 3600]` and `[0x80000004, 3599]`: a duty's commence, no
+  scene 60000. The player starts at (-678.72, 63.67, -808.74) facing -2.115.
+* **Who.** The boss (layout 9082104, base 14581, BNpcName 2160, level 49, 24609 HP) at (-696.22, 65.84, -818.51),
+  twelve helpers (base 9020, 44 HP) on the same spot, and from 149.4 s three of base 14582 (9283146, 9283147,
+  9082106; 2501 HP) and one of 14583 (9082105; 5977 HP), targetable 8.6 s after they came.
+* **First part** (to 1 HP; times from arriving, the pull at 8.2 with talk 33400): 28871 at 14.3 (2.7 s cast), 28870
+  at 19.6, talk 33403 and 28864 at 29.7, four helpers' 28865 a second apart from 35.7 (3.7 s casts, a line of
+  spots), talk 33402 and 28866 (4.7 s) at 45.8 (statuses 680 and 2195 on himself, off at 58.6), 28872 at 61.1 (a
+  leap: SnapNextMove), talk 33424 and 28868 at 63.2, then map effect index 0 (timeline 2, state 1) with two
+  helpers' 28869 (7.7 s) and its end (timeline 8, state 4) as they land, again with timeline 32 / state 16; 28871,
+  28870 twice, 28871, 28872, then talk 33425 and 28873 three times 6.1 s apart.
+* **At 1 HP** (146.95): untargetable, talk 33404, ActionTimeline 10500; the four come; 109 `[0x10000001, 33421]` and
+  `[0x10000002, 33421]` as they become targetable; talks 33405-33407 and 33429 7 s apart; he casts 28874 at 190.3
+  and 204.6. **All four down** (214.1): 109 `[0x80000001, 1]`, NpcYell 13809, ActionTimelines 10502 and 10503,
+  status 2056 (param 95), NpcYell 13810, then at 240.3 targetable again with full health, 109 with 33422, talk 33410.
+* **Second part**: 28875 on the player (status 2656), 28877 and 28876 (5.7 s casts, NpcYells 13650 and 13649),
+  talk 33426 and 28878, two rows of the helpers' 28865, 28876, 28872, talk 33427 and 28868 with four helpers'
+  28869 and map effects (timelines 512 and 2048), 28877, 28876, 28877, 28878.
+* **At 32 HP** (393.0): cast cancelled, untargetable, NpcYell 13811, ActionTimeline 10506, 109 `[0x80000001, 1]` and
+  **the director's scene 3** (flags 0x08502403, cutscene 2874, then 0, 173, 0, 0) for 47 s; a warp; then 28879 on
+  the player (status 3134), a helper's 28880 (a knockback), targetable, talk 33414, 28881 (his health back to
+  13373), a helper's 28882, and **28883 every 13.2 s** (4.7 s casts) with status 3008 one stack higher and talks
+  33415-33419 each time, to his death at 523.2.
+* **The end**: 109 `[0x40000007, 0]` and `[0x40000007, 1]`, EventStart 0x0e and **scene 4** (flags 0x08502403;
+  cutscene 263, then 1) for 3.6 s; as it ends the quest to sequence 4, PrepareZoning and out to the Northern
+  Thanalan (140) at once, where the quest's entering scene moves it to 255. No "Duty Complete" scene.
+
 ## Adding a quest battle
 
 1. Record it on retail with Recorder 2.4 or later, ideally two or three times played differently, marking moments

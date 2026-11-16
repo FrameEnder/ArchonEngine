@@ -43,6 +43,10 @@ const QUEST_BATTLE_OPENING_FLAGS: u32 = 0xF841AEFB;
 const TELEPORT_INSUFFICIENT_GIL: u32 = 2;
 /// The ServerRequestCallbackManager command of the quest battle prompt (YesNoQuestBattle).
 const QUEST_BATTLE_PROMPT: u32 = 10;
+/// The same prompt for a quest's solo duty that is an InstanceContent, not a QuestBattle (Operation Archon's Cape
+/// Westwind, 5060): the client asks with 11, and retail answers as it does 10, the content named again
+/// (`[0, 11, 5060, 0]` twice in Bob's Chronofoil capture 667a68c5; Kawari answered `[0, 11, 0, 0]`.)
+const QUEST_CONTENT_PROMPT: u32 = 11;
 
 const AUTOSAVE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(30);
 
@@ -1723,7 +1727,9 @@ async fn process_packet(
                                     // Retail's reply names the battle again (the prompt's level is read from it)
                                     // and counts the player's losses of it (`quest_battle_prompt`.)
                                     // TODO: retail probably checks whether the player can enter, we always allow it.
-                                    let (argument, result) = if unk2 == QUEST_BATTLE_PROMPT {
+                                    let (argument, result) = if unk2 == QUEST_BATTLE_PROMPT
+                                        || unk2 == QUEST_CONTENT_PROMPT
+                                    {
                                         connection.quest_battle_asked = Some(unk3);
                                         connection.quest_battle_difficulty = 0;
                                         kawari_world::quest_battle_prompt(
