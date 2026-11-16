@@ -2303,6 +2303,22 @@ pub async fn server_main_loop(
                                     instance.insert_npc(actor_id, npc, &config, &mut game_data);
                                 }
                             }
+                            QueuedTaskData::FateState { fate_id, state } => {
+                                let data = data.lock();
+                                if let Some(instance) = data.instances.get(*instance_index) {
+                                    network.lock().send_to_instance(
+                                        ObjectId::default(),
+                                        instance,
+                                        FromServer::ActorControlSelf(
+                                            ActorControlCategory::FateInit {
+                                                fate_id: *fate_id,
+                                                fate_state: *state,
+                                            },
+                                        ),
+                                        DestinationNetwork::ZoneClients,
+                                    );
+                                }
+                            }
                             QueuedTaskData::EndFate { fate_id } => {
                                 let mut data = data.lock();
                                 let mut ended_ac = None;
@@ -2329,6 +2345,28 @@ pub async fn server_main_loop(
 
                                     // Remove the instance
                                     instance.fates.retain(|x| x.fate_id != *fate_id);
+
+                                    // Its enemies still standing go with it (a FATE that ran out of time: its
+                                    // boss would stand there for good, and the next one beside it.)
+                                    let left: Vec<ObjectId> = instance
+                                        .actors
+                                        .iter()
+                                        .filter(|(_, actor)| match actor {
+                                            NetworkedActor::Npc { spawn, state, .. } => {
+                                                spawn.common.fate_id as u32 == *fate_id
+                                                    && *state != NpcState::Dead
+                                            }
+                                            _ => false,
+                                        })
+                                        .map(|(id, _)| *id)
+                                        .collect();
+                                    if !left.is_empty() {
+                                        let mut network = network.lock();
+                                        for actor_id in left {
+                                            instance.cancel_actor_tasks(actor_id);
+                                            network.remove_actor(instance, actor_id);
+                                        }
+                                    }
                                 }
 
                                 if let Some(instance) = data.instances.get(*instance_index)

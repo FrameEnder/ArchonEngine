@@ -74,8 +74,8 @@ Nineteen quests transcribed from Bob's Chronofoil capture 651981e7 and the clien
   names, and Bob's character never played it.
 * `questkit clientcheck` reads none of a transcribed script's scenes (it looks for `play_scene(` with the number,
   and these call their own `play(`): "the server plays none" for all of them, as for the earlier transcribed ones.
-* The capture's two finished FATEs (588 and 586 in Outer La Noscea) and its run of duty 6 haven't been read into
-  anything yet. Its chocobo's skills and stances were (`chocobo.md`): what the companion's ActorControl 82 is besides
+* The capture's run of duty 6 hasn't been read into anything yet; FATE 586 is scripted ([FATEs](fates.md)), 588
+  (which only went on around Bob) isn't. Its chocobo's skills and stances were (`chocobo.md`): what the companion's ActorControl 82 is besides
   the stance's look isn't known, nor what a skill learnt with the companion away is answered with (it was out for
   all five).
 
@@ -1799,6 +1799,9 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 
 ## FATEs
 
+* One FATE is scripted from retail: 586, a boss FATE ([FATEs](fates.md)), from one run with one player; not played
+  on Kawari. The other FATEs a zone picks still run with nothing in them. What a boss FATE's progress does with
+  several players, and what retail sends when one runs out of time, weren't captured.
 * Entering a zone, Kawari sends FateInit before CreateFateContext; retail creates the contexts first (during the
   loading screen) and sends FateInit after the player has loaded in. Not known to break anything.
 * What 2352 (`UnkFate2`, sent with the FATE start NPC's actor ID on leaving) does isn't known.

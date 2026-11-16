@@ -1166,3 +1166,106 @@ fn a_battle_npc_a_key_item_took_goes_without_being_defeated() {
     crate::server::actor::capture_battle_npc(&world.network, &mut world.instance, enemy);
     assert!(world.sent(player).is_empty());
 }
+
+/// FATE 586, Bob's Chronofoil capture 651981e7 (2026-11-16; "586 was the one implement that"): one enemy, and the
+/// FATE's progress is the health it has lost, told every 1.33 s; when it falls the FATE's state goes to 5 with its
+/// Defeated, 7 and 10 a second later, 0 6.5 s after that.
+#[test]
+fn a_boss_fate_follows_its_boss_s_health() {
+    use crate::server::fate::{
+        BOSS_PROGRESS_EVERY, FateInstance, boss_progress, boss_tick, send_fate_updates,
+    };
+    use kawari::common::FateState;
+    const FATE: u32 = 586;
+    const LAYOUT: u32 = 4306103;
+
+    // Retail's numbers: 20240 HP; whole percent, rounded down; 100 only at none.
+    assert_eq!(boss_progress(20240, 20240), 0);
+    assert_eq!(boss_progress(20038, 20240), 0);
+    assert_eq!(boss_progress(20037, 20240), 1);
+    assert_eq!(boss_progress(15180, 20240), 25);
+    assert_eq!(boss_progress(1, 20240), 99);
+    assert_eq!(boss_progress(0, 20240), 100);
+
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [80.0, 55.0, -465.0]);
+    let boss = world.enemy(ENEMY, [82.6, 55.5, -467.7], 20240);
+    if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(boss) {
+        spawn.common.layout_id = LAYOUT;
+        spawn.common.fate_id = FATE as u16;
+    }
+    world.instance.fates.push(FateInstance {
+        fate_id: FATE,
+        fate_state: FateState::Running,
+        boss: Some(LAYOUT),
+        ..Default::default()
+    });
+    world.sent(player);
+    let progress = |world: &mut TestWorld| -> Vec<u32> {
+        world
+            .sent(player)
+            .iter()
+            .filter_map(|m| match m {
+                FromServer::ActorControlSelf(ActorControlCategory::FateUpdate {
+                    fate_id: FATE,
+                    progress,
+                    ..
+                }) => Some(*progress),
+                _ => None,
+            })
+            .collect()
+    };
+    let mut tick = |world: &mut TestWorld, now: std::time::Instant| {
+        let updates = boss_tick(&mut world.instance, now);
+        send_fate_updates(&mut world.network.lock(), &mut world.instance, updates);
+    };
+    let start = std::time::Instant::now();
+
+    // Told at once, then not again until 1.33 s on, changed or not.
+    tick(&mut world, start);
+    assert_eq!(progress(&mut world), [0]);
+    world
+        .instance
+        .find_actor_mut(boss)
+        .unwrap()
+        .get_common_spawn_mut()
+        .health_points = 15180;
+    tick(&mut world, start + Duration::from_millis(700));
+    assert!(progress(&mut world).is_empty());
+    tick(&mut world, start + BOSS_PROGRESS_EVERY);
+    assert_eq!(progress(&mut world), [25]);
+    tick(&mut world, start + BOSS_PROGRESS_EVERY * 2);
+    assert_eq!(progress(&mut world), [25]);
+
+    // It falls: 100 without waiting for the next turn, and the FATE's end queued as retail's came.
+    world
+        .instance
+        .find_actor_mut(boss)
+        .unwrap()
+        .get_common_spawn_mut()
+        .health_points = 0;
+    tick(
+        &mut world,
+        start + BOSS_PROGRESS_EVERY * 2 + Duration::from_millis(100),
+    );
+    assert_eq!(progress(&mut world), [100]);
+    let queued: Vec<String> = world
+        .instance
+        .queued_task
+        .iter()
+        .filter_map(|task| match &task.data {
+            crate::server::QueuedTaskData::FateState {
+                fate_id: FATE,
+                state,
+            } => Some(format!("{state:?}")),
+            crate::server::QueuedTaskData::EndFate { fate_id: FATE } => Some("end".to_string()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(queued.len(), 3, "{queued:?}");
+    assert!(queued.contains(&"Ending".to_string()) && queued.contains(&"end".to_string()));
+    assert!(queued.contains(&"Unk0".to_string()));
+    // And nothing more once it's at 100.
+    tick(&mut world, start + BOSS_PROGRESS_EVERY * 5);
+    assert!(progress(&mut world).is_empty());
+}

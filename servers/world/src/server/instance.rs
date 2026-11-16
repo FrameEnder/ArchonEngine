@@ -140,6 +140,12 @@ pub enum QueuedTaskData {
     RespawnMob { layout_id: u32 },
     /// Ends a FATE.
     EndFate { fate_id: u32 },
+    /// Tells everyone here a FATE's state (FateInit): a boss FATE's 5 as its boss falls and 0 after it's over
+    /// (`fate::BOSS_ENDING_AFTER`.)
+    FateState {
+        fate_id: u32,
+        state: kawari::common::FateState,
+    },
     /// Terminates a director.
     TerminateDirector { handler_id: HandlerId },
     /// An NPC's leap lands it beside `target` (`npc_behavior::NPC_LEAPS`.)

@@ -1,0 +1,30 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 136.0
+        },
+        "720": {
+            "players": 430.0
+        }
+    },
+    "rotation": {
+        "pace": 10.6,
+        "actions": [
+            {
+                "action": 429,
+                "every": 40.0,
+                "comment": "5 uses, 34 to 63 s apart (the first 8.5 s into the fight); a 1.2 s cast, status 207 with 100 on itself for 30 s"
+            },
+            {
+                "action": 720,
+                "every": 10.6,
+                "comment": "19 uses, 10.6 s apart but for those a 429 pushed back (the first 3.9 s into the fight); a 2.2 s cast on an area"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "FATE 586's one enemy (Outer La Noscea; BNpcBase 2153, BNpcName 1524, layout 4306103): level 44, 20240 HP. Bob's Chronofoil capture 651981e7 (2026-11-16), the whole FATE, 246 s of fighting, Bob alone on it: auto-attacks (870) 3 s apart between casts for 136 (the median of 36 that hit), 720 for 430 (the median of the 3 that landed on him of 19) and 429 on itself. Times from its pull. Hitbox not recorded."
+}

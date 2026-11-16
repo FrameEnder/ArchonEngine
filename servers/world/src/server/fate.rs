@@ -1,4 +1,7 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use kawari::{
     common::{
@@ -37,6 +40,33 @@ pub struct FateInstance {
     pub motivation_npc: Option<(ObjectId, Position)>,
     /// Current progress of this FATE.
     pub progress: u32,
+    /// A FATE that is one enemy to defeat (`fate:spawn_boss`): its layout ID. The FATE's progress is the share of
+    /// its health taken (`boss_progress`), told every `BOSS_PROGRESS_EVERY`.
+    pub boss: Option<u32>,
+    /// The boss has been seen on the field (gone after that, it was defeated.)
+    pub boss_seen: bool,
+    /// When the boss's progress is next told.
+    pub next_boss_progress: Option<Instant>,
+}
+
+/// A boss FATE's FateUpdate comes every 1.33 s while it runs, changed or not (FATE 586 in Bob's Chronofoil capture
+/// 651981e7 of 2026-11-16: 229 of them over the 306 s its enemy lived, 1.3 to 1.4 s apart.)
+pub const BOSS_PROGRESS_EVERY: Duration = Duration::from_millis(1330);
+/// After the boss falls: the FATE's state goes to 5 with its Defeated (2.0 s after the death, 0.1 s more), to 7 and
+/// 10 a second later, and to 0 6.5 s after that (the same capture; FATE 588's two ends there had the same four.)
+pub const BOSS_ENDING_AFTER: Duration = Duration::from_millis(2100);
+pub const BOSS_ENDED_AFTER: Duration = Duration::from_millis(3100);
+pub const FATE_GONE_AFTER: Duration = Duration::from_millis(6500);
+
+/// A boss FATE's progress: the share of the boss's health taken, in whole percent, rounded down (retail's FateUpdates
+/// against its enemy's health at the time: 210 of 229 exactly, the other 19 one above, a hit's result a moment
+/// ahead of the health seen.) 100 only when it has none left.
+pub fn boss_progress(health: u32, max_health: u32) -> u32 {
+    if health == 0 || max_health == 0 {
+        return 100;
+    }
+    let taken = max_health.saturating_sub(health) as u64;
+    ((taken * 100 / max_health as u64) as u32).min(99)
 }
 
 impl FateInstance {
@@ -107,9 +137,19 @@ impl FateInstance {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum LuaFateTask {
-    SpawnBattleNpc { id: u32 },
-    SpawnMotivationNpc { id: u32 },
-    SetProgress { progress: u32 },
+    SpawnBattleNpc {
+        id: u32,
+    },
+    SpawnMotivationNpc {
+        id: u32,
+    },
+    SetProgress {
+        progress: u32,
+    },
+    /// The FATE's one enemy (`fate:spawn_boss`): spawned as `SpawnBattleNpc`, and the FATE follows its health.
+    SpawnBoss {
+        id: u32,
+    },
 }
 
 // TODO: Maybe collapse into FateData?
@@ -126,6 +166,12 @@ impl UserData for LuaFate {
         });
         methods.add_method_mut("spawn_motivation_npc", |_, this, id: u32| {
             this.tasks.push(LuaFateTask::SpawnMotivationNpc { id });
+            Ok(())
+        });
+        // The FATE's one enemy, by its layout ID: the FATE's progress is the health it has lost, and it's over when
+        // the enemy falls.
+        methods.add_method_mut("spawn_boss", |_, this, id: u32| {
+            this.tasks.push(LuaFateTask::SpawnBoss { id });
             Ok(())
         });
         methods.add_method_mut("set_progress", |_, this, progress: u32| {
@@ -216,8 +262,11 @@ pub fn fate_tick(
         let fate_id = fate.fate_id;
 
         for task in &tasks {
+            if let LuaFateTask::SpawnBoss { id } = task {
+                fate.boss = Some(*id);
+            }
             match task {
-                LuaFateTask::SpawnBattleNpc { id } => {
+                LuaFateTask::SpawnBattleNpc { id } | LuaFateTask::SpawnBoss { id } => {
                     if let Some(mut npc) = instance.zone.get_battle_npc(*id) {
                         npc.common.fate_id = fate_id as u16;
                         npc.common.handler_id = HandlerId::new(HandlerType::Fate, 65535);
@@ -297,10 +346,60 @@ pub fn fate_tick(
         fate.data.tasks.clear();
         fate.motivation_npc = new_fate.motivation_npc;
         fate.progress = new_fate.progress;
+        fate.boss = new_fate.boss;
     }
+    fates_that_updated.extend(boss_tick(instance, Instant::now()));
 
-    // Send any FateUpdates as needed
-    let mut network = network.lock();
+    send_fate_updates(&mut network.lock(), instance, fates_that_updated);
+}
+
+/// Boss FATEs (`fate:spawn_boss`): each one's progress from its boss's health, when it's time to tell it again or
+/// the boss has fallen. Returns the FATEs to tell, with their progress.
+pub fn boss_tick(instance: &mut Instance, now: Instant) -> Vec<(u32, u32)> {
+    let mut updates = Vec::new();
+    for index in 0..instance.fates.len() {
+        let fate = &instance.fates[index];
+        let Some(layout) = fate.boss else {
+            continue;
+        };
+        if fate.fate_state != FateState::Running || fate.progress >= 100 {
+            continue;
+        }
+        let health = instance
+            .find_npc(layout)
+            .and_then(|(id, _)| instance.find_actor(id))
+            .map(|actor| {
+                let common = actor.get_common_spawn();
+                (common.health_points, common.max_health_points)
+            });
+        let fate = &mut instance.fates[index];
+        let fallen = match health {
+            Some((health, _)) => {
+                fate.boss_seen = true;
+                health == 0
+            }
+            None => fate.boss_seen,
+        };
+        if !fallen && fate.next_boss_progress.is_some_and(|at| now < at) {
+            continue;
+        }
+        fate.next_boss_progress = Some(now + BOSS_PROGRESS_EVERY);
+        fate.progress = match health {
+            _ if fallen => 100,
+            Some((health, max_health)) => boss_progress(health, max_health),
+            None => 0,
+        };
+        updates.push((fate.fate_id, fate.progress));
+    }
+    updates
+}
+
+/// Tells everyone in the instance these FATEs' progress, and queues the end of those at 100.
+pub fn send_fate_updates(
+    network: &mut NetworkState,
+    instance: &mut Instance,
+    fates_that_updated: Vec<(u32, u32)>,
+) {
     for (fate_id, progress) in fates_that_updated {
         network.send_to_instance(
             ObjectId::default(),
@@ -314,6 +413,38 @@ pub fn fate_tick(
         );
 
         if progress == 100 {
+            // A boss FATE ends as retail's did: state 5 with the boss's Defeated, 7 and 10 a second later.
+            let is_boss = instance
+                .fates
+                .iter()
+                .any(|fate| fate.fate_id == fate_id && fate.boss.is_some());
+            if is_boss {
+                instance.insert_task(
+                    ClientId::default(),
+                    ObjectId::default(),
+                    BOSS_ENDING_AFTER,
+                    QueuedTaskData::FateState {
+                        fate_id,
+                        state: FateState::Ending,
+                    },
+                );
+                instance.insert_task(
+                    ClientId::default(),
+                    ObjectId::default(),
+                    BOSS_ENDED_AFTER,
+                    QueuedTaskData::EndFate { fate_id },
+                );
+                instance.insert_task(
+                    ClientId::default(),
+                    ObjectId::default(),
+                    BOSS_ENDED_AFTER + FATE_GONE_AFTER,
+                    QueuedTaskData::FateState {
+                        fate_id,
+                        state: FateState::Unk0,
+                    },
+                );
+                continue;
+            }
             // TODO: Introduce the slight delay seen in retail (higher for turn-in FATEs)
             instance.insert_task(
                 ClientId::default(),

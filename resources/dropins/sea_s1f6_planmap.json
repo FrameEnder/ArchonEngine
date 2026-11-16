@@ -4223,6 +4223,35 @@
                     "rotation": 1.7743
                 }
             ]
+        },
+        {
+            "name": "FATE_00586",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 2153,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 20240,
+                        "level": 44,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1524,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262144,
+                        "character_data_flags": 2
+                    },
+                    "layout_id": 4306103,
+                    "position": {
+                        "x": 82.559,
+                        "y": 55.485,
+                        "z": -467.706
+                    },
+                    "rotation": -0.6027
+                }
+            ]
         }
     ]
 }
