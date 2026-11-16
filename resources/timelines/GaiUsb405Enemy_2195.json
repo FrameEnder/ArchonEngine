@@ -1,0 +1,30 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 63.0
+        },
+        "717": {
+            "players": 89.0
+        }
+    },
+    "rotation": {
+        "pace": 8.6,
+        "actions": [
+            {
+                "action": 553,
+                "every": 24.5,
+                "comment": "2 uses, 24.5 s apart (5.7 and 30.2 s in); a 2.2 s cast, status 63 on itself for 15 s"
+            },
+            {
+                "action": 717,
+                "every": 8.6,
+                "comment": "2 uses, 8.6 s apart (17.0 and 25.6 s in)"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "Return to Your Dust's enemy (quest 861, BNpcBase 2195, BNpcName 2059, layout 4294228, weakened by the quest's key item): level 34, 10278 HP. Bob's Chronofoil capture 651981e7 (2026-11-16), one fight, 38 s: auto-attacks (870) about every 3 s for 37-78 when they hit (3 of 9), 553 on itself twice and 717 twice (89 once, a miss once). How often each comes is a guess from two uses. Hitbox not recorded."
+}

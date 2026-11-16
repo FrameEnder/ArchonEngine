@@ -1,0 +1,33 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "recorded_amounts": {
+        "970": {
+            "players": 60.0
+        },
+        "554": {
+            "players": 174.0
+        }
+    },
+    "rotation": {
+        "pace": 3.1,
+        "actions": [
+            {
+                "action": 554,
+                "every": 7.9,
+                "comment": "1 use, 8.4 s in (2.2 s cast, on an area); every 7.9 s is 1892's, the same kit"
+            },
+            {
+                "action": 970,
+                "every": 3.1,
+                "comment": "2 uses, 3.1 s apart (4.3 and 7.4 s in); 0.7 s cast"
+            }
+        ]
+    },
+    "animation_locks": {
+        "970": 0.1
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "Looking for Trouble's first kobold (quest 864, BNpcBase 331, BNpcName 373, layout 4294757): level 34, 1142 HP. Bob's Chronofoil capture 651981e7 (2026-11-16), one fight, 11 s: casts 970 instead of auto-attacking, then 554. Every hit on Bob missed in this fight, so the amounts are 1892's (the same two actions at the same level, Helm Me You Love Me's). Hitbox not recorded."
+}

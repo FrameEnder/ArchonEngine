@@ -60,6 +60,23 @@ None of it played yet.
   brings a festival's layers out without a zone change wasn't seen on retail (no capture spans an event's start.)
 * ZoneInit's and SetFestival's **festivals past the eighth** (or fourth, for SetFestival) aren't sent.
 
+## Outer La Noscea's side quests (2026-11-16)
+
+Nineteen quests transcribed from Bob's Chronofoil capture 651981e7 and the client's scripts (858-868, 1015,
+1017-1021, 1025, 1553; `quests.md`), one run of each; none played on Kawari yet.
+
+* Each script does what that one run did: an NPC's lines in a sequence nobody talked to them in aren't there, and
+  the any-order steps were seen in one order.
+* The five quest enemies (`QB_GaiUsb405_001`, `QB_GaiUsb408_001`, `QB_GaiUsb409_001` in
+  `sea_s1f6_planmap.json`) have timelines from one fight of 10 to 38 s each: how often each action comes is a guess
+  from one or two uses, and what statuses 63 and 207 (their self-buffs, 553 and 429) do isn't scripted.
+* 1016 isn't scripted: retail finished it with 1553 (`quests_finished_with.json`), the quest its accept check
+  names, and Bob's character never played it.
+* `questkit clientcheck` reads none of a transcribed script's scenes (it looks for `play_scene(` with the number,
+  and these call their own `play(`): "the server plays none" for all of them, as for the earlier transcribed ones.
+* The capture's two finished FATEs (588 and 586 in Outer La Noscea), its run of duty 6 and Bob's chocobo's skill
+  points and stance actions haven't been read into anything yet.
+
 ## The owner's rates (2026-11-15)
 
 None of it played yet; the page not used against the running server.

@@ -582,12 +582,39 @@ pub fn use_event_item(
         process_effects_list(network.clone(), instance, target_id);
     }
 
+    // The item takes the NPC: it fades as the quest's event starts and goes 0.63 s later.
+    if weakening.is_some_and(|weakening| weakening.captures) && bnpc_base.is_some() {
+        network.lock().send_ac_in_range_instance(
+            instance,
+            target_id,
+            ActorControlCategory::FadeOut {
+                actor: target_id,
+                kind: CAPTURE_FADE.0,
+                unk: CAPTURE_FADE.1,
+                time: CAPTURE_FADE.2,
+            },
+        );
+        instance.insert_task(
+            ClientId::default(),
+            ObjectId::default(),
+            CAPTURED_AFTER,
+            QueuedTaskData::Captured {
+                actor_id: target_id,
+            },
+        );
+    }
+
     network.lock().send_to(
         from_id,
         FromServer::EventItemUsed(request.action_id, request.target, bnpc_base),
         DestinationNetwork::ZoneClients,
     );
 }
+
+/// Retail's ActorControl 607 from a battle NPC a key item took (`[itself, 2, 197, 100]`) and how long after it the
+/// NPC went (Don't Let the Cat out of the Bag, Bob's Chronofoil capture 651981e7, 2026-11-16.)
+const CAPTURE_FADE: (u32, u32, u32) = (2, 197, 100);
+const CAPTURED_AFTER: Duration = Duration::from_millis(630);
 
 /// What retail's ActionEffect for a key item's use locks (0.1 s, Bob's 2026-10-18 capture.)
 const EVENT_ITEM_ANIMATION_LOCK: f32 = 0.1;

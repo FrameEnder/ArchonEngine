@@ -2005,6 +2005,12 @@ pub async fn server_main_loop(
                                     *effect_source_actor_id,
                                 );
                             }
+                            QueuedTaskData::Captured { actor_id } => {
+                                let mut data = data.lock();
+                                if let Some(instance) = data.instances.get_mut(*instance_index) {
+                                    actor::capture_battle_npc(&network, instance, *actor_id);
+                                }
+                            }
                             QueuedTaskData::DeadFadeOut {
                                 actor_id,
                                 respawn_layout_id,

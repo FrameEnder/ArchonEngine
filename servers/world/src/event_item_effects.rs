@@ -31,6 +31,10 @@ pub struct Effects {
     /// The ActionEffect's animation lock.
     #[serde(default)]
     pub animation_lock: Option<f32>,
+    /// The NPC is taken away by the item (Don't Let the Cat out of the Bag's bag): it fades as the quest's event
+    /// starts and is gone a second later, without being defeated (`server::actor::capture_battle_npc`.)
+    #[serde(default)]
+    pub captures: bool,
 }
 
 fn table() -> &'static Table {
@@ -72,5 +76,14 @@ mod tests {
         assert_eq!(weakened(effects, 13351, 14283), (2856, 2856));
         assert_eq!(weakened(effects, 1000, 14283), (1000, 2856));
         assert!(super::effects(1).is_none());
+        // Return to Your Dust's item does the same to its enemy: 10278 HP, then 2055 and 2055 (capture 651981e7.)
+        let dust = super::effects(2000960).unwrap();
+        assert_eq!(dust.statuses.len(), 2);
+        assert_eq!(weakened(dust, 8521, 10278), (2055, 2055));
+        assert!(!dust.captures);
+        // Don't Let the Cat out of the Bag's bag takes its hecatoncheir: no statuses, its health as it was.
+        let bag = super::effects(2000670).unwrap();
+        assert!(bag.captures && bag.statuses.is_empty());
+        assert_eq!(weakened(bag, 160, 3000), (160, 3000));
     }
 }

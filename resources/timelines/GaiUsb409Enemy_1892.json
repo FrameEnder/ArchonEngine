@@ -1,0 +1,33 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "recorded_amounts": {
+        "970": {
+            "players": 60.0
+        },
+        "554": {
+            "players": 174.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 554,
+                "every": 7.9,
+                "comment": "2 uses, 7.9 s apart (6.8 and 14.7 s in); a 2.2 s cast on an area, 174 the once it landed"
+            },
+            {
+                "action": 970,
+                "every": 5.9,
+                "comment": "2 uses, 5.9 s apart (5.7 and 11.6 s in), each right before a 554; 0.7 s cast, 58 and 63"
+            }
+        ]
+    },
+    "animation_locks": {
+        "970": 0.1
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "Helm Me You Love Me's enemy (quest 865, BNpcBase 1892, BNpcName 1980, layout 4294858): level 34, 1713 HP. Bob's Chronofoil capture 651981e7 (2026-11-16), one fight, 15 s: casts 970 then 554, twice over, with no auto-attack. Hitbox not recorded."
+}

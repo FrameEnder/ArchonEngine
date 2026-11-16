@@ -642,6 +642,78 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
     }
 }
 
+/// A battle NPC a key item took goes (`event_item_effects.json`'s `captures`; Don't Let the Cat out of the Bag's
+/// hecatoncheir, Bob's Chronofoil capture 651981e7): retail's ActorControl 2 `[2]` and 14 `[0]`, an EffectResult with
+/// its health at 0, and its DeleteActor 0.49 s later. It isn't defeated: no Defeated, no kill counted for anyone, no
+/// director told. An open-world one comes back as after a death.
+pub fn capture_battle_npc(
+    network: &Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    actor_id: ObjectId,
+) {
+    const GONE_AFTER: Duration = Duration::from_millis(490);
+    let Some(NetworkedActor::Npc { state, spawn, .. }) = instance.find_actor_mut(actor_id) else {
+        return;
+    };
+    if *state == NpcState::Dead {
+        return;
+    }
+    *state = NpcState::Dead;
+    spawn.common.health_points = 0;
+    let max_health = spawn.common.max_health_points;
+    let class_job = spawn.common.class_job;
+    let layout_id = spawn.common.layout_id;
+    instance.cancel_actor_tasks(actor_id);
+    let quest_spawned = instance.quest_spawned_npcs.remove(&actor_id);
+    {
+        let mut network = network.lock();
+        set_character_mode(
+            instance,
+            &mut network,
+            actor_id,
+            CharacterMode::Dead,
+            0,
+            true,
+        );
+        network.send_ac_in_range_inclusive_instance(
+            instance,
+            actor_id,
+            ActorControlCategory::Kill { animation_id: 0 },
+        );
+        let sequence = network.global_action_sequence;
+        network.global_action_sequence += 1;
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::EffectResult(
+            kawari::ipc::zone::EffectResult {
+                count: 1,
+                global_sequence: sequence,
+                target_id: actor_id,
+                health_points: 0,
+                max_health_points: max_health,
+                classjob_id: class_job,
+                ..Default::default()
+            },
+        ));
+        network.send_in_range_inclusive_instance(
+            actor_id,
+            instance,
+            FromServer::PacketSegment(ipc, actor_id),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+    let respawn_layout_id =
+        (layout_id != 0 && should_respawn_mobs(instance.zone.intended_use) && !quest_spawned)
+            .then_some(layout_id);
+    instance.insert_task(
+        ClientId::default(),
+        ObjectId::default(),
+        GONE_AFTER,
+        QueuedTaskData::DeadDespawn {
+            actor_id,
+            respawn_layout_id,
+        },
+    );
+}
+
 /// How long after an actor dies everyone is told who defeated it (retail: 2.0-2.09 s.)
 const DEFEATED_DELAY: Duration = Duration::from_millis(2000);
 

@@ -1335,6 +1335,8 @@ mod finished_with_tests {
         assert_eq!(finished_with(3871), vec![1003]);
         assert_eq!(finished_with(3865), vec![815, 816, 819, 820]);
         assert!(finished_with(1004).is_empty());
+        // 1553 then 1016, the quest its accept check names (651981e7.)
+        assert_eq!(finished_with(1553), vec![1016]);
     }
 }
 

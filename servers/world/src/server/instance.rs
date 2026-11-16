@@ -87,6 +87,8 @@ pub enum QueuedTaskData {
         actor_id: ObjectId,
         killer: ObjectId,
     },
+    /// A battle NPC a key item took (`event_item_effects.json`'s `captures`) goes: `actor::capture_battle_npc`.
+    Captured { actor_id: ObjectId },
     /// Fade out a dead actor.
     DeadFadeOut {
         actor_id: ObjectId,

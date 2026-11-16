@@ -1,0 +1,37 @@
+{
+  "quest": 1020,
+  "script": "GaiUsc708_01020",
+  "source": "scenes and effects from Bob's Chronofoil capture of 2026-11-16",
+  "params": {"ACTOR0": 1006325, "ITEM0": 2000777, "ACTOR1": 1003281, "ACTOR2": 1007487},
+  "steps": [
+    {
+      "talk": 1006325,
+      "layout": 4260378,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1003281,
+      "layout": 4101423,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1007487,
+      "layout": 4330032,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

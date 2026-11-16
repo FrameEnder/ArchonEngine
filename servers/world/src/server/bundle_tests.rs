@@ -1116,3 +1116,53 @@ fn an_easier_quest_battle_comes_after_a_loss() {
     // Easy is in no capture: Normal.
     assert_eq!(quest_battle_difficulty(1, 1), 0);
 }
+
+/// Don't Let the Cat out of the Bag (863), Bob's Chronofoil capture 651981e7 (2026-11-16): the quest's bag, used on a
+/// hecatoncheir, takes it: 0.63 s after the quest's event the NPC's mode goes to dead with ActorControl 14 and an
+/// EffectResult at 0 HP, and it's deleted 0.49 s later, with no Defeated and nothing counted as a kill.
+#[test]
+fn a_battle_npc_a_key_item_took_goes_without_being_defeated() {
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 4.0, 290.0]);
+    let enemy = world.enemy(ENEMY, [3.0, 4.0, 288.0], 3000);
+    world.sent(player);
+
+    crate::server::actor::capture_battle_npc(&world.network, &mut world.instance, enemy);
+
+    let Some(NetworkedActor::Npc { spawn, state, .. }) = world.instance.find_actor(enemy) else {
+        panic!("it's still there until its despawn");
+    };
+    assert_eq!(*state, NpcState::Dead);
+    assert_eq!(spawn.common.health_points, 0);
+    assert_eq!(spawn.common.mode, CharacterMode::Dead);
+    let sent = world.sent(player);
+    assert!(sent.iter().any(|m| matches!(
+        m,
+        FromServer::ActorControl(from, ActorControlCategory::Kill { animation_id: 0 }) if *from == enemy
+    )));
+    assert!(sent.iter().any(|m| matches!(
+        m,
+        FromServer::PacketSegment(segment, from)
+            if *from == enemy && matches!(&segment.data, ServerZoneIpcData::EffectResult(result) if result.health_points == 0)
+    )));
+    assert!(
+        !sent.iter().any(|m| matches!(
+            m,
+            FromServer::ActorControl(_, ActorControlCategory::Defeated { .. })
+                | FromServer::BattleNpcKilled { .. }
+        )),
+        "it wasn't defeated: {sent:?}"
+    );
+    // Its despawn is queued, and nothing that says who defeated it.
+    assert!(world.instance.queued_task.iter().any(|task| matches!(
+        task.data,
+        crate::server::QueuedTaskData::DeadDespawn { actor_id, .. } if actor_id == enemy
+    )));
+    assert!(!world.instance.queued_task.iter().any(|task| matches!(
+        task.data,
+        crate::server::QueuedTaskData::SendDefeated { .. }
+    )));
+    // A second call does nothing.
+    crate::server::actor::capture_battle_npc(&world.network, &mut world.instance, enemy);
+    assert!(world.sent(player).is_empty());
+}
