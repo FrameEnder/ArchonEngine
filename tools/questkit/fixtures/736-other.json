@@ -1,0 +1,158 @@
+{
+ "quest": 736,
+ "script": "GaiUsa304_00736",
+ "source": "the fossils retail didn't show, in another order, from the client's quest script (IsAcceptEvent, GetEventItems): two oblong ones first (EOBJECT2, EOBJECT5), a searched one and a kind no longer wanted refused, then the round EOBJECT0; unseen on retail (Bob's capture 216274f3 has EOBJECT1, 3 and 4)",
+ "unseen": true,
+ "from": {
+  "sequence": 1,
+  "vars": "000000000000"
+ },
+ "params": {
+  "ACTOR0": 1006195,
+  "EOBJECT0": 2002827,
+  "EVENT_ACTION_SEARCH": 1,
+  "EOBJECT1": 2002828,
+  "ITEM0": 2000593,
+  "EOBJECT2": 2001947,
+  "EOBJECT3": 2001948,
+  "EOBJECT4": 2002829,
+  "EOBJECT5": 2002830,
+  "ITEM1": 2000592
+ },
+ "steps": [
+  {
+   "territory": 139,
+   "talk": 2001947,
+   "what": "EOBJECT2",
+   "scenes": [
+    {
+     "scene": 6,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ],
+     "bar": 1
+    },
+    {
+     "scene": 7,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 1,
+    "vars": "001100000020",
+    "notices": [
+     [
+      1,
+      [
+       1,
+       2,
+       22202
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "territory": 139,
+   "talk": 2001947,
+   "what": "EOBJECT2",
+   "scenes": [],
+   "expect": {
+    "sequence": 1,
+    "vars": "001100000020",
+    "notices": []
+   }
+  },
+  {
+   "territory": 139,
+   "talk": 2002830,
+   "what": "EOBJECT5",
+   "scenes": [
+    {
+     "scene": 12,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ],
+     "bar": 1
+    },
+    {
+     "scene": 13,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 1,
+    "vars": "002200000024",
+    "notices": [
+     [
+      1,
+      [
+       2,
+       2,
+       22202
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "territory": 139,
+   "talk": 2001948,
+   "what": "EOBJECT3",
+   "scenes": [],
+   "expect": {
+    "sequence": 1,
+    "vars": "002200000024",
+    "notices": []
+   }
+  },
+  {
+   "territory": 139,
+   "talk": 2002827,
+   "what": "EOBJECT0",
+   "scenes": [
+    {
+     "scene": 2,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ],
+     "bar": 1
+    },
+    {
+     "scene": 3,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 255,
+    "vars": "002100000000",
+    "notices": [
+     [
+      0,
+      [
+       22256
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

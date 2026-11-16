@@ -1,0 +1,28 @@
+{
+  "quest": 735,
+  "script": "GaiUsa303_00735",
+  "source": "scenes and effects from Bob's Chronofoil capture of 2026-11-16",
+  "params": {"ACTOR0": 1006194, "ITEM0": 2000591, "ACTOR1": 1006195},
+  "steps": [
+    {
+      "talk": 1006194,
+      "layout": 4250530,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1006195,
+      "layout": 4250537,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 3, "flags": "0x2000", "results": [1, 5825, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
