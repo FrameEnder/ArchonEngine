@@ -1,6 +1,7 @@
 //! The Hunting Log as the client is told of it: all twelve logs at login, and after a kill that counts, ActorControlSelf
-//! 542 for each target counted, 543 and the entry's reward for each entry completed, then the log (Bob's and Connor's
-//! Chronofoil captures). A kill counts for the current class's log and for the player's Grand Company's. The rules
+//! 542 for each target counted, 543 and the entry's reward for each entry completed, then the log, with 544, the
+//! rank's bonus and 541 around it when that finished the rank (Bob's and Connor's Chronofoil captures; the order is
+//! `kill_steps`). A kill counts for the current class's log and for the player's Grand Company's. The rules
 //! are `crate::hunting_log`; see docs/src/fork/hunting-log.md.
 
 use kawari::ipc::zone::{ActorControlCategory, ServerZoneIpcData, ServerZoneIpcSegment};
@@ -8,8 +9,8 @@ use kawari::ipc::zone::{ActorControlCategory, ServerZoneIpcData, ServerZoneIpcSe
 use crate::{
     ZoneConnection,
     hunting_log::{
-        ENTRIES, FIRST_COMPANY_LOG, HUNTING_LOGS, HuntingLogEvent, HuntingLogProgress, TARGETS,
-        company_of, note_base, note_group, ranks_of,
+        ENTRIES, FIRST_COMPANY_LOG, HUNTING_LOGS, HuntingLogProgress, HuntingLogStep, TARGETS,
+        company_of, kill_steps, note_base, ranks_of,
     },
 };
 
@@ -152,9 +153,9 @@ impl ZoneConnection {
         if events.is_empty() {
             return;
         }
-        for event in &events {
-            match *event {
-                HuntingLogEvent::Counted {
+        for step in kill_steps(index, base, &events) {
+            match step {
+                HuntingLogStep::Counted {
                     note,
                     target,
                     count,
@@ -166,16 +167,25 @@ impl ZoneConnection {
                     })
                     .await;
                 }
-                HuntingLogEvent::EntryCompleted { note, reward } => {
+                HuntingLogStep::EntryCompleted { note, group } => {
                     self.actor_control_self(ActorControlCategory::HuntingLogEntryCompleted {
                         note,
-                        class: note_group(note),
+                        class: group,
                     })
                     .await;
+                }
+                HuntingLogStep::Reward(reward) => {
                     self.give_hunting_log_reward(company, reward).await;
                 }
-                HuntingLogEvent::RankCompleted { rank } => {
-                    // Retail's packets for a finished rank weren't recorded: its bonus as an entry's reward is given.
+                HuntingLogStep::RankCompleted { log, rank } => {
+                    self.actor_control_self(ActorControlCategory::HuntingLogRankCompleted {
+                        log: log as u32,
+                        rank: rank as u32,
+                    })
+                    .await;
+                }
+                HuntingLogStep::Log => self.send_hunting_log(&log, false).await,
+                HuntingLogStep::RankReward { rank } => {
                     let reward = self
                         .game_data
                         .lock()
@@ -187,9 +197,15 @@ impl ZoneConnection {
                     );
                     self.give_hunting_log_reward(company, reward).await;
                 }
+                HuntingLogStep::RankOpened { group, rank } => {
+                    self.actor_control_self(ActorControlCategory::HuntingLogRankOpened {
+                        class: group,
+                        rank: rank as u32,
+                    })
+                    .await;
+                }
             }
         }
-        self.send_hunting_log(&log, false).await;
         self.save_hunting_log(log);
     }
 

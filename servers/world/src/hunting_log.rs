@@ -53,8 +53,8 @@ pub enum HuntingLogEvent {
     Counted { note: u32, target: u8, count: u8 },
     /// An entry was completed (543, then its EXP.)
     EntryCompleted { note: u32, reward: u32 },
-    /// The rank's every entry is done (the rank finished, 0-based): its bonus, and the log moves to the next rank.
-    /// Retail's packets for it weren't recorded.
+    /// The rank's every entry is done (the rank finished, 0-based): its bonus, and the log moves to the next rank
+    /// (`kill_steps` has retail's packets for it.)
     RankCompleted { rank: u8 },
 }
 
@@ -88,10 +88,84 @@ pub fn note_id(base: u32, rank: u8, entry: usize) -> u32 {
     base + rank as u32 * 10 + entry as u32 + 1
 }
 
-/// ActorControlSelf 543's second number for an entry: 1 for the Gladiator's and 6 for the Conjurer's on retail, which
-/// is the entry's row over 10,000 (its class; a company's would be 100, 200 or 300, unseen.)
+/// ActorControlSelf 543's second number for an entry (and 541's first): whose log it is. 1 for the Gladiator's and 6
+/// for the Conjurer's on retail (the entry's row over 10,000: its class), 2 for the Twin Adder's 2000006 (the row over
+/// 1,000,000: the company; Bob's Chronofoil capture 216274f3.)
 pub fn note_group(note: u32) -> u32 {
-    note / 10_000
+    if note >= 1_000_000 {
+        note / 1_000_000
+    } else {
+        note / 10_000
+    }
+}
+
+/// What the client is sent for a kill that counted, in retail's order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HuntingLogStep {
+    /// ActorControlSelf 542.
+    Counted { note: u32, target: u8, count: u8 },
+    /// ActorControlSelf 543.
+    EntryCompleted { note: u32, group: u32 },
+    /// An entry's reward (EXP or seals).
+    Reward(u32),
+    /// ActorControlSelf 544.
+    RankCompleted { log: u8, rank: u8 },
+    /// The log's HuntingLog.
+    Log,
+    /// A finished rank's bonus: the rank (0-based) it's for.
+    RankReward { rank: u8 },
+    /// ActorControlSelf 541.
+    RankOpened { group: u32, rank: u8 },
+}
+
+/// The packets of a kill's `record_kill` events as retail orders them (Bob's Chronofoil capture 216274f3, four ranks
+/// of the Conjurer's finished and a Twin Adder entry): each target's 542; an entry's 543 and its reward; then the
+/// log. When that finished the rank: 544 before the log (which has the rank moved on and its counts emptied), and
+/// after it the rank's bonus and 541 with the number of the rank now open. No last rank was finished in a capture:
+/// 541 is left out when no rank opens.
+pub fn kill_steps(index: u8, base: u32, events: &[HuntingLogEvent]) -> Vec<HuntingLogStep> {
+    let mut steps = Vec::new();
+    let mut finished = None;
+    for event in events {
+        match *event {
+            HuntingLogEvent::Counted {
+                note,
+                target,
+                count,
+            } => steps.push(HuntingLogStep::Counted {
+                note,
+                target,
+                count,
+            }),
+            HuntingLogEvent::EntryCompleted { note, reward } => {
+                steps.push(HuntingLogStep::EntryCompleted {
+                    note,
+                    group: note_group(note),
+                });
+                if reward != 0 {
+                    steps.push(HuntingLogStep::Reward(reward));
+                }
+            }
+            HuntingLogEvent::RankCompleted { rank } => finished = Some(rank),
+        }
+    }
+    if events.is_empty() {
+        return steps;
+    }
+    if let Some(rank) = finished {
+        steps.push(HuntingLogStep::RankCompleted { log: index, rank });
+    }
+    steps.push(HuntingLogStep::Log);
+    if let Some(rank) = finished {
+        steps.push(HuntingLogStep::RankReward { rank });
+        if rank + 1 < ranks_of(index) {
+            steps.push(HuntingLogStep::RankOpened {
+                group: note_group(base + 1),
+                rank: rank + 2,
+            });
+        }
+    }
+    steps
 }
 
 impl HuntingLogProgress {
@@ -297,6 +371,89 @@ mod tests {
         assert_eq!((log.rank, log.mask()), (1, 0xFFFF_FFFE));
     }
 
+    /// Retail's packets for a kill, in its order (Bob's Chronofoil capture 216274f3, 2026-11-16).
+    #[test]
+    fn kill_steps_are_retail_s() {
+        // 2796.95 s: the Conjurer's 60010 done with its third kill, and the first rank with it: 542 [60010, 0, 3],
+        // 543 [60010, 6], the entry's EXP, 544 [5, 0], HuntingLog (rank 1, emptied), the rank's EXP, 541 [6, 2].
+        let mut log = HuntingLogProgress::fresh(5);
+        let mut events = Vec::new();
+        for name in [49, 37]
+            .into_iter()
+            .chain((60003..=60010).map(|note| 1000 + note))
+        {
+            for _ in 0..3 {
+                events = log.record_kill(60000, name, 5, conjurer);
+            }
+        }
+        assert_eq!(
+            kill_steps(5, 60000, &events),
+            vec![
+                HuntingLogStep::Counted {
+                    note: 60010,
+                    target: 0,
+                    count: 3
+                },
+                HuntingLogStep::EntryCompleted {
+                    note: 60010,
+                    group: 6
+                },
+                HuntingLogStep::Reward(100),
+                HuntingLogStep::RankCompleted { log: 5, rank: 0 },
+                HuntingLogStep::Log,
+                HuntingLogStep::RankReward { rank: 0 },
+                HuntingLogStep::RankOpened { group: 6, rank: 2 },
+            ]
+        );
+
+        // 706.14 s: the Twin Adder's 2000006: 542 [2000006, 0, 3], 543 [2000006, 2], the seals, HuntingLog.
+        let entry = [
+            HuntingLogEvent::Counted {
+                note: 2000006,
+                target: 0,
+                count: 3,
+            },
+            HuntingLogEvent::EntryCompleted {
+                note: 2000006,
+                reward: 357,
+            },
+        ];
+        assert_eq!(
+            kill_steps(9, 2_000_000, &entry),
+            vec![
+                HuntingLogStep::Counted {
+                    note: 2000006,
+                    target: 0,
+                    count: 3
+                },
+                HuntingLogStep::EntryCompleted {
+                    note: 2000006,
+                    group: 2
+                },
+                HuntingLogStep::Reward(357),
+                HuntingLogStep::Log,
+            ]
+        );
+
+        // A kill that only counted: its 542 and the log. A last rank opens none (unseen on retail).
+        let counted = [HuntingLogEvent::Counted {
+            note: 60021,
+            target: 0,
+            count: 1,
+        }];
+        assert_eq!(kill_steps(5, 60000, &counted).len(), 2);
+        let last = [HuntingLogEvent::RankCompleted { rank: 4 }];
+        assert_eq!(
+            kill_steps(5, 60000, &last),
+            vec![
+                HuntingLogStep::RankCompleted { log: 5, rank: 4 },
+                HuntingLogStep::Log,
+                HuntingLogStep::RankReward { rank: 4 },
+            ]
+        );
+        assert!(kill_steps(5, 60000, &[]).is_empty());
+    }
+
     /// What the client is told of which ranks were looked at (ClientTrigger 401; Bob's Chronofoil captures b23b91ef,
     /// `[5, 0]`: 0xFFFFFFFF then 0xFFFFFFFE; c99fe374, `[10, 0]` for the Immortal Flames' log.)
     #[test]
@@ -353,7 +510,7 @@ mod tests {
         ); // Rogue 50
         assert_eq!(
             (note_group(10002), note_group(60006), note_group(3000001)),
-            (1, 6, 300)
+            (1, 6, 3)
         );
 
         let mut log = HuntingLogProgress::fresh(10);

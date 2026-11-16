@@ -890,11 +890,23 @@ pub enum ActorControlCategory {
     #[brw(magic = 542u32)]
     HuntingLogTargetCounted { note: u32, target: u32, count: u32 },
 
-    /// A Hunting Log entry was completed: its MonsterNote row and that row over 10,000 (1 for the Gladiator's entries,
-    /// 6 for the Conjurer's: their classes; Bob's and Connor's Chronofoil captures, nine of them), then retail gives its
-    /// EXP.
+    /// A Hunting Log entry was completed: its MonsterNote row and whose log it is (the class, 1 for the Gladiator's
+    /// entries and 6 for the Conjurer's; the company, 2 for the Twin Adder's 2000006; Bob's and Connor's Chronofoil
+    /// captures, 45 of them), then retail gives its EXP or seals.
     #[brw(magic = 543u32)]
     HuntingLogEntryCompleted { note: u32, class: u32 },
+
+    /// A Hunting Log rank was finished: the log's index and the rank (0-based), after the last entry's 543 and reward
+    /// and before the HuntingLog with the rank moved on (Bob's Chronofoil capture 216274f3, 2026-11-16: the
+    /// Conjurer's first four ranks, `[5, 0]` to `[5, 3]`; see docs/src/fork/hunting-log.md.)
+    #[brw(magic = 544u32)]
+    HuntingLogRankCompleted { log: u32, rank: u32 },
+
+    /// Sent last when a Hunting Log rank was finished, after the rank's bonus: whose log it is (as 543's second
+    /// number) and the number of the rank now open (`[6, 2]` after the Conjurer's first, to `[6, 5]`; the same
+    /// capture.) What the client does with it wasn't checked.
+    #[brw(magic = 541u32)]
+    HuntingLogRankOpened { class: u32, rank: u32 },
 
     /// Sent with a job's soul crystal as its first quest gave it, with that quest's HOW_TO_JOB (the HowTo row on jobs:
     /// Seer Folly's 94; Bob's Chronofoil capture 8d550e33, 2026-11-05, between the reward's InventoryActionAck and the

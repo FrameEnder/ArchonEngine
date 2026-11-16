@@ -14,9 +14,11 @@ saves).
 
 ## What retail does
 
-From every Chronofoil capture at hand (Bob's and Connor's, 2026-10-18 to 2026-11-12: 92 logins of six characters, 27
-targets counted and 9 entries finished, by a Conjurer and a Gladiator), the game's sheets, and the community's wiki
-where neither shows it (said where).
+From every Chronofoil capture at hand (Bob's and Connor's, 2026-10-18 to 2026-11-16: 93 logins of six characters, 159
+targets counted, 45 entries finished and four ranks, by a Conjurer and a Gladiator), the game's sheets, and the
+community's wiki where neither shows it (said where). Most of it is Bob's capture 216274f3 (2026-11-16, 2.7 hours on
+his White Mage of 48: the Conjurer's log from the five entries its first rank had left to the fifth rank's first,
+132 counts and 35 entries, and one entry of the Twin Adder's).
 
 **The logs.** Twelve, by ClassJob's `MonsterNote` column: 0 Gladiator, 1 Pugilist, 2 Marauder, 3 Lancer, 4 Archer,
 5 Conjurer, 6 Thaumaturge, 7 Arcanist, 8 the Maelstrom, 9 the Twin Adder, 10 the Immortal Flames, 11 Rogue (jobs share
@@ -55,15 +57,28 @@ made them from the rank. What retail has:
 * Bob's older character: 0xFFFFFFFC, ...F8 and ...E0 for logs at ranks 1, 2 and 5, and a Marauder's at rank 1 (its
   first rank finished) still 0xFFFFFFFE: its second rank never looked at.
 
-So the server keeps which ranks were viewed and the field is their complement. Only rank 0 was seen in a 401.
+So the server keeps which ranks were viewed and the field is their complement. The 401's second number is the rank
+looked at (`[5, 1]`, `[5, 2]`, `[5, 3]` in 216274f3, and the field went 0xFFFFFFFE, ...FC, ...F8, ...F0 with them);
+finishing a rank doesn't clear its bit or the next one's.
 
 **A kill that counts** sends:
 
 1. ActorControlSelf **542** (note, target, count) for the target counted;
-2. when that finished the entry, ActorControlSelf **543** (note, the note over 10,000: 1 for the Gladiator's, 6 for
-   the Conjurer's) and the entry's EXP (ActorControlSelf 7, as any EXP without a source);
-3. the log's HuntingLog (byte 0 = 0);
-4. then the kill's own EXP.
+2. when that finished the entry, ActorControlSelf **543** (note, whose log: the class for a class's, the note over
+   10,000, 1 for the Gladiator's and 6 for the Conjurer's; the company for a company's, 2 for the Twin Adder's
+   2000006) and the entry's reward: EXP (ActorControlSelf 7, as any EXP without a source, and 43) or seals (the
+   currency's UpdateInventorySlot and ActorControlSelf 517 `[1300, company, seals]`: `[1300, 2, 357]`);
+3. when that finished the rank, ActorControlSelf **544** (the log's index, the rank finished from 0: `[5, 0]` to
+   `[5, 3]`);
+4. the log's HuntingLog (byte 0 = 0; after a finished rank, the rank byte moved on, the counts and flags zero, the
+   last field as it was);
+5. after a finished rank, its bonus (ActorControlSelf 7 and 43: 2,500, 10,000, 20,000 and 30,000 for the Conjurer's
+   first four, the sheet's numbers), then ActorControlSelf **541** (whose log as 543's, the number of the rank now
+   open: `[6, 2]` to `[6, 5]`) and the EXP's 43 once more;
+6. then the kill's own EXP.
+
+All of it in one frame (2796.95 s, 4054.37 s, 7004.98 s and 9015.24 s in 216274f3 for the four ranks; 706.14 s for
+the company's entry). `kill_steps` in `hunting_log.rs` is this order, tested with those packets.
 
 The kill counts for the current class's log, for the entries of its current rank that want that kind of enemy, up to
 each target's count.
@@ -92,7 +107,9 @@ As above:
   counts for both).
 * **Rewards.** An entry's `Reward` as EXP (`add_exp`) or as the company's seals (`give_company_seals`: the currency
   slot, LogMessage 1300 as a quest's seals, capped at the rank's MaxSeals).
-* **Ranks.** When every used entry of a rank is done: the rank's bonus (`hunting_log_rank_reward`), the rank byte moves
+* **Ranks.** When every used entry of a rank is done: 544, the log, the rank's bonus (`hunting_log_rank_reward`) and
+  541 in retail's order (since 2026-11-16; before, the bonus came before the log and neither control was sent, and a
+  company's 543 had 100, 200 or 300 for its second number where retail has the company). The rank byte moves
   on and the counts are emptied (the Rogue's with its unused targets set, as a fresh one). A company's next rank counts
   only from the company rank that opens it (`company_hunting_log_ranks`, from `RequiredHuntingLogRank`).
 * **Seen ranks.** ClientTrigger 401 (`ViewHuntingLog`) sets the log's `seen` bit; bytes 56-59 are its complement. A
@@ -102,13 +119,13 @@ As above:
 
 ## Not seen on retail
 
-* **A finished rank**: no capture has one. The bonus's amount is the sheet's; how it's announced (an ActorControl, a
-  log line) isn't known, so it's given as an entry's reward is.
-* **A company's entry**: no capture counted one. 543's second number for it would be 100, 200 or 300 by the rule the
-  classes' follow (the note over 10,000); the seals' packets are a quest reward's.
+* **A log's last rank finished** (a class's fifth, a company's third): 544 and the bonus are sent as for the others;
+  541 isn't, no rank opening (a guess: every 541 seen named the rank that opened). What the client does with 541
+  wasn't read out of it. Retail's second 43 after 541 (the same numbers as the one before it) isn't sent.
+* **A company's finished rank**: one entry of the Twin Adder's was counted, no rank. 544 would have the log's index
+  (8-10) and 541 the company, by the classes' rule.
 * **Company ranks and the log's ranks**: the wiki's rule; what the HuntingLog looks like while the next rank waits for
   a promotion isn't recorded (Kawari: the rank byte moved on, kills not counted).
-* 401's second number other than 0.
 * Whether kills by party members count (the community says they do for members nearby; Kawari counts every kill the
   player gets EXP for).
 * The achievements for finishing a log ("Bump on a Log": a ring for each class's, a minion for each company's) aren't

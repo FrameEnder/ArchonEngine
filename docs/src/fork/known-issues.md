@@ -842,8 +842,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 ## Hunting Log
 
 * Whole since 2026-11-14 ([Hunting Log](hunting-log.md)): the classes' five ranks, the Grand Companies' logs, rank
-  bonuses, the ranks looked at. Not played in game yet. Not seen on retail, so built from the sheets and the wiki: what
-  a finished rank and a company's entry send, and a company's ranks waiting on a promotion. Party members' kills and
+  bonuses, the ranks looked at. Not played in game yet. A finished rank and a company's entry are sent as retail's
+  since 2026-11-16 (Bob's capture 216274f3). Not seen on retail, so built from the sheets and the wiki: a log's last
+  rank finished, a company's finished rank, and a company's ranks waiting on a promotion. Party members' kills and
   the "Bump on a Log" achievements aren't done. Auracite (Kawari) backups and ArchonEngine ControlPanel don't carry
   the log.
 
