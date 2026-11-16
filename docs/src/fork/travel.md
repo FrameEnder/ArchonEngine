@@ -229,7 +229,7 @@ game: each key until then was added by hand when a bundle showed the Sands wrong
 character had them then (the active list, the completed list at login, each accept, update and finish after), and
 asks the table for each; it fails when the table gives another key, has no entry for one, or doesn't have the
 territory. `--save` keeps the observations (numbers only: `tools/questkit/questkit/data/layer_keys.json`, 77 from
-the 86 captures read on 2026-11-15) and questkit's test suite, which CI runs on every push, checks the table
+the 86 captures read on 2026-11-15; 79 with capture 651981e7 the day after, 92221 both times it visits) and questkit's test suite, which CI runs on every push, checks the table
 against all of them. **Captures of a quest are read with `--layers --save` when they come in**, like making its
 fixtures.
 
