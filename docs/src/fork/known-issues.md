@@ -70,6 +70,14 @@ Nineteen quests transcribed from Bob's Chronofoil capture 651981e7 and the clien
 * The five quest enemies (`QB_GaiUsb405_001`, `QB_GaiUsb408_001`, `QB_GaiUsb409_001` in
   `sea_s1f6_planmap.json`) have timelines from one fight of 10 to 38 s each: how often each action comes is a guess
   from one or two uses, and what statuses 63 and 207 (their self-buffs, 553 and 429) do isn't scripted.
+* **Heart of the Forest** (1084) and its quest battle 76 (2026-11-16, [Quest battles](quest-battles.md)): not played
+  in game. From three retail runs, one won. Guessed: everyone down before the third wave's minute is up, a downed
+  guard at the win. Not played: the guards' Stoneskin (retail's kept the one who prays' ticks off about 6 s at a
+  time, so the battle is somewhat harder here), Regen, Divine Seal and Holy; the bursting ones' slow walk; two of
+  their spots (4290121, 4290123: known of, not where). Whether enemies leave a downed guard alone as retail's did
+  rests on `set_targetable` (an untargetable NPC isn't noticed; one already being fought wasn't tried). 1084's
+  ACTOR1, ACTOR2 and EOBJECT1 at sequence 1 aren't scripted (not talked to on retail).
+* 1036 isn't scripted: retail finished it with 4521 (Operation Archon), as 1016 with 1553.
 * 1016 isn't scripted: retail finished it with 1553 (`quests_finished_with.json`), the quest its accept check
   names, and Bob's character never played it.
 * `questkit clientcheck` reads none of a transcribed script's scenes (it looks for `play_scene(` with the number,

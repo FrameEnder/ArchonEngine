@@ -223,6 +223,11 @@ ZoneInit with it at sequence 255, the only visits there during the quest, and at
 (0abe6734). The table had nothing for it, so the Sands stayed on 92220 (Bob, 2026-11-15); the entry waits for
 sequence 255, a visit at sequence 1 not having been captured.
 
+**Operation Archon** (4521; Bob's Chronofoil capture 667a68c5 of 2026-11-16): 92221 in ZoneInit before it, then
+**92222** in the ActorSetPos (warp type 18, after PrepareZoning to the same territory) as its accepting cutscene
+ended and it went to sequence 1. `questkit chronofoil --layers --save` named it as the capture came in; the entry is
+from the quest's acceptance.
+
 **Checked against every capture.** The key had been in two captures for three days when Bob found it missing in
 game: each key until then was added by hand when a bundle showed the Sands wrong. `questkit chronofoil <captures>
 --layers` reads every key a capture's server named (ZoneInit and the player's ActorSetPos) with the quests as the

@@ -68,6 +68,23 @@ pub fn add_periodic_effect(
     });
 }
 
+/// Damage every tick while `target` has `status`, from no one: a director's own (`director:gain_effect`'s `tick`),
+/// as Heart of the Forest's one who prays loses health under status 324 (quest battle 76; retail's ticks named
+/// 0xE0000000 as their source, Bob's Chronofoil capture 667a68c5.)
+pub fn add_status_tick(instance: &mut Instance, target: ObjectId, status: u16, amount: u32) {
+    add_periodic_effect(
+        instance,
+        target,
+        ObjectId::default(),
+        &PeriodicSpec {
+            effect_id: status,
+            kind: PeriodicKind::Damage,
+            amount,
+            on_self: false,
+        },
+    );
+}
+
 /// What a target's ticks of one kind add up to, sent as one (`tick_control`.)
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct TickTotal {

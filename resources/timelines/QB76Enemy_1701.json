@@ -1,0 +1,36 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 205
+        },
+        "440": {
+            "npcs": 620
+        }
+    },
+    "timepoints": [
+        {
+            "time": 10.0,
+            "every": 20.0,
+            "data": {
+                "type": "action",
+                "action_id": 440,
+                "target": "target"
+            },
+            "comment": "440 (2.2 s cast, an area at its target: up to four caught, the one who prays among them) 10.0-10.8 s after the fight began (6.1-9.3 s after the third wave came), then about every 20 s (19.2-21.2)"
+        },
+        {
+            "time": 19.8,
+            "every": 21.5,
+            "data": {
+                "type": "action",
+                "action_id": 863,
+                "target": "itself"
+            },
+            "comment": "863 (2.7 s cast round itself: status 14, param 50, on everyone but the one who prays) 19.8 s after the fight began (16.6 s after the third wave came), then every 21.1-22.3 s"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The first wave's three of BNpcBase 1701 (BNpcName 1927, layouts 4290093-4290095) and the third's (4292906-4292908): level 50, 802 HP; each on one of the three who guard. Heart of the Forest (quest 1084, quest battle 76, drop-in layer QB_JobWhm500_001 of fst_f1). From Bob's Chronofoil capture 667a68c5 (2026-11-16, three runs: two lost, one won, `questkit chronofoil --battle 0.20`, `0.22`, `0.24`, territory 320, duty 369; a level 50 White Mage): `players` is the median damage to the player, `npcs` to the other side's NPCs (or a heal's on them), times from its pull. Hitbox not recorded."
+}

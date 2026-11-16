@@ -97,11 +97,14 @@ pub enum LuaDirectorTask {
     DespawnBattleNpc {
         layout_id: u32,
     },
+    /// `tick`: damage every 3 s while the actor has the status, from no one (`periodic.rs`): Heart of the Forest's
+    /// one who prays under status 324 (quest battle 76.)
     GainEffect {
         actor_id: ObjectId,
         id: u16,
         param: u16,
         duration: f32,
+        tick: Option<u32>,
     },
     /// The status `id` on an actor ends now (`effect::lose_effect_instance`): the Navel's Granite Gaol (292) as the
     /// gaol holding them breaks.
@@ -891,12 +894,13 @@ impl UserData for LuaDirector {
         });
         methods.add_method_mut(
             "gain_effect",
-            |_, this, (actor_id, id, param, duration): (u32, u16, u16, f32)| {
+            |_, this, (actor_id, id, param, duration, tick): (u32, u16, u16, f32, Option<u32>)| {
                 this.tasks.push(LuaDirectorTask::GainEffect {
                     actor_id: ObjectId(actor_id),
                     id,
                     param,
                     duration,
+                    tick,
                 });
                 Ok(())
             },
@@ -2699,7 +2703,13 @@ pub fn director_tick(
                 id,
                 param,
                 duration,
+                tick,
             } => {
+                // An NPC by its layout ID too, as the other methods take one.
+                let actor_id = &match instance.find_actor(*actor_id) {
+                    Some(_) => *actor_id,
+                    None => resolve_bnpc(instance, actor_id.0).unwrap_or(*actor_id),
+                };
                 gain_effect_instance(
                     network.clone(),
                     ClientId::default(),
@@ -2713,8 +2723,15 @@ pub fn director_tick(
                     // 775 and the Navel's gaoled players' 292 (Bob's Chronofoil captures b8432613 and 650dbfd8.)
                     true,
                 );
+                if let Some(amount) = tick {
+                    crate::server::periodic::add_status_tick(instance, *actor_id, *id, *amount);
+                }
             }
             LuaDirectorTask::LoseEffect { actor_id, id } => {
+                let actor_id = &match instance.find_actor(*actor_id) {
+                    Some(_) => *actor_id,
+                    None => resolve_bnpc(instance, actor_id.0).unwrap_or(*actor_id),
+                };
                 lose_effect_instance(network.clone(), instance, *actor_id, *id);
             }
             LuaDirectorTask::SpawnPartBattleNpc {

@@ -1,0 +1,31 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 330
+        },
+        "127": {
+            "npcs": 455
+        },
+        "120": {
+            "npcs": 1090
+        },
+        "135": {
+            "npcs": 1830
+        }
+    },
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 127,
+                "every": 8.0,
+                "comment": "Stone II between heals (119 once or twice and 127 once or twice a run)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "One of the three who guard the one who prays (BNpcBase 1706, BNpcName 1422, layout 4290082): level 50, 15145 HP, a white mage. Cure (120, 1.2 s cast, 1047-1754) about every 8-10 s and Cure II (135, 1.7 s, 1803-2795) about every 20 s on the one who prays (the director's heals; 16-22 and 6-7 a run each), a Stone or Stone II now and then on whoever is on it. Its Stoneskin (129, on itself, another guard, the one who prays or the player), Regen (137), Divine Seal (138) and Holy (139, once a run) aren't played. Below 20 % it's down (the director.) No auto-attack. Heart of the Forest (quest 1084, quest battle 76, drop-in layer QB_JobWhm500_001 of fst_f1). From Bob's Chronofoil capture 667a68c5 (2026-11-16, three runs: two lost, one won, `questkit chronofoil --battle 0.20`, `0.22`, `0.24`, territory 320, duty 369; a level 50 White Mage): `players` is the median damage to the player, `npcs` to the other side's NPCs (or a heal's on them), times from its pull. Hitbox not recorded."
+}

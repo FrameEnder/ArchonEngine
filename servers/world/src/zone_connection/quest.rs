@@ -1337,6 +1337,8 @@ mod finished_with_tests {
         assert!(finished_with(1004).is_empty());
         // 1553 then 1016, the quest its accept check names (651981e7.)
         assert_eq!(finished_with(1553), vec![1016]);
+        // 4521 (Operation Archon) then the old 1036 (667a68c5.)
+        assert_eq!(finished_with(4521), vec![1036]);
     }
 }
 

@@ -135,6 +135,15 @@ mod tests {
         assert_eq!(filter_key(212, ultimatum(Some(1))), 92220);
         assert_eq!(filter_key(212, ultimatum(Some(255))), 92221);
         assert_eq!(filter_key(212, ultimatum(None)), 92221);
+        // Operation Archon (4521): 92222 from its acceptance (Bob's Chronofoil capture 667a68c5; found by
+        // `questkit chronofoil --layers --save` as the capture came in.)
+        assert_eq!(
+            filter_key(212, |quest, _, _| quest <= 522
+                || quest == 683
+                || quest == 876
+                || quest == 4521),
+            92222
+        );
         assert_eq!(filter_key(140, |_, _, _| true), 0);
     }
 }

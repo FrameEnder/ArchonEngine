@@ -174,6 +174,9 @@ def spawn_differences(registry: dict | None = None, dropins: dict | None = None)
     quest_battle: list[tuple[str, str, dict]] = []
     for file, data in dropins.items():
         for layer in data.get("layers", []):
+            # NPCs retail spawned there whose spots no capture at hand has (`"unplaced"`: layout IDs): known of, not
+            # placed. Heart of the Forest's 4290121 and 4290123, in the table from a capture since gone.
+            in_dropins.update(layer.get("unplaced", []))
             for obj in layer.get("objects", []):
                 in_dropins.add(obj.get("layout_id"))
                 if layer["name"].startswith("QB_") and obj.get("data", {}).get("type") == "battle_npc":

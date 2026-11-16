@@ -43,7 +43,7 @@ Guardian, Underneath the Sultantree). The fork added them on top of upstream's c
    how retail spawned it** (2026-11-14): `tools/questkit/retail_spawns.json` (`questkit chronofoil <captures>
    --spawns`, every instanced territory's battle NPCs from every capture: BNpcBase, BNpcName, level, HP, character
    data flags, display flags, Mount, ModelChara) and `questkit lint` (CI) fails on any field a layer has otherwise,
-   and on an NPC retail spawned there that no layer has; `lint --fix-spawns` writes retail's in. Layers had been
+   and on an NPC retail spawned there that no layer has (unless the layer lists it as `"unplaced"`: known of from the table, its spot in no capture at hand; Heart of the Forest's 4290121 and 4290123); `lint --fix-spawns` writes retail's in. Layers had been
    written once from an export, by hand or by script, and what they left out showed only when Bob played: Fool Me
    Twice's boss and Escape from Castrum Centri's Wedge ride Magitek Reapers (Mount 14) and stood on foot (Bob's
    bundle 20261114-015635). Its first run set 329 NPCs in 13 drop-ins to retail's: character data flags 3 (0x1 with
@@ -134,7 +134,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `attach_bnpc(npc, to, distance)` | Keeps an NPC (actor ID or layout ID) `distance` yalms in front of another, facing as it faces, wherever that one goes: an ActorMove whenever it has moved or turned (`director::keep_attached`), until either is gone or dead. The Navel's Heart of the Mountain, 2.3 yalms before Titan (retail moved it with him: Bob's Chronofoil captures of 2026-11-06). |
 | `spawn_bnpc_part(layout_id, to, distance)` | Spawns a drop-in NPC as a part of another (`to`: actor ID or layout ID): BattleNpcSubKind Part with `to`'s actor ID in the spawn's `pet_id`, `distance` yalms in front of it facing its way, kept there as `attach_bnpc` keeps one; returns its actor ID. The client draws and targets a part where the other's model has it, not where the part stands: the Navel's Heart of the Mountain in Titan's chest, as retail spawned it (Bob's Chronofoil captures 650dbfd8, 0fd8bce0, 48aaf6fe). Spawned as an ordinary enemy and attached, its target ring stood on the ground before him (Bob's bundle 20261109-201914). Bots and actions treat a part as an enemy. |
 | `effects:toss(gimmick_jump, value)` (action scripts) | Whoever the action lands on is thrown into the air: the GimmickJump row and retail's value for the effect ([Combat](combat.md): tossed into the air). The Stone Vigil's whirlwinds, `effects:toss(64, 173)`. |
-| `lose_effect(actor_id, status)` | The status ends now on that actor (player or NPC): its expiry dropped, ActorControl LoseEffect from 0xE0000000 and the status list to everyone around (`effect::lose_effect_instance`). The Navel's Granite Gaol (292) as the gaol breaks. `gain_effect` (actor, status, param, seconds; 0 never ends) is shown to everyone since 2026-11-06 (ActorControl GainEffect and the status list: Ifrit's 775 wasn't). |
+| `lose_effect(actor_id, status)` | The status ends now on that actor (player or NPC): its expiry dropped, ActorControl LoseEffect from 0xE0000000 and the status list to everyone around (`effect::lose_effect_instance`). The Navel's Granite Gaol (292) as the gaol breaks. `gain_effect` (actor, status, param, seconds; 0 never ends) is shown to everyone since 2026-11-06 (ActorControl GainEffect and the status list: Ifrit's 775 wasn't). Both take an NPC's layout ID too, and `gain_effect` a fifth argument (since 2026-11-16): damage every 3 s while the actor has the status, from no one (`periodic::add_status_tick`; ActorControl 1541 `[0, amount ±5 %, 0xE0000000, 0xFFFFFFFF]`, a barrier taking it first), as Heart of the Forest's one who prays loses health under status 324. Test `a_director_s_status_ticks_from_no_one`. |
 | `dismount_bnpc(npc)` | The NPC (actor ID or layout ID) gets off its mount where it is: ActorControl 930 (PlayDismountAnimation) with where it stands and faces packed as for a player's (x, y, then rotation and z), to everyone around, and its spawn on foot from then on. One that rides in has the drop-in's `mount` (CommonSpawn's current_mount): In the Eyes of Gods and Men's Haurchefant (mount 10), off as he speaks (since 2026-11-10). |
 | `kill_bnpc(npc)` | The NPC (actor ID or layout ID) dies where it stands, its health at 0 (`actor::kill_actor`, so `onActorDeath` follows): the Thousand Maws of Toto-Rak's eggs, gone 2.1 s after their burst. A death a task causes has its own tasks run the next tick (the director's task list used to be cleared after each tick, losing them.) |
 | `objective(done, next)` | The duty's objectives (InstanceContent's ObjectiveStart to ObjectiveEnd, as the Duty Information shows them): ContentDirector event 0x80000016 `[done, 1]`, then 0x80000015 `[next, 0]` if `next` is given (`ContentDirectorEvent::ObjectiveDone`, `SetObjective`; upstream's `UnknownDirector16`, `15` with one parameter). Retail's in the Thousand Maws of Toto-Rak, which counts its progress with them instead of DirectorVars. |
@@ -1796,6 +1796,51 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
   and 294 on himself, 3.7 s cast, at about 20 %; their length a guessed 30 s), `QB68Boss_01098`, `QB68Boss_01099`
   (2.7 s casts on himself whose ActionEffect had no target: nothing). The battle's client script
   (`JobPld451Btl_01059`, Bob's extracted scripts of 2026-11-12) has scenes 1 and 5 and OnSequence001-002, as played.
+
+### Quest battle 76 — Heart of the Forest (`content/questbattle/76.lua`)
+
+* Quest 1084 (JobWhm500_01084, the White Mage's level 50 quest) enters it from EOBJECT0 (the destination: scene 2,
+  its bar, 3, YesNoQuestBattle; territory 320, duty 369). Territory 320 is taken to be a copy of the Central Shroud:
+  its spots stand where the quest's destination does there, so its NPCs are layer `QB_JobWhm500_001` of
+  `fst_f1_planmap.json` (25 NPCs from the capture's SpawnNpcs, `nonpop`, their flags and looks), from three runs: Bob's
+  Chronofoil capture 667a68c5 of 2026-11-16 (`--battle 0.20` and `0.22` lost, `0.24` won; a level 50 White Mage).
+  Opening scene 1, 0xF841AEFB.
+* **On your side**: the one who prays (4290091, base 1702, 50688 HP), who never moved or acted, and three white mages
+  who guard them (4290072, 4290082, 4290083; bases 1708, 1706, 1707; 15145 HP each). **The one who prays loses health
+  all through**: status 324 from 0.1 s in, a tick every 3 s from no one (ActorControl 1541 `[0, amount, 0xE0000000,
+  0xFFFFFFFF]`: 1763-1940 during the first wave and the wait after it, 2186-2413 from the second wave on, when retail
+  took the status off and gave it again), which no enemy does: the enemies go for the guards and you. The guards'
+  Cures (120 every 8-10 s each, 135 about every 20 s) don't keep up with it; the player's healing wins the battle.
+  The script gives the status with its tick (`gain_effect`'s fifth argument, 1850 then 2300).
+* **Flow**: sequence 2, talks 107 and 108 (4290072) at 5.0 and 10.0. **The first wave down** (three of base 1705,
+  three of 1701, out from the start, one of each on each guard): sequence 3 at once; 20.05 s later sequence 4 and the
+  second wave (three of base 1703, whose 1308 poisons everyone near but the one who prays), talk 109 (4290082) 5.0 s
+  on. **The second wave down**: sequence 5; 20.05 s later sequence 6 and the third wave (three more of 1701), talk
+  110 5.05 s on, NpcYell 1173 at 10.07 s, and from 8.3 s **one of base 1704 every 8.05 s** at one of its spots (nine
+  seen across the runs, drawn at random; two at once at one spot in the won run), after you: it stands 4.9 s, walks
+  up and bursts on reaching you (1341: 448, 672, 672, 897), dying of it. **60.0 s after sequence 6**: sequence 7, and
+  no more of them. **Everyone down after that**: sequence 8 at once; 20.08 s later the battle's scene 9 (0xF8402EFB)
+  with sequence 9, no "Duty Complete" before it; as it ends the quest's LOGMESSAGE0 (3656, `QUEST_LOG`), the quest
+  to 255, and out.
+* **Marks**: the one who prays under 35 % (between 34.2 and 37.6 % in the runs' samples): talk 114 (4290083), once.
+  **A guard under 20 %** (2846-2853 HP left by the hit that did it) **is down**: ActorControl 32 `[1]` and 31 `[1]`
+  from it, untargetable (54 `[0]`), nothing more from or at it, and its line (112 for 4290083, 111 for 4290082, 113
+  for 4290072; the second lost run, all three within 18 s). The script holds it, makes it invulnerable and
+  untargetable and sends the two controls. **Lost** when the one who prays reaches 0 (sequence 0xFE at once, both
+  lost runs) or you do.
+* `questkit battle-sim 76`: the won run (27 events; sequences 8 and 9 allowed 13 s, since the simulator's 1704s
+  burst at once where the won run's last lived 18 s past sequence 7; talk 114 allowed 3 s, the health samples
+  around it 6 s apart) and both lost ones (`76-lost-20.json`, `76-lost-22.json`: 22 and 13 events), the 1704s a
+  pool.
+* Timelines `QB76Enemy_1705` (907), `QB76Enemy_1701` (440, 863), `QB76Enemy_1703` (1308), `QB76Bomb_1704`,
+  `QB76Guard_1706`-`1708`, `QB76Prayer_1702`; new action scripts `QB76Enemy_01308` and `QB76Bomb_01341`. The
+  battle's client script (`JobWhm500Btl_01084`, Bob's extracted scripts of 2026-11-16) has scenes 1 and 9 and
+  OnSequence001-002, as played.
+* **Guessed or not played** (no run showed it, or nothing plays it yet): everyone down before the minute is up
+  (sequence 8 waits for 7); a downed guard at the win; 4290121 and 4290123, two more of 1704's spots known from an
+  earlier capture's table but not where they stand; the guards' Stoneskin (129, which held the ticks off for about
+  6 s each time on retail), Regen, Divine Seal and Holy; 1704's slow walk (about 1.9 yalms a second). Not played in
+  game yet.
 
 ## Adding a quest battle
 

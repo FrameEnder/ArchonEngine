@@ -592,6 +592,68 @@ fn a_target_s_over_time_effects_tick_together() {
     )));
 }
 
+/// Heart of the Forest (quest battle 76; Bob's Chronofoil capture 667a68c5, three runs): the one who prays loses
+/// health every 3 s under status 324, ActorControl 1541 `[0, 1763-1940, 0xE0000000, 0xFFFFFFFF]`, from the director's
+/// own status (`director:gain_effect`'s tick), and no longer once the status is off.
+#[test]
+fn a_director_s_status_ticks_from_no_one() {
+    use crate::server::periodic::{add_status_tick, periodic_tick};
+
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let prayer = world.enemy(0x4000_0001, [2.0, 0.0, 0.0], 50688);
+    if let Some(actor) = world.instance.find_actor_mut(prayer) {
+        actor
+            .status_effects_mut()
+            .unwrap()
+            .add(324, 0, 0.0, ObjectId::default());
+    }
+    add_status_tick(&mut world.instance, prayer, 324, 1850);
+    let due = |world: &mut TestWorld| {
+        for effect in &mut world.instance.periodic_effects {
+            effect.next_tick = std::time::Instant::now() - Duration::from_millis(1);
+        }
+    };
+    due(&mut world);
+    periodic_tick(world.network.clone(), &mut world.instance);
+    let left = world
+        .instance
+        .find_actor(prayer)
+        .unwrap()
+        .get_common_spawn()
+        .health_points;
+    assert!((50688 - 1943..=50688 - 1757).contains(&left), "{left}");
+    assert!(world.sent(player).iter().any(|message| matches!(
+        message,
+        FromServer::ActorControl(
+            from,
+            ActorControlCategory::DamageFlyingText {
+                unk1: 0,
+                amount: 1757..=1943,
+                source_actor_id,
+                unk4: u32::MAX,
+            },
+        ) if *from == prayer && *source_actor_id == ObjectId::default()
+    )));
+
+    // The status off (a new wave's larger tick is given with it again): nothing more of the old one.
+    if let Some(actor) = world.instance.find_actor_mut(prayer) {
+        actor.status_effects_mut().unwrap().remove(324);
+    }
+    due(&mut world);
+    periodic_tick(world.network.clone(), &mut world.instance);
+    assert!(world.instance.periodic_effects.is_empty());
+    assert_eq!(
+        world
+            .instance
+            .find_actor(prayer)
+            .unwrap()
+            .get_common_spawn()
+            .health_points,
+        left
+    );
+}
+
 /// Bob, on the known issues: barriers (Galvanize...) took no damage, and retail's EffectResult tells what's left of a
 /// target's barriers as a share of their maximum HP (7,270 results in Bob's Chronofoil captures.) A barrier takes the
 /// damage first, one used up loses its status, and the share is what's left.
