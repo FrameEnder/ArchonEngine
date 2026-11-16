@@ -56,7 +56,10 @@ At zone-in with no companion out retail sent 263 `[0]`, CompanionUpdate `[0, 1, 
 ## Commands, barding, skills
 
 * **Commands** (client trigger 1700, a BuddyAction row): 2 Withdraw; 3 Follow, 4 Free, 5 Defender, 6 Attacker, 7
-  Healer Stance, answered with 264 `[companion, command]` and kept with the character.
+  Healer Stance, answered with 264 `[companion, command]` and kept with the character. With it, when the stance's
+  look changes, **ActorControl 82 from the companion**: `[635]` for Healer Stance, `[634]` for Defender or Attacker;
+  Free and Follow leave it as it was (Bob's Chronofoil capture 651981e7, 2026-11-16: Healer 635, Defender 634,
+  Attacker, Free and Follow nothing, Healer 635, later Attacker 634; `stance_look`, since 2026-11-16).
 * **Withdraw**: ActorControl 258 `[1]` on the companion, CompanionUpdate `[0, 1, 0, …]`, 264 with 2; 2 s later
   SetupPet with no pet (0xE0000000), CompanionUpdate again, and it's deleted. Its time is lost. The same when its
   time runs out or it falls.
@@ -72,8 +75,14 @@ At zone-in with no companion out retail sent 263 `[0]`, CompanionUpdate `[0, 1, 
   character who finished one without it (before 2026-10-29) is given it, and wears it in all three slots if the
   chocobo wears nothing. Other content can call `player:give_companion_barding(row)`.
 * **Skills** (client trigger 1702 `[line]`, 0 Defender, 1 Attacker, 2 Healer): the line's next skill costs its place
-  in the line in points (retail: 11 points, Attacker at 4, then 6, then 0), answered with CompanionUpdate (no time)
-  and the companion's StatusEffectList.
+  in the line in points (retail: 11 points, Attacker at 4, then 6, then 0), answered with CompanionUpdate (no time),
+  **ActorControlSelf 262 with the three lines' levels** (Defender, Attacker, Healer), **265 with the line and its
+  new level**, and the companion's StatusEffectList. 262 and 265 are in both captures with skills learnt (e8158807:
+  `[0, 5, 0]` and `[1, 5]`, `[0, 6, 0]` and `[1, 6]`; 651981e7, a rank 2 companion spending its three points on one
+  level of each line: `[0, 0, 1]` and `[2, 1]`, `[0, 1, 1]` and `[1, 1]`, `[1, 1, 1]` and `[0, 1]`, the points left
+  2, 1, 0) and were overlooked in the first: Kawari sends them since 2026-11-16. 651981e7's companion (level 48,
+  1,668 HP) then used Choco Slash (824) in Attacker Stance and Choco Drop (820) once in Free Stance, as `SKILLS` has
+  them.
 
 **Its HP** is its level's, not a share of its owner's: 36,330 at level 90 and 35,038 at 88 (Bob's level 88 White
 Mage had 35,118, his level 90 character 69,756), both with Attacker's +5% HP. Kawari: ParamGrow's HpModifier × 9.42

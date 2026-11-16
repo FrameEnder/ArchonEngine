@@ -59,6 +59,29 @@ const WITHDRAW_TIME: Duration = Duration::from_millis(2000);
 /// Retail sent ActorControl 36 and 54 for a companion 0.7-0.85 s after its spawn.
 const APPEAR_TIME: Duration = Duration::from_millis(800);
 
+/// A skill learnt (client trigger 1702), after the CompanionUpdate: ActorControlSelf 262 with the three lines' levels
+/// (Defender, Attacker, Healer) and 265 with the line and its new level. Retail, five skills in two captures: `262
+/// [0, 5, 0]`, `265 [1, 5]`, then `[0, 6, 0]`, `[1, 6]` (Bob's Chronofoil capture e8158807, 2026-10-24); `[0, 0, 1]`
+/// and `[2, 1]`, `[0, 1, 1]` and `[1, 1]`, `[1, 1, 1]` and `[0, 1]` (651981e7, 2026-11-16.) Kawari sent neither until
+/// 2026-11-16: the first capture's were overlooked.
+const SKILL_LEVELS: u32 = 262;
+const SKILL_LEARNT: u32 = 265;
+/// How the companion stands for its stance: ActorControl 82 from it with 635 for Healer Stance and 634 for Defender
+/// or Attacker, when that changes (651981e7, eight commands: Healer 635; then Defender 634, Attacker, Free and Follow
+/// nothing, Healer 635; later Attacker 634. e8158807's two Attacker commands in Attacker Stance: nothing.) Free and
+/// Follow leave it as it was. What 82 is otherwise isn't known.
+const STANCE_LOOK: u32 = 82;
+const LOOK_HEALER: u32 = 635;
+const LOOK_FIGHTER: u32 = 634;
+
+fn stance_look(stance: u8) -> Option<u32> {
+    match stance {
+        COMMAND_HEALER => Some(LOOK_HEALER),
+        COMMAND_DEFENDER | COMMAND_ATTACKER => Some(LOOK_FIGHTER),
+        _ => None,
+    }
+}
+
 /// Its HP by its level's ParamGrow HpModifier, before its skill lines' HP traits: retail's companions had 36,330 at
 /// level 90 (HpModifier 3,661) and 35,038 at level 88 (3,553), both with Attacker's +5% HP; it isn't a share of the
 /// owner's (Bob's level 88 White Mage had 35,118, his level 90 character 69,756.) 9.42 fits both within 0.3%.
@@ -404,6 +427,8 @@ pub struct Companion {
     appearing: Option<(ObjectId, Instant, bool)>,
     /// Fighting: its next skill's time.
     next_skill: Option<Instant>,
+    /// The stance's look last told (`stance_look`), or the stance's it was summoned in.
+    look: Option<u32>,
     /// When it next looks after health (Healer and Free Stance.)
     next_heal_check: Option<Instant>,
     /// Its Choco Regen on its owner and on itself, and its Choco Surge, until then.
@@ -647,6 +672,7 @@ fn spawn(
     companion.actor = Some(actor_id);
     companion.appearing = Some((actor_id, Instant::now() + APPEAR_TIME, came_along));
     companion.next_skill = None;
+    companion.look = stance_look(companion.profile.stance());
     if let Some(paused) = companion.paused.take() {
         companion.until = Some(Instant::now() + paused);
     }
@@ -827,6 +853,12 @@ pub(super) fn handle_companion_messages(
             let stance_changed = companion.profile.stance() != profile.stance();
             let points_changed = companion.profile.skill_points != profile.skill_points;
             let levels_changed = companion.profile.levels != profile.levels;
+            let levels_before = companion.profile.levels;
+            // How it stands for its stance (`stance_look`): told when it changes.
+            let look = stance_look(profile.stance()).filter(|look| companion.look != Some(*look));
+            if look.is_some() {
+                companion.look = look;
+            }
             let exp_changed =
                 companion.profile.exp != profile.exp || companion.profile.rank != profile.rank;
             companion.profile = profile.clone();
@@ -844,6 +876,15 @@ pub(super) fn handle_companion_messages(
                         unk2: profile.stance() as u32,
                     },
                 );
+                if let Some(look) = look
+                    && let Some(instance) = data.find_actor_instance(actor_id)
+                {
+                    network.send_ac_in_range_inclusive_instance(
+                        instance,
+                        actor_id,
+                        unknown(STANCE_LOOK, look, 0),
+                    );
+                }
                 // Told to follow or to heal, it leaves the fight.
                 if matches!(profile.stance(), COMMAND_FOLLOW | COMMAND_HEALER)
                     && let Some(instance) = data.find_actor_instance_mut(actor_id)
@@ -855,6 +896,32 @@ pub(super) fn handle_companion_messages(
             }
             if points_changed || exp_changed {
                 send_update(&mut network, *owner, &companion, false);
+            }
+            // A skill learnt: the three lines' levels, then the line and its new level (retail's ActorControlSelf 262
+            // and 265 after the CompanionUpdate, before the companion's StatusEffectList.)
+            if levels_changed {
+                let [defender, attacker, healer] = profile.levels.map(u32::from);
+                send_self(
+                    &mut network,
+                    *owner,
+                    ActorControlCategory::Unknown {
+                        category: SKILL_LEVELS,
+                        param1: defender,
+                        param2: attacker,
+                        param3: healer,
+                        param4: 0,
+                        param5: 0,
+                    },
+                );
+                for (line, level) in profile.levels.iter().enumerate() {
+                    if levels_before[line] != *level {
+                        send_self(
+                            &mut network,
+                            *owner,
+                            unknown(SKILL_LEARNT, line as u32, *level as u32),
+                        );
+                    }
+                }
             }
             // Its auto-attack (none in Healer Stance), and what its new skills and traits make of its HP and hits.
             if (stance_changed || levels_changed)
@@ -1331,6 +1398,33 @@ mod tests {
             }
         );
         assert_eq!(trait_bonus([10, 10, 10]).hp, 20 + 5 + 10);
+    }
+
+    /// Bob's Chronofoil capture 651981e7 (2026-11-16): ActorControl 82 from the companion as its stance's look
+    /// changes: Healer 635, Defender and Attacker 634, Free and Follow nothing of their own.
+    #[test]
+    fn stance_looks() {
+        assert_eq!(stance_look(COMMAND_HEALER), Some(635));
+        assert_eq!(stance_look(COMMAND_DEFENDER), Some(634));
+        assert_eq!(stance_look(COMMAND_ATTACKER), Some(634));
+        assert_eq!(stance_look(COMMAND_FREE), None);
+        assert_eq!(stance_look(COMMAND_FOLLOW), None);
+        // The capture's eight commands, and what came with each.
+        let mut last = None;
+        let told: Vec<Option<u32>> = [7u8, 5, 6, 4, 3, 7, 6]
+            .into_iter()
+            .map(|stance| {
+                let look = stance_look(stance).filter(|look| last != Some(*look));
+                if look.is_some() {
+                    last = look;
+                }
+                look
+            })
+            .collect();
+        assert_eq!(
+            told,
+            [Some(635), Some(634), None, None, None, Some(635), Some(634)]
+        );
     }
 
     #[test]

@@ -74,8 +74,10 @@ Nineteen quests transcribed from Bob's Chronofoil capture 651981e7 and the clien
   names, and Bob's character never played it.
 * `questkit clientcheck` reads none of a transcribed script's scenes (it looks for `play_scene(` with the number,
   and these call their own `play(`): "the server plays none" for all of them, as for the earlier transcribed ones.
-* The capture's two finished FATEs (588 and 586 in Outer La Noscea), its run of duty 6 and Bob's chocobo's skill
-  points and stance actions haven't been read into anything yet.
+* The capture's two finished FATEs (588 and 586 in Outer La Noscea) and its run of duty 6 haven't been read into
+  anything yet. Its chocobo's skills and stances were (`chocobo.md`): what the companion's ActorControl 82 is besides
+  the stance's look isn't known, nor what a skill learnt with the companion away is answered with (it was out for
+  all five).
 
 ## The owner's rates (2026-11-15)
 
