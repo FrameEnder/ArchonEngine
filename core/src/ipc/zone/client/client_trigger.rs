@@ -410,6 +410,12 @@ pub enum ClientTriggerCommand {
     #[brw(magic = 1002u32)]
     RequestNearCompletionAchievements { slots: u32 },
 
+    /// The client asks about one achievement by itself, as it arrives in a zone: retail's client asked for 3818 and
+    /// 3811 after every zone change and was answered with `ActorControlCategory::AchievementProgress` for each
+    /// (`[id, 0, 0, 1]`: not complete, 0 of 1; Bob's Chronofoil captures bb5fb70a and 47ee1e32, 2026-11-17.)
+    #[brw(magic = 1011u32)]
+    RequestAchievementState { id: u32 },
+
     /// When a player opens the Shared FATE window.
     #[brw(magic = 1009u32)]
     OpenSharedFATEWindow {
@@ -833,6 +839,20 @@ mod tests {
 
     /// A summoning bell asking for one retainer's entry (client trigger 9003, command 3), as retail's client sent it
     /// (Bob's Chronofoil capture of 2026-09-15.)
+    /// Retail's client asking about achievement 3818 as it arrived in a zone (Bob's Chronofoil capture bb5fb70a,
+    /// 2026-11-17: client trigger 1011.)
+    #[test]
+    fn read_request_achievement_state() {
+        let mut bytes = vec![0u8; 32];
+        bytes[..2].copy_from_slice(&1011u16.to_le_bytes());
+        bytes[4..8].copy_from_slice(&3818u32.to_le_bytes());
+        let trigger = ClientTrigger::read_le(&mut Cursor::new(&bytes)).unwrap();
+        assert_eq!(
+            trigger.trigger,
+            ClientTriggerCommand::RequestAchievementState { id: 3818 }
+        );
+    }
+
     /// Retail's as Bob opened the Conjurer's Hunting Log (Chronofoil capture b23b91ef: the log 5, the rank 0), and
     /// the Immortal Flames' (c99fe374: `0a 00 00 00` in the log's place).
     #[test]

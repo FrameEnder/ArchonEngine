@@ -110,6 +110,8 @@ pub enum HuntingLogStep {
     Reward(u32),
     /// ActorControlSelf 544.
     RankCompleted { log: u8, rank: u8 },
+    /// The log's last rank was the one finished: its achievement (ActorControlSelf 515 and ActorControl 518.)
+    LogFinished,
     /// The log's HuntingLog.
     Log,
     /// A finished rank's bonus: the rank (0-based) it's for.
@@ -121,8 +123,9 @@ pub enum HuntingLogStep {
 /// The packets of a kill's `record_kill` events as retail orders them (Bob's Chronofoil capture 216274f3, four ranks
 /// of the Conjurer's finished and a Twin Adder entry): each target's 542; an entry's 543 and its reward; then the
 /// log. When that finished the rank: 544 before the log (which has the rank moved on and its counts emptied), and
-/// after it the rank's bonus and 541 with the number of the rank now open. No last rank was finished in a capture:
-/// 541 is left out when no rank opens.
+/// after it the rank's bonus and 541 with the number of the rank now open. A log's last rank (the Conjurer's fifth,
+/// his capture bb5fb70a of 2026-11-17): 544 `[5, 4]`, the log's achievement (515 and 518 with 733), the log with rank
+/// 5 and its counts and flags empty, the bonus (40,000 EXP), and no 541.
 pub fn kill_steps(index: u8, base: u32, events: &[HuntingLogEvent]) -> Vec<HuntingLogStep> {
     let mut steps = Vec::new();
     let mut finished = None;
@@ -154,6 +157,9 @@ pub fn kill_steps(index: u8, base: u32, events: &[HuntingLogEvent]) -> Vec<Hunti
     }
     if let Some(rank) = finished {
         steps.push(HuntingLogStep::RankCompleted { log: index, rank });
+        if rank + 1 >= ranks_of(index) {
+            steps.push(HuntingLogStep::LogFinished);
+        }
     }
     steps.push(HuntingLogStep::Log);
     if let Some(rank) = finished {
@@ -406,6 +412,41 @@ mod tests {
             ]
         );
 
+        // The log's last rank (his capture bb5fb70a of 2026-11-17, 4700.61 s): 542 [60044, 0, 4], 543 [60044, 6],
+        // the entry's EXP (18,500), 544 [5, 4], the achievement (515 and 518 with 733), HuntingLog (rank 5, its
+        // counts and flags empty), the rank's EXP (40,000), and no 541.
+        let last = [
+            HuntingLogEvent::Counted {
+                note: 60044,
+                target: 0,
+                count: 4,
+            },
+            HuntingLogEvent::EntryCompleted {
+                note: 60044,
+                reward: 18500,
+            },
+            HuntingLogEvent::RankCompleted { rank: 4 },
+        ];
+        assert_eq!(
+            kill_steps(5, 60000, &last),
+            vec![
+                HuntingLogStep::Counted {
+                    note: 60044,
+                    target: 0,
+                    count: 4
+                },
+                HuntingLogStep::EntryCompleted {
+                    note: 60044,
+                    group: 6
+                },
+                HuntingLogStep::Reward(18500),
+                HuntingLogStep::RankCompleted { log: 5, rank: 4 },
+                HuntingLogStep::LogFinished,
+                HuntingLogStep::Log,
+                HuntingLogStep::RankReward { rank: 4 },
+            ]
+        );
+
         // 706.14 s: the Twin Adder's 2000006: 542 [2000006, 0, 3], 543 [2000006, 2], the seals, HuntingLog.
         let entry = [
             HuntingLogEvent::Counted {
@@ -447,6 +488,7 @@ mod tests {
             kill_steps(5, 60000, &last),
             vec![
                 HuntingLogStep::RankCompleted { log: 5, rank: 4 },
+                HuntingLogStep::LogFinished,
                 HuntingLogStep::Log,
                 HuntingLogStep::RankReward { rank: 4 },
             ]

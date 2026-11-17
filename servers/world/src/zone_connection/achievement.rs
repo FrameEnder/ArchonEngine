@@ -12,17 +12,19 @@
 //! * 6: every quest in Key and Data
 //! * 8: every part of map Key discovered, "Mapping the Realm" (A Realm Reborn's field zones are revealed whole on the
 //!   first visit, `WHOLE_MAP_DISCOVERY`, which completes theirs)
+//! * 7: the Hunting Log Key (its index) finished, every rank ("Bump on a Log")
 //! * 9: any quest in Key and Data
 //! * 20: every aether current in a zone (AetherCurrentCompFlgSet Key), "Freebird"
 
 use kawari::{
+    common::{ERR_INVENTORY_ADD_FAILED, INVENTORY_ACTION_ACK_GENERAL},
     constants::{ACHIEVEMENT_BITMASK_SIZE, ACHIEVEMENT_HISTORY_SIZE, TITLE_UNLOCK_BITMASK_SIZE},
     ipc::zone::{ActorControlCategory, ServerZoneIpcData, ServerZoneIpcSegment},
 };
 
 use crate::{
-    AchievementCounter, ToServer, ZoneConnection, common::adjust_quest_id,
-    gamedata::AchievementRule,
+    AchievementCounter, ItemInfoQuery, ToServer, ZoneConnection, common::adjust_quest_id,
+    gamedata::AchievementRule, inventory::Item,
 };
 
 /// The highest achievement the client's bitmap has room for (it ignores higher ones.)
@@ -32,7 +34,14 @@ const KIND_COUNTER: u8 = 1;
 const KIND_ACHIEVEMENTS: u8 = 2;
 const KIND_CLASS_LEVEL: u8 = 3;
 const KIND_ALL_QUESTS: u8 = 6;
+/// A Hunting Log finished, every rank of it (Bump on a Log: Conjurer, 733: Type 7, Key 5, the log's index, Data
+/// empty; retail completed it between the last rank's 544 and the HuntingLog that follows: Bob's Chronofoil capture
+/// bb5fb70a, 2026-11-17.)
+const KIND_HUNTING_LOG: u8 = 7;
 const KIND_MAP: u8 = 8;
+/// The ServerRequestCallbackManager command the Achievements window claims an achievement's item with (client
+/// trigger 9003 `[slot, 22, achievement]`, the same capture.)
+pub const ACHIEVEMENT_REWARD_COMMAND: u32 = 22;
 const KIND_ANY_QUEST: u8 = 9;
 const KIND_AETHER_CURRENTS: u8 = 20;
 
@@ -144,11 +153,65 @@ impl ZoneConnection {
                 ))
                 .await;
         }
-        // Its item. Not seen on retail (no achievement with one was completed in Bob's captures): given as an obtained
-        // item, with its log line; with the inventory full the client's told it couldn't be added.
-        if item != 0 {
-            self.obtain_drop(item, 1).await;
+        // Its item isn't given here: the player claims it in the Achievements window (`claim_achievement_reward`;
+        // until 2026-11-17 it came with the achievement, as a drop.)
+        let _ = item;
+    }
+
+    /// Whether an achievement's item has been claimed.
+    pub fn achievement_reward_claimed(&self, id: u32) -> bool {
+        let claimed = &self.player_data.unlock.achievement_rewards;
+        (id as usize / 8) < claimed.data.len() && claimed.contains(id)
+    }
+
+    /// The Achievements window's reward: client trigger 9003 `[slot, 22, achievement]`. Retail (Bob's Chronofoil
+    /// capture bb5fb70a of 2026-11-17, Bump on a Log: Conjurer's ring, 25.5 s after the achievement): the inventory's
+    /// ack (0xFFFFFFFF, 6) and the item's slot, ActorControlSelf 517 `[789, item]` (the "obtained" pop-up), 941
+    /// `[6, 1]` (not sent: what it tells the client isn't known) and the request's reply, 925 `[slot, 22, 1, 0]`.
+    /// An achievement not completed, with no item, already claimed, or no room for it: the reply with 0 and nothing
+    /// else (not seen on retail).
+    pub async fn claim_achievement_reward(&mut self, callback_index: u32, id: u32) {
+        const LOG_MESSAGE_ITEM_POP_UP: u32 = 789;
+        let (_, item) = self.game_data.lock().achievement_reward(id);
+        let mut given = false;
+        if item != 0
+            && id <= MAX_ACHIEVEMENT_ID
+            && self.has_achievement(id)
+            && !self.achievement_reward_claimed(id)
+        {
+            let new_item = {
+                let mut game_data = self.game_data.lock();
+                game_data
+                    .get_item_info(ItemInfoQuery::ById(item))
+                    .map(|info| Item::new(&info, 1))
+            };
+            match new_item {
+                Some(new_item) if self.player_data.inventory.add_obtained_item(new_item) => {
+                    let claimed = &mut self.player_data.unlock.achievement_rewards;
+                    claimed.data.resize(ACHIEVEMENT_BITMASK_SIZE, 0);
+                    claimed.set(id);
+                    tracing::info!("Achievement {id}: its item {item} claimed");
+                    self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_GENERAL, 0)
+                        .await;
+                    self.send_inventory().await;
+                    self.actor_control_self(ActorControlCategory::LogMessage {
+                        log_message: LOG_MESSAGE_ITEM_POP_UP,
+                        id: item,
+                    })
+                    .await;
+                    given = true;
+                }
+                Some(_) => self.send_notice(ERR_INVENTORY_ADD_FAILED).await,
+                None => tracing::warn!("Achievement {id}'s item {item} isn't in the game's data"),
+            }
         }
+        self.actor_control_self(ActorControlCategory::ServerRequestReply {
+            callback_index,
+            command: ACHIEVEMENT_REWARD_COMMAND,
+            argument: given as u32,
+            result: 0,
+        })
+        .await;
     }
 
     /// Unlocks a title (the Title sheet's row). With `announce`, retail's ActorControl 501 `UnlockTitle` tells the
@@ -299,6 +362,12 @@ impl ZoneConnection {
                 let mut ids = listed;
                 (ids.any(|id| self.quest_completed(id)) as u32, 1)
             }
+            KIND_HUNTING_LOG => {
+                let index = rule.key.max(0) as u8;
+                let done = (index as usize) < crate::HUNTING_LOGS
+                    && self.hunting_log(index).rank >= crate::hunting_log::ranks_of(index);
+                (done as u32, 1)
+            }
             _ if self.has_achievement(rule.id) => (1, 1),
             _ => (0, 0),
         }
@@ -339,6 +408,31 @@ impl ZoneConnection {
             .await;
     }
 
+    /// Answers the client asking about one achievement by itself (client trigger 1011): ActorControlSelf 600 with
+    /// whether it's complete and its progress. Retail's for two the player hadn't begun: `[id, 0, 0, 1]`.
+    pub async fn send_achievement_state(&mut self, id: u32) {
+        let rule = self
+            .game_data
+            .lock()
+            .achievement_rules()
+            .iter()
+            .find(|rule| rule.id == id)
+            .cloned()
+            .unwrap_or(AchievementRule {
+                id,
+                ..Default::default()
+            });
+        let (current, max) = self.achievement_progress(&rule);
+        self.actor_control_self(ActorControlCategory::AchievementProgress {
+            id,
+            unk1: self.has_achievement(id) as u32,
+            unk2: current,
+            unk3: max.max(1),
+            unk4: 0,
+        })
+        .await;
+    }
+
     /// Completes every achievement the character now meets the requirements of (see the top of this file), e.g.
     /// after finishing a quest or levelling up. Achievements made of other achievements are checked again until
     /// nothing more completes.
@@ -361,6 +455,7 @@ impl ZoneConnection {
                         | KIND_ANY_QUEST
                         | KIND_MAP
                         | KIND_AETHER_CURRENTS
+                        | KIND_HUNTING_LOG
                 ) || (rule.kind == KIND_COUNTER && COUNTED.contains(&(rule.key.max(0) as u32)))
             })
             .cloned()

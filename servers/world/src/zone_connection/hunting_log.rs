@@ -20,7 +20,7 @@ pub const HUNTING_LOG_UNLOCK: u32 = 21;
 
 impl ZoneConnection {
     /// A log's progress (a fresh one if it hasn't been begun.)
-    fn hunting_log(&self, index: u8) -> HuntingLogProgress {
+    pub(crate) fn hunting_log(&self, index: u8) -> HuntingLogProgress {
         self.player_data
             .unlock
             .hunting_log
@@ -183,6 +183,11 @@ impl ZoneConnection {
                         rank: rank as u32,
                     })
                     .await;
+                }
+                HuntingLogStep::LogFinished => {
+                    // The log's achievement (Type 7), which looks at the log as kept.
+                    self.save_hunting_log(log.clone());
+                    self.check_achievements(true).await;
                 }
                 HuntingLogStep::Log => self.send_hunting_log(&log, false).await,
                 HuntingLogStep::RankReward { rank } => {

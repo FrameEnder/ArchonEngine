@@ -117,16 +117,28 @@ As above:
 * **Promotions.** With the companies' logs kept, the client's own check for Sergeant Third Class and Second Lieutenant
   (the log's rank byte) can pass; before, a company's log was always at rank 0.
 
+## A log finished
+
+Bob's Chronofoil capture bb5fb70a (2026-11-17): the Conjurer's fifth rank, its last entry (60044) done with three
+kills in 0.3 s. In one instant: 542 `[60044, 0, 4]`, 543 `[60044, 6]`, the entry's 18,500 EXP (7 and 43), **544
+`[5, 4]`**, **ActorControlSelf 515 `[733]` and ActorControl 518 `[733]`** (Bump on a Log: Conjurer), the
+**HuntingLog with rank 5 and every count and flag 0**, then the rank's 40,000 EXP, and **no 541**. Kawari sent all
+of it but the achievement (and had guessed the missing 541 and the emptied log right): `HuntingLogStep::LogFinished`
+now comes after a last rank's 544 and completes the log's achievement (the Achievement sheet's Type 7, Key the log's
+index: `KIND_HUNTING_LOG` in `zone_connection/achievement.rs`), which a log already finished gets at the next
+achievement check too. Its ring is claimed in the Achievements window
+([Achievements](character-windows.md)). The other 16 kills of the session (542, the log; 543 and the EXP with an
+entry's last) were as before.
+
 ## Not seen on retail
 
-* **A log's last rank finished** (a class's fifth, a company's third): 544 and the bonus are sent as for the others;
-  541 isn't, no rank opening (a guess: every 541 seen named the rank that opened). What the client does with 541
-  wasn't read out of it. Retail's second 43 after 541 (the same numbers as the one before it) isn't sent.
+* What the client does with 541 wasn't read out of it. Retail's second 43 after 541 (the same numbers as the one
+  before it) isn't sent.
 * **A company's finished rank**: one entry of the Twin Adder's was counted, no rank. 544 would have the log's index
   (8-10) and 541 the company, by the classes' rule.
 * **Company ranks and the log's ranks**: the wiki's rule; what the HuntingLog looks like while the next rank waits for
   a promotion isn't recorded (Kawari: the rank byte moved on, kills not counted).
 * Whether kills by party members count (the community says they do for members nearby; Kawari counts every kill the
   player gets EXP for).
-* The achievements for finishing a log ("Bump on a Log": a ring for each class's, a minion for each company's) aren't
-  given.
+* The companies' "Bump on a Log" achievements: the classes' are Type 7 with the log's index as Key (below); the
+  companies' are taken to be the same with 8-10, which no capture shows.

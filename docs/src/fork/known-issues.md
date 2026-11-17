@@ -872,9 +872,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 * Whole since 2026-11-14 ([Hunting Log](hunting-log.md)): the classes' five ranks, the Grand Companies' logs, rank
   bonuses, the ranks looked at. Not played in game yet. A finished rank and a company's entry are sent as retail's
-  since 2026-11-16 (Bob's capture 216274f3). Not seen on retail, so built from the sheets and the wiki: a log's last
-  rank finished, a company's finished rank, and a company's ranks waiting on a promotion. Party members' kills and
-  the "Bump on a Log" achievements aren't done. Auracite (Kawari) backups and ArchonEngine ControlPanel don't carry
+  since 2026-11-16 (Bob's capture 216274f3). A log's last rank and its "Bump on a Log" achievement are retail's since
+  2026-11-17 (his capture bb5fb70a: the Conjurer's). Not seen on retail, so built from the sheets and the wiki: a
+  company's finished rank (and its achievement), and a company's ranks waiting on a promotion. Party members' kills
+  aren't done. An achievement's item is claimed in the Achievements window since then (untested in game): ActorControlSelf
+  941 `[6, 1]` isn't sent with it, how the client knows a reward is unclaimed isn't known, and an item Kawari gave
+  with its achievement before can be claimed once more (nothing recorded those). Auracite (Kawari) backups and ArchonEngine ControlPanel don't carry
   the log.
 
 ## Achievement Certificates
@@ -1697,8 +1700,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Gold Saucer tabs: the Chocobo tab (1900) isn't answered (opcode 661 is the racing chocobo, RaceChocoboManager's
   layout, and Kawari has none; ActorControlSelf 933 `[3]` isn't understood), nor is 2010 (opcode 410, AgentId 0xB9,
   layout partly read); GoldSaucerInformation for the General tab is sent as zeros. Mahjong's 2001 `[0, 1500, 1500]`
-  is sent. Nor is ClientTrigger 1011 (`[achievement]`, answered with ActorControlSelf 600
-  `[achievement, 0, 0, 1]`), the free company's activity list (client opcode 708, paged), or CustomTalk 200
+  is sent. Nor is the free company's activity list (client opcode 708, paged), or CustomTalk 200
   (CmnDefMiniGame) at the Hourglass.
 
 ## Crafting

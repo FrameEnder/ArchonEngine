@@ -309,6 +309,8 @@ pub struct Unlock {
     pub achievement_history: Bitmask<ACHIEVEMENT_HISTORY_SIZE>,
     /// The counters "do this N times" achievements count, by their Key (see `zone_connection/achievement.rs`.)
     pub achievement_counters: AchievementCounters,
+    /// The achievements whose item has been claimed (`ZoneConnection::claim_achievement_reward`.)
+    pub achievement_rewards: Bitmask<ACHIEVEMENT_BITMASK_SIZE>,
     /// The currencies the client counts outside the inventory (Achievement Certificates), see `player_currency.rs`.
     pub player_currencies: PlayerCurrencies,
     /// The Hunting Log's progress, a log at a time (only those begun; see `hunting_log.rs`.)

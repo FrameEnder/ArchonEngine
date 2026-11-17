@@ -1478,6 +1478,9 @@ async fn process_packet(
                                 ClientTriggerCommand::RequestAchievementProgress { id } => {
                                     connection.send_achievement_progress(id).await;
                                 }
+                                ClientTriggerCommand::RequestAchievementState { id } => {
+                                    connection.send_achievement_state(id).await;
+                                }
                                 ClientTriggerCommand::RequestNearCompletionAchievements {
                                     slots,
                                 } => {
@@ -1797,6 +1800,10 @@ async fn process_packet(
                                                     unk3, unk4,
                                                 ))
                                                 .await
+                                        }
+                                        // The Achievements window's reward (docs/src/fork/character-windows.md.)
+                                        kawari_world::ACHIEVEMENT_REWARD_COMMAND => {
+                                            connection.claim_achievement_reward(unk1, unk3).await
                                         }
                                         command => {
                                             // Command 4 came as a retainer was called and again as their menu

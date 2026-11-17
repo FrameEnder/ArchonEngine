@@ -157,6 +157,7 @@ diesel::table! {
         achievements -> Text,
         achievement_history -> Text,
         achievement_counters -> Text,
+        achievement_rewards -> Text,
         player_currencies -> Text,
         hunting_log -> Text,
         gold_saucer -> Text,

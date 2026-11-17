@@ -35,6 +35,7 @@ pub mod marketboard;
 /// The Hunting Log's progress and how a kill counts towards it.
 pub mod hunting_log;
 pub use hunting_log::HUNTING_LOGS;
+pub use zone_connection::ACHIEVEMENT_REWARD_COMMAND;
 
 /// The Gold Saucer's lotteries and arcade machines: their rules and what the character keeps of them.
 pub mod gold_saucer;

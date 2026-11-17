@@ -50,6 +50,7 @@ Types 2 and 9 missed their first ID.
 | 2 | 67 | Every achievement in Key and Data | done / listed |
 | 3 | 267 | The class or job Key at level Data[0] | level / wanted |
 | 6 | 382 | Every quest in Key and Data | done / listed |
+| 7 | (not counted) | The Hunting Log Key (its index: 5 the Conjurer's) finished, every rank ("Bump on a Log"; 733 is Key 5, Data empty) | 0 or 1 of 1 |
 | 8 | 202 | Every part of map Key discovered ("Mapping the Realm"): Map's DiscoveryFlag, of every map that shares its discovery slot (DiscoveryIndex); A Realm Reborn's field zones are revealed whole on the first visit (below) | parts / all |
 | 9 | 10 | Any quest in Key and Data | 0 or 1 of 1 |
 | 20 | 30 | Every aether current of AetherCurrentCompFlgSet Key ("Freebird") | 0 or 1 of 1 |
@@ -109,9 +110,29 @@ state" in the log) and the player was left frozen, or revived into an endless lo
 The Map sheet's discovery columns are now read once (`GameData::map_discovery`), and the server warns when a check
 takes over 50 ms.
 
-Everything else (the other counters (the Hunting Log is [its own page](hunting-log.md)), dungeons, PvP, beast tribes, Grand Company…) isn't tracked; those
+Everything else (the other counters, dungeons, PvP, beast tribes, Grand Company…) isn't tracked; those
 can be given by hand with `!achievement <id>`. `!achievement clear <id>` takes one away, `!achievement check` runs the check (for
 characters that met requirements before this existed). The sheet is read once, the first time it's needed.
+
+**An achievement's item is claimed, not given** (Bob's Chronofoil capture bb5fb70a, 2026-11-17: Bump on a Log:
+Conjurer, 733, and its ring, item 6124). The achievement came with the log's last rank (515 and 518 between the
+rank's 544 and the HuntingLog: [Hunting Log](hunting-log.md)) and nothing else. 25.5 s later he pressed the reward
+in the Achievements window:
+
+| Client | Server |
+|---|---|
+| trigger **9003** `[0, 22, 733]` (a ServerRequestCallbackManager request: slot 0, command 22, the achievement) | InventoryActionAck (0xFFFFFFFF, 6), UpdateInventorySlot (the ring in the bags), ActorControlSelf **517** `[789, 6124]` (LogMessage 789, the "obtained" pop-up), **941** `[6, 1]`, then the reply, **925** `[0, 22, 1, 0]` |
+| trigger **1010** `[0]`, as the window opened 7.6 s before | nothing |
+| trigger **1011** `[achievement]` (3818 and 3811, after every zone change, with 1002) | ActorControlSelf **600** `[achievement, 0, 0, 1]` for each: not complete, 0 of 1 |
+
+Kawari since then: `complete_achievement` no longer gives the item (it came with the achievement, as a drop);
+`claim_achievement_reward` (command 22, `ACHIEVEMENT_REWARD_COMMAND`) gives it once, for a completed achievement
+with an Item, and remembers it (`unlock.achievement_rewards`, a bitmask like `achievements`; migration
+`update-2026-11-17_achievement_rewards`), then replies with 1; otherwise the reply has 0 and nothing is given (not
+seen on retail). 941 isn't sent: `[6, 1]` once, and what it tells the client isn't known (6 is the Conjurer's
+ClassJob and the ring's; the player was a White Mage). 1011 is answered with 600 (`send_achievement_state`: complete
+or not, and its progress). How the client knows a reward is still to be claimed isn't known: nothing the server sent
+at the completion or as the window opened says so, and the Achievements packet's last 26 bytes were zeros before it.
 
 ## Achievement Certificates (Jonathas)
 
