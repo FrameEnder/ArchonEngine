@@ -224,6 +224,10 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
             "death": death,
             "hp": compact,
         }
+        # Its HP, so a script that looks at the number (Cape Westwind's boss stops at 1 HP, which a percentage can't
+        # tell from 246) sees it; fixtures from before 2026-11-17 have none and give the percentage of 100.
+        if actor.get("MaxHp"):
+            npcs[str(actor["LayoutId"])]["max_hp"] = actor["MaxHp"]
         if spawn > 1.0:
             events.append([spawn, "spawn", actor["LayoutId"]])
 
@@ -562,7 +566,13 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                 pct = at(spec["hp"], t - offset) if spec else 100.0
                 health[layout] = max(pct, 0.1)
                 x, y, z = _position_then(positions.get(str(layout)), t - offset)
-                info_table[layout] = lua.table_from({"hp": pct, "max_hp": 100, "x": x, "y": y, "z": z})
+                max_hp = (spec or {}).get("max_hp")
+                if max_hp:
+                    # A health of 0.1 % or less is the floor the fixture keeps (1 HP of a boss that doesn't fall.)
+                    hp = 1 if 0 < pct <= 0.1 else round(pct * max_hp / 100)
+                else:
+                    hp, max_hp = pct, 100
+                info_table[layout] = lua.table_from({"hp": hp, "max_hp": max_hp, "x": x, "y": y, "z": z})
             player_pct = _health_then(fixture["player"], t) if fixture.get("player") else 100.0
             # The player falling, as the server tells the director (a lost run: Like Mother, Like Daughter's kept
             # spawning after retail's run had ended.)

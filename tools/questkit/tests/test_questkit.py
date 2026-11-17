@@ -1905,8 +1905,9 @@ end
         fixture = battle_sim.fixture_from_run(run, 9999)
         self.assertEqual(fixture["events"], [[0.0, "sequence", 2], [5.0, "talk", 100], [30.0, "spawn", 33],
                                              [52.0, "won"]])
+        # Its HP is kept too (since 2026-11-17), so a script reading `info[layout].hp` sees an HP.
         self.assertEqual(fixture["npcs"]["22"], {"spawn": None, "death": 50.0, "hp": [[0.0, 100.0], [30.0, 50.0],
-                                                                                    [50.0, 0.0]]})
+                                                                                    [50.0, 0.0]], "max_hp": 1000})
         self.assertEqual(fixture["npcs"]["33"]["death"], 40.0)  # its health reached 0 before its Defeated
 
     def test_a_death_from_its_status(self):

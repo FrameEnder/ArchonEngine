@@ -34,6 +34,15 @@ pub const RETAINER_UNLOCK_QUEST: u32 = 509;
 /// isn't recorded, 1 is that company's BuddyEquip row with Order 1, as the other two are.
 const COMPANY_SADDLES: [(u32, u32); 3] = [(700, 5), (701, 1), (702, 9)];
 
+/// The quests that complete an AetherCurrentCompFlgSet (flying) as they're finished: The Ultimate Weapon (4522) and
+/// A Realm Reborn's set, 19 (Bob's Chronofoil capture 9ba7d981, 2026-11-17.) No sheet column for it has been found.
+pub const QUEST_FLYING_SETS: [(u32, u32); 1] = [(4522, 19)];
+/// The aether current ID retail's ActorControlSelf 164 carried for it (past the currents', so the client does nothing
+/// for one current.)
+const FLYING_SET_CURRENT_ID: u32 = 2818308;
+/// LogMessage 1306, "Mount speed at <place> has increased."
+const MOUNT_SPEED_LOG_MESSAGE: u32 = 1306;
+
 impl ZoneConnection {
     /// What the client is sent for one of our active quests.
     fn active_quest_entry(quest: &PersistentQuest) -> ActiveQuest {
@@ -372,6 +381,9 @@ impl ZoneConnection {
         // The allied society it introduces, and the achievement for meeting it, before the markers as retail (Voyce of
         // Concern, Bob's Chronofoil capture 7a4214b7.)
         self.grant_quest_society_rank(adjusted_id).await;
+        // Flying and riding speed it opens (The Ultimate Weapon's, the same order on retail: after the achievement
+        // and the ScenarioGuide, before the EventFinish; Bob's Chronofoil capture 9ba7d981.)
+        self.grant_quest_travel(adjusted_id).await;
 
         // Retail's map markers come before the journal's update, already without this quest and with what it
         // opened (flags 27: `send_map_markers`.)
@@ -1124,6 +1136,43 @@ impl ZoneConnection {
                 .await;
         } else {
             self.send_reward_log(QUEST_REWARD_ITEM_LOG, vec![0, item_id])
+                .await;
+        }
+    }
+
+    /// What finishing a quest opens for travel, as retail did with The Ultimate Weapon (Bob's Chronofoil capture
+    /// 9ba7d981 of 2026-11-17, 9643.3 s):
+    /// * flying: the AetherCurrentCompFlgSet it completes (`QUEST_FLYING_SETS`), told with ActorControlSelf 164
+    ///   `[2818308, 1, 0x13000000, 0, 1]`: an ID past the aether currents' (0x2B0104, sent as recorded), the set
+    ///   complete, no screen image, set 19, and the flying mounts' help;
+    /// * riding speed: LogMessage 1306 `[place, 0]` for each place whose MountSpeed row names the quest
+    ///   (`GameData::mount_speed_places_for_quest`: 46, 425, 426 and 427.) The client works the speed out itself from
+    ///   the quest's completion.
+    async fn grant_quest_travel(&mut self, quest: u32) {
+        if let Some((_, set)) = QUEST_FLYING_SETS.iter().find(|(id, _)| *id == quest)
+            && !self
+                .player_data
+                .aether_current
+                .comp_flg_set
+                .contains(*set - 1)
+        {
+            tracing::info!("Quest {quest} completes aether current set {set} (flying)");
+            self.player_data.aether_current.comp_flg_set.set(*set - 1);
+            self.actor_control_self(ActorControlCategory::ToggleAetherCurrentUnlock {
+                id: FLYING_SET_CURRENT_ID,
+                attunement_complete: true,
+                padding: 0,
+                screen_image_id: 0,
+                zone_id: *set as u8,
+                unk1: false,
+                show_flying_mounts_help: true,
+                remove_aether_current: false,
+            })
+            .await;
+        }
+        let places = self.game_data.lock().mount_speed_places_for_quest(quest);
+        for place in places {
+            self.send_reward_log(MOUNT_SPEED_LOG_MESSAGE, vec![place, 0])
                 .await;
         }
     }

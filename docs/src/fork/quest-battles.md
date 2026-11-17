@@ -1997,7 +1997,11 @@ stand on his spot and cast where the director puts them.
   14582 (2501 HP) and one of 14583 (5977 HP) where the player came in, talk 33405 at 7.0 s; at 11.0 s they're
   targetable, with `0x10000001` and `0x10000002 [33421]`; talks 33406, 33407, 33429 at 14.1, 21.1, 28.1 s. Each of
   them only casts 28884, 28885 (and 28886), 113 to the player every time. He casts 28874 from the middle 43.4 s in
-  and every 14.25 s. Each yells as it falls (13647, 13822, 13648, 13821); his NpcYell 13651 3.15 s after the first.
+  and every 14.25 s. Each yells as it falls (13647, 13822, 13648, 13821); his NpcYell 13651 35.2 s after talk 33404, on the same
+  clock as the talks (35.14, 35.22 and 35.17 s in three runs, with the first of the four falling at 32.0, 44.9 and
+  19.2 s; the script had it 3 s after the first fell until 2026-11-17). Two more runs check the script since then
+  (Bob's Chronofoil capture 9ba7d981: visit 0.6, lost 315 s in, and 0.8, won; fixtures `5060-9ba7d981-6.json` and
+  `-8.json`): every other step was within 2 s.
 * **The four down** (214.1): SetBGM 1; NpcYell 13809 and ActionTimeline 10502 at 5.0 s, talk 33409 at 15.1 s,
   ActionTimeline 10503 at 18.2 s, 63 `[0]` at 21.15 s, status 2056 (param 95) at 21.6 s, SetBGM 107 and NpcYell 13810
   at 22.2 s; at 26.2 s targetable again **at full health**, the commands with 33422, talk 33410.

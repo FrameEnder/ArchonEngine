@@ -281,6 +281,19 @@ get it. Upstream set it in every zone outside a duty, so a character who hadn't 
 Southern Thanalan (Bob's bundle 20261031-203841). `GameData::flying_set` reads the set, `zone.rs` checks it against the
 character's `aether_current.comp_flg_set`.
 
+**How set 19 is completed**: with The Ultimate Weapon's reward (Bob's Chronofoil capture 9ba7d981, 2026-11-17,
+9643.3 s), after the quest's achievement and ScenarioGuide and before the EventFinish: ActorControlSelf 164
+`[2818308, 1, 0x13000000, 0, 1]`, which is an aether current ID past the currents' own (0x2B0104), the set complete,
+no screen image, set 19, and the flying mounts' help. Kawari does the same in `finish_quest`
+(`grant_quest_travel`, `QUEST_FLYING_SETS`: no sheet column for the quest has been found, so it's the one recorded),
+sets the character's `comp_flg_set` 19, and the next ZoneInit in a field zone carries the flag.
+
+**Riding speed with a quest**: right after it, retail sent LogMessage 1306 ("Mount speed at <place> has increased")
+four times, `[46, 0]`, `[425, 0]`, `[426, 0]`, `[427, 0]`: the PlaceNames of the territories (147, 339, 340, 341)
+whose MountSpeed rows (15, 25, 26, 27) name the quest (MountSpeed's Quest column: 70058), in the rows' order. Kawari
+sends them for any quest the MountSpeed sheet names (`GameData::mount_speed_places_for_quest`); the client raises
+the speed itself from the quest's completion.
+
 The client works out riding speed itself, from the zone's MountSpeed row; the Mount packet carries nothing about it
 (Kawari's are byte for byte retail's: the mount, then a 1 or 0 and the chocobo's barding). The speeds the client
 reported (UpdatePositionHandler, Southern Thanalan) were about 1.5 times running speed for the story characters on

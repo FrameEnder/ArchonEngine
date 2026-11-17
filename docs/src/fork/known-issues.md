@@ -3,6 +3,19 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Bob's Chronofoil capture 9ba7d981 (2026-11-17, the end of A Realm Reborn's story)
+
+Three hours: Operation Archon to The Ultimate Weapon with Cape Westwind twice, Castrum Meridianum, the Praetorium
+twice, the Porta Decumana and the last quest battle twice, then the Waking Sands and some of what follows.
+
+* **Read so far**: the Waking Sands' layer keys (92223, 92224); the five quests' steps (second fixtures, all
+  matching); The Ultimate Weapon's reward (flying, riding speed); Cape Westwind's two runs (`quest-battles.md`).
+* **Not read yet**: Castrum Meridianum (visit 0.12, 28 min), the Praetorium (0.14 and 0.16, 32 and 34 min), the
+  Porta Decumana (0.18, 19 min) and The Ultimate Weapon's quest battle 5061 (0.20, left after 40 s, and 0.22, 9 min),
+  none of which is scripted; what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
+  back in from Western Thanalan; the script's `onPartyWipe` is a guess); what came after the story (from 9688 s:
+  warps 131089 and 131091, aetherytes, events 0xB0013 and 0xB0002, quest 524's completion with 4522's).
+
 ## Battle talk without a portrait (2026-11-17)
 
 * Bob: the talk windows in instanced content show only the speaker's text, where retail shows a portrait. Kawari's
@@ -458,9 +471,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 ## Flying and riding speed (2026-10-31)
 
 * Kawari sets ZoneInit's flying flag only where the character has completed the zone's AetherCurrentCompFlgSet, as
-  retail does. Nothing but the GM commands grants set 19 (A Realm Reborn's) yet: how retail completes it (presumably
-  with A Realm Reborn's story) isn't recorded. Riding speed should follow (it was faster with the flag wrongly set);
-  not yet checked in game.
+  retail does. Set 19 (A Realm Reborn's) comes with The Ultimate Weapon's reward since 2026-11-17, as retail's
+  (`travel.md`); a character who finished the quest before then hasn't got it (the GM command gives it). Not yet
+  checked in game, nor the riding speed.
 
 ## Party bots
 

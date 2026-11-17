@@ -565,6 +565,9 @@ fixture's `npcs` by hand, there from the start (56's Sylphie, 4249177). The play
 has it (`player`, written by `--make` since 2026-10-21: for lines said as it drops), as the last value seen (it
 jumps, with hits and potions, so it isn't interpolated); full otherwise. `tolerances` (by label, e.g.
 `{"talk 86": 4.5}`) gives one event more slack where the runs disagree; `--make` doesn't write it. NPCs' health is
+(a fixture made since 2026-11-17 keeps each NPC's `max_hp`, and the script's `info[layout].hp` is then the HP itself,
+1 at the fixture's floor of 0.1 %: Cape Westwind's boss stops at 1 HP, and with the percentage for an HP the script
+took 1.0 % for it, 2.3 s early in one run; older fixtures give the percentage of 100) and is
 interpolated between samples, unless the fixture says `"npc_health": "held"` (written by hand): then it holds until
 the next one, for runs where the player stopped attacking for a while (quest battle 29: interpolating put a 30 % mark
 53 s early). Holding it for every fixture throws Chasing Shadows' and Lurkers in the Grotto's marks off by 3–5 s.

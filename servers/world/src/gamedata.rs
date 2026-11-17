@@ -4764,6 +4764,30 @@ impl GameData {
         (set != 0).then_some(set as u32)
     }
 
+    /// The places where finishing `quest` (its short ID) raises the riding speed, in their MountSpeed rows' order: the
+    /// PlaceName of each territory whose MountSpeed row has the quest (see `mount_speed_places`.)
+    pub fn mount_speed_places_for_quest(&mut self, quest: u32) -> Vec<u32> {
+        let Ok(sheet) =
+            icarus::MountSpeed::MountSpeedSheet::read_from(&mut self.resource, Language::None)
+        else {
+            return Vec::new();
+        };
+        let mut rows = Vec::new();
+        for (id, row) in self.territory_type_sheet.into_iter().flatten_subrows() {
+            if row.MountSpeed == 0 || row.PlaceName == 0 {
+                continue;
+            }
+            let quest_of_row = sheet.row(row.MountSpeed as u32).map(|speed| speed.Quest);
+            rows.push((
+                row.MountSpeed as u32,
+                id,
+                row.PlaceName as u32,
+                quest_of_row.unwrap_or(0),
+            ));
+        }
+        mount_speed_places(&rows, quest + 65536)
+    }
+
     /// Returns the TerritoryIntendedUse for a given zone.
     pub fn get_intended_use(&mut self, zone_id: u32) -> Option<TerritoryIntendedUse> {
         let row = self.territory_type_sheet.row(zone_id)?;
@@ -5340,3 +5364,41 @@ struct QuestIssuer {
 /// 2026-11-12: 152 71151, 165 71021, 1057 71141), against which the sheet's MapIconAvailable is checked at startup to
 /// find the offset (Questionable takes NPC icons as NpcIconAvailable plus one.)
 const RETAIL_QUEST_MAP_ICONS: [(u32, u32); 3] = [(152, 71151), (165, 71021), (1057, 71141)];
+
+/// The PlaceNames `quest` (its full ID) raises the riding speed at, from `(MountSpeed row, territory, PlaceName, the
+/// row's Quest)`: in the MountSpeed rows' order, each place once. The Ultimate Weapon (70058) has rows 15, 25, 26 and
+/// 27, which are Northern Thanalan's and the three housing wards' territories 147, 339, 340 and 341, whose PlaceNames
+/// 46, 425, 426 and 427 retail named in that order (LogMessage 1306; Bob's Chronofoil capture 9ba7d981, 2026-11-17.)
+pub fn mount_speed_places(rows: &[(u32, u32, u32, u32)], quest: u32) -> Vec<u32> {
+    let mut matching: Vec<_> = rows.iter().filter(|row| row.3 == quest).collect();
+    matching.sort_by_key(|row| (row.0, row.1));
+    let mut places = Vec::new();
+    for row in matching {
+        if !places.contains(&row.2) {
+            places.push(row.2);
+        }
+    }
+    places
+}
+
+#[cfg(test)]
+mod mount_speed_tests {
+    use super::mount_speed_places;
+
+    /// The Ultimate Weapon's four places, as retail's log named them (Bob's Chronofoil capture 9ba7d981), from the
+    /// sheets' rows for them and two others' (Eastern Thanalan's row 9 has quest 66312.)
+    #[test]
+    fn the_ultimate_weapon_speeds_four_places() {
+        let rows = [
+            (27, 341, 427, 70058),
+            (9, 145, 44, 66312),
+            (15, 147, 46, 70058),
+            (26, 340, 426, 70058),
+            (25, 339, 425, 70058),
+            (0, 128, 28, 0),
+        ];
+        assert_eq!(mount_speed_places(&rows, 70058), vec![46, 425, 426, 427]);
+        assert_eq!(mount_speed_places(&rows, 66312), vec![44]);
+        assert!(mount_speed_places(&rows, 70059).is_empty());
+    }
+}

@@ -4,7 +4,8 @@
 -- sequence 4 and out to Western Thanalan.
 --
 -- Everything here is one retail run: Bob's Chronofoil capture 667a68c5 of 2026-11-16 (`questkit chronofoil --battle
--- 0.16`: won, 527 s, a level 50 White Mage synced to 49.) Layout IDs, levels, HP, positions and flags are its
+-- 0.16`: won, 527 s, a level 50 White Mage synced to 49), checked against two more in capture 9ba7d981 of 2026-11-17
+-- (visits 0.6, lost 315 s in, and 0.8, won in 361 s.) Layout IDs, levels, HP, positions and flags are its
 -- SpawnNpcs' (drop-in `territory_1049.json`.) Times below are seconds from arriving.
 --
 -- The boss (9082104, base 14581, BNpcName 2160, 24609 HP) never auto-attacks; he walks after the player and casts.
@@ -21,7 +22,7 @@
 --         1.5 s on; at 2.45 s three of base 14582 and one of 14583 where the player came in, talk 33405 at 7.0 s,
 --         targetable at 11.0 s with the director's 0x10000001 and 0x10000002 [33421]; talks 33406, 33407, 33429 at
 --         14.1, 21.1 and 28.1 s. He casts 28874 from the middle 43.4 s in and every 14.25 s. Each of the four yells
---         as it falls; his NpcYell 13651 3.15 s after the first.
+--         as it falls; his NpcYell 13651 35.2 s in (three runs alike, whenever the four fell.)
 --   214.1 the four down: the music off (SetBGM 1); NpcYell 13809 and ActionTimeline 10502 at 5.0 s, talk 33409 at
 --         15.1 s, ActionTimeline 10503 at 18.2 s, 63 [0] at 21.15 s, status 2056 (param 95) at 21.6 s, SetBGM 107 and
 --         NpcYell 13810 at 22.2 s; at 26.2 s targetable again at full health, 0x10000001 and 0x10000002 [33422],
@@ -162,7 +163,6 @@ next_helper = 0
 part = 0
 part_number = 1
 adds_left = 0
-first_add_fell = false
 recovered = false
 used = {}
 last_stacks = 0
@@ -225,8 +225,7 @@ function reset()
     part = 0
     part_number = 1
     adds_left = 0
-    first_add_fell = false
-    recovered = false
+        recovered = false
     used = {}
     last_stacks = 0
     later = {}
@@ -369,6 +368,9 @@ function bringAdds(director)
     after(14.0, function(d) talk(d, 33406) end)
     after(21.0, function(d) talk(d, 33407, 6000, true) end)
     after(28.0, function(d) talk(d, 33429, 6000, true) end)
+    -- His NpcYell 13651 is on the same clock: 35.14, 35.22 and 35.17 s after talk 33404 in three runs (Bob's
+    -- Chronofoil captures 667a68c5 and 9ba7d981), whenever the four fell (the first at 32.0, 44.9 and 19.2 s.)
+    after(35.0, function(d) d:yell(BOSS, 13651) end)
 end
 
 -- The four down: he gets up, at full health.
@@ -518,10 +520,6 @@ function onActorDeath(director, layout_id, position)
     if ADD_YELL[layout_id] ~= nil and part == "adds" then
         director:yell(layout_id, ADD_YELL[layout_id])
         adds_left = adds_left - 1
-        if not first_add_fell then
-            first_add_fell = true
-            after(3.0, function(d) d:yell(BOSS, 13651) end)
-        end
         if adds_left <= 0 then
             afterAdds(director)
         end
