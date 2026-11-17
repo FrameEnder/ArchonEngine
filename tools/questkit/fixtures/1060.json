@@ -1,0 +1,88 @@
+{
+  "quest": 1060,
+  "script": "JobPld500_01060",
+  "source": "Bob's Chronofoil captures b98a60bc and 36c7d119 (2026-11-17)",
+  "params": {
+    "ACTOR0": 1006747,
+    "ACTOR1": 1007829,
+    "EVENTRANGE0": 4303342,
+    "EOBJECT0": 2002359,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2002714,
+    "ACTOR2": 1007830,
+    "ACTOR3": 1007831,
+    "ACTOR4": 1007832,
+    "ACTOR5": 1007833,
+    "TERRITORYTYPE0": 313,
+    "QUESTBATTLE0": 69,
+    "LOGMESSAGE0": 3616,
+    "LOC_ACTION0_WSGET": 995,
+    "LOC_WS": 30,
+    "LOC_VFX1": 241,
+    "LOC_VFX2": 408,
+    "LOC_LOG_MES": 3612,
+    "JOBSTONE_MODEL": 1
+  },
+  "steps": [
+    {
+      "talk": 1006747,
+      "layout": 4253800,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1007829,
+      "layout": 4303317,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "range": 4303342,
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 313}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []}
+    },
+    {
+      "range": 4303342,
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []}
+    },
+    {
+      "range": 4303342,
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 313}
+      ],
+      "arrivals": [[-766.28, 225.27, 26.3, -0.784]],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []}
+    },
+    {
+      "battle_won": 255,
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [], "logs": [[3616, []]]}
+    },
+    {
+      "talk": 1006747,
+      "layout": 4253800,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 12, "flags": "0xf8482efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

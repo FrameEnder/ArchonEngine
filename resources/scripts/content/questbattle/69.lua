@@ -81,6 +81,8 @@ CUTSCENE_FLAGS = 0xF8412FFF
 TALK_FLAGS = 0x2001
 
 QUEST_SEQUENCE_AFTER_WIN = 255
+-- The quest's own log line as the closing scene ends (its LOGMESSAGE0: retail's EventLogMessage from quest 1060.)
+QUEST_LOG = 3616
 SEQUENCE_START = 1
 SEQUENCE_FIGHTING = 2
 SEQUENCE_FIRST_WON = 3
@@ -401,7 +403,8 @@ function onActorDeath(director, layout_id, position)
             over = true
             timers = {}
             d:set_sequence(SEQUENCE_WON)
-            d:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE, FINISH_SCENE_FLAGS)
+            d:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE, FINISH_SCENE_FLAGS, nil, true,
+                QUEST_LOG)
         end)
     end
 end

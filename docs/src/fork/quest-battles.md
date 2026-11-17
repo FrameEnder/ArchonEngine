@@ -1368,8 +1368,7 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
 
 * Territory 326, whose level isn't known: a drop-in of its own (`territory_326.json`, layer `QB_82`), four NPCs with
   retail's layout IDs, levels, HP, spots, gear and flags (Bob's Chronofoil capture a75e1390 of 2026-11-17,
-  `--battle 0.4`, ContentFinderCondition 375: one run, won in 132 s, a Summoner of 50). The quest (1096) isn't
-  scripted yet (no dump). The player starts at (479.62, -0.87, -794.01), facing 1.119; the opening scene 1 is
+  `--battle 0.4`, ContentFinderCondition 375: one run, won in 132 s, a Summoner of 50). Primal Burdens (1096) leads into it; retail sent no log line of the quest's at the win. The player starts at (479.62, -0.87, -794.01), facing 1.119; the opening scene 1 is
   0xF841AEFB.
 * A master (4302960, 11391 HP, which never moves and goes for the ally) and its creature (4302979, 12945 HP, for
   you) against you and an ally (4302956, 13592 HP: Stone II and Aero on the master, Cure on you at 39 to 55 %).
@@ -1391,8 +1390,8 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
 * Territory 313, whose level isn't known, so it has a drop-in of its own (`territory_313.json`, layer `QB_69`): 17
   NPCs with retail's layout IDs, levels, HP, spots, gear and flags (Bob's Chronofoil captures 36c7d119 of 2026-11-17,
   `--battle 0.1`, ContentFinderCondition 362: one run, won in 324 s, a Paladin of 50; and b98a60bc, `--battle 0.4`:
-  the first 97 s of a run the client crashed in). The quest (1060) isn't scripted yet (no dump), so nothing leads
-  into it. The player starts at (-766.28, 225.27, 26.3), facing -0.784; the opening scene 1 is 0xF841AEFB.
+  the first 97 s of a run the client crashed in). Keeping the Oath (1060) leads into it, and its win gives the
+  quest's LogMessage 3616 (`QUEST_LOG`). The player starts at (-766.28, 225.27, 26.3), facing -0.784; the opening scene 1 is 0xF841AEFB.
 * **Three parts**, the two allies (BNpcNames 1421 and 1808, bases 1558 and 1557, level 50) a new NPC in each.
   1. An ogre (4293477, 14576 HP) and an eye (4293479) against you and the allies. Sequence 2; talks 100 and 101 at
      3.0 and 8.1 s (both runs). The ogre's Defeated: sequence 3, talks 102 to 104 at 3.1, 8.1 and 13.1 s, and at

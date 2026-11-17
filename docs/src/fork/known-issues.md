@@ -5,9 +5,8 @@ add one when something is found.
 
 ## Quest battle 82, the Summoner's level 50 quest and Broadening Horizons (2026-11-17)
 
-* **The Summoner's quest (1096) isn't scripted**: its dump hasn't come, so quest battle 82 can't be entered in play.
-  Retail's steps are in capture a75e1390 (scenes 0 and 1; 2 and 4 with notices 0 and 1; the range's scene 6 into
-  the battle; scene 13 with notice 3; the reward's scene 14).
+* **Primal Burdens** (1096) is unplayed (it passes replay). Its ACTOR sides and objects that weren't used on retail
+  (EOBJECT0, EOBJECT1) aren't scripted.
 * **Quest battle 82** is unplayed, from one retail run. Guessed: that the creature's health moves sequences 3 and 4
   on. Not played: the master's health coming back as it takes its creature (1348), its 1159, 31085 and 31086, the
   creature's 1294, the ally's 129, what the add's Fire III hits for (it never landed).
@@ -17,10 +16,8 @@ add one when something is found.
 
 ## Quest battle 69 and the Paladin's level 50 quest (2026-11-17)
 
-* **The quest (1060) isn't scripted**: its dump hasn't come, so quest battle 69 can't be entered in play. Retail's
-  steps are in captures b98a60bc and 36c7d119 (scenes 0 and 1, 2, the range's scene 3 into the battle, the reward's
-  scene 12 with items 3220 and 20642, LogMessage 789 `[3220]`, achievement 407, and EventLogMessage 3616 as the
-  battle was won).
+* **Keeping the Oath** (1060) is unplayed (it passes replay). Its EOBJECT0, EOBJECT1 and ACTOR2 to ACTOR5 weren't
+  used on retail and aren't scripted. LogMessage 789 with the reward isn't sent (`quests.md`).
 * **Quest battle 69** is unplayed, from one whole retail run and the start of another
   ([Quest battles](quest-battles.md)). Guessed: what brings the grimoire (the master at 60 %), sequence 13's clock,
   the vyraals' 24.8 s while the grimoire stands, where the second NPCs wander. Not played: the master's Eye for an
