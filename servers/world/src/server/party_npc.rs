@@ -91,6 +91,10 @@ pub struct Kit {
     /// Lancer) and 13-19 s (the Thaumaturge), in each fight.
     pub first_burst: f32,
     pub burst: &'static [Step],
+    /// A burst that goes by the fillers used, not the clock: `(first, later)`, the fillers before a fight's first
+    /// burst and between the later ones (the third set's Lancer: eight, then five, with or without its opener; its
+    /// Thaumaturge at 41: six, then three.)
+    pub burst_after_fillers: Option<(u8, u8)>,
     pub opener: Option<u32>,
     pub pull: Option<u32>,
     pub aoe: Option<u32>,
@@ -127,6 +131,8 @@ pub struct Member {
     /// (lancer) and 8.1 yalms (thaumaturge.)
     pub attack_range: f32,
     pub kit: Kit,
+    /// Another kit from this level on (the third set's Thaumaturge at 41), if it fought otherwise there.
+    pub kit_from: Option<(u8, Kit)>,
     /// Its lines in fights (NpcYell), the first one at its first fight if `opens_with_first`.
     pub chatter: &'static [u32],
     pub opens_with_first: bool,
@@ -167,6 +173,7 @@ pub const MEMBERS: [Member; 4] = [
                 gcd(29765, 2.13),
                 on_self(29766, 1.07),
             ],
+            burst_after_fillers: None,
             opener: None,
             // Its first throw at a pack (21 times) and its area combo (34 times, up to 8 hit.)
             pull: Some(29291),
@@ -179,6 +186,7 @@ pub const MEMBERS: [Member; 4] = [
         },
         // 13951 at its first fight (46 s in), then 13961, 13952 twice; in the Tam-Tara Deepcroft (Bob's capture of
         // 2026-10-24) 13953 three times and 13951.
+        kit_from: None,
         chatter: &[13951, 13952, 13961, 13953],
         opens_with_first: true,
     },
@@ -210,6 +218,7 @@ pub const MEMBERS: [Member; 4] = [
                 on_self(29767, 1.07),
             ],
             // Each fight starts with 29304 (21 times), as the tank throws.
+            burst_after_fillers: None,
             opener: Some(29304),
             pull: None,
             aoe: None,
@@ -217,6 +226,7 @@ pub const MEMBERS: [Member; 4] = [
             defensive: None,
             heal: None,
         },
+        kit_from: None,
         chatter: &[13962, 13964],
         opens_with_first: false,
     },
@@ -240,6 +250,7 @@ pub const MEMBERS: [Member; 4] = [
             burst_every: 9.0,
             first_burst: 13.0,
             burst: &[gcd(29312, 3.07)],
+            burst_after_fillers: None,
             opener: None,
             pull: None,
             aoe: None,
@@ -247,6 +258,7 @@ pub const MEMBERS: [Member; 4] = [
             defensive: None,
             heal: None,
         },
+        kit_from: None,
         chatter: &[13972, 13974],
         opens_with_first: false,
     },
@@ -275,6 +287,7 @@ pub const MEMBERS: [Member; 4] = [
             burst_every: 12.0,
             first_burst: 12.0,
             burst: &[gcd(29324, 2.1)],
+            burst_after_fillers: None,
             opener: None,
             pull: None,
             aoe: None,
@@ -282,6 +295,7 @@ pub const MEMBERS: [Member; 4] = [
             defensive: None,
             heal: Some((29317, 85.0)),
         },
+        kit_from: None,
         // Only the duties' story lines (`director:party_npc_yell`), none of its own in either run.
         chatter: &[],
         opens_with_first: false,
@@ -343,8 +357,8 @@ pub const TRIAL_MEMBERS: [Member; 4] = [
 /// The third set (DawnQuestMember 44-47; Brayflox's Longstop with Duty Support in Bob's Chronofoil capture 44df02fc of
 /// 2026-11-03, visit 0.20, registered as 44, 47, 46 under DawnContent 206): the Marauder, Lancer, Thaumaturge and Conjurer
 /// again, with BNpcBases 14654-14657 (BNpcNames 11330-11333, the trials' names) and ActorControlSelf 276/1525 values of
-/// their own (10008-10011, 1042784-1042787; slots 0-2 held 44, 47, 46). The Lancer (45, 14655) wasn't there: its slot
-/// values follow the others'. Their level and HP there are in `DUTY_LEVELS`.
+/// their own (10008-10011, 1042784-1042787; slots 0-2 held 44, 47, 46). The Lancer (45, 14655) came with a tank's party
+/// in the Stone Vigil (his capture 216f28eb of 2026-11-17: slots 0-2 held 47, 46, 45, the Lancer's 10009 and 1042785). Their level and HP there are in `DUTY_LEVELS`.
 pub const THIRD_MEMBERS: [Member; 4] = [
     Member {
         dawn_quest_member: 44,
@@ -377,6 +391,29 @@ pub const THIRD_MEMBERS: [Member; 4] = [
         name_id: 11331,
         slot_member: 10009,
         slot_resident: 1042785,
+        // As it fought at 41 in the Stone Vigil (the seven runs of Bob's capture 216f28eb of 2026-11-17, a Paladin's
+        // party: the only ones with it; what it does at 32 and 34 isn't recorded): five GCD actions in turn every
+        // 2.67 s (29305, 29306, 29307, 29305, 29308, from the first again in each fight), and after the first eight
+        // and every five from then its burst: 26230 at its target 1.07 s after the last, 29310 on itself 0.18 s on,
+        // then 29769, 29770 and 29771 on its GCD with 29311 on itself before the last and 29767 after it (1,478
+        // auto-attacks, 545, 307, 302 and 212 fillers, 246, 212 and 200 of the burst's three.) 29304 opens a fight
+        // it has to run to (100 times), as before.
+        kit: Kit {
+            filler: &[29305, 29306, 29307, 29305, 29308],
+            burst: &[
+                ability(26230, 1.07),
+                on_self(29310, 0.18),
+                gcd(29769, 1.6),
+                gcd(29770, 2.67),
+                on_self(29311, 1.07),
+                gcd(29771, 1.6),
+                on_self(29767, 1.07),
+            ],
+            burst_after_fillers: Some((8, 5)),
+            ..TRIAL_MEMBERS[1].kit
+        },
+        // 13965 fifteen times and 13966 seven in those runs.
+        chatter: &[13965, 13966],
         ..TRIAL_MEMBERS[1]
     },
     Member {
@@ -385,6 +422,19 @@ pub const THIRD_MEMBERS: [Member; 4] = [
         name_id: 11332,
         slot_member: 10010,
         slot_resident: 1042786,
+        // At 41 in the Stone Vigil (Bob's capture 216f28eb of 2026-11-17, seven runs) it had a third spell, 29316
+        // (384 uses to 29314's 504 and 29315's 462; twice their damage), in turn with the two, and 29313 after the
+        // first six of a fight (18.5 s in) and every fourth spell from then (12.3 s apart; up to three enemies hit,
+        // ten times the others' damage). At 32 and 34 it showed neither 29316 nor that order.
+        kit_from: Some((
+            41,
+            Kit {
+                filler: &[29314, 29315, 29316],
+                burst: &[gcd(29313, 3.07)],
+                burst_after_fillers: Some((6, 3)),
+                ..TRIAL_MEMBERS[2].kit
+            },
+        )),
         // 13975 three times and 13976 twice (Bob's capture 44df02fc.)
         chatter: &[13975, 13976],
         ..TRIAL_MEMBERS[2]
@@ -429,10 +479,20 @@ pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 9] = [
     // guess, the Marauder's HP by the Lancer's share of it at 20 (469 of 618.)
     (57, 34, &[(44, 1607), (45, 1220), (46, 1103), (47, 1113)]),
     // The Stone Vigil (Bob's capture 1cefedf4 of 2026-11-07, visit 0.1, during In Pursuit of the Past): the third set's
-    // Marauder, Thaumaturge and Conjurer (44, 46, 47) at 41 with 2422, 1662 and 1678. The Lancer (45) wasn't there: 1838
-    // is a guess, the Marauder's HP by the Lancer's share of it at 20 (469 of 618.)
-    (11, 41, &[(44, 2422), (45, 1838), (46, 1662), (47, 1678)]),
+    // Marauder, Thaumaturge and Conjurer (44, 46, 47) at 41 with 2422, 1662 and 1678. The Lancer (45) had 1884 there
+    // with a Paladin (his capture 216f28eb of 2026-11-17, seven runs: 45, 46, 47 with the same 1662 and 1678.)
+    (11, 41, &[(44, 2422), (45, 1884), (46, 1662), (47, 1678)]),
 ];
+
+impl Member {
+    /// How it fights at `level`: its kit, or the one it has from a level on.
+    pub fn kit_at(&self, level: u8) -> &Kit {
+        match &self.kit_from {
+            Some((from, kit)) if level >= *from => kit,
+            _ => &self.kit,
+        }
+    }
+}
 
 /// A member's level and HP in the duty `content_finder_condition`.
 pub fn level_and_hp(member: &Member, content_finder_condition: u16) -> (u8, u32) {
@@ -482,7 +542,12 @@ pub struct MemberState {
     pub member: &'static Member,
     /// Its party slot (the client's order.)
     pub slot: u8,
+    /// Its kit at the level it came at (`Member::kit_at`.)
+    kit: &'static Kit,
     filler: usize,
+    /// The fillers since its last burst (or the fight's start), and whether this fight has had a burst.
+    fillers_since_burst: u8,
+    bursted: bool,
     burst: Option<usize>,
     burst_ready: Option<Instant>,
     last_action: Option<Instant>,
@@ -495,11 +560,14 @@ pub struct MemberState {
 }
 
 impl MemberState {
-    pub fn new(member: &'static Member, slot: u8) -> Self {
+    pub fn new(member: &'static Member, slot: u8, level: u8) -> Self {
         Self {
             member,
             slot,
+            kit: member.kit_at(level),
             filler: 0,
+            fillers_since_burst: 0,
+            bursted: false,
             burst: None,
             burst_ready: None,
             last_action: None,
@@ -520,7 +588,7 @@ impl MemberState {
     /// Something else used its GCD (the tank's pull or area combo.)
     pub fn used_gcd(&mut self, now: Instant) {
         if self.burst_ready.is_none() {
-            self.burst_ready = Some(now + Duration::from_secs_f32(self.member.kit.first_burst));
+            self.burst_ready = Some(now + Duration::from_secs_f32(self.kit.first_burst));
         }
         self.last_gcd = Some(now);
         self.last_action = Some(now);
@@ -533,13 +601,18 @@ impl MemberState {
             self.opened = false;
             self.burst = None;
             self.burst_ready = None;
+            // Its fillers from the first again (retail's Lancer and Thaumaturge began every fight of seven runs
+            // with theirs: Bob's capture 216f28eb.)
+            self.filler = 0;
+            self.fillers_since_burst = 0;
+            self.bursted = false;
         }
     }
 
     /// Its next action, if one is due: `(action, on itself)`. `in_reach` is whether its target is close enough for
     /// its attacks, `in_range` for its opener.
     pub fn choose(&mut self, now: Instant, in_reach: bool, in_range: bool) -> Option<(u32, bool)> {
-        let kit = &self.member.kit;
+        let kit = self.kit;
         if !self.opened {
             if let Some(opener) = kit.opener {
                 if !in_range {
@@ -556,10 +629,17 @@ impl MemberState {
         if self.burst.is_none()
             && !kit.burst.is_empty()
             && in_reach
-            && self.burst_ready.is_some_and(|ready| now >= ready)
+            && match kit.burst_after_fillers {
+                Some((first, later)) => {
+                    self.fillers_since_burst >= if self.bursted { later } else { first }
+                }
+                None => self.burst_ready.is_some_and(|ready| now >= ready),
+            }
             && Self::since(self.last_action, now) >= kit.burst[0].after
         {
             self.burst = Some(0);
+            self.bursted = true;
+            self.fillers_since_burst = 0;
             self.burst_ready = Some(now + Duration::from_secs_f32(kit.burst_every));
         }
         if let Some(index) = self.burst {
@@ -578,6 +658,7 @@ impl MemberState {
         if in_reach && !kit.filler.is_empty() && Self::since(self.last_gcd, now) >= kit.gcd {
             let action = kit.filler[self.filler % kit.filler.len()];
             self.filler += 1;
+            self.fillers_since_burst = self.fillers_since_burst.saturating_add(1);
             self.used_gcd(now);
             return Some((action, false));
         }
@@ -586,7 +667,7 @@ impl MemberState {
 
     /// The tank's provoke on an enemy it's taking off someone else, if it's ready.
     pub fn provoke(&mut self, now: Instant) -> Option<u32> {
-        let (action, cooldown) = self.member.kit.provoke?;
+        let (action, cooldown) = self.kit.provoke?;
         if self.provoke_ready.is_some_and(|ready| now < ready) {
             return None;
         }
@@ -597,7 +678,7 @@ impl MemberState {
 
     /// Its defensive ability on itself, with `enemies` fighting the party, if it's ready.
     pub fn defensive(&mut self, now: Instant, enemies: usize) -> Option<u32> {
-        let (action, needs, cooldown) = self.member.kit.defensive?;
+        let (action, needs, cooldown) = self.kit.defensive?;
         if enemies < needs || self.defensive_ready.is_some_and(|ready| now < ready) {
             return None;
         }
@@ -890,13 +971,14 @@ fn spawn_member(
         member.attack_range,
         order,
     );
-    bot.pull_action = member.kit.pull;
-    bot.aoe_action = member.kit.aoe;
-    if let Some((heal, below)) = member.kit.heal {
+    let kit = member.kit_at(level);
+    bot.pull_action = kit.pull;
+    bot.aoe_action = kit.aoe;
+    if let Some((heal, below)) = kit.heal {
         bot.heal_action = Some(heal);
         bot.heal_below = below;
     }
-    bot.party_npc = Some(MemberState::new(member, slot));
+    bot.party_npc = Some(MemberState::new(member, slot, level));
     instance.party_bots.insert(actor_id, bot);
     tracing::info!(
         "Party NPC {} (BNpcBase {}, class {}, level {}) joined {leader} in slot {slot} as {actor_id}",
@@ -1077,7 +1159,7 @@ mod tests {
     #[test]
     fn the_tank_fights_as_retails() {
         let tank = member(36).unwrap();
-        let mut state = MemberState::new(tank, 0);
+        let mut state = MemberState::new(tank, 0, tank.level);
         let start = Instant::now();
         let mut used = Vec::new();
         // Ticks of half a second, as the server's.
@@ -1097,10 +1179,67 @@ mod tests {
         );
     }
 
+    /// The third set's Lancer and Thaumaturge at 41, as in the seven Stone Vigil runs of Bob's capture 216f28eb
+    /// (2026-11-17): the Lancer's five fillers in turn with its burst after the first eight and every five from
+    /// then, with its opener or without; the Thaumaturge's three spells in turn with 29313 after the first six and
+    /// every fourth from then; both from the first again in a new fight.
+    #[test]
+    fn the_third_set_at_41_fights_as_retails() {
+        fn fight(state: &mut MemberState, start: Instant, seconds: u64, opener: bool) -> Vec<u32> {
+            let mut used = Vec::new();
+            for tick in 0..seconds * 2 {
+                let now = start + Duration::from_millis(tick * 500);
+                // Out of reach for its first tick: the opener's for a fight it has to run to.
+                let in_reach = !(opener && tick == 0);
+                if let Some((action, _)) = state.choose(now, in_reach, true) {
+                    used.push(action);
+                }
+            }
+            used
+        }
+        const ROUND: [u32; 12] = [
+            29305, 29308, 29305, 29306, 29307, 26230, 29310, 29769, 29770, 29311, 29771, 29767,
+        ];
+        let lancer = member(45).unwrap();
+        assert_eq!(level_and_hp(lancer, 11), (41, 1884));
+        assert_eq!((lancer.slot_member, lancer.slot_resident), (10009, 1042785));
+        let mut state = MemberState::new(lancer, 2, 41);
+        let start = Instant::now();
+        let used = fight(&mut state, start, 70, true);
+        assert_eq!(
+            &used[..16],
+            &[
+                29304, 29305, 29306, 29307, 29305, 29308, 29305, 29306, 29307, 26230, 29310, 29769,
+                29770, 29311, 29771, 29767
+            ]
+        );
+        assert_eq!(&used[16..28], &ROUND);
+        // The next fight: its opener and the same eight first.
+        state.out_of_combat(start + Duration::from_secs(90));
+        let used = fight(&mut state, start + Duration::from_secs(90), 60, true);
+        assert_eq!(&used[..3], &[29304, 29305, 29306]);
+        assert_eq!(used.iter().position(|a| *a == 26230), Some(9));
+
+        let thaumaturge = member(46).unwrap();
+        // At 32 (Brayflox's Longstop) its two spells; at 41 the three.
+        assert_eq!(thaumaturge.kit_at(32).filler, &[29314, 29315]);
+        let mut state = MemberState::new(thaumaturge, 1, 41);
+        let used = fight(&mut state, start, 50, false);
+        assert_eq!(
+            &used[..12],
+            &[
+                29314, 29315, 29316, 29314, 29315, 29316, 29313, 29314, 29315, 29316, 29313, 29314
+            ]
+        );
+        state.out_of_combat(start + Duration::from_secs(90));
+        let used = fight(&mut state, start + Duration::from_secs(90), 10, false);
+        assert_eq!(&used[..3], &[29314, 29315, 29316]);
+    }
+
     #[test]
     fn the_lancer_opens_then_alternates() {
         let lancer = member(37).unwrap();
-        let mut state = MemberState::new(lancer, 2);
+        let mut state = MemberState::new(lancer, 2, lancer.level);
         let now = Instant::now();
         assert_eq!(state.choose(now, false, true), Some((29304, false)));
         let later = now + Duration::from_secs(3);
@@ -1113,7 +1252,7 @@ mod tests {
     #[test]
     fn the_first_line_comes_at_the_first_fight() {
         let tank = member(36).unwrap();
-        let mut state = MemberState::new(tank, 0);
+        let mut state = MemberState::new(tank, 0, tank.level);
         let now = Instant::now();
         assert_eq!(state.chatter(now), None);
         assert_eq!(state.chatter(now + Duration::from_secs(3)), Some(13951));

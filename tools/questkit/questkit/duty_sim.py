@@ -48,6 +48,7 @@ What it doesn't simulate: the server's own part (enmity, who hits whom, the part
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -71,6 +72,7 @@ ACTION_TIMELINE = 407  # ActorControl: an NPC plays an ActionTimeline (its first
 # The event kinds a fixture can have that come from the fight itself (made since 2026-11-11); compared only where a
 # fixture has them.
 FIGHT_KINDS = ("talk", "timeline", "appear")
+HELPER_BASE = 9020
 
 
 # --- making a fixture -----------------------------------------------------------------------------------------------
@@ -128,8 +130,10 @@ def fixture_from_run(run: dict, script: str, source: str = "", unlaid: dict[int,
         curve: list = []
         for t, hp in sorted(health.get(key, [])):
             pct = percent(hp, actor["MaxHp"])
-            # Kept small: a point when the health has moved a percent (and as it reaches 0.)
-            if not curve or abs(curve[-1][1] - pct) >= 1.0 or (pct <= 0 < curve[-1][1]):
+            # Kept small: a point when the health has moved a fifth of a percent (and as it reaches 0.) A whole
+            # percent hid what a boss decided by: Isgebind flies below 85 %, and was at 84.8 % in one pull and
+            # 85.04 % in another when it looked (Bob's capture 216f28eb, 2026-11-17.)
+            if not curve or abs(curve[-1][1] - pct) >= 0.2 or (pct <= 0 < curve[-1][1]):
                 curve.append([t, pct])
         spawn = rel(actor["Seen"])
         death = rel(actor["Died"]) if "Died" in actor else None
@@ -541,6 +545,9 @@ def script_events(calls: list[tuple]) -> list[list]:
     events = []
     for t, name, args in calls:
         if t <= SETUP_CLOCK / 2:
+            # Nothing of a duty's setup is an event, but what it brings out is known to be there from the start.
+            if name in SPAWNS and args and isinstance(args[0], (int, float)):
+                events.append([t, "appear", int(args[0])])
             continue
         if name == "set_bgm" and args:
             events.append([t, "bgm", int(args[0])])
@@ -559,16 +566,51 @@ def script_events(calls: list[tuple]) -> list[list]:
     return events
 
 
+_DROPIN_KINDS = None
+
+
+def _dropin_kinds() -> tuple[set[int], set[int]]:
+    """The drop-ins' battle NPCs by layout ID: those out from the start (not `nonpop`), and the helpers (BNpcBase
+    9020.)"""
+    global _DROPIN_KINDS
+    if _DROPIN_KINDS is None:
+        pops, helpers = set(), set()
+        for path in sorted((repo.ROOT / "resources" / "dropins").glob("*.json")):
+            for layer in json.loads(path.read_text()).get("layers", []):
+                for obj in layer.get("objects", []):
+                    data = obj.get("data", {})
+                    if data.get("base_id") == HELPER_BASE:
+                        helpers.add(obj.get("layout_id"))
+                    elif not data.get("nonpop"):
+                        pops.add(obj.get("layout_id"))
+        _DROPIN_KINDS = (pops, helpers)
+    return _DROPIN_KINDS
+
+
 def compare(fixture: dict, calls: list[tuple], result: SimResult) -> list[str]:
     """Retail's events against the script's: the same kind and value, in order, each within the tolerance."""
     tolerance = fixture.get("tolerance", DEFAULT_TOLERANCE)
     kinds = {event[1] for event in fixture["events"]}
     mine = [event for event in script_events(calls) if event[1] not in FIGHT_KINDS or event[1] in kinds]
+    # An NPC "appearing" is only the fight's doing when the script brings it out. One the drop-in has out from the
+    # start (not `nonpop`) appears on retail as the party comes near enough to be sent it (the Stone Vigil's 37 of
+    # trash and its first two bosses, in every one of seven runs): not an event. And a helper (BNpcBase 9020) the
+    # script brings out has no layout ID on retail, so a run doesn't list it (the fork's stand under made-up ones.)
+    pops, helpers = _dropin_kinds()
+    scripted = {event[2] for event in mine if event[1] == "appear"}
+    mine = [event for event in mine if not (event[1] == "appear" and event[2] in helpers
+                                            and str(event[2]) not in fixture.get("npcs", {}))]
+    # And one the script has out from the duty's setup is there from the start as well: retail's shows when the party
+    # nears it (the Stone Vigil's whirlwind helpers, sent with their boss.)
+    at_setup = {event[2] for event in mine if event[1] == "appear" and event[0] < 0}
+    mine = [event for event in mine if not (event[1] == "appear" and event[2] in at_setup)]
     used = [False] * len(mine)
     problems = []
     for event in fixture["events"]:
         t, kind = event[0], event[1]
         value = event[2] if len(event) > 2 else None
+        if kind == "appear" and (value in at_setup or (value in pops and value not in scripted)):
+            continue
         label = f"{kind} {value}" if value is not None else kind
         found = next((i for i, other in enumerate(mine) if not used[i] and other[1] == kind
                       and (other[2] if len(other) > 2 else None) == value), None)
@@ -677,6 +719,12 @@ def rehearse_wipes(fixture: dict, name: str = "") -> SimResult:
             continue  # pulled more than once on retail: its first go isn't a whole fight
         middle = round((pulled + (fell - pulled) / 2) * 2) / 2
         lead = max(0.0, round((pulled - 5.0) * 2) / 2)
+        # Not from before the boss was there: what a script does once as its room is entered (the boss, its helpers,
+        # its scene) isn't the fight's, and a party that pulls within seconds of it has it inside those five (Duty
+        # Support pulled Isgebind 2.0 to 2.4 s after it appeared, six runs of seven: Bob's capture 216f28eb.)
+        spawned = fixture["npcs"][str(layout)][0].get("spawn")
+        if spawned is not None and spawned + 1.0 > lead:
+            lead = min(math.ceil((spawned + 1.0) * 2) / 2, math.floor(pulled * 2) / 2)
         driver = None
         try:
             driver = Driver(fixture, script, scripted)

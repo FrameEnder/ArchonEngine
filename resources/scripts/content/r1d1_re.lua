@@ -178,10 +178,12 @@ BOSS3_COMES_AFTER = 2.2
 HELPER = 99009020
 HELPERS = 8
 
--- Its rounds on the ground (retail's clock, all four pulls): Rime Wreath (1025, on itself), Frost Breath (1022, at its
--- target) 9.2 s later, Sheet of Ice (1023, at one of the party) 16.4-17.5 s after the Rime Wreath, and 26.0 s after it
--- (30.1 in the round after the pull) whether to fly; the first round's Rime Wreath 8.1-8.2 s after the pull, the next
--- one's 4.1 s after it lands or decides not to fly.
+-- Its rounds on the ground (retail's clock): Rime Wreath (1025, on itself), Frost Breath (1022, at its target) 9.2 s
+-- later, Sheet of Ice (1023, at one of the party) 16.4 s after the Rime Wreath (17.3 in the round after the pull), and
+-- 26.0 s after it whether to fly; the first round's Rime Wreath 8.1-8.2 s after the pull, the next one's 4.1 s after
+-- it lands or decides not to fly. In the round after the pull it decides twice: 21.9 s after the Rime Wreath (30.0 s
+-- after the pull, 2.1 s after the Sheet of Ice lands) and 29.8 s after it (38.0 s). The seven pulls of Bob's capture
+-- 216f28eb (2026-11-17, Duty Support) to the tenth of a second, with the six before.
 ACTION_RIME_WREATH = 1025
 ACTION_FROST_BREATH = 1022
 ACTION_SHEET = 1023
@@ -190,17 +192,28 @@ ACTION_CAUTERIZE = 1026
 ACTION_TOUCHDOWN = 1027
 FIRST_ROUND_AFTER = 8.1
 FROST_BREATH_AFTER = 9.2
-SHEET_AFTER = 16.8
+SHEET_AFTER = 16.4
+FIRST_SHEET_AFTER = 17.3
 DECIDE_AFTER = 26.0
-FIRST_DECIDE_AFTER = 30.1
+-- Between the Frost Breath and the Sheet of Ice it looks at its health once more: below 50 % 11.3 s into a round, its
+-- new round's Rime Wreath came at 16.3 s, when the Sheet would have (visit 0.14 of Bob's capture 216f28eb,
+-- 2026-11-17); below at 12.3 to 13.4 s, it came 4.1 s after the Sheet's time (20.3-20.4 s, four pulls), and below
+-- before the Frost Breath, 4.0 s after that one's (13.1-13.2 s, two). So it looks between 11.3 and 12.3 s in; when
+-- exactly isn't known (4.1 s before the Sheet, 12.2 s, would fit its other moves.) Early in that window here: the
+-- pull that fell below at 12.28 s is in duty-sim's fixtures, whose clock is up to a second behind retail's by then.
+LOOK_AFTER = 11.4
+FIRST_CHECK_AFTER = 21.9
+FIRST_DECIDE_AFTER = 29.8
 NEXT_ROUND_AFTER = 4.1
--- When it flies (its health, in percent, in the six pulls): the first time as soon as it's below 85 % while its round's
--- Frost Breath or Sheet of Ice is still to come, once it isn't casting (0 and 1.8 s after it fell below in the last two
--- runs), else at the round's end (2.8-7.1 s after, three pulls); once more between 50 and 70 % at a round's end (59.7-
+-- When it flies (its health, in percent, in the thirteen pulls): the first time as soon as it's below 85 % while its
+-- round's Frost Breath or Sheet of Ice is still to come, once it isn't casting (0, 0.4 and 1.8 s after it fell below,
+-- three pulls); with the Sheet of Ice cast, at the round's first decision if it's below 85 % by then (below at 27.1 to
+-- 29.5 s after the pull, up at 30.0-30.1 s: four of the seven pulls of 2026-11-17), else at its second (below at 30.4
+-- and 31.0 s, up at 38.0 s: two; not as soon as it fell below); once more between 50 and 70 % at a round's end (59.7-
 -- 66.0 % three times; at 48-55 % it didn't, three times); then below 40 % at every round's end, with the Sheets of Ice
--- (34.6-35.7 %, 16.3 %, 12.3 %, 23.0 %). Falling below 50 % with a Frost Breath or Sheet of Ice to come, it begins a new
--- round instead at that move's time (the conjurer's run: 4.1 s later, as after a round's end; in the other pulls it
--- fell below 50 % after its round's last move).
+-- (34.6-35.7 %, 16.3 %, 12.3 %, 23.0 %). Below 50 % when a Frost Breath or Sheet of Ice is due (or at its look
+-- between them, LOOK_AFTER), it begins a new round 4.1 s later instead, as after a round's end (the conjurer's run,
+-- and all seven pulls of 2026-11-17).
 FLY_FIRST_BELOW = 85
 NEW_ROUND_BELOW = 50
 -- How long after a move it doesn't take off (the longest of its casts, Rime Wreath's 2.7 s, and a moment.)
@@ -257,12 +270,19 @@ COFFER_CLEAR = 185
 -- them: the Thaumaturge 4.3 s after the duty began, the tank as the first boss fell, the Conjurer as the party came up
 -- to the second boss's room (3.0 s before its pull), the Thaumaturge as it fell, the tank as the party walked into the
 -- last room after its cutscene (7.2 s after it ended).
+-- With a Paladin (Bob's capture 216f28eb of 2026-11-17, seven runs with the Conjurer, the Thaumaturge and the Lancer)
+-- one of the three said its own line at the start: the Thaumaturge's 14368 twice, the Lancer's 14369 three times, the
+-- Conjurer's 14370 twice. With no tank of theirs, the Thaumaturge said 14372 as the first boss fell (six runs of the
+-- seven, as its health reached 0) and the Lancer 14377 in the last room (all seven, 1.1 to 2.7 s after its cutscene.)
+LINES_START = { { "ranged", 14368 }, { "melee", 14369 }, { "healer", 14370 } }
 LINE_START = 14368
 LINE_START_AFTER = 4.3
 LINE_BOSS1 = 14371
+LINE_BOSS1_NO_TANK = 14372
 LINE_BOSS2_ROOM = 14374
 LINE_BOSS2 = 14375
 LINE_BOSS3_ROOM = 14376
+LINE_BOSS3_ROOM_NO_TANK = 14377
 
 -- onUpdate comes every logic tick (500 ms): the script's own clock.
 TICK = 0.5
@@ -385,6 +405,8 @@ function onSetup(director)
         director:treasure_loot(coffer, openings)
     end
 
+    bringWhirlwindHelpers(director)
+
     -- Retail's Duty Support members' spots for the bosses' big casts.
     for index, spot in ipairs(SWINGE_SPOTS) do
         director:party_spots(ACTION_SWINGE, spot.x, spot.z, SWINGE_PARTY[index])
@@ -396,7 +418,9 @@ function onSetup(director)
 end
 
 function onCommence(director)
-    director:party_npc_yell("ranged", LINE_START, LINE_START_AFTER)
+    -- One of them, its own; the Thaumaturge (in both parties recorded) when that one isn't here.
+    local first = LINES_START[math.random(#LINES_START)]
+    director:party_npc_yell(first[1], first[2], LINE_START_AFTER, "ranged", LINE_START)
 end
 
 function onUpdate(director, health, player_health, info)
@@ -462,7 +486,7 @@ function onUpdate(director, health, player_health, info)
     end
     if boss3_started and not boss3_line and anyoneIn(all, 9394128) then
         boss3_line = true
-        director:party_npc_yell("tank", LINE_BOSS3_ROOM)
+        director:party_npc_yell("tank", LINE_BOSS3_ROOM, 0, "melee", LINE_BOSS3_ROOM_NO_TANK)
     end
     if boss3_started and not boss3_pulled and not boss3_dead and pulled(info, BNPC_BOSS3) then
         boss3_pulled = true
@@ -484,8 +508,13 @@ function onUpdate(director, health, player_health, info)
         -- Below 85 % with its Frost Breath or Sheet of Ice to come: up at once, once it isn't casting.
         if boss ~= nil and isgebind.flights == 0 and hp < FLY_FIRST_BELOW and (isgebind.step == 2 or isgebind.step == 3)
             and clock - isgebind.moved_at >= CASTING_FOR then
+            isgebind.at = clock
             fly(director, false, boss.id)
         elseif clock >= isgebind.next then
+            -- When this move was due, not the tick that found it (half a second apart at the most): the next ones
+            -- count from it, or every round came a little later than retail's (0.8 s a flight over the seven pulls
+            -- of 2026-11-17.)
+            isgebind.at = isgebind.next
             isgebindStep(director, health, info)
         end
     end
@@ -571,15 +600,7 @@ end
 -- The bosses' actions the director answers.
 function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
     if layout_id == BNPC_BOSS2 and action_id == ACTION_TYPHOON then
-        -- Its helpers, one for each lane's whirlwind (held: they act as the director says; retail's stood by the boss
-        -- from the start, at (50.1, 4.0, -79.3).)
-        if #whirlwind_helpers == 0 then
-            for _ = 1, #LANES do
-                local helper = director:spawn_bnpc(NPC_WHIRLWIND_HELPER, 50.1, 4.0, -79.3, 0.0)
-                director:hold_bnpc(helper)
-                table.insert(whirlwind_helpers, helper)
-            end
-        end
+        bringWhirlwindHelpers(director)
         typhoons = typhoons + 1
         local pairs_now = typhoons == 1 and FIRST_TYPHOONS[math.random(#FIRST_TYPHOONS)]
             or TYPHOONS[math.random(#TYPHOONS)]
@@ -588,6 +609,20 @@ function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
                 typhoon(d, pairs_now)
             end
         end)
+    end
+end
+
+-- The second boss's helpers, one for each lane's whirlwind (held: they act as the director says), by the boss at
+-- (50.1, 4.0, -79.3) from the duty's start as retail's are (sent with the boss as the party nears, seven runs of
+-- seven: Bob's capture 216f28eb, 2026-11-17) until it falls.
+function bringWhirlwindHelpers(director)
+    if #whirlwind_helpers > 0 then
+        return
+    end
+    for _ = 1, #LANES do
+        local helper = director:spawn_bnpc(NPC_WHIRLWIND_HELPER, 50.1, 4.0, -79.3, 0.0)
+        director:hold_bnpc(helper)
+        table.insert(whirlwind_helpers, helper)
     end
 end
 
@@ -654,11 +689,22 @@ function isgebindStep(director, health, info)
         fly(director, false, boss.id)
         return
     end
+    -- It looks once more between its Frost Breath and its Sheet of Ice: below 50 % then, the new round comes when
+    -- the Sheet would have.
+    if state.step == 3 and state.look then
+        state.look = false
+        state.next = state.round_at + (state.first and FIRST_SHEET_AFTER or SHEET_AFTER)
+        if not state.new_round and hp < NEW_ROUND_BELOW then
+            state.new_round = true
+            state.step = 1
+        end
+        return
+    end
     -- Below 50 % for the first time with a move of its round to come: a new round instead.
     if not state.new_round and hp < NEW_ROUND_BELOW and (state.step == 2 or state.step == 3) then
         state.new_round = true
         state.step = 1
-        state.next = clock + NEXT_ROUND_AFTER
+        state.next = state.at + NEXT_ROUND_AFTER
         return
     end
     if state.step ~= 4 then
@@ -666,21 +712,29 @@ function isgebindStep(director, health, info)
     end
     if state.step == 1 then
         director:actor_use_action(boss.id, ACTION_RIME_WREATH)
-        state.round_at = clock
+        state.round_at = state.at
         state.step = 2
         state.next = state.round_at + FROST_BREATH_AFTER
     elseif state.step == 2 then
         local target = positionOf(info, boss.target_id)
         director:actor_use_action(boss.id, ACTION_FROST_BREATH, target ~= nil and target.id or nil)
         state.step = 3
-        state.next = state.round_at + SHEET_AFTER
+        state.look = true
+        state.next = state.round_at + LOOK_AFTER
     elseif state.step == 3 then
         local all = party(info)
         local victim = all[math.random(math.max(#all, 1))]
         director:actor_use_action(boss.id, ACTION_SHEET, victim ~= nil and victim.id or nil)
         state.step = 4
-        state.next = state.round_at + (state.first and FIRST_DECIDE_AFTER or DECIDE_AFTER)
+        state.next = state.round_at + (state.first and FIRST_CHECK_AFTER or DECIDE_AFTER)
     else
+        -- The round after the pull decides twice (it flew above, below 85 % at the first; else it waits for the
+        -- second.)
+        if state.first and not state.checked then
+            state.checked = true
+            state.next = state.round_at + FIRST_DECIDE_AFTER
+            return
+        end
         state.first = false
         if hp < NEW_ROUND_BELOW then
             state.new_round = true
@@ -692,7 +746,7 @@ function isgebindStep(director, health, info)
             fly(director, false, boss.id)
         else
             state.step = 1
-            state.next = clock + NEXT_ROUND_AFTER
+            state.next = state.at + NEXT_ROUND_AFTER
         end
     end
 end
@@ -753,11 +807,12 @@ function fly(director, sheets, boss_id)
     director:delay(landed_at)
     director:set_targetable(BNPC_BOSS3, true)
     director:delay(0)
+    local took_off = state.at or clock
     after(landed_at, function()
         if isgebind ~= nil then
             isgebind.flying = false
             isgebind.step = 1
-            isgebind.next = clock + NEXT_ROUND_AFTER
+            isgebind.next = took_off + landed_at + NEXT_ROUND_AFTER
         end
     end)
 end
@@ -806,7 +861,7 @@ function onActorDeath(director, bnpc_id, position)
         for _, coffer in ipairs(COFFERS_BOSS1) do
             director:spawn_treasure(coffer)
         end
-        director:party_npc_yell("tank", LINE_BOSS1)
+        director:party_npc_yell("tank", LINE_BOSS1, 0, "ranged", LINE_BOSS1_NO_TANK)
     elseif bnpc_id == BNPC_BOSS2 then
         boss2_dead = true
         for _, whirlwind in ipairs(whirlwinds) do

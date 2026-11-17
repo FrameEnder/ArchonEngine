@@ -965,6 +965,30 @@ script's `objective`), BGM 37 as the first and second bosses were pulled and 0 a
 Kawari: `content/r1d1_re.lua`, drop-in `r1d1_re_planmap.json` (`questkit chronofoil --dropin 1042`: 48 battle NPCs),
 timelines `StoneVigil*`, action scripts `StoneVigil*`.
 
+**Seven more runs** (Bob's capture 216f28eb of 2026-11-17, visits 0.1, 0.4, 0.6, 0.8, 0.10, 0.14 and 0.16: Duty
+Support, a Paladin synced to 43 with the Conjurer, the Thaumaturge and the Lancer, 19 to 22 minutes each, no wipes;
+`duties/11-216f28eb-*.json`). What they added:
+
+* **Isgebind's first round**: Rime Wreath 8.1-8.2 s after the pull, Frost Breath 9.1-9.2 s after it, the Sheet of
+  Ice 17.3 s after it (16.4 in later rounds: the 16.4-17.5 below), and two looks at its health, 21.9 and 29.8 s
+  after the Rime Wreath (30.0 and 38.0 s after the pull): below 85 % at the first it flew then (four pulls: 84.3 to
+  84.8 %), else at the second (two: 85.5 and 85.0 % at the first), not as soon as it fell below. One pull was
+  below 85 % before the Sheet of Ice and flew at once (25.4 s), as in the earlier runs. Flights are 44.1-44.3 s
+  apart while they follow each other (14.0 s to targetable, the next round 4.1 s on, its decision 26.0 s after that),
+  61.4-61.8 s after one with the Sheets of Ice.
+* **Below 50 %**: at a Frost Breath's or Sheet of Ice's time it began a new round 4.0-4.1 s later instead (below
+  before the Frost Breath: the next Rime Wreath 13.1-13.2 s after the last, two pulls; below 12.3 to 13.4 s into the
+  round: 20.3-20.4 s, four), and it looks once between the two as well: below at 11.3 s, the new round came at 16.3 s,
+  when the Sheet would have (one pull). The script's `LOOK_AFTER` is 11.4 s: somewhere from 11.3 to 12.3.
+* **The whirlwinds' helpers** (14544, 9061123) are there from the start: the four were sent with the second boss as
+  the party neared it, 118 to 181 s before its pull, in all seven. The script brought them out at the first Typhoon;
+  now in `onSetup` (`bringWhirlwindHelpers`), until the boss falls.
+* **Lines without a tank of theirs**: [Party NPCs](party-npcs.md). `party_npc_yell`'s other role and line give the
+  Thaumaturge's 14372 for the tank's 14371 and the Lancer's 14377 for its 14376; the start's is one of 14368, 14369
+  and 14370, from whoever is there.
+* With those the script is within 1.6 s of all seven (48 NPCs and 78-82 events a run: the perched dragons' and
+  Isgebind's ActionTimelines, the ice sprites, the music, the objectives).
+
 **The entrance.** Its entrance circle is EObj 2001869 (layout 4239683, layer LVD_gimmick), bound to the SharedGroup
 4239670 at (0, 4.8, 306) where retail put the players (all three runs; hidden at DutyCommence, shown again after each
 wipe), not one of the circles Kawari knew (2000182, 2001710, 2007457): with none found, every entry and every return
@@ -985,7 +1009,7 @@ the start; the first two bosses (1461 at 4000969, 14535 at 9061121) are the layo
 | The perched dragons (1460; layer LVD_gmmick_wyvern) | each once, as a player first came into the range ahead of it (4240064, 4240075, 4240078, 4240080): ActionTimeline 7749, its 1021 (an instant line ahead) 1.96 s later, ActionTimeline 7739 2.09 s after that |
 | The ice walls (EObjs 2001881-2001883; LVD_gmmick_ice) | as a player first came into the range in front of one (4240100, 4240136, 4240137): ActorControl 106 with 0 from it, and its three ice sprites 0.2-0.4 s later at it |
 | The first boss (1461; wall 2001873, line 2001872, PlaceName 877) | Swinge 14.4 s after the pull (14.2-14.6, three pulls), then about every 31 s (26.6-36.6); before each it runs (ActorMoves every 0.31 s, 2.8 yalms apart, speed byte 90: `sweep_bnpc` at 9 yalms a second; a single ActorMove to the spot, `move_bnpc`, snapped it there on the client, Bob's bundle 20261107-212704) to one of three spots at the room's edge ((0, 130), (15, 116), (-15, 116); never the one it's at) and casts as it arrives, facing into the room (all 13 first Swinges 0.02-0.72 off the way to the middle, (0, 116): at its target, kept within that), and keeps facing that way through the cast (`sweep.rs` sends nothing more once the run has reached its end: one more ActorMove facing the way it ran turned it back to the wall on the client, so the cone the client and Bob's plugins drew pointed away from the one that hit, Bob's bundle 20261110-134659); below half its health it Swinges again from there 6.3-6.4 s later at its target (every double at 45-49 % or below, every single at 68 % or above). Lion's Breath (902) and Rake (901) its timeline's. Swinge spared those beside or behind it, inside its hitbox, as every cone does now ([Combat](combat.md)); Lion's Breath (0.7 s) hit its target 24 times of 25, and nobody dodges it ([Party Bots](party-bots.md)) |
-| Its death | log 2014, the way on (2001878) state 7, coffers 179, 180 and 182, the tank's 14371 |
+| Its death | log 2014, the way on (2001878) state 7, coffers 179, 180 and 182, the tank's 14371 (the Thaumaturge's 14372 with a player tank) |
 | The second boss (14535; wall 2002872, line 2002735, PlaceName 878) | its round of 44.9 s: Typhoon, Spiked Tail (28732) 30.2 s later, Sonic Storm (29053) 37.4 s later; the first round shorter (Spiked Tail 5.1-5.2 s after the pull, Sonic Storm 12.4, Typhoon 20.5-20.7, the next 37.7 s after it), both runs |
 | Its whirlwinds | 1.5 s after each Typhoon ends, at x 57 in lanes z -72, -77.5, -82.5, -88, a helper riding with each (ActorSetPos to it, then its 28731, a 3-yalm circle, every 0.58 s from the first pair's setting off until its own arrives). Two set off 3.9 s after they came, the others 7.1 s after them, at 3.0 yalms a second (ActorMove every 0.31 s, speed byte 30) to x 30.4; gone 23.5 and 30.5 s after they came. Each hit someone once (damage, status 2656 for 4 s, which throws them into the air, and an effect of kind 62 with 173, 64) and left them alone while 2656 lasted (all eleven hits in the three runs: `action_areas.json`'s `spares_while`). The first Typhoon's were three: -72 and -82.5 then -88 (the first two runs), or -77.5 and -88 then -82.5 (the conjurer's); after it four, in pairs: -72 with -82.5 and -77.5 with -88, either first, or -72 with -77.5 and -82.5 with -88, either first (all four orders seen over the three runs) |
 | Its death | log 2014, the way on (2001879) state 7, coffers 181, 183 and 184, the Thaumaturge's 14375 |

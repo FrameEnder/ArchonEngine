@@ -295,6 +295,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * The members' abilities that did no damage (26230, 29303, 29766, 29311, 29767, 25082, 25083) are only animations,
   and the Lancer's 29772 doesn't heal it. Their chatter in fights is at random every 150–400 s of fighting, not
   whatever made retail's members speak.
+* The third set at 41 (2026-11-17, from seven Stone Vigil runs with a Paladin; untested in game): the Lancer's kit
+  and the Thaumaturge's third spell and 29313 are built; not the Thaumaturge's 3269, 27839 and 17995 as the
+  second boss was pulled, once a run (a limit break by the look of it; whether it's that boss's or a gauge's doing
+  seven runs of one duty can't say, and Kawari's party NPCs have no limit gauge: Bob's call), the Lancer's 29778 (what calls for it isn't known) and 29771's heal, 29313's other targets, nor the
+  Conjurer's 29318, Medica and Esuna. Where the Lancer goes for the bosses' big moves (`party_spots`' `dps` is the
+  Thaumaturge's) wasn't measured.
 * The bots' diamond formation (also the Player NPCs') is measured with a healer player only.
 * Getting out of area attacks (2026-10-24, `server/dodge.rs`) is untested in game, and so is bracing when there's nowhere to go (which actions retail's members used then isn't recorded; party NPCs brace with the player classes' actions by their class and level, not their kits). Every Action sheet shape is
   dodged as it's drawn (circles, cones, lines, donuts, crosses; [Combat: area shapes](combat.md)): a donut's hole read
@@ -1279,7 +1285,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Untested in game, from three runs (Bob's Chronofoil captures 1cefedf4 with Duty Support, three wipes, 341808b0 a
   tank's and f842581d a conjurer's Duty Finder runs); the bosses' rules are fits to them: Swinge twice below 50 %, the
   last boss's flights below 85 % (at once if its round isn't over), between 50 and 70 % at a round's end and below
-  40 %, and a new round as it falls below 50 % mid-round (seen once). Where its
+  40 %, and a new round as it falls below 50 % mid-round (seen once, then in all seven runs of 2026-11-17, which
+  also gave the first round's two looks at 85 %; its look between the Frost Breath and the Sheet of Ice is from one
+  pull, 11.3 to 12.3 s into the round). Where its
   rounds and flights stand when it's pulled again after a wipe follows the script's reset, not retail's (not seen).
 * The first boss's run to its spot is a `sweep_bnpc` at 9 yalms a second (ActorMoves every 500 ms tick, retail's
   every 0.31 s), kept from acting on its own for the run (`busy_bnpc`); it turns to its target as it arrives.

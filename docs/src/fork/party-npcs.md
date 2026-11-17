@@ -56,6 +56,39 @@ In the Navel (Bob's capture 650dbfd8 of 2026-11-06, visit 0.1) the same three (4
 at level 34 with 1607, 1103 and 1113 HP (`DUTY_LEVELS`; the Lancer's 1220 a guess as before); their lines there are in
 [Dungeons](dungeons.md#the-navel).
 
+**The third set's Lancer, and the set at 41 with a tank** (the Stone Vigil, Bob's Chronofoil capture 216f28eb of
+2026-11-17: seven runs of 19 to 22 minutes, Bob a Paladin synced to 43): slots 0-2 held the Conjurer, the Thaumaturge
+and the Lancer (47, 46, 45: ActorControlSelf 276 10011, 10010, 10009 and 1525 1042787, 1042786, 1042785), at 41 with
+1678, 1662 and **1884** HP (the Lancer's was a guess of 1838; BNpcBase 14655, BNpcName 11331 as assumed). How they
+fought, the same in all seven:
+
+* **The Lancer** (auto-attack 17059; 2.67 s GCD): 29305, 29306, 29307, 29305, 29308 in turn, from the first again in
+  every fight; after the first eight of a fight and every five from then its burst: 26230 at its target 1.07 s after
+  the last, 29310 on itself 0.18 s later, then 29769, 29770 and 29771 on its GCD, 29311 on itself 1.07 s after 29770
+  and 29767 on itself 1.07 s after 29771 (a round of 21.6 s). 29304 opens a fight it has to run to (100 times). Median
+  damage: 81-82 for 29304, 29305, 29306 and 29308, 163 for 29307, 247 for 29769, 329 for 29770, 742 for 29771 (which
+  also healed it 85), 8 an auto-attack. 29778 (83 a hit, 62 times) came at no fixed place in the round, in the fights
+  where the party was dodging; what calls for it isn't known. `THIRD_MEMBERS`' 45 has this kit at every level (the
+  only one recorded for it), `Kit::burst_after_fillers` the count (the clock put the burst a filler early after an
+  opener), action scripts `DutySupport_29307`, `_29308`, `_29310`, `_29769`, `_29770`, `_29771` with potencies in
+  those proportions to 29305's.
+* **The Thaumaturge** (3.07 s between spells): 29314, 29315 and a third spell, 29316 (181 to the others' 90), in
+  turn, and 29313 after the first six of a fight and every fourth spell from then (963 in the median, on up to three
+  enemies: two 68 times and three 14 times of 330). 29763 came 63 times (91). `Member::kit_from`: its kit from 41
+  (`DutySupport_29316`, `_29313`, the latter on its target alone); at 32 and 34 it stays the trials'.
+* **Its one big hit**: once a run, as the second boss was pulled (0.1 s after its health first fell, all seven), the
+  Thaumaturge used 3269 on itself, 27839 on itself 0.6 s later (saying 13980 with it) and 17995 on the boss 2.1 s
+  after that, for 2196-2214: a limit break by the look of it (never at the first or the last boss). Not built (see
+  known issues).
+* **The Conjurer** (as a tank's healer): Stone 29323 (53), Aero 29324 (555), Cure 29318 (1174 in the median, 486
+  times, 470 of them on someone else), Medica 29320 (586 to each of four, 143 times), Esuna 25043 (75 times), its
+  auto-attack 17235 for 1. Kawari's still heals with 29317 and casts no Medica or Esuna.
+* **Their lines**: at the start one of the three said its own (the Thaumaturge's 14368 twice, the Lancer's 14369
+  three times, the Conjurer's 14370 twice); with no tank of theirs the Thaumaturge said 14372 as the first boss fell
+  (six runs of seven) and the Lancer 14377 in the last room (all seven); 14374 and 14375 as before. Between fights:
+  the Lancer's 13965 and 13966 (15 and 7 times; its `chatter` now), the Thaumaturge's 13978-13979, the Conjurer's
+  13985. The script's lines: [Dungeons](dungeons.md#the-stone-vigil).
+
 **`pet_id` is the slot's**, not the member's: 1, 5 and 9 for slots 0, 1 and 2, whoever is in them (the Marauder had 1
 in slot 0 in Sastasha, the Conjurer 1 in slot 0 with a tank; the Thaumaturge 5 and the Lancer 9 in slots 1 and 2 in
 every run).
@@ -199,7 +232,7 @@ setting off as it began and holding there until it had gone off, still fighting:
 
 The director gives these (`director:party_spots`, `director:party_positions`, `director:sweep_bnpc`; [Party
 Bots](party-bots.md#how-it-fights)), and the bots go by them too. Their HP at 41: 2422, 1662 and 1678 (`DUTY_LEVELS`;
-the Lancer's 1838 a guess). Their lines there: the Thaumaturge's 14368 4.3 s after the duty began and 14375 as Koshchei
+the Lancer's 1884 from the runs of 2026-11-17). Their lines there: the Thaumaturge's 14368 4.3 s after the duty began and 14375 as Koshchei
 fell, the tank's 14371 as Chudo-Yudo fell and 14376 as the party walked into Isgebind's room, the Conjurer's 14374 as
 they came up to Koshchei's; between fights the tank's 13954-13956, the Thaumaturge's 13978 and 13979 and the
 Conjurer's 13985 (not the lines they had at 32 in Brayflox's Longstop: not added, see known issues).
@@ -259,7 +292,11 @@ Their lines are NpcYell packets from the member, under its BNpcName:
 * Recorded: the Marauder, Lancer, Thaumaturge and Conjurer of the three dungeons and the Bowl, and the third set in Brayflox's Longstop (at 32). Other duties'
   members are Player NPCs until a run with them is recorded. Sastasha's lines for the tank, with a player tank, aren't
   recorded (no line then).
-* The Conjurer's Medica, Esuna and instant Cure aren't cast.
+* The Conjurer's Medica, Esuna and instant Cure aren't cast, and the third set's still heals with 29317 (retail's:
+  29318).
+* The Thaumaturge's 17995 (once a run, as the Stone Vigil's second boss was pulled) isn't built, the Lancer's 29778
+  isn't used (what calls for it isn't known) and its 29771 doesn't heal it. The third set's Lancer has its kit of 41
+  at 32 and 34 too (not recorded there), with guessed HP.
 * What 26230, 29303, 29766, 29311, 29767, 25082 and 25083 do (statuses, enmity) isn't known: they're only their
   animation. The Lancer's 29772 healed it 30 HP on retail; not here.
 * Retail's DawnContent, DawnQuestMember and DawnMemberUIParam sheets aren't read: the members are recorded numbers.

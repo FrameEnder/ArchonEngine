@@ -76,10 +76,17 @@ Then two checks:
   timeline too, and it's checked the same way: battle talk (`talk`, against `battle_talk`), each laid-out NPC's
   ActionTimelines (`timeline [layout, id]`, ActorControl 407, against `play_action_timeline`) and every NPC brought out
   after the start (`appear`, against `spawn_bnpc`); older fixtures don't have these kinds, and they're compared only
-  where a fixture has them. The script sees an NPC's health in whole percent, as the server gives it (it was the
+  where a fixture has them. An `appear` is the fight's only when the script brings the NPC out: one the drop-in has
+  out from the start (not `nonpop`) or the script brings out in `onSetup` shows on retail when the party comes near
+  enough to be sent it, and is skipped (the Stone Vigil's 37 of trash and two bosses, and its whirlwind helpers, in
+  seven runs); and a script's helper (BNpcBase 9020) the fixture has no NPC for isn't held against it (retail's have
+  no layout ID). A fixture's health curve has a point for every fifth of a percent since 2026-11-17 (it was a whole
+  percent, which hid what Isgebind decided by: 84.8 % in one pull, 85.04 % in another). The script sees an NPC's health in whole percent, as the server gives it (it was the
   recorded percent: a threshold the server reaches at 40.2 % the simulator didn't.)
 * **A wipe rehearsed** in every boss fight retail got through in one go (the bosses: the NPCs whose fall the music or
   an objective followed): the fight to its middle, `onPartyWipe`, `onDutyRecommence`, and the same stretch again.
+  The stretch starts 5 s before the pull, but not before the boss was there (a second after it appeared: what a
+  script does once as the room is entered isn't the fight's, and Duty Support pulled Isgebind 2 s after it came).
   Every *kind* of thing the script told the director the first time must come again (not each call: a random choice
   or helpers kept across attempts differ in the particulars). A flag `onPartyWipe` doesn't reset shows as a kind that
   never comes again. Lines and shortcuts said once a duty are left out (`ONCE`; a fixture's `once` adds its own.)
