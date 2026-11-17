@@ -54,7 +54,7 @@
             "data": {
                 "type": "action",
                 "action_id": 29340,
-                "target": "player"
+                "target": "target"
             },
             "comment": "first part, 37.8 s after the pull"
         },
@@ -171,7 +171,7 @@
             "data": {
                 "type": "action",
                 "action_id": 29340,
-                "target": "player"
+                "target": "target"
             },
             "comment": "first part, 159.3 s after the pull"
         },
@@ -180,7 +180,7 @@
             "data": {
                 "type": "action",
                 "action_id": 29341,
-                "target": "player"
+                "target": "target"
             },
             "comment": "first part, 165.3 s after the pull (no cast)"
         },
@@ -218,7 +218,7 @@
             "data": {
                 "type": "action",
                 "action_id": 29340,
-                "target": "player"
+                "target": "target"
             },
             "comment": "second part, 21.4 s after talk 33704 (334.1 s after the pull)"
         },
@@ -228,7 +228,7 @@
             "data": {
                 "type": "action",
                 "action_id": 29341,
-                "target": "player"
+                "target": "target"
             },
             "comment": "second part, 27.3 s after talk 33704 (340.0 s after the pull) (no cast)"
         },
@@ -238,7 +238,7 @@
             "data": {
                 "type": "action",
                 "action_id": 29342,
-                "target": "player"
+                "target": "target"
             },
             "comment": "second part, 29.2 s after talk 33704 (341.9 s after the pull) (no cast)"
         },
@@ -418,7 +418,7 @@
             "data": {
                 "type": "action",
                 "action_id": 29340,
-                "target": "player"
+                "target": "target"
             },
             "comment": "second part, 186.9 s after talk 33704 (499.6 s after the pull)"
         },
@@ -428,7 +428,7 @@
             "data": {
                 "type": "action",
                 "action_id": 29341,
-                "target": "player"
+                "target": "target"
             },
             "comment": "second part, 192.9 s after talk 33704 (505.6 s after the pull) (no cast)"
         },
@@ -438,7 +438,7 @@
             "data": {
                 "type": "action",
                 "action_id": 29342,
-                "target": "player"
+                "target": "target"
             },
             "comment": "second part, 194.8 s after talk 33704 (507.5 s after the pull) (no cast)"
         },
