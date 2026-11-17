@@ -828,6 +828,22 @@ pub struct LuaDirector {
     pub delays: Vec<(usize, f32)>,
 }
 
+#[cfg(test)]
+mod battle_talk_source_tests {
+    use super::*;
+
+    /// A battle talk's source is "no one", which a connection turns into the player (`send_ipc_from`): retail's 89
+    /// battle talks all came from the player's own actor (Bob's Chronofoil captures of 2026-11-16 and 17.)
+    #[test]
+    fn a_battle_talk_comes_from_the_player() {
+        assert_eq!(BATTLE_TALK_SOURCE, ObjectId::default());
+    }
+}
+
+/// The segment source a battle talk goes out with: none (`ObjectId::default()`'s 0xE0000000), which the connection
+/// makes the player's own actor (retail's.)
+const BATTLE_TALK_SOURCE: ObjectId = ObjectId(0xE000_0000);
+
 impl UserData for LuaDirector {
     fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut("hide_eobj", |_, this, base_id: u32| {
@@ -3249,10 +3265,13 @@ pub fn director_tick(
                     param2: 0,
                 });
                 let mut network = network.lock();
+                // Retail's comes from the player, not the speaker (the segment's source was the player's own actor
+                // in all 89 battle talks of Bob's Chronofoil captures of 2026-11-16 and 17; the speaker is only in
+                // the packet.) Kawari sent it from the speaker until 2026-11-17.
                 network.send_to_instance(
                     ObjectId::default(),
                     instance,
-                    FromServer::PacketSegment(ipc, actor_id),
+                    FromServer::PacketSegment(ipc, BATTLE_TALK_SOURCE),
                     DestinationNetwork::ZoneClients,
                 );
             }

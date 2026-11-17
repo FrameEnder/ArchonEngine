@@ -3,6 +3,14 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Battle talk without a portrait (2026-11-17)
+
+* Bob: the talk windows in instanced content show only the speaker's text, where retail shows a portrait. Kawari's
+  packet is retail's byte for byte, the `icon` included (0 on retail for most speakers, and the scripts pass the
+  ones retail set); the one difference found was the segment's source (the speaker here, the player on retail),
+  which is now the player. Whether that brings the portrait isn't known: if it doesn't, the portrait comes from
+  something else the client has on retail (which speaker, in which duty, is needed to look further).
+
 ## Quest battle 82, the Summoner's level 50 quest and Broadening Horizons (2026-11-17)
 
 * **Primal Burdens** (1096) is unplayed (it passes replay). Its ACTOR sides and objects that weren't used on retail
