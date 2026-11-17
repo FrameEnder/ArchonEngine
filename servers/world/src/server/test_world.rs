@@ -202,6 +202,8 @@ impl TestWorld {
                 heal_action: None,
                 heal_below: 0.0,
                 next_heal: Instant::now(),
+                area_heals: &[],
+                next_area_heal: 0,
                 aoe_action: None,
                 pull_action: None,
                 next_special: Instant::now(),

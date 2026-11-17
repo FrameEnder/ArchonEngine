@@ -2673,7 +2673,10 @@ end
                         {"S": 11.0, "Id": you, "P": [1.0, 0.0, 1.0]}, {"S": 20.0, "Id": mate, "P": [2.0, 0.0, 2.0]}],
             "Actions": [],
             "Events": [{"S": 31.0, "Kind": "cast", "Id": boss, "Text": "action 903 spell 903"},
-                       {"S": 32.0, "Kind": "battle talk", "Id": boss, "Text": "text 3700 name 1644 icon 0 5000 ms"}],
+                       {"S": 32.0, "Kind": "battle talk", "Id": boss, "Text": "text 3700 name 1644 icon 0 5000 ms"},
+                       # The opening's end (before the start) isn't kept; a cutscene's halfway through is.
+                       {"S": 8.0, "Kind": "scene end", "Text": "event 0x80030001 scene 1"},
+                       {"S": 45.0, "Kind": "scene end", "Text": "event 0x80030001 scene 3"}],
             "Controls": [{"S": 33.0, "Id": boss, "Category": 407, "Params": [1415, 0, 0, 0], "Packet": "ActorControl"},
                          director(10.0, 0x40000001, 5400), director(30.0, 0x80000001, 37), director(80.0, 0x80000001),
                          director(80.0, 0x80000016), director(80.0, 0x40000003), director(50.0, 0x40000005),
@@ -2692,9 +2695,26 @@ end
         self.assertEqual((fixture["wipes"], fixture["bars"], fixture["casts"]),
                          ([[40.0, 50.0]], [[5.0, 24, 2.0]], [[21.0, 5000001, 903]]))
         self.assertEqual(list(fixture["party"]), ["party1"])
+        self.assertEqual(fixture["scenes"], [[35.0, 3]])
         with tempfile.TemporaryDirectory() as tmp:
             path = duty_sim.save(fixture, Path(tmp) / "999-made.json")
             self.assertEqual(json.loads(path.read_text()), fixture)
+
+    def test_the_script_hears_a_scene_s_end(self):
+        # The Porta Decumana's cutscene between its two fights: what follows it waits for `onSceneFinished`.
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / "made.lua"
+            script.write_text(self.SCRIPT + self.RESET
+                              + "function onSceneFinished(director, scene) director:set_sequence(scene + 4) end\n")
+            fixture = self.fixture(script)
+            fixture["scenes"] = [[33.0, 3]]
+            fixture["events"].append([33.0, "sequence", 7])
+            run = duty_sim.simulate(fixture, "made")
+            self.assertEqual((run.error, run.problems), (None, []))
+            self.assertIn(("sequence", 7), [(kind, value) for kind, value, _, _ in run.matched])
+            del fixture["scenes"]
+            self.assertIn("sequence 7 at 33.0 s on retail: the script never did it",
+                          duty_sim.simulate(fixture, "made").problems)
 
 
 class DutySimFightKindsTest(unittest.TestCase):

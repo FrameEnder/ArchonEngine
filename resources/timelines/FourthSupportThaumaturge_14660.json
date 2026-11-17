@@ -1,0 +1,24 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "17235": {
+            "npcs": 1
+        },
+        "29313": {
+            "npcs": 1645
+        },
+        "29314": {
+            "npcs": 149
+        },
+        "29315": {
+            "npcs": 148
+        },
+        "29316": {
+            "npcs": 296
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The fourth set's Duty Support Thaumaturge (BNpcBase 14660, BNpcName 11336, DawnQuestMember 50): level 50, 2770 HP. The median of each action in the Porta Decumana (Connor's Chronofoil capture af05916c (2026-11-09, visit 0.12) and Bob's 9ba7d981 (2026-11-17, visit 0.18), both with Duty Support). Its kit and timing are in `server/party_npc.rs` (`FOURTH_MEMBERS`); hitbox not recorded."
+}

@@ -1,0 +1,238 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 29004,
+    "attack_range": 3.0,
+    "from_pull": true,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "29004": {
+            "players": 616,
+            "npcs": 237
+        }
+    },
+    "timepoints": [
+        {
+            "time": 8.1,
+            "data": {
+                "type": "action",
+                "action_id": 28628,
+                "target": "nobody"
+            },
+            "comment": "8.1 s after the pull (no cast)"
+        },
+        {
+            "time": 10.5,
+            "data": {
+                "type": "action",
+                "action_id": 28977,
+                "target": "itself"
+            },
+            "comment": "10.5 s after the pull (a 4.7 s cast)"
+        },
+        {
+            "time": 37.8,
+            "data": {
+                "type": "action",
+                "action_id": 28981,
+                "target": "itself"
+            },
+            "comment": "37.8 s after the pull (a 2.7 s cast)"
+        },
+        {
+            "time": 78.2,
+            "data": {
+                "type": "action",
+                "action_id": 28981,
+                "target": "itself"
+            },
+            "comment": "78.2 s after the pull (a 2.7 s cast)"
+        },
+        {
+            "time": 103.4,
+            "data": {
+                "type": "action",
+                "action_id": 28628,
+                "target": "nobody"
+            },
+            "comment": "103.4 s after the pull (no cast)"
+        },
+        {
+            "time": 105.8,
+            "data": {
+                "type": "action",
+                "action_id": 28987,
+                "target": "itself"
+            },
+            "comment": "105.8 s after the pull (a 3.7 s cast)"
+        },
+        {
+            "time": 116.0,
+            "data": {
+                "type": "action",
+                "action_id": 29435,
+                "target": "itself"
+            },
+            "comment": "116.0 s after the pull (a 32.7 s cast)"
+        },
+        {
+            "time": 135.1,
+            "data": {
+                "type": "action",
+                "action_id": 28994,
+                "target": "itself"
+            },
+            "comment": "135.1 s after the pull (no cast)"
+        },
+        {
+            "time": 158.5,
+            "data": {
+                "type": "action",
+                "action_id": 28628,
+                "target": "nobody"
+            },
+            "comment": "158.5 s after the pull (no cast)"
+        },
+        {
+            "time": 160.7,
+            "data": {
+                "type": "action",
+                "action_id": 28976,
+                "target": "itself"
+            },
+            "comment": "160.7 s after the pull (a 4.7 s cast)"
+        },
+        {
+            "time": 173.9,
+            "data": {
+                "type": "action",
+                "action_id": 28979,
+                "target": "itself"
+            },
+            "comment": "173.9 s after the pull (a 2.7 s cast)"
+        },
+        {
+            "time": 213.1,
+            "data": {
+                "type": "action",
+                "action_id": 28979,
+                "target": "itself"
+            },
+            "comment": "213.1 s after the pull (a 2.7 s cast)"
+        },
+        {
+            "time": 233.2,
+            "data": {
+                "type": "action",
+                "action_id": 28628,
+                "target": "nobody"
+            },
+            "comment": "233.2 s after the pull (no cast)"
+        },
+        {
+            "time": 235.7,
+            "data": {
+                "type": "action",
+                "action_id": 28984,
+                "target": "itself"
+            },
+            "comment": "235.7 s after the pull (a 3.7 s cast)"
+        },
+        {
+            "time": 244.8,
+            "data": {
+                "type": "action",
+                "action_id": 28510,
+                "target": "itself"
+            },
+            "comment": "244.8 s after the pull (a 27.7 s cast)"
+        },
+        {
+            "time": 262.9,
+            "data": {
+                "type": "action",
+                "action_id": 28993,
+                "target": "itself"
+            },
+            "comment": "262.9 s after the pull (no cast)"
+        },
+        {
+            "time": 284.3,
+            "data": {
+                "type": "action",
+                "action_id": 28628,
+                "target": "nobody"
+            },
+            "comment": "284.3 s after the pull (no cast)"
+        },
+        {
+            "time": 286.5,
+            "data": {
+                "type": "action",
+                "action_id": 28978,
+                "target": "itself"
+            },
+            "comment": "286.5 s after the pull (a 4.7 s cast)"
+        },
+        {
+            "time": 301.7,
+            "every": 40.9,
+            "data": {
+                "type": "action",
+                "action_id": 28982,
+                "target": "itself"
+            },
+            "comment": "301.7 s after the pull (a 1.9 s cast) and every 40.9 s: Bob's run had the three again at 342.6, 346.9 and 363.3"
+        },
+        {
+            "time": 306.0,
+            "every": 40.9,
+            "data": {
+                "type": "action",
+                "action_id": 28982,
+                "target": "itself"
+            },
+            "comment": "306.0 s after the pull (a 1.9 s cast) and every 40.9 s: Bob's run had the three again at 342.6, 346.9 and 363.3"
+        },
+        {
+            "time": 322.3,
+            "every": 40.9,
+            "data": {
+                "type": "action",
+                "action_id": 28982,
+                "target": "itself"
+            },
+            "comment": "322.3 s after the pull (a 1.9 s cast) and every 40.9 s: Bob's run had the three again at 342.6, 346.9 and 363.3"
+        },
+        {
+            "time": 5.1,
+            "after": 33214,
+            "data": {
+                "type": "action",
+                "action_id": 28628,
+                "target": "nobody"
+            },
+            "comment": "the chain, 5.1 s after talk 33214 (no cast)"
+        },
+        {
+            "time": 7.6,
+            "after": 33214,
+            "data": {
+                "type": "action",
+                "action_id": 28990,
+                "target": "itself"
+            },
+            "comment": "the chain, 7.6 s after talk 33214 (a 31.7 s cast)"
+        },
+        {
+            "time": 29.6,
+            "after": 33214,
+            "data": {
+                "type": "action",
+                "action_id": 28995,
+                "target": "itself"
+            },
+            "comment": "the chain, 29.6 s after talk 33214 (no cast)"
+        }
+    ],
+    "comment": "The Porta Decumana's first boss (ContentFinderCondition 830, territory 1048; BNpcBase 14587, BNpcName 2137, layout 9088367): level 50, 262421 HP. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.12) and Bob's 9ba7d981 (2026-11-17, visit 0.18), both with Duty Support: every cast and instant of the two runs was the same to 0.3 s for 322 s from the pull, so the fight is one clock from it. Auto-attacks (29004) every 3.0 s: 145 to 253 to Duty Support's tank, 616 the once it hit a player (Bob's, in the second fight). Its own casts hit no one: 28976, 28977 and 28978 (4.7 s, on itself) come with the three's casts, 28981 (2.7 s) and 28979 (2.7 s) face someone of the party, 28987, 29435, 28984, 28510 and 28990 are the long casts the director stops, 28993, 28994 and 28995 (no cast) take statuses 3009, 3010 and 3011 off it, 28628 (no cast) takes it away for 1.7 s; what goes with each is the director's (content/w1d5_battle.lua.) From 301.7 s its 28982 comes three times in 20.6 s and again every 40.9 s until the director starts the chain (`restart_timeline` with 33214, at 40 % as a round ends or begins); the cutscene's anchor 33218 has no points. Hitbox and range not recorded."
+}

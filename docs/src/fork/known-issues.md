@@ -13,8 +13,22 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
 * **The Ultimate Weapon's last battle** (5061) is unplayed. The director's `hold_wipe` and `revive_players` are
   new and have no test of their own beyond the script's two fixtures; if the player isn't got up at 312 s, or a wipe
   is called while they lie, that is where to look. Its unknowns are in `quest-battles.md`.
-* **Not read yet**: Castrum Meridianum (visit 0.12, 28 min), the Praetorium (0.14 and 0.16, 32 and 34 min) and the
-  Porta Decumana (0.18, 19 min), none of which is scripted (Connor's capture af05916c has each once more); what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
+* **The Porta Decumana** (duty 830) is built from visit 0.18 and Connor's af05916c visit 0.12 (`dungeons.md`) and
+  unplayed. Guessed or left out, because neither run shows it: what its last cast (29024, 70.7 s) does if it lands
+  (9999999 here); what the four of base 14594 do if one reaches the middle (it's taken away); whether felling the
+  four of base 14590 early matters; the first boss below 22 % before its chain (a floor of 1 HP keeps it standing
+  until the cutscene); the second fight after 325.7 s with the boss still above 30 % (29022 and the question again
+  every 15.4 s); a wipe in either fight (that fight begins again; in the second everyone is sent back to the second
+  arena, `set_start`); what ActorControls 20, 49, 62 and 70 on the bosses and statuses 3009-3012 do (sent and given
+  as retail did; that 28976-28978 give the statuses is a guess); the damage of the six actions that hit no one. The
+  three health lines are read from two runs each: 40 % (between 36.3 and 40.7), 22 % (the cutscene came at 21.7
+  and 21.1) and 30 % (between 29.4 and 32.9). `stop_cast`, `set_start`, the battle talk's style byte, the rows'
+  leaps (`jump_bnpc` for ten at once) and the party warp after the cutscene are new or first used this way: if the
+  second fight never begins, look at `onSceneFinished` (scene 3) first.
+* **Duty Support's fourth set** (at 50) fights by what it did in the Porta Decumana alone, a fight that kept breaking
+  its turns; its Conjurer's area heals (29321, 29320) are new in the party bot's healer (`party-npcs.md`).
+* **Not read yet**: Castrum Meridianum (visit 0.12, 28 min) and the Praetorium (0.14 and 0.16, 32 and 34 min),
+  neither of which is scripted (Connor's capture af05916c has each once more); what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
   back in from Western Thanalan; the script's `onPartyWipe` is a guess); what came after the story (from 9688 s:
   warps 131089 and 131091, aetherytes, events 0xB0013 and 0xB0002, quest 524's completion with 4522's).
 
@@ -25,6 +39,9 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
   ones retail set); the one difference found was the segment's source (the speaker here, the player on retail),
   which is now the player. Whether that brings the portrait isn't known: if it doesn't, the portrait comes from
   something else the client has on retail (which speaker, in which duty, is needed to look further).
+* One more field found since (the Porta Decumana's lines): the packet's **style byte**, 0 in every battle talk read
+  before and 6 or 7 for that duty's lines under two of its three speakers. `battle_talk` can send it now; what the
+  client draws for 6 and 7 isn't known, and the scripts written before pass 0, as retail did for their lines.
 
 ## Quest battle 82, the Summoner's level 50 quest and Broadening Horizons (2026-11-17)
 

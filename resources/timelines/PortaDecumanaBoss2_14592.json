@@ -1,0 +1,322 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 29004,
+    "attack_range": 3.0,
+    "from_pull": true,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "29004": {
+            "players": 616,
+            "npcs": 239
+        },
+        "29022": {
+            "players": 1003,
+            "npcs": 864
+        },
+        "29023": {
+            "npcs": 971
+        }
+    },
+    "timepoints": [
+        {
+            "time": 8.1,
+            "data": {
+                "type": "action",
+                "action_id": 29023,
+                "target": "target"
+            },
+            "comment": "8.1 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 16.5,
+            "data": {
+                "type": "action",
+                "action_id": 29005,
+                "target": "itself"
+            },
+            "comment": "16.5 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 18.9,
+            "data": {
+                "type": "action",
+                "action_id": 29006,
+                "target": "itself"
+            },
+            "comment": "18.9 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 21.2,
+            "data": {
+                "type": "action",
+                "action_id": 29007,
+                "target": "itself"
+            },
+            "comment": "21.2 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 27.7,
+            "data": {
+                "type": "action",
+                "action_id": 29011,
+                "target": "itself"
+            },
+            "comment": "27.7 s after the pull (talk 33219) (a 3.7 s cast)"
+        },
+        {
+            "time": 38.8,
+            "data": {
+                "type": "action",
+                "action_id": 29022,
+                "target": "itself"
+            },
+            "comment": "38.8 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 51.0,
+            "data": {
+                "type": "action",
+                "action_id": 28628,
+                "target": "nobody"
+            },
+            "comment": "51.0 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 53.4,
+            "data": {
+                "type": "action",
+                "action_id": 29015,
+                "target": "itself"
+            },
+            "comment": "53.4 s after the pull (talk 33219) (a 3.7 s cast)"
+        },
+        {
+            "time": 71.5,
+            "data": {
+                "type": "action",
+                "action_id": 29013,
+                "target": "itself"
+            },
+            "comment": "71.5 s after the pull (talk 33219) (a 3.7 s cast)"
+        },
+        {
+            "time": 77.9,
+            "data": {
+                "type": "action",
+                "action_id": 29020,
+                "target": "itself"
+            },
+            "comment": "77.9 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 125.3,
+            "data": {
+                "type": "action",
+                "action_id": 29020,
+                "target": "itself"
+            },
+            "comment": "125.3 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 133.5,
+            "data": {
+                "type": "action",
+                "action_id": 29011,
+                "target": "itself"
+            },
+            "comment": "133.5 s after the pull (talk 33219) (a 3.7 s cast)"
+        },
+        {
+            "time": 144.6,
+            "data": {
+                "type": "action",
+                "action_id": 29013,
+                "target": "itself"
+            },
+            "comment": "144.6 s after the pull (talk 33219) (a 3.7 s cast)"
+        },
+        {
+            "time": 154.8,
+            "data": {
+                "type": "action",
+                "action_id": 28628,
+                "target": "nobody"
+            },
+            "comment": "154.8 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 157.2,
+            "data": {
+                "type": "action",
+                "action_id": 29022,
+                "target": "itself"
+            },
+            "comment": "157.2 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 170.4,
+            "data": {
+                "type": "action",
+                "action_id": 29005,
+                "target": "itself"
+            },
+            "comment": "170.4 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 172.8,
+            "data": {
+                "type": "action",
+                "action_id": 29006,
+                "target": "itself"
+            },
+            "comment": "172.8 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 175.2,
+            "data": {
+                "type": "action",
+                "action_id": 29007,
+                "target": "itself"
+            },
+            "comment": "175.2 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 181.8,
+            "data": {
+                "type": "action",
+                "action_id": 29020,
+                "target": "itself"
+            },
+            "comment": "181.8 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 200.0,
+            "data": {
+                "type": "action",
+                "action_id": 29023,
+                "target": "target"
+            },
+            "comment": "200.0 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 207.1,
+            "data": {
+                "type": "action",
+                "action_id": 29022,
+                "target": "itself"
+            },
+            "comment": "207.1 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 228.4,
+            "data": {
+                "type": "action",
+                "action_id": 29020,
+                "target": "itself"
+            },
+            "comment": "228.4 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 236.6,
+            "data": {
+                "type": "action",
+                "action_id": 29011,
+                "target": "itself"
+            },
+            "comment": "236.6 s after the pull (talk 33219) (a 3.7 s cast)"
+        },
+        {
+            "time": 247.7,
+            "data": {
+                "type": "action",
+                "action_id": 29013,
+                "target": "itself"
+            },
+            "comment": "247.7 s after the pull (talk 33219) (a 3.7 s cast)"
+        },
+        {
+            "time": 257.8,
+            "data": {
+                "type": "action",
+                "action_id": 28628,
+                "target": "nobody"
+            },
+            "comment": "257.8 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 260.3,
+            "data": {
+                "type": "action",
+                "action_id": 29022,
+                "target": "itself"
+            },
+            "comment": "260.3 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 273.6,
+            "data": {
+                "type": "action",
+                "action_id": 29005,
+                "target": "itself"
+            },
+            "comment": "273.6 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 276.0,
+            "data": {
+                "type": "action",
+                "action_id": 29006,
+                "target": "itself"
+            },
+            "comment": "276.0 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 278.4,
+            "data": {
+                "type": "action",
+                "action_id": 29007,
+                "target": "itself"
+            },
+            "comment": "278.4 s after the pull (talk 33219) (no cast)"
+        },
+        {
+            "time": 285.1,
+            "data": {
+                "type": "action",
+                "action_id": 29020,
+                "target": "itself"
+            },
+            "comment": "285.1 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 303.2,
+            "data": {
+                "type": "action",
+                "action_id": 29023,
+                "target": "target"
+            },
+            "comment": "303.2 s after the pull (talk 33219) (a 4.7 s cast)"
+        },
+        {
+            "time": 0.0,
+            "after": 33223,
+            "data": {
+                "type": "action",
+                "action_id": 28628,
+                "target": "nobody"
+            },
+            "comment": "the last part (the director's, at 30 % 310.3 s in or 15.4 s later): away"
+        },
+        {
+            "time": 2.2,
+            "after": 33223,
+            "data": {
+                "type": "action",
+                "action_id": 29024,
+                "target": "itself"
+            },
+            "comment": "the last part, 2.2 s on: a 70.7 s cast; it fell 54 and 63 s into it"
+        }
+    ],
+    "comment": "The Porta Decumana's second boss (BNpcBase 14592, BNpcName 2137, layout 9088373): level 50, 244634 HP, there as the cutscene between the fights ends. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.12) and Bob's 9ba7d981 (2026-11-17, visit 0.18), both with Duty Support: its casts were the same to 0.3 s for 303 s from its pull in both runs. The last part is the director's (`restart_timeline` with 33223: at 30 % 310.3 s in, or 15.4 s later). Auto-attacks (29004) every 3.0 s for 153 to 253 to the tank (616 to a player once); 29023 (4.7 s, on its target) 920 to 1285 to the tank; 29022 (4.7 s) 907 to 1046 to a player and 269 to 995 to the members; 29005, 29006 and 29007 (no cast, on itself, 2.4 s apart) go with a helper's 29008 to 29010, 29011 (3.7 s) with the helpers' 29012, 29013 (3.7 s) with a helper's 29014, 29015 (3.7 s) throws everyone to the edge (Knockback 13) before the four of base 14594, 29020 (4.7 s) comes five times beside the rows of base 14593 (which keep the fight's clock, not its), 28628 takes it to the middle; the last part's 29024 never landed. What goes with each is the director's (content/w1d5_battle.lua.) Hitbox and range not recorded."
+}

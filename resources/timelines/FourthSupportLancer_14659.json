@@ -1,0 +1,36 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 17059,
+    "recorded_amounts": {
+        "17059": {
+            "npcs": 14
+        },
+        "29305": {
+            "npcs": 151
+        },
+        "29306": {
+            "npcs": 156
+        },
+        "29307": {
+            "npcs": 311.5
+        },
+        "29308": {
+            "npcs": 151
+        },
+        "29309": {
+            "npcs": 310.5
+        },
+        "29769": {
+            "npcs": 466
+        },
+        "29773": {
+            "npcs": 1549.5
+        },
+        "29774": {
+            "npcs": 623.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The fourth set's Duty Support Lancer (BNpcBase 14659, BNpcName 11335, DawnQuestMember 49): level 50, 3132 HP. The median of each action in the Porta Decumana (Connor's Chronofoil capture af05916c (2026-11-09, visit 0.12) and Bob's 9ba7d981 (2026-11-17, visit 0.18), both with Duty Support). Its kit and timing are in `server/party_npc.rs` (`FOURTH_MEMBERS`); hitbox not recorded."
+}

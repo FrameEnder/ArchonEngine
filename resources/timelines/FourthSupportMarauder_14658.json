@@ -1,0 +1,33 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 17058,
+    "recorded_amounts": {
+        "17058": {
+            "npcs": 10
+        },
+        "29291": {
+            "npcs": 115.5
+        },
+        "29299": {
+            "npcs": 110
+        },
+        "29300": {
+            "npcs": 111
+        },
+        "29301": {
+            "npcs": 220.5
+        },
+        "29302": {
+            "npcs": 998
+        },
+        "29764": {
+            "npcs": 331
+        },
+        "29765": {
+            "npcs": 554
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The fourth set's Duty Support Marauder (BNpcBase 14658, BNpcName 11334, DawnQuestMember 48): level 50, 4375 HP. The median of each action in the Porta Decumana (Connor's Chronofoil capture af05916c (2026-11-09, visit 0.12) and Bob's 9ba7d981 (2026-11-17, visit 0.18), both with Duty Support). Its kit and timing are in `server/party_npc.rs` (`FOURTH_MEMBERS`); hitbox not recorded."
+}

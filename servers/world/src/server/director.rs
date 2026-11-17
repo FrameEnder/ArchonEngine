@@ -198,6 +198,19 @@ pub enum LuaDirectorTask {
     },
     /// Play a cutscene (scene 3 with its ID), with the scene's parameters after the ID: `DEFAULT_CUTSCENE_PARAMS`
     /// unless the script gives its own.
+    /// Where players are sent back to after a wipe from now on (`Instance::quest_battle_start`, as a quest's solo
+    /// duty has from its script): a duty whose fight has moved on from its entrance. The Porta Decumana's second
+    /// arena.
+    SetStart {
+        position: Position,
+        rotation: f32,
+    },
+    /// Cuts short what an NPC (actor ID or layout ID) is casting, as the fight itself does
+    /// (`action::cut_cast_short`): the cast never lands, CancelCast with `message` (537 unless given.)
+    StopCast {
+        npc: u32,
+        message: u32,
+    },
     PlayCutscene {
         cutscene_id: u32,
         params: Vec<u32>,
@@ -292,6 +305,10 @@ pub enum LuaDirectorTask {
         icon: u32,
         duration_ms: u32,
         kind: u8,
+        /// The packet's byte after `kind`: 0 in nearly every battle talk of the captures; 6 for the Porta Decumana's
+        /// ten lines under BNpcName 2183 and none of its others (Connor's Chronofoil capture af05916c and Bob's
+        /// 9ba7d981.) What the client draws differently for it isn't known.
+        style: u8,
     },
     /// Where the party goes as an enemy casts `action` from near `caster` (x, z; anywhere if None): retail's Duty
     /// Support members' spots for it, by role (`dodge::AuthoredSpots`.)
@@ -768,7 +785,8 @@ pub fn update_appearances(
     for pending in due {
         let found = match pending.actor {
             Some(actor) => instance.find_actor(actor).map(|_| actor),
-            None => instance.find_npc(pending.layout_id).map(|(actor, _)| actor),
+            // (An actor ID from `spawn_bnpc` too, since 2026-11-17: the Porta Decumana's four of one layout.)
+            None => resolve_bnpc(instance, pending.layout_id),
         };
         let Some(actor_id) = found else {
             // (A pet dismissed before it came into view is simply gone.)
@@ -1092,6 +1110,26 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
+        methods.add_method_mut(
+            "set_start",
+            |_, this, (x, y, z, rotation): (f32, f32, f32, f32)| {
+                this.tasks.push(LuaDirectorTask::SetStart {
+                    position: Position(glam::Vec3A::new(x, y, z)),
+                    rotation,
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "stop_cast",
+            |_, this, (npc, message): (u32, Option<u32>)| {
+                this.tasks.push(LuaDirectorTask::StopCast {
+                    npc,
+                    message: message.unwrap_or(crate::server::action::CAST_STOPPED),
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("update_shortcut", |_, this, poprange_id: u32| {
             // Show the shortcut object because it's hidden by default
             this.tasks.push(LuaDirectorTask::ShowEObj {
@@ -1224,12 +1262,13 @@ impl UserData for LuaDirector {
             "battle_talk",
             |_,
              this,
-             (layout_id, name_id, text_id, icon, duration_ms, kind): (
+             (layout_id, name_id, text_id, icon, duration_ms, kind, style): (
                 u32,
                 u32,
                 u32,
                 u32,
                 Option<u32>,
+                Option<u8>,
                 Option<u8>,
             )| {
                 this.tasks.push(LuaDirectorTask::BattleTalk {
@@ -1241,6 +1280,7 @@ impl UserData for LuaDirector {
                     duration_ms: duration_ms.unwrap_or(4000),
                     // A BattleNpc unless said otherwise.
                     kind: kind.unwrap_or(BATTLE_TALK_KIND_BATTLE_NPC),
+                    style: style.unwrap_or(0),
                 });
                 Ok(())
             },
@@ -3296,6 +3336,7 @@ pub fn director_tick(
                 icon,
                 duration_ms,
                 kind,
+                style,
             } => {
                 let actor_id = instance
                     .find_npc(*layout_id)
@@ -3312,7 +3353,7 @@ pub fn director_tick(
                     duration_msecs: *duration_ms,
                     icon: *icon,
                     kind: *kind,
-                    style: 0,
+                    style: *style,
                     params_count: 0,
                     param1: 0,
                     param2: 0,
@@ -3520,6 +3561,19 @@ pub fn director_tick(
                 // Picked up on the next NPC tick, the same way as being attacked.
                 if let Some(actor) = instance.find_actor_mut(actor_id) {
                     actor.add_enmity(target_id, *amount);
+                }
+            }
+            LuaDirectorTask::SetStart { position, rotation } => {
+                instance.quest_battle_start = Some((*position, *rotation));
+            }
+            LuaDirectorTask::StopCast { npc, message } => {
+                if let Some(actor_id) = resolve_bnpc(instance, *npc) {
+                    crate::server::action::cut_cast_short(
+                        network.clone(),
+                        instance,
+                        actor_id,
+                        *message,
+                    );
                 }
             }
             LuaDirectorTask::PlayCutscene {

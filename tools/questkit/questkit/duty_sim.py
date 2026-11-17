@@ -17,6 +17,8 @@ of the duty from a Chronofoil capture (`questkit chronofoil --battle N.V`), in s
   capture doesn't say: `[[seconds, range ID]]` (Sastasha's cove, as its boss first appeared);
 * `bars`: the progress bars of the party's event actions (a door being opened: ActorControlTarget 3 with 1 and the
   EventAction row as it began, 0 as it ended): when, the row, how long;
+* `scenes` (fixtures made since 2026-11-17): when the director's own scenes ended after the start, `[[seconds,
+  scene]]`: the script hears `onSceneFinished` then (the Porta Decumana's cutscene between its two fights);
 * `events`, what the script must do as retail did: the boss music (`bgm`, the director's 0x80000001), objectives done
   (`objective`, 0x80000016), the director's sequences, and `complete` (0x40000003); in fixtures made since 2026-11-11
   also the fight's own timeline: battle talk (`talk`, its text ID), a laid-out NPC's ActionTimelines (`timeline`,
@@ -228,7 +230,23 @@ def fixture_from_run(run: dict, script: str, source: str = "", unlaid: dict[int,
             start = open_bars.pop(key)
             bars.append([rel(start), action, round(control["S"] - start, 2)])
 
+    # The ends of the director's own scenes after the start (a cutscene halfway through: the Porta Decumana's.)
+    scenes = []
+    for event in run.get("Events", []):
+        if event.get("Kind") == "scene end" and event["S"] > commence:
+            scene = _number_after(event.get("Text", ""), "scene")
+            if scene is not None:
+                scenes.append([rel(event["S"]), scene])
+
     events.sort(key=lambda e: (e[0], e[1]))
+    fixture = _fixture(run, script, source, npcs, positions, you, player_health, party, players, casts, wipes, bars,
+                       events)
+    if scenes:
+        fixture["scenes"] = scenes
+    return fixture
+
+
+def _fixture(run, script, source, npcs, positions, you, player_health, party, players, casts, wipes, bars, events):
     return {"duty": run.get("ContentFinderCondition", 0), "script": script, "source": source or run.get("Source", ""),
             "tolerance": DEFAULT_TOLERANCE, "npcs": npcs,
             "player": {"pos": _sparse(sorted(positions.get(you, [])), 1.5), "hp": player_health},
@@ -247,7 +265,7 @@ def save(fixture: dict, path: Path) -> Path:
             for layout, lives in fixture["npcs"].items()]
     lines.append(",\n".join(rows))
     lines.append(" },")
-    for key in ("player", "party", "players", "casts", "wipes", "bars"):
+    for key in ("player", "party", "players", "casts", "wipes", "bars", "scenes"):
         if key not in fixture:
             continue
         lines.append(f' {json.dumps(key)}: {json.dumps(fixture[key], separators=(",", ":"))},')
@@ -476,6 +494,7 @@ class Driver:
         self.bars = [list(b) for b in fixture.get("bars", [])]
         self.bars_due: list[tuple[float, int]] = []
         self.ranges = [list(r) for r in fixture.get("ranges", [])]
+        self.scenes = [list(s) for s in fixture.get("scenes", [])]
         self.t = 0.0
         self.stage.clock = SETUP_CLOCK
         self.stage.call("onSetup")
@@ -520,6 +539,12 @@ class Driver:
             self.ranges.remove(entered)
             stage.clock = t
             stage.call("onGimmickRect", entered[1])
+            world.follow_calls()
+        # The director's own scenes' ends, as retail's player finished them (`onSceneFinished`.)
+        for ended in [s for s in self.scenes if s[0] <= retail_t]:
+            self.scenes.remove(ended)
+            stage.clock = t
+            stage.call("onSceneFinished", ended[1])
             world.follow_calls()
         for due in [d for d in self.bars_due if d[0] <= t]:
             self.bars_due.remove(due)

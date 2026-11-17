@@ -1,0 +1,13 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "29016": {
+            "players": 195,
+            "npcs": 186.5
+        }
+    },
+    "timepoints": [],
+    "comment": "The Porta Decumana's four of base 14594 (BNpcName 2138, layout 9088375: level 50, 2589 HP): at the second arena's corners 0.8 s after the boss's 29015 lands, off for the middle 5 s later at 1.7 yalms a second; each used 29016 (no cast: 159 to 195) on the member of the party it reached and was gone, two of the four in each run, and the party felled the others. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.12) and Bob's 9ba7d981 (2026-11-17, visit 0.18), both with Duty Support. No auto-attack; the director's (content/w1d5_battle.lua). Hitbox not recorded."
+}

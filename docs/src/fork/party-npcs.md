@@ -135,6 +135,44 @@ has loaded into the duty, `party_npc::fill_duty_support` spawns the recorded mem
 bot filling (`party_bot::fill_duty_party`) takes any role still missing, so a member nobody has recorded yet is a
 Player NPC of that role for now.
 
+**The fourth set, at 50** (the Porta Decumana: Connor's Chronofoil capture af05916c of 2026-11-09, visit 0.12, a
+healer, and Bob's 9ba7d981 of 2026-11-17, visit 0.18, a damage dealer; Castrum Meridianum and the Praetorium in the
+same captures registered the same members under DawnContent 210 and 211, the Porta Decumana 212). Registered as 48,
+50, 49 (Connor's) and 48, 51, 50 (Bob's):
+
+| DawnQuestMember | BNpcBase | BNpcName | Class | Level | HP | 276 | 1525 |
+|---|---|---|---|---|---|---|---|
+| 48 | 14658 | 11334 | Marauder (3) | 50 | 4375 | 10012 | 1042788 |
+| 49 | 14659 | 11335 | Lancer (4) | 50 | 3132 | 10013 | 1042789 |
+| 50 | 14660 | 11336 | Thaumaturge (7) | 50 | 2770 | 10014 | 1042790 |
+| 51 | 14661 | 11337 | Conjurer (6) | 50 | 2796 | 10015 | 1042791 |
+
+`party_npc::FOURTH_MEMBERS`, their level and HP for duty 830 in `DUTY_LEVELS`, their hits and heals scaled by
+`FourthSupport*_<base>.json`. The trial's mechanics kept breaking their turns, so their kits are from the stretches
+nothing broke:
+
+* **The Marauder**: 29299, 29300, 29301 twice round, then 26230, 29303 on itself, 29764, 29765, **29302** (where the
+  third set had 29768: 998 a hit to 29299's 110) and 29766 on itself, 23 s from burst to burst. Seen and not built:
+  29296 on itself (status 89, 12.2 s into the first fight in both runs and four more times as a big hit was cast),
+  25136 on the second boss (status 1193, four and five times), 29297 on itself once (875 healed, status 87).
+* **The Lancer** (Connor's run): six fillers now (29305, 29306, 29307, 29305, 29308, **29309**), then 26230, 29310 on
+  itself, 29769, **29774**, 29311 on itself, **29773**, 29767 on itself, 24 s from burst to burst (nine fillers before
+  the first: `burst_after_fillers` 9, 6). 29773 healed it 158-167 a hit (not done).
+* **The Thaumaturge**: as the third set's at 41 (29314, 29315, 29316, then 29313, 12 s apart). Its 3269 on itself
+  (ten times in Bob's run), and once at the very end of Connor's 27841, 25528 (10089 to the boss) and 27838, aren't
+  built.
+* **The Conjurer** (Bob's run): 29323 every 2.1 s and **29325** every 19 s (1065 a hit); **29318** on the lowest of
+  the party (28 times, 1654-1732); and **with most of the party hurt, 29321 (510-541 to everyone round it, and
+  status 150) and 29320 (816-865), in turn**, three seconds apart, after what hit them all (15 and 11 times). Kawari:
+  `Kit::area_heals`, used by the party bot's healer when three or more of the living party are below its heal's line
+  (`party_bot::AREA_HEAL_HURT`, `area_heal_due`; test `a_healer_heals_everyone_when_most_are_hurt`). What status 150
+  healed over time wasn't measured: it's only given.
+
+Their lines there: 14404 at the first pull (the Thaumaturge), 14407 or 14408 as the first long cast was stopped (the
+Lancer; the Conjurer), 14409 and 13980 in the last part (the Marauder, the Thaumaturge): the duty's
+(`party_npc_yell` in `content/w1d5_battle.lua`); 13958 (the Marauder), 13978 and 13979 (the Thaumaturge) are their own
+chatter.
+
 ## The members (Sastasha)
 
 | Slot | DawnQuestMember | BNpcBase | BNpcName | Class | Level | HP | `pet_id` | 276 | 1525 |
@@ -311,6 +349,10 @@ Their lines are NpcYell packets from the member, under its BNpcName:
   recorded (no line then).
 * The Conjurer's Medica, Esuna and instant Cure aren't cast, and the third set's still heals with 29317 (retail's:
   29318).
+* The fourth set (at 50) is recorded in the Porta Decumana only: in Castrum Meridianum and the Praetorium its members
+  come with their own level and HP (50; the same) until those duties' `DUTY_LEVELS` rows are read. Its Marauder's
+  29296, 25136 and 29297, its Thaumaturge's 3269 and its Lancer's heal from 29773 aren't built; the earlier sets'
+  Conjurers still have no area heal (29320 and 29321 weren't seen below 50).
 * The Thaumaturge's 17995 (once a run as the Stone Vigil's second boss was pulled, with a Paladin; never with a
   Summoner) isn't built, nor the Marauder's 25136, 29296, 29297 and 29777, the Lancer's 29778
   isn't used (what calls for it isn't known) and its 29771 doesn't heal it. The third set's Lancer has its kit of 41

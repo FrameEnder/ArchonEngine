@@ -53,7 +53,9 @@ from the duty commencing (the director's 0x40000001): every NPC by layout ID wit
 target, fell, health a percent at a time, where a boss went), where the player and the party stood, the NPCs' casts,
 the party's wipes (0x40000005, 0x40000006), the progress bars of event actions (a door being opened), which of the
 party were players (`players`: the script sees those as `player2`... too), event ranges the party walked into
-(`ranges`, written by hand: a capture doesn't say; Sastasha's cove), and the events
+(`ranges`, written by hand: a capture doesn't say; Sastasha's cove), when the director's own scenes ended after the
+start (`scenes`, since 2026-11-17: `[[seconds, scene]]`, at which the script hears `onSceneFinished`: the Porta
+Decumana's cutscene between its two fights, without which its second fight never began in the simulator), and the events
 to match: the boss music (0x80000001: 37 at a pull, 0 as the boss falls), objectives done (0x80000016), sequences and
 the completion (0x40000003).
 

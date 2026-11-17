@@ -85,6 +85,11 @@ const RANGED_RANGE: f32 = 15.0;
 /// Ranged bots and healers stay within this of the one they follow while fighting.
 const RANGED_STAY_WITHIN: f32 = 20.0;
 
+/// How many of the party are hurt (below the healer's line) before it heals everyone round it instead of the lowest
+/// (`PartyBot::area_heals`): retail's level 50 Duty Support Conjurer used 29321 and 29320 with three or four of the
+/// four hurt, after what hit them all, and its single heal otherwise (Bob's Chronofoil capture 9ba7d981 of
+/// 2026-11-17, the Porta Decumana: 26 area heals, 28 single ones.)
+pub const AREA_HEAL_HURT: usize = 3;
 /// The healer heals someone below this much health (in %), the lowest first.
 const HEAL_BELOW_PERCENT: f32 = 60.0;
 /// How long a player tank took to answer an enemy hitting someone else in the party (their next action hitting it), in
@@ -182,6 +187,10 @@ pub struct PartyBot {
     pub heal_action: Option<u32>,
     pub heal_below: f32,
     pub next_heal: Instant,
+    /// Its heals for everyone round it (a Duty Support member's, `party_npc::Kit::area_heals`), used in turn while
+    /// `AREA_HEAL_HURT` of the party are below `heal_below`, and which comes next.
+    pub area_heals: &'static [u32],
+    pub next_area_heal: usize,
     /// Tanks: their area enmity combo and ranged pull, and when the next of these (on the GCD) may go.
     pub aoe_action: Option<u32>,
     pub pull_action: Option<u32>,
@@ -260,6 +269,8 @@ impl PartyBot {
             heal_action: None,
             heal_below: HEAL_BELOW_PERCENT,
             next_heal: now,
+            area_heals: &[],
+            next_area_heal: 0,
             aoe_action: None,
             pull_action: None,
             next_special: now,
@@ -2022,6 +2033,8 @@ fn spawn_bot(
             heal_action: heal,
             heal_below: HEAL_BELOW_PERCENT,
             next_heal: Instant::now(),
+            area_heals: &[],
+            next_area_heal: 0,
             aoe_action,
             pull_action,
             next_special: Instant::now(),
@@ -3523,6 +3536,16 @@ pub(super) fn back_to_the_start(
     }
 }
 
+/// The heal for everyone round it a healer uses now, if it has any (`heals`, in turn from `next`) and at least
+/// `AREA_HEAL_HURT` of the living party (`healths`, percent) are below its line.
+pub fn area_heal_due(heals: &[u32], next: usize, healths: &[f32], below: f32) -> Option<u32> {
+    if heals.is_empty() {
+        return None;
+    }
+    let hurt = healths.iter().filter(|percent| **percent < below).count();
+    (hurt >= AREA_HEAL_HURT).then(|| heals[next % heals.len()])
+}
+
 fn health_percent(actor: &NetworkedActor) -> f32 {
     let common = actor.get_common_spawn();
     if common.max_health_points == 0 {
@@ -3618,6 +3641,14 @@ fn update_party(
         .map(|(id, actor)| (id, health_percent(actor)))
         .min_by(|a, b| a.1.total_cmp(&b.1));
 
+    // How many of the party each healer's line finds hurt (for `PartyBot::area_heals`.)
+    let healths: Vec<f32> = members
+        .iter()
+        .filter_map(|id| instance.find_actor(*id))
+        .filter(|actor| actor.get_common_spawn().health_points > 0)
+        .map(health_percent)
+        .collect();
+
     // Where everyone is and faces, and each bot's place behind the one it follows.
     let where_is: HashMap<ObjectId, (Vec3A, f32)> = members
         .iter()
@@ -3687,6 +3718,7 @@ fn update_party(
     let mut boss_spots: Vec<(ObjectId, Option<Vec3A>)> = Vec::new();
 
     let mut heals = Vec::new();
+    let mut area_heals_used = Vec::new();
     let mut provokes = Vec::new();
     let mut specials: Vec<(ObjectId, u32, ObjectId, Vec<ObjectId>)> = Vec::new();
     let mut tank_answers: Vec<(ObjectId, HashMap<ObjectId, Instant>)> = Vec::new();
@@ -4138,7 +4170,17 @@ fn update_party(
                 .is_none_or(sees)
         };
 
-        // The healer heals first.
+        // The healer heals first: everyone round it when enough of them are hurt, if it has heals for that.
+        if bot.role == BotRole::Healer
+            && let Some(heal) =
+                area_heal_due(bot.area_heals, bot.next_area_heal, &healths, bot.heal_below)
+            && now >= bot.next_heal
+            && !busy
+        {
+            area_heals_used.push(*bot_id);
+            heals.push((*bot_id, heal, *bot_id));
+            continue;
+        }
         if bot.role == BotRole::Healer
             && let (Some(heal), Some((patient, _))) = (
                 bot.heal_action,
@@ -4525,6 +4567,11 @@ fn update_party(
             bot.pulled.extend(close.iter().copied());
         }
     }
+    for bot_id in area_heals_used {
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.next_area_heal += 1;
+        }
+    }
     for (bot_id, heal, patient) in heals {
         npc_use_action(network, game_data, instance, bot_id, heal, patient);
         // Its GCD goes on the heal, so its rotation doesn't cast over it.
@@ -4572,6 +4619,37 @@ fn tank_target(
 
 #[cfg(test)]
 mod tests {
+    /// Retail's level 50 Duty Support Conjurer healed everyone (29321, then 29320) with most of the party hurt and
+    /// the lowest alone otherwise (Bob's Chronofoil capture 9ba7d981 of 2026-11-17, the Porta Decumana.)
+    #[test]
+    fn a_healer_heals_everyone_when_most_are_hurt() {
+        let heals = [29321, 29320];
+        // One hurt, or two: the single heal's business.
+        assert_eq!(
+            area_heal_due(&heals, 0, &[40.0, 100.0, 100.0, 100.0], 85.0),
+            None
+        );
+        assert_eq!(
+            area_heal_due(&heals, 0, &[40.0, 60.0, 100.0, 90.0], 85.0),
+            None
+        );
+        // Three of the four: its area heals, in turn.
+        assert_eq!(
+            area_heal_due(&heals, 0, &[60.0, 58.0, 63.0, 82.0], 85.0),
+            Some(29321)
+        );
+        assert_eq!(
+            area_heal_due(&heals, 1, &[70.0, 66.0, 59.0, 90.0], 85.0),
+            Some(29320)
+        );
+        assert_eq!(
+            area_heal_due(&heals, 2, &[70.0, 66.0, 59.0, 90.0], 85.0),
+            Some(29321)
+        );
+        // A healer without any (the earlier sets' Conjurer) never does.
+        assert_eq!(area_heal_due(&[], 0, &[10.0, 10.0, 10.0, 10.0], 85.0), None);
+    }
+
     use super::*;
 
     #[test]

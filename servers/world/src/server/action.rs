@@ -3217,6 +3217,24 @@ pub fn cancel_action(
 /// Interrupts what an actor is casting (Head Graze, Interject): its cast tasks only (its statuses still run out), and
 /// everyone nearby sees the cast bar cancelled.
 fn interrupt_cast(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, actor_id: ObjectId) {
+    cut_cast_short(network, instance, actor_id, CAST_INTERRUPTED);
+}
+
+/// CancelCast's first number when a cast is interrupted (538, as Kawari always sent it), and when the fight itself
+/// stops one (537: the Porta Decumana's boss's 29435, 28510 and 28990, cut short 19.0, 17.9 and 21.9 s into their
+/// casts in both of Connor's and Bob's runs, Chronofoil captures af05916c and 9ba7d981: ActorControl 15 `[537, 1,
+/// action, 0]`.)
+pub const CAST_INTERRUPTED: u32 = 538;
+pub const CAST_STOPPED: u32 = 537;
+
+/// Cuts what an actor is casting short: its cast tasks dropped (it never lands), and CancelCast with `message` to
+/// everyone nearby. The actions it was casting.
+pub fn cut_cast_short(
+    network: Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    actor_id: ObjectId,
+    message: u32,
+) -> Vec<u32> {
     let cancelled = instance.cancel_actor_casts(actor_id);
     if let Some(NetworkedActor::Npc { cast, .. }) = instance.find_actor_mut(actor_id) {
         *cast = None;
@@ -3227,18 +3245,19 @@ fn interrupt_cast(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
     {
         set_casting(&mut network, actor_id, false);
     }
-    for action_id in cancelled {
+    for action_id in &cancelled {
         network.send_ac_in_range_inclusive_instance(
             instance,
             actor_id,
             ActorControlCategory::CancelCast {
-                unk1: 538,
+                unk1: message,
                 unk2: 1,
-                action_id,
+                action_id: *action_id,
                 unk3: 0,
             },
         );
     }
+    cancelled
 }
 
 /// The IDs of an actor's statuses.

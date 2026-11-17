@@ -1,0 +1,12 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "29019": {
+            "players": 1140
+        }
+    },
+    "timepoints": [],
+    "comment": "The Porta Decumana's base 14593 (BNpcName 2142, layout 9088374: level 50, 2589 HP), ten at a time, five times in the second fight (83.1, 128.6, 172.4, 231.6 and 275.8 s from its pull): they come where the boss stands, 4.8 s later leap (29018, no cast, then SnapNextMove) to a row of ten through the middle and cast 29019 (3.7 s) across it, twice, leap a third time and are gone 22.2 s after coming. 29019 hit a player once, for 1140. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.12) and Bob's 9ba7d981 (2026-11-17, visit 0.18), both with Duty Support. No auto-attack; the director's (content/w1d5_battle.lua). Hitbox not recorded."
+}

@@ -1,0 +1,13 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "28996": {
+            "players": 1654,
+            "npcs": 1480
+        }
+    },
+    "timepoints": [],
+    "comment": "The Porta Decumana's base 14588 (BNpcName 2141, layout 9088368: level 50, 2589 HP), one of the three that stand unseen in the first arena's middle: shown by ActionTimeline 4561 for its casts and hidden by 4573, 28996 (4.7 s) from the middle 162.0 s in (1593 and 1715 to the players, 436 to 1643 to the members) and 28997 (4.7 s) from an edge spot three times (it hit no one); gone with ActionTimeline 4576 as the boss uses 28993. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.12) and Bob's 9ba7d981 (2026-11-17, visit 0.18), both with Duty Support. No auto-attack; the director's (content/w1d5_battle.lua). Hitbox not recorded."
+}

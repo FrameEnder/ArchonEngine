@@ -104,6 +104,9 @@ pub struct Kit {
     pub defensive: Option<(u32, usize, f32)>,
     /// A healer's heal, on the lowest of the party when they're below this percent (`PartyBot::heal_below`.)
     pub heal: Option<(u32, f32)>,
+    /// A healer's heals for everyone round it, used in turn while most of the party are below its heal's line
+    /// (`PartyBot::area_heals`, `party_bot::AREA_HEAL_HURT`.)
+    pub area_heals: &'static [u32],
 }
 
 /// A Duty Support member, as retail spawned it and as it fought.
@@ -183,6 +186,7 @@ pub const MEMBERS: [Member; 4] = [
             provoke: Some((25083, 30.0)),
             defensive: Some((25082, 3, 100.0)),
             heal: None,
+            area_heals: &[],
         },
         // 13951 at its first fight (46 s in), then 13961, 13952 twice; in the Tam-Tara Deepcroft (Bob's capture of
         // 2026-10-24) 13953 three times and 13951.
@@ -225,6 +229,7 @@ pub const MEMBERS: [Member; 4] = [
             provoke: None,
             defensive: None,
             heal: None,
+            area_heals: &[],
         },
         kit_from: None,
         chatter: &[13962, 13964],
@@ -257,6 +262,7 @@ pub const MEMBERS: [Member; 4] = [
             provoke: None,
             defensive: None,
             heal: None,
+            area_heals: &[],
         },
         kit_from: None,
         chatter: &[13972, 13974],
@@ -294,6 +300,7 @@ pub const MEMBERS: [Member; 4] = [
             provoke: None,
             defensive: None,
             heal: Some((29317, 85.0)),
+            area_heals: &[],
         },
         kit_from: None,
         // Only the duties' story lines (`director:party_npc_yell`), none of its own in either run.
@@ -449,6 +456,114 @@ pub const THIRD_MEMBERS: [Member; 4] = [
     },
 ];
 
+/// The fourth set (DawnQuestMember 48-51; Castrum Meridianum, the Praetorium and the Porta Decumana with Duty Support,
+/// DawnContent 210, 211 and 212: Connor's Chronofoil capture af05916c of 2026-11-09, registered as 48, 50, 49, and
+/// Bob's 9ba7d981 of 2026-11-17, registered as 48, 51, 50): the Marauder, Lancer, Thaumaturge and Conjurer again, level
+/// 50, with BNpcBases 14658-14661, BNpcNames 11334-11337 and ActorControlSelf 276/1525 values 10012-10015 and
+/// 1042788-1042791. Their kits are what they did in the Porta Decumana (visits 0.12 and 0.18, 18 minutes each): the
+/// fight's mechanics kept breaking their turns, so the order is from the stretches nothing broke.
+pub const FOURTH_MEMBERS: [Member; 4] = [
+    Member {
+        dawn_quest_member: 48,
+        base_id: 14658,
+        name_id: 11334,
+        level: 50,
+        hp: 4375,
+        slot_member: 10012,
+        slot_resident: 1042788,
+        kit: Kit {
+            // 29299, 29300, 29301 twice round, then 26230, 29303, 29764, 29765, 29302 (the third set's 29768 here)
+            // and 29766, 23 s from burst to burst (417 fillers and 239 bursts' steps of each kind in the two runs.)
+            filler: &[29299, 29300, 29301],
+            burst: &[
+                ability(26230, 1.07),
+                on_self(29303, 0.18),
+                gcd(29764, 1.61),
+                gcd(29765, 2.15),
+                gcd(29302, 2.14),
+                on_self(29766, 1.07),
+            ],
+            ..TRIAL_MEMBERS[0].kit
+        },
+        // 13958 once (Connor's run.)
+        chatter: &[13958],
+        ..TRIAL_MEMBERS[0]
+    },
+    Member {
+        dawn_quest_member: 49,
+        base_id: 14659,
+        name_id: 11335,
+        level: 50,
+        hp: 3132,
+        slot_member: 10013,
+        slot_resident: 1042789,
+        kit: Kit {
+            // Six GCD actions in turn every 2.67 s (29305, 29306, 29307, 29305, 29308, 29309), then its burst: 26230,
+            // 29310 on itself, 29769, 29774, 29311 on itself, 29773, 29767 on itself (the third set's 29770 and 29771
+            // are 29774 and 29773 here), 24 s from burst to burst when nothing broke its turn (Connor's run: 107
+            // fillers, 35 bursts.)
+            filler: &[29305, 29306, 29307, 29305, 29308, 29309],
+            burst: &[
+                ability(26230, 1.07),
+                on_self(29310, 0.18),
+                gcd(29769, 1.6),
+                gcd(29774, 2.67),
+                on_self(29311, 1.07),
+                gcd(29773, 1.6),
+                on_self(29767, 1.07),
+            ],
+            burst_after_fillers: Some((9, 6)),
+            ..TRIAL_MEMBERS[1].kit
+        },
+        // 14407 and 13968 once each (Connor's run): the duty's lines, not its own.
+        chatter: &[],
+        ..TRIAL_MEMBERS[1]
+    },
+    Member {
+        dawn_quest_member: 50,
+        base_id: 14660,
+        name_id: 11336,
+        level: 50,
+        hp: 2770,
+        slot_member: 10014,
+        slot_resident: 1042790,
+        // As the third set's at 41: 29314, 29315, 29316 in turn and 29313 after every third (12 s apart: 85, 82, 85
+        // and 107 uses in the two runs.)
+        kit: Kit {
+            filler: &[29314, 29315, 29316],
+            burst: &[gcd(29313, 3.07)],
+            burst_after_fillers: Some((3, 3)),
+            ..TRIAL_MEMBERS[2].kit
+        },
+        kit_from: None,
+        // 13978 and 13979 (three and two times in the two runs.)
+        chatter: &[13978, 13979],
+        ..TRIAL_MEMBERS[2]
+    },
+    Member {
+        dawn_quest_member: 51,
+        base_id: 14661,
+        name_id: 11337,
+        level: 50,
+        hp: 2796,
+        slot_member: 10015,
+        slot_resident: 1042791,
+        kit: Kit {
+            // 29323 every 2.1 s and 29325 every 19 s (152 and 59 uses in Bob's run); 29318 on the lowest of the party
+            // (28 times: 1654 to 1732 a heal), and with most of them hurt 29321 (15: 510 to 541 to each and status
+            // 150) and 29320 (11: 816 to 865 to each) in turn, three seconds apart.
+            filler: &[29323],
+            burst_every: 19.0,
+            first_burst: 10.0,
+            burst: &[gcd(29325, 2.1)],
+            heal: Some((29318, 85.0)),
+            area_heals: &[29321, 29320],
+            ..MEMBERS[3].kit
+        },
+        ..TRIAL_MEMBERS[3]
+    },
+];
+
 /// The level the members come at in a duty (its ContentFinderCondition) and each one's HP there, by
 /// `dawn_quest_member`: retail's Sastasha members were level 15 (Bob's capture of 2026-10-23), the Tam-Tara
 /// Deepcroft's the same three at 16 with 443, 347 and 316 HP (his capture of 2026-10-24, 3ec702a8 visit 0.3), the
@@ -456,7 +571,7 @@ pub const THIRD_MEMBERS: [Member; 4] = [
 /// takes the member's own `level` and `hp`.
 /// The Conjurer (39, 43) the same (Bob's captures c99fe374 and cc62ad94 of 2026-10-28): 293 HP at 15 in Sastasha, 316 at
 /// 16, 339 at 17, 432 at 20.
-pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 9] = [
+pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 10] = [
     (4, 15, &[(36, 411), (37, 322), (38, 293), (39, 293)]),
     (2, 16, &[(36, 443), (37, 347), (38, 316), (39, 316)]),
     (3, 17, &[(36, 476), (37, 372), (38, 339), (39, 339)]),
@@ -482,6 +597,10 @@ pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 9] = [
     // Marauder, Thaumaturge and Conjurer (44, 46, 47) at 41 with 2422, 1662 and 1678. The Lancer (45) had 1884 there
     // with a Paladin (his capture 216f28eb of 2026-11-17, seven runs: 45, 46, 47 with the same 1662 and 1678.)
     (11, 41, &[(44, 2422), (45, 1884), (46, 1662), (47, 1678)]),
+    // The Porta Decumana (Connor's Chronofoil capture af05916c of 2026-11-09, visit 0.12, and Bob's 9ba7d981 of
+    // 2026-11-17, visit 0.18): the fourth set at 50, the Marauder with 4375 in both, the Lancer 3132 (Connor's), the
+    // Thaumaturge 2770 in both, the Conjurer 2796 (Bob's).
+    (830, 50, &[(48, 4375), (49, 3132), (50, 2770), (51, 2796)]),
 ];
 
 impl Member {
@@ -513,6 +632,7 @@ pub fn member(dawn_quest_member: u8) -> Option<&'static Member> {
         .iter()
         .chain(TRIAL_MEMBERS.iter())
         .chain(THIRD_MEMBERS.iter())
+        .chain(FOURTH_MEMBERS.iter())
         .find(|member| member.dawn_quest_member == dawn_quest_member)
 }
 
@@ -978,6 +1098,7 @@ fn spawn_member(
         bot.heal_action = Some(heal);
         bot.heal_below = below;
     }
+    bot.area_heals = kit.area_heals;
     bot.party_npc = Some(MemberState::new(member, slot, level));
     instance.party_bots.insert(actor_id, bot);
     tracing::info!(
@@ -1124,7 +1245,39 @@ mod tests {
             vec![36, 38, 37]
         );
         assert_eq!(member(36).map(|m| m.base_id), Some(14646));
-        assert!(member(48).is_none());
+        assert!(member(52).is_none());
+        // The Porta Decumana (Connor's capture af05916c: 48, 50, 49 under DawnContent 212; Bob's 9ba7d981: 48, 51,
+        // 50), the fourth set at 50 there.
+        assert_eq!(chosen_members([0x0031_3230, 0, 0, 0]), vec![48, 50, 49]);
+        assert_eq!(chosen_members([0x0032_3330, 0, 0, 0]), vec![48, 51, 50]);
+        let fourth: Vec<_> = (48..=51)
+            .map(|id| member(id).unwrap())
+            .map(|m| {
+                (
+                    m.base_id,
+                    m.name_id,
+                    m.classjob,
+                    m.slot_member,
+                    m.slot_resident,
+                )
+            })
+            .collect();
+        assert_eq!(
+            fourth,
+            vec![
+                (14658, 11334, 3, 10012, 1042788),
+                (14659, 11335, 4, 10013, 1042789),
+                (14660, 11336, 7, 10014, 1042790),
+                (14661, 11337, 6, 10015, 1042791),
+            ]
+        );
+        assert_eq!(level_and_hp(member(48).unwrap(), 830), (50, 4375));
+        assert_eq!(level_and_hp(member(51).unwrap(), 830), (50, 2796));
+        // Its Conjurer heals the lowest with 29318, and everyone with 29321 and 29320 in turn.
+        let conjurer = member(51).unwrap().kit_at(50);
+        assert_eq!(conjurer.heal, Some((29318, 85.0)));
+        assert_eq!(conjurer.area_heals, &[29321, 29320]);
+        assert_eq!(member(48).unwrap().kit_at(50).burst[4].action, 29302);
         // Brayflox's Longstop (Bob's capture 44df02fc): 44, 47, 46 under DawnContent 206, at 32 there.
         assert_eq!(chosen_members([0x002E_2F2C, 0, 0, 0]), vec![44, 47, 46]);
         let marauder = member(44).unwrap();

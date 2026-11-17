@@ -18,6 +18,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Howling Eye (Garuda) | 58 | 1047 | `content/r1fa_re.lua` | one run with Duty Support (6a5244ec) and two Duty Finder runs (09ecf8e7, 6c495fc4), 2026-11-08 |
 | Brayflox's Longstop | 8 | 1041 | `content/s1d2_re.lua` | one run with Duty Support (44df02fc) and one Duty Finder run (c9145fdc), 2026-11-03 |
 | The Stone Vigil | 11 | 1042 | `content/r1d1_re.lua` | one run with Duty Support (1cefedf4) and one Duty Finder run (341808b0), 2026-11-07 |
+| The Porta Decumana | 830 | 1048 | `content/w1d5_battle.lua` | two runs with Duty Support: Connor's af05916c (2026-11-09) and Bob's 9ba7d981 (2026-11-17) |
 
 Every duty script in this table is checked against AutoDuty's route for its territory (`questkit autoduty`, see
 [questkit](questkit.md)): on 2026-11-13 each names every object AutoDuty uses, and Sastasha's keys are the one
@@ -1063,6 +1064,97 @@ Typhoon goes), and the whirlwinds go by `director:sweep_bnpc` ([Party Bots](part
 10500, 181 31533, 183 31518, 184 31525, 185 10438 and 7033, 7033 and 2176, or 7033, 31528 and 1927. The tank's run's
 first boss gave 10438 and its second 31518 and 31527, the conjurer's 1927, and 31519 and 31520, from coffers not told
 apart. The conjurer's run's exit can't be read (the capture ends in the loading screen to New Gridania).
+
+## The Porta Decumana
+
+ContentFinderCondition 830 (ShortCode `w1d5_battle`), territory 1048, director 0x80034E72: the trial at the end of The
+Ultimate Weapon (quest 4522), two fights with a cutscene between them. Built on 2026-11-17 from two retail runs with
+Duty Support, both won: Connor's Chronofoil capture af05916c (visit 0.12, a healer with the Marauder, the Thaumaturge
+and the Lancer) and Bob's 9ba7d981 (visit 0.18, a damage dealer with the Marauder, the Conjurer and the
+Thaumaturge); `questkit chronofoil --battle` and the visits' packets. **Untested in game.**
+
+**One clock from the pull.** In both fights every cast, instant, talk, map effect and ActionTimeline of the two runs
+came at the same second from the pull (to 0.3 s), up to three places where the boss's health decides. So the script
+(`content/w1d5_battle.lua`) is that clock: tables of `{ seconds, what, … }` rows (Connor's run's numbers) run from
+the pull, the bosses' own casts in their timelines (`PortaDecumanaBoss1_14587.json`, `PortaDecumanaBoss2_14592.json`,
+`from_pull`), everything round them the director's.
+
+**Who's there** (drop-in `territory_1048.json`, from `questkit chronofoil --dropin 1048`, all `nonpop`):
+
+| Layout | Base | BNpcName | HP | What |
+|---|---|---|---|---|
+| 9088367 | 14587 | 2137 | 262421 | The first boss, at (-781, -600) facing east; the arena is 20 yalms round (-772, -600) |
+| 9088369, 9088368, 9088371 | 14589, 14588, 14591 | 2140, 2141, 2139 | 2589 | Three that stand unseen in the middle (display flags 393224), each shown by an ActionTimeline for its casts |
+| 9088370 | 14590 | 1804 | 2589 | Four, brought in for one long cast |
+| 0 | 9020 | 2137 | 44 | Helpers: 25 in the first fight, ten in the second on retail; 13 here (twelve cast at once at the most) |
+| 9088373 | 14592 | 2137 | 244634 | The second boss, at (-713, 480); the arena is 20 yalms round (-704, 480) |
+| 9088374 | 14593 | 2142 | 2589 | Ten at a time: the rows |
+| 9088375 | 14594 | 2138 | 2589 | Four at the second arena's corners |
+
+**The first fight** (seconds from the pull, talk 33200; the boss's auto-attack 29004 every 3.0 s throughout):
+
+| When | What |
+|---|---|
+| 8.1 | 28628 (no cast): the boss goes, and comes out 1.7 s later at (-784, -600) facing east (SnapNextMove). The same at 103.4, 158.5, 233.2, 284.3 and 5.1 s into the chain |
+| 10.5 | Talk 33207, its 28977 (4.7 s), ActorControl 70 `[8201055]`; base 14589 shown (ActionTimeline 7747) and its 28998 from the middle at 11.3 (1674-1723 to a player), hidden at 21.3 (7737) |
+| 25.7-38.3 | 14589's 28999 (4.7 s, 546-589) then 29000 (2.7 s) from a spot on the edge, 15 yalms out; the boss's 28981 (2.7 s, facing someone) at 37.8; again at 66.0-78.5 from another edge spot |
+| 47.0, 51.1 | Ten helpers' 29001 (2.7 s) on ten spots, then on ten others; again at 87.4 and 91.5, the two sets in either order |
+| 105.8 | Talk 33208, its 28987 (3.7 s), a helper's 28988 on each of the party |
+| 111.3-135.1 | Four of base 14590 round the middle (Appear with ActionTimeline 142 0.6 s on); from 116.0 their 28989 and the boss's 29435 (32.7 s casts); 119.9 map effect 4 (timeline 2, state 1), weather 105 and the lines under BNpcName 2183; 132.0 a helper's 28511 on the party and 28992 on itself; 132.9 the map effect off (8, 4) and weather 2; **134.9 both casts stopped** (ActorControl 15 `[537, 1, 29435]`, `[540, 1, 28989, 1]`) and the four fall; 135.1 its 28994 (status 3010 off it) and 14589 gone for good (ActionTimeline 4575) |
+| 160.6-226.5 | Talk 33201, its 28976, ActorControl 70 `[8201054]`; base 14588 shown (4561) and hidden (4573) round its 28996 from the middle (162.0: 1593-1715) and three 28997s from edge spots (180.2, 195.2, 219.4); the boss's 28979 at 173.9 and 213.1, each followed by a helper's 28980 from the middle every 5.1 s (five, and four before the boss goes) |
+| 235.7-263.0 | Its 28984 (status 3012 on it), then 28510 (27.7 s) at 244.8: the map effect and weather at 249.7, the party's 28511 at 259.8, **the cast stopped at 262.7**, its 28993 (status 3009 off) and 14588 gone (4576) |
+| 286.4 | Talk 33213, its 28978, ActorControl 70 `[8201056]`; base 14591 shown and its 29002 from the middle at 287.8 (1625-1735) |
+| 301.7 on | **The rounds**: its 28982 (1.9 s) at 301.7, 306.0 and 322.3, with three helpers' 28983 15 yalms from the middle and one in it (three ways round seen) the first two times and eight 17 yalms out the third; 14591's 29003 (533-540, and everyone thrown to the edge: Knockback 67) 14.9 s into the round. The round again every 40.9 s |
+| below 40 % | Looked at 4.2 s after a round's third 28982 began and as the next round would begin (Connor's: 41.3 % then 35.3 %, so at 342.6 s; Bob's: 42 %, 40.7 %, then 36.3 % at 367.5 s): **the chain**, from talk 33214: 28628 at 5.1 s, talk 33215 and its 28990 (31.7 s) with twelve helpers' 28991 at 7.6, the map effect and weather at 17.5, the party's 28511 at 26.6, the casts stopped at 29.5, its 28995 (status 3011 off) at 29.6 and 14591 gone (4578), talk 33218 and ActorControl 70 `[8201058]` at 41.8 |
+| below 22 % | (21.7 and 21.1 % in the runs, 62.0 and 71.1 s into the chain.) **The cutscene**: the director's scene 3 (flags 0x08502403) with cutscene 120 and `[0, 150, 0, 0]`; every NPC of the first fight is taken away as it begins |
+
+**Between the fights**: as the cutscene ends (279 and 281 s in the runs) PrepareZoning to the same territory and an
+ActorSetPos put the player at (-689.55, -185.73, 480.35) facing west, the members beside them (`warp_players`; the
+members catch up as party NPCs do), and the second boss and its helpers come 3.9 and 1.9 s later. A wipe from then on
+sends everyone back there (`director:set_start`, new; retail's wasn't seen).
+
+**The second fight** (seconds from its pull, talk 33219, which came 39.4 and 10.4 s after the cutscene's end):
+
+| When | What |
+|---|---|
+| 8.1 | Its 29023 (4.7 s) on its target: 920-1285 to the tank. Again at 200.0 and 303.2 |
+| 16.5, 18.9, 21.2 | Its 29005, 29006, 29007 (no cast), each with a helper's 29008, 29009, 29010 (1.9 s) from where it stands, facing somewhere of its own (someone of the party here). Again from 170.4 and 273.6 |
+| 27.7 | Its 29011 (3.7 s) with a helper's 29012 (4.7 s: 925-1001) on each of the party. Again at 133.5 and 236.6 |
+| 38.8 | Talk 33220, ActorControl 70 `[8201057]`, its 29022 (4.7 s: 907-1046 to everyone). Again at 157.2, 207.1, 260.3 |
+| 51.0-67 | 28628 to the middle; 29015 (3.7 s) throws everyone to the edge (Knockback 13, no damage); 0.8 s after it lands **four of base 14594** at the corners (14.1 yalms out each way), which set off for the middle 5 s later at 1.7 yalms a second: each uses 29016 (159-195) on the member of the party it reaches and is gone (two of the four in each run, 6 s after they came; the party felled the other two 9 s after) |
+| 71.5 | Its 29013 (3.7 s) with a helper's 29014 (4.7 s: 829-948 to all four) on one of the party. Again at 144.6 and 247.7 |
+| 83.1, 128.6, 172.4, 231.6, 275.8 | **The rows**: ten of base 14593 come where the boss stands; 4.8 s later they leap (29018, then SnapNextMove) to ten places 4 yalms apart on a line through the middle and cast 29019 (3.7 s; 1140 the once it caught a player) across it; 7.7 s after the first leap another row; 7.4 s after that a third leap, and they're gone 22.2 s after coming. The rows were the east-west line (every other one facing the other way), a diagonal (each half its own way), or two half rows crossed: line and diagonal, diagonal and line, diagonal and crossed, diagonal and line, diagonal and crossed. Its 29020 (4.7 s) comes 5.2 and 3.3 s before them or 9.4 s after: the rows keep the fight's clock, not the cast's |
+| 119.2, 188.8, 222.2, 292.1 | Four helpers' 29021 (6.7 s: 135-248 a hit) 20 yalms north, south, east and west of the middle; map effects 0-3 (timeline 2, state 4) 1.9 s into the cast |
+| 310.3 | **Below 30 %** (28.0 %, Connor's): the last part. Otherwise (32.9 %, Bob's) its 29022 and the same question 15.4 s later (29.4 %: the last part) |
+| the last part | 28628 to the middle, 2.2 s on 29024 (a 70.7 s cast), talks 33223 and 33224 at 4.2 and 11.2 s, map effect 5 (2, 1), weather 106 and talk 33225 at 20.3, talk 33226 at 26.3, the map effect off (8, 4) and weather 2 at 32.3, a helper's 28542 on the party at 32.4, talk 33227 (BNpcName 2664) at 53.3 (and 33228 at 63.4 in Bob's) |
+| its health at 0 | (54 and 63 s into 29024.) The cast stopped (ActorControl 15 `[540, 1, 29024, 1]`), the duty complete (the director's 0x40000003, then 0x40000007 `[0, 0]` and `[1, 0]`), the closing cutscene (scene 3 with cutscene 121 and `[1, 18, 0, 0]`), ActionTimeline 73 on it a second later |
+
+**New facts** from the two runs:
+
+* **A battle talk's style byte.** DirectorPopupMessage's byte after the speaker's kind was 0 for the 24 lines under
+  BNpcName 2136, **6** for the six under 2183 and **7** for the two under 2664 (both runs). `battle_talk` takes it as
+  its seventh argument; what the client draws differently isn't known (Bob's question of 2026-11-17 about portraits
+  in battle talk: this is the one field of the packet Kawari had never set).
+* **ActorControl 15 (CancelCast) from the fight itself** is `[537, 1, action, 0]` (Kawari's interrupt sends 538), and
+  `[540, 1, action, 1]` for a cast its caster dies in. `director:stop_cast` (new) sends the first and drops the
+  cast's task, so it never lands.
+* **Action effect type 31 with a Knockback row** threw everyone to the arena's edge (29003: row 67, the members
+  landing 17 yalms from the middle; 29015: row 13, 22 yalms): `effects:knockback` here, as type 32.
+* **The duty's time flags** came as every other duty's (0x40000007 `[0, 1]` 300 s and `[1, 1]` 900 s after the
+  start), through the cutscene.
+* Duty Support's members were the fourth set: [Party NPCs](party-npcs.md).
+
+**Not known, so guessed or left out** (also in `known-issues.md`): what 29024 does if it lands (9999999 here); what
+the four of base 14594 do at the middle (gone here); whether felling the four of base 14590 early changes anything;
+the first boss below 22 % before the chain (a 1 HP floor keeps it standing); the second fight past 325.7 s above
+30 %; what ActorControls 20 `[325]`, 49 `[16]`, 62 and 70 on the bosses and statuses 3009-3012 do (sent and given as
+retail did; that 28976-28978 give 3009-3011 is a guess from 28993-28995 taking them off); a wipe (the fight the
+party fell in begins again); the damage of what hit no one (28980, 28983, 28997, 29000, 29001, 29010).
+
+**Tests**: duty fixtures `830-af05916c` and `830-9ba7d981` (`questkit duty-sim`: 109 and 112 of retail's events, the
+talks, the three's ActionTimelines, every NPC's coming, the completion; and a rehearsed wipe); the fixture's `scenes`
+give the script the cutscene's end ([Testing](testing.md)); `a_cast_the_fight_stops_never_lands`
+(`bundle_tests.rs`).
 
 ## At a wipe, duty by duty (2026-11-10)
 

@@ -77,6 +77,57 @@ fn a_player_who_dies_mid_cast_stops_casting() {
     );
 }
 
+/// The Porta Decumana's long casts never land: the fight stops its boss's 29435 19.0 s into its 32.7 s (ActorControl
+/// 15 `[537, 1, 29435, 0]` in both of Connor's and Bob's runs, Chronofoil captures af05916c and 9ba7d981), and the
+/// four of base 14590's 28989 with `[540, 1, 28989, 1]` as they fall. `director:stop_cast` (`cut_cast_short`.)
+#[test]
+fn a_cast_the_fight_stops_never_lands() {
+    use crate::server::action::{CAST_STOPPED, cut_cast_short};
+    const LONG_CAST: u32 = 29435;
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 4.0, 290.0]);
+    let enemy = world.enemy(ENEMY, [3.0, 4.0, 288.0], 9000);
+    world.casting(enemy, LONG_CAST, Duration::from_secs(30), enemy);
+    assert_eq!(world.casts_queued(enemy), 1);
+    world.sent(player);
+
+    let stopped = cut_cast_short(
+        world.network.clone(),
+        &mut world.instance,
+        enemy,
+        CAST_STOPPED,
+    );
+
+    assert_eq!(stopped, vec![LONG_CAST]);
+    assert_eq!(world.casts_queued(enemy), 0, "the cast never lands");
+    let sent = world.sent(player);
+    assert!(
+        sent.iter().any(|m| matches!(
+            m,
+            FromServer::ActorControl(
+                _,
+                ActorControlCategory::CancelCast {
+                    unk1: 537,
+                    unk2: 1,
+                    action_id: LONG_CAST,
+                    ..
+                }
+            )
+        )),
+        "everyone near sees the cast stopped, as retail's [537, 1, action]: {sent:?}"
+    );
+    // Nothing being cast: nothing sent.
+    assert!(
+        cut_cast_short(
+            world.network.clone(),
+            &mut world.instance,
+            enemy,
+            CAST_STOPPED
+        )
+        .is_empty()
+    );
+}
+
 /// Bundle 20261110-141944, "on reset the party list broke": at a wipe the Duty Finder's bots were taken away
 /// (DeleteActor) and spawned again, which retail does to Duty Support's members and never to a party's players
 /// (three wipes in parties of players: each member moved with an ActorSetPos of the player's own warp type, their
