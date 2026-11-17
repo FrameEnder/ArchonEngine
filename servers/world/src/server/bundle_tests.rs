@@ -592,6 +592,43 @@ fn a_target_s_over_time_effects_tick_together() {
     )));
 }
 
+/// Cape Westwind (InstanceContent 5060; Bob's Chronofoil capture 667a68c5): its boss's health stopped at 1 twice,
+/// 380 to 1 and 525 to 1 under the player's hits, and he went on to the next part of the fight; only in the last
+/// part did he fall. `director:set_health_floor` holds an NPC there (`Instance::health_floors`), damage over time
+/// included.
+#[test]
+fn a_director_s_floor_holds_an_npc_s_health() {
+    use crate::server::periodic::{add_status_tick, periodic_tick};
+
+    let mut world = TestWorld::new();
+    world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let boss = world.enemy(0x4000_0002, [2.0, 0.0, 0.0], 380);
+    world.instance.health_floors.insert(boss, 1);
+    if let Some(actor) = world.instance.find_actor_mut(boss) {
+        actor
+            .status_effects_mut()
+            .unwrap()
+            .add(18, 0, 0.0, ObjectId::default());
+    }
+    add_status_tick(&mut world.instance, boss, 18, 5000);
+    let tick = |world: &mut TestWorld| {
+        for effect in &mut world.instance.periodic_effects {
+            effect.next_tick = std::time::Instant::now() - Duration::from_millis(1);
+        }
+        periodic_tick(world.network.clone(), &mut world.instance);
+        world
+            .instance
+            .find_actor(boss)
+            .map(|actor| actor.get_common_spawn().health_points)
+    };
+    assert_eq!(tick(&mut world), Some(1));
+    assert_eq!(tick(&mut world), Some(1));
+
+    // The last part: no floor, and he falls.
+    world.instance.health_floors.remove(&boss);
+    assert_eq!(tick(&mut world).unwrap_or(0), 0);
+}
+
 /// Heart of the Forest (quest battle 76; Bob's Chronofoil capture 667a68c5, three runs): the one who prays loses
 /// health every 3 s under status 324, ActorControl 1541 `[0, 1763-1940, 0xE0000000, 0xFFFFFFFF]`, from the director's
 /// own status (`director:gain_effect`'s tick), and no longer once the status is off.

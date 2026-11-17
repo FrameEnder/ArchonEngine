@@ -133,6 +133,22 @@ pub enum LuaDirectorTask {
     SetBGM {
         id: u32,
     },
+    /// One of the director's commands by number (ActorControlSelf 109 `[director, id, args…]`), for those with no
+    /// name: Cape Westwind's `0x10000001 [text]` and `0x10000002 [text]`, InstanceContentTextData rows.
+    Command {
+        id: u32,
+        args: [u32; 7],
+    },
+    /// The least health damage leaves an NPC (0: none), `Instance::health_floors`.
+    SetHealthFloor {
+        who: u32,
+        health: u32,
+    },
+    /// An NPC's health set outright (None: full), as a boss gets its health back between two parts of its fight.
+    SetHealth {
+        who: u32,
+        health: Option<u32>,
+    },
     SealBossWall {
         actor_id: ObjectId,
         id: u32,
@@ -208,6 +224,9 @@ pub enum LuaDirectorTask {
         /// Quest variables (index 0-5, value) set in the same journal update as the sequence (Lurkers in the Grotto's
         /// ITEM0, UI8BH, as retail sets it on winning.)
         variables: Vec<(u8, u8)>,
+        /// The finish scene's parameters. With any, it's a duty's closing cutscene (the cutscene's ID first), played
+        /// in a GameComplete event: Cape Westwind's scene 4 with `[263, 1]`.
+        finish_params: Vec<u32>,
         /// Whether "Duty Complete" and its fanfare (`QUEST_BATTLE_SCENE_COMPLETE`) play before the finish scene.
         /// Retail skips them when the battle ends on a timer into a cutscene (Lord of the Inferno's: scene 7 at once.)
         fanfare: bool,
@@ -1079,7 +1098,16 @@ impl UserData for LuaDirector {
             "complete_quest_battle",
             |_,
              this,
-             (sequence, stay, finish_scene, finish_flags, variables, fanfare, quest_log): (
+             (
+                sequence,
+                stay,
+                finish_scene,
+                finish_flags,
+                variables,
+                fanfare,
+                quest_log,
+                finish_params,
+            ): (
                 u8,
                 Option<bool>,
                 Option<u16>,
@@ -1087,6 +1115,7 @@ impl UserData for LuaDirector {
                 Option<mlua::Table>,
                 Option<bool>,
                 Option<u32>,
+                Option<Vec<u32>>,
             )| {
                 // `variables` is a table of quest variable index (0-5) to value, e.g. { [1] = 0x10 }.
                 let mut set = Vec::new();
@@ -1104,6 +1133,7 @@ impl UserData for LuaDirector {
                     variables: set,
                     fanfare: fanfare.unwrap_or(true),
                     quest_log,
+                    finish_params: finish_params.unwrap_or_default(),
                 });
                 Ok(())
             },
@@ -1414,6 +1444,26 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::KillBattleNpc { who });
             Ok(())
         });
+        methods.add_method_mut("command", |_, this, (id, list): (u32, Option<Vec<u32>>)| {
+            let mut args = [0u32; 7];
+            for (slot, value) in args.iter_mut().zip(list.unwrap_or_default()) {
+                *slot = value;
+            }
+            this.tasks.push(LuaDirectorTask::Command { id, args });
+            Ok(())
+        });
+        methods.add_method_mut("set_health_floor", |_, this, (who, health): (u32, u32)| {
+            this.tasks
+                .push(LuaDirectorTask::SetHealthFloor { who, health });
+            Ok(())
+        });
+        methods.add_method_mut(
+            "set_health",
+            |_, this, (who, health): (u32, Option<u32>)| {
+                this.tasks.push(LuaDirectorTask::SetHealth { who, health });
+                Ok(())
+            },
+        );
         methods.add_method_mut("objective", |_, this, (done, next): (u32, Option<u32>)| {
             this.tasks.push(LuaDirectorTask::Objective { done, next });
             Ok(())
@@ -2948,7 +2998,10 @@ pub fn director_tick(
                 variables,
                 fanfare,
                 quest_log,
+                finish_params,
             } => {
+                // A duty's clock stops with it (no party wipe after the win.)
+                instance.duty_clock = None;
                 let quest_id = instance.directors.first().unwrap().quest_battle_quest_id;
                 let exit = instance.quest_battle_win_exit;
                 let self_network = network.clone();
@@ -2969,6 +3022,7 @@ pub fn director_tick(
                         *fanfare,
                         exit,
                         *quest_log,
+                        finish_params.clone(),
                     ),
                     DestinationNetwork::ZoneClients,
                 );
@@ -3777,6 +3831,50 @@ pub fn director_tick(
                     actor_id,
                     ActorControlCategory::PlayDismountAnimation { unk1, unk2, unk3 },
                 );
+            }
+            LuaDirectorTask::Command { id, args } => {
+                let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorControlSelf(
+                    ActorControlSelf {
+                        category: ActorControlCategory::DirectorEvent {
+                            handler_id: director_id,
+                            event: DirectorEvent::Raw {
+                                id: *id,
+                                args: *args,
+                            },
+                        },
+                    },
+                ));
+                let mut network = network.lock();
+                network.send_to_instance(
+                    ObjectId::default(),
+                    instance,
+                    FromServer::PacketSegment(ipc, ObjectId::default()),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+            LuaDirectorTask::SetHealthFloor { who, health } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} for SetHealthFloor!");
+                    continue;
+                };
+                if *health == 0 {
+                    instance.health_floors.remove(&actor_id);
+                } else {
+                    instance.health_floors.insert(actor_id, *health);
+                }
+            }
+            LuaDirectorTask::SetHealth { who, health } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} for SetHealth!");
+                    continue;
+                };
+                if let Some(actor) = instance.find_actor_mut(actor_id) {
+                    let common = actor.get_common_spawn_mut();
+                    common.health_points = health
+                        .unwrap_or(common.max_health_points)
+                        .min(common.max_health_points);
+                }
+                crate::server::actor::update_actor_hp_mp(network.clone(), instance, actor_id);
             }
             LuaDirectorTask::KillBattleNpc { who } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {

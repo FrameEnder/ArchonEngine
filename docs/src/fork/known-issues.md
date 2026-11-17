@@ -404,8 +404,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   runs), 63 (1004, two) and 64 (1005, one: no lost run, and its worn-down ally never acted) are scripted, their
   territories taken to be copies of Coerthas and Mor Dhona from where their spots stand; 64's two talking event NPCs
   aren't put in the battle. 1651's 129, 1655's 527, 1874's 91 and 1988's 1286 give statuses whose length wasn't seen.
-  **Not scripted**: 5060 (Cape Westwind, 4521; an InstanceContent, not a QuestBattle: retail's run of 2026-11-16 is written up in [Quest battles](quest-battles.md), with what it needs) and 5061 (Devastation, 4522), so those quests stop at
-  their battle (65 is since 2026-11-12, `quest-battles.md`); and the duties Castrum
+  **Cape Westwind** (5060, 4521) is built since 2026-11-17 from one retail run and not played in game: [Quest
+  battles](quest-battles.md) lists what's guessed (his parts past what the run showed, losing) and unknown (what seven
+  statuses and three ActorControls do, 28870's damage), and its drop-in names its territory because 1049's level isn't
+  known here (if nothing spawns, that or the helpers' layout ID 0 is where to look). **Not scripted**: 5061
+  (Devastation, 4522; it would be entered the same way), so that quest stops at
+  its battle (65 is since 2026-11-12, `quest-battles.md`); and the duties Castrum
   Meridianum (InstanceContent 15, 3873), the Praetorium (86) and the Porta Decumana (20082, 4522), Thornmarch (Hard)
   (20011, 1190) and the Whorleater (Hard) (20017, 1361): their quests move on when one is cleared and let out where
   retail did (`set_duty_exit`), but the duties themselves don't exist yet.

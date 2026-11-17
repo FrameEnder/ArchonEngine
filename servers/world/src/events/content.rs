@@ -140,7 +140,11 @@ impl EventHandler for ContentEventHandler {
         }
 
         // After winning a quest battle (see FromServer::QuestBattleComplete), play its last scene and send them back.
-        if event.id.handler_type() == HandlerType::QuestBattle {
+        // A quest's solo duty (an InstanceContent's director, Cape Westwind's) ends the same way, with its closing
+        // cutscene.
+        if event.id.handler_type() == HandlerType::QuestBattle
+            || connection.quest_battle_finish_scene == Some(scene)
+        {
             if scene == QUEST_BATTLE_SCENE_COMPLETE {
                 // Some quest battles carry on a little after "Duty Complete" (e.g. lines after the boss falls), their
                 // director sends the players back later.
@@ -200,8 +204,11 @@ impl EventHandler for ContentEventHandler {
         // Keybound Brawler's own scenes (the cutscene before its last wave, the result, the way out: `keybound.rs`) are
         // an instanced duty's, not a quest battle's: the game carries on from their end too. Until 2026-11-15 only a
         // quest battle's were told, so the way out's end sent no one out (Bob: "I just stand there in the map".)
+        // Any duty's script hears of its own scenes' ends (`onSceneFinished`), since 2026-11-17: Cape Westwind's
+        // cutscene before its last part (the director's scene 3) is where the fight goes on from.
         if event.event_type == EventType::GameProgress
-            && connection.content_finder_condition_id == crate::server::KEYBOUND_DUTY
+            && (connection.content_finder_condition_id == crate::server::KEYBOUND_DUTY
+                || event.id.handler_type().is_content_director())
         {
             player.finish_event();
             connection

@@ -203,6 +203,11 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
         } else {
             amount
         };
+        let floor = instance
+            .health_floors
+            .get(&effect.target)
+            .copied()
+            .unwrap_or_default();
         let Some(actor) = instance.find_actor_mut(effect.target) else {
             return false;
         };
@@ -211,7 +216,10 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
         match effect.kind {
             PeriodicKind::Damage => {
                 if common.name_id != STRIKING_DUMMY_NAME_ID {
-                    common.health_points = common.health_points.saturating_sub(through);
+                    common.health_points = common
+                        .health_points
+                        .saturating_sub(through)
+                        .max(floor.min(common.health_points));
                 }
             }
             PeriodicKind::Heal => {

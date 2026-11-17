@@ -338,6 +338,9 @@ pub struct Instance {
     pub party_wipe: Option<crate::server::wipe::PartyWipe>,
     /// Where players start in a quest battle, and which way they face.
     pub quest_battle_start: Option<(Position, f32)>,
+    /// NPCs that damage leaves at this much health at the least (`director:set_health_floor`): Cape Westwind's boss
+    /// stopped at 1 HP twice, to go on with the next part of the fight (Bob's Chronofoil capture 667a68c5.)
+    pub health_floors: HashMap<ObjectId, u32>,
     /// The quest battle begins with the Echo (Very Easy after a loss: `director::give_quest_battle_echo`.)
     pub quest_battle_echo: bool,
     /// Where the players go when they leave a won quest battle, if not back where they came from (the script's

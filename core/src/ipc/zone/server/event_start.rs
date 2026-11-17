@@ -28,6 +28,9 @@ pub enum EventType {
     GameStart = 12,
     /// Seen in Gold Saucer Invitational and Treasure Hunts.
     GameProgress = 13,
+    /// A duty's closing cutscene: the director's scene 4 as Cape Westwind was won (EventStart's type 0x0E, Bob's
+    /// Chronofoil capture 667a68c5.)
+    GameComplete = 14,
     /// Used for events started by EnterTerritoryEvent.
     EnterTerritory = 15,
     GameComeBack = 17,

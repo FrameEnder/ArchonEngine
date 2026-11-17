@@ -273,23 +273,42 @@ impl WorldServer {
 
         prepare_quest_battle_instance(&mut instance);
 
-        let id = HandlerId::new(HandlerType::QuestBattle, quest_battle_id as u16);
+        // A quest's solo duty that no QuestBattle row answers to is an InstanceContent (Operation Archon's
+        // QUESTBATTLE0 is 5060, Cape Westwind: retail's director was 0x800313C4, and it began as a duty does,
+        // DutyCommence and no scene 60000; Bob's Chronofoil capture 667a68c5.) It's made here all the same: entered
+        // from its quest, alone, with the script's start spot, and won into the quest's next step.
+        let quest_battle = game_data.get_quest_battle(quest_battle_id);
+        let solo_duty = match quest_battle {
+            Some(_) => None,
+            None => game_data.quest_content_finder(quest_battle_id, zone_id),
+        };
+        let id = HandlerId::new(
+            if solo_duty.is_some() {
+                HandlerType::InstanceContent
+            } else {
+                HandlerType::QuestBattle
+            },
+            quest_battle_id as u16,
+        );
         let mut director = DirectorData {
             id,
             ..Default::default()
         };
 
-        let info = game_data
-            .get_quest_battle(quest_battle_id)
-            .unwrap_or_default();
-        instance.duration = Some(Duration::from_mins(info.time_limit as u64));
+        let info = quest_battle.unwrap_or_default();
+        instance.duration = Some(Duration::from_mins(match solo_duty {
+            Some(_) => game_data
+                .find_content_time_limit(quest_battle_id as u16)
+                .unwrap_or_default() as u64,
+            None => info.time_limit as u64,
+        }));
         director.quest_battle_quest_id = info.quest_id;
 
         // It's a duty of its own (ContentFinderCondition 349 for Trial by Wind's): the client hears of it in ZoneInit,
         // and the player is synced to its level, as retail did (Bob's Chronofoil capture b23b91ef: a level 14 there;
         // without it, a level 21 fought it at 21, Bob's bundle of 2026-10-27.)
         if let Some(content_finder_condition) =
-            game_data.quest_battle_content_finder(quest_battle_id, zone_id)
+            solo_duty.or_else(|| game_data.quest_battle_content_finder(quest_battle_id, zone_id))
         {
             instance.content_finder_condition_id = content_finder_condition;
             instance.synced_level = game_data.find_content_synced_level(content_finder_condition);
@@ -728,6 +747,19 @@ fn return_to_start(
         FromServer::PacketSegment(ipc, actor_id),
         DestinationNetwork::ZoneClients,
     );
+    // A quest's solo duty has its script's start spot, not an entrance (Cape Westwind.)
+    if let Some((position, rotation)) = instance.quest_battle_start {
+        do_change_zone(
+            &mut network,
+            instance,
+            false,
+            Some(position),
+            Some(rotation),
+            from_id,
+            warp_type,
+        );
+        return;
+    }
     change_zone_warp_to_entrance(
         &mut network,
         &mut game_data,

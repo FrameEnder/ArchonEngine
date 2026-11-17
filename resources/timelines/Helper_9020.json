@@ -1,0 +1,17 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "28865": {
+            "players": 821
+        },
+        "28869": {
+            "players": 1060
+        },
+        "28882": {
+            "players": 448
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "BNpcBase 9020, the director's helper (layout 0, level 1, 44 HP, never seen): twelve of them in Cape Westwind, on the boss's spot until the director puts one somewhere to cast. 28865 (3.7 s cast, no target: 810 and 832), 28869 (7.7 s: 1015, 1105; 913 parried), 28880 (0.2 s on the player: Knockback 17), 28882 (2.7 s: 448). No auto-attack. Cape Westwind (InstanceContent 5060, Operation Archon's solo duty; content/questbattle/5060.lua). From Bob's Chronofoil capture 667a68c5 of 2026-11-16 (`questkit chronofoil --battle 0.16`: one run, won, a level 50 White Mage synced to 49): `players` is the damage to the player, times from its pull or the part's start."
+}

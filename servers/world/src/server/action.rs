@@ -1930,12 +1930,19 @@ pub fn execute_action(
                                 request.target.object_id,
                                 *amount as u32,
                             );
+                            // A director's floor under an NPC's health (`Instance::health_floors`.)
+                            let held_at = instance
+                                .health_floors
+                                .get(&request.target.object_id)
+                                .copied()
+                                .unwrap_or_default();
                             let Some(actor) = instance.find_actor_mut(request.target.object_id)
                             else {
                                 continue;
                             };
                             let hit_player = matches!(actor, NetworkedActor::Player { .. });
-                            let floor = u32::from(modifiers::has_hp_floor(&status_ids(actor)));
+                            let floor =
+                                u32::from(modifiers::has_hp_floor(&status_ids(actor))).max(held_at);
                             let common_spawn = actor.get_common_spawn_mut();
                             if common_spawn.name_id != STRIKING_DUMMY_NAME_ID {
                                 common_spawn.health_points = common_spawn
@@ -4564,10 +4571,15 @@ fn hit_area_bystander(
         .iter()
         .any(|effect| matches!(effect.0, TargetEffectKind::Miss));
 
+    let held_at = instance
+        .health_floors
+        .get(&target_id)
+        .copied()
+        .unwrap_or_default();
     let Some(actor) = instance.find_actor_mut(target_id) else {
         return;
     };
-    let floor = u32::from(modifiers::has_hp_floor(&status_ids(actor)));
+    let floor = u32::from(modifiers::has_hp_floor(&status_ids(actor))).max(held_at);
     if actor.get_common_spawn().health_points == 0 {
         return;
     }

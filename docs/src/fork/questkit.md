@@ -446,7 +446,9 @@ python3 tools/questkit battle-sim --make 12 --run run.json.gz --source "…"   #
 ```
 
 **Battle fixtures** (`tools/questkit/battles/<quest battle>.json`, numbers only) hold what the battle did on retail,
-in seconds from the fight starting (the director's scene 60000, Kawari's `onCommence`): each NPC's health curve, when
+in seconds from the fight starting (the director's scene 60000, Kawari's `onCommence`; for a quest's solo duty
+that is an InstanceContent, Cape Westwind's 5060, its DutyCommence, and the script's `play_cutscene` ends after
+retail's scene 3 took; a helper spawned with layout ID 0 isn't matched): each NPC's health curve, when
 it appeared (or `null`: there from the start) and when its health reached 0, how long the client took over each of
 the director's own scenes, and the events to match: the director's sequence changes (not the 0xFE the server sets
 when it's over), battle talk by text ID, the NPCs that arrived during the fight, and "won" (scene 60001). From a

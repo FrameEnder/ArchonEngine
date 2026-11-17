@@ -1,0 +1,49 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "recorded_amounts": {
+        "28884": {
+            "players": 113
+        },
+        "28885": {
+            "players": 113
+        },
+        "28886": {
+            "players": 113
+        }
+    },
+    "timepoints": [
+        {
+            "time": 1.1,
+            "every": 7.7,
+            "data": {
+                "type": "action",
+                "action_id": 28884,
+                "target": "target"
+            },
+            "comment": "28884, 28885 and 28886 2.55 s apart, round every 7.7 s (7, 7 and 6 uses): 113 to the player each time"
+        },
+        {
+            "time": 3.6,
+            "every": 7.7,
+            "data": {
+                "type": "action",
+                "action_id": 28885,
+                "target": "target"
+            },
+            "comment": "see 28884"
+        },
+        {
+            "time": 6.2,
+            "every": 7.7,
+            "data": {
+                "type": "action",
+                "action_id": 28886,
+                "target": "target"
+            },
+            "comment": "see 28884"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The one of BNpcBase 14583 that comes with them (BNpcName 11276, layout 9082105): level 49, 5977 HP. No auto-attack: only these three. Cape Westwind (InstanceContent 5060, Operation Archon's solo duty; content/questbattle/5060.lua). From Bob's Chronofoil capture 667a68c5 of 2026-11-16 (`questkit chronofoil --battle 0.16`: one run, won, a level 50 White Mage synced to 49): `players` is the damage to the player, times from its pull or the part's start."
+}

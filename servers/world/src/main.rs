@@ -5291,6 +5291,7 @@ async fn process_server_msg(
                 fanfare,
                 exit,
                 quest_log,
+                finish_params,
             ) => {
                 // Won: its prompt counts no losses the next time.
                 connection.quest_battle_echo = false;
@@ -5314,6 +5315,9 @@ async fn process_server_msg(
                 connection.quest_battle_finish_flags = finish_flags;
                 connection.quest_battle_finish_log = quest_log.map(|log| (quest_id, log));
 
+                // A duty's closing cutscene is a GameComplete event with no argument (Cape Westwind's, EventStart
+                // 0x0E / 0); a quest battle's scenes a GameProgress one.
+                let closing_cutscene = !finish_params.is_empty();
                 connection
                     .start_event(
                         ObjectTypeId {
@@ -5321,8 +5325,12 @@ async fn process_server_msg(
                             object_type: ObjectTypeKind::None,
                         },
                         handler_id,
-                        EventType::GameProgress,
-                        1,
+                        if closing_cutscene {
+                            EventType::GameComplete
+                        } else {
+                            EventType::GameProgress
+                        },
+                        if closing_cutscene { 0 } else { 1 },
                         events,
                         lua_player,
                     )
@@ -5342,7 +5350,7 @@ async fn process_server_msg(
                         lua_player.play_scene(
                             finish_scene,
                             SceneFlags::from_bits_retain(finish_flags),
-                            Vec::new(),
+                            finish_params,
                         );
                     }
                 }
@@ -5739,6 +5747,9 @@ async fn process_server_msg(
                     SceneFlags::from_bits_retain(
                         opening_flags.unwrap_or(QUEST_BATTLE_OPENING_FLAGS),
                     )
+                } else if let Some(flags) = opening_flags {
+                    // A duty whose script names its own (Cape Westwind's 0x0C002001, a solo duty's.)
+                    SceneFlags::from_bits_retain(flags)
                 } else if ride_shooting {
                     SceneFlags::from_bits_retain(RIDE_SHOOTING_OPENING_FLAGS)
                 } else {

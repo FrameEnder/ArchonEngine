@@ -262,7 +262,11 @@ impl Zone {
                     if let Ok(contents) = std::fs::read_to_string(entry.path()) {
                         match serde_json::from_str::<DropIn>(&contents) {
                             Ok(mut dropin) => {
-                                if lvb.sections[0].lgb_paths.contains(&dropin.appends) {
+                                // Its LGB is one of the level's, or it names the territory itself
+                                // (`territory/1049`: a duty's own, whose level isn't known where it was written.)
+                                if lvb.sections[0].lgb_paths.contains(&dropin.appends)
+                                    || dropin.appends == format!("territory/{id}")
+                                {
                                     tracing::info!("Loaded dropin from {:?}", entry.path());
                                     // Only the layers that are this territory's (`DropInLayer::territories`.)
                                     dropin.layers.retain(|layer| layer.is_for(id));

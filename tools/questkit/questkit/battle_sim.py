@@ -68,6 +68,9 @@ QUEST_BATTLE_SCRIPTS = repo.SCRIPTS / "content" / "questbattle"
 DROPINS = repo.ROOT / "resources" / "dropins"
 TICK = 0.5
 SCENE_COMMENCE = 60000
+CONTROL_DIRECTOR = 109
+CUTSCENE_SCENE = 3
+DUTY_COMMENCE = 0x40000001
 CONTROL_SET_STATUS = 2  # ActorControl category: the actor's status (2: dead)
 STATUS_DEAD = 2
 SCENE_COMPLETE = 60001
@@ -124,7 +127,14 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
     ends = [(t, (_number_after(text, "scene") or 0) & 0xFFFF) for t, text in _director_events(run, "scene end")]
     commence = next((t for t, n in scenes if n == SCENE_COMMENCE), None)
     if commence is None:
-        raise ValueError("the run has no scene 60000 (the fight starting); a Chronofoil battle has it")
+        # A quest's solo duty that is an InstanceContent (Cape Westwind, 5060) begins as a duty does: the director's
+        # DutyCommence (ActorControlSelf 109 [director, 0x40000001, seconds]), no scene 60000.
+        commence = next((control["S"] for control in run.get("Controls", [])
+                         if control.get("Category") == CONTROL_DIRECTOR
+                         and (control.get("Params") or [0, 0])[1] == DUTY_COMMENCE), None)
+    if commence is None:
+        raise ValueError("the run has no scene 60000 or DutyCommence (the fight starting); a Chronofoil battle "
+                         "has one")
 
     def rel(t):
         return round(t - commence, 2)
@@ -427,7 +437,11 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                 alive.add(layout)
                 if outside_update:
                     not_yet.add(layout)
-                if layout not in known:
+                if layout == 0:
+                    # A director's helper (BNpcBase 9020, no layout ID: Cape Westwind's twelve), which a run's NPCs
+                    # don't list: nothing to match.
+                    pass
+                elif layout not in known:
                     result.problems.append(f"spawns {layout}, which no drop-in has")
                 elif layout not in npcs and layout not in standing and not any(
                         other in npcs for other, root in pooled.items() if layout in pooled and root == pooled[layout]):
@@ -438,6 +452,9 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                 alive.discard(int(args[0]))
             elif name == "spawn_eobj" and args:
                 eobjs.add(int(args[0]))
+            elif name == "play_cutscene":
+                # A duty's cutscene is the director's scene 3 (Cape Westwind's before its last part.)
+                scenes_due.append((t + fixture.get("scenes", {}).get(str(CUTSCENE_SCENE), 1.0), CUTSCENE_SCENE))
             elif name == "play_scene" and args:
                 scene = int(args[0])
                 took = lead_in.get(str(scene)) if t < 0 else None

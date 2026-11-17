@@ -4204,6 +4204,22 @@ impl GameData {
             .map(|(id, _)| id as u16)
     }
 
+    /// The ContentFinderCondition of a quest's solo duty that is an InstanceContent (a quest's QUESTBATTLE0 that no
+    /// QuestBattle row answers to: Operation Archon's 5060, Cape Westwind, duty 865 in territory 1049): the row whose
+    /// Content is the InstanceContent and whose TerritoryType is where it's fought.
+    pub fn quest_content_finder(&mut self, instance_content_id: u32, zone_id: u16) -> Option<u16> {
+        self.instance_content_sheet.row(instance_content_id)?;
+        self.content_finder_condition_sheet
+            .into_iter()
+            .flatten_subrows()
+            .find(|(_, row)| {
+                row.ContentLinkType == 1
+                    && row.Content as u32 == instance_content_id
+                    && row.TerritoryType == zone_id
+            })
+            .map(|(id, _)| id as u16)
+    }
+
     /// The value of one of a quest's parameters (its Lua variables, e.g. QUESTBATTLE0), by name.
     pub fn quest_param(&mut self, quest_id: u32, name: &str) -> Option<u32> {
         let row = self.quest_sheet.row(quest_id)?;
