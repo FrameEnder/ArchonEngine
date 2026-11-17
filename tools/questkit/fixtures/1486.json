@@ -1,0 +1,223 @@
+{
+  "quest": 1486,
+  "script": "BanIxa001_01486",
+  "source": "Bob's Chronofoil capture 7a4214b7 (2026-11-17)",
+  "params": {
+    "ACTOR0": 1009294,
+    "ACTOR1": 1000612,
+    "EOBJECT0": 2004442,
+    "EVENT_ACTION_SEARCH_MIDDLE": 3,
+    "ITEM0": 2001363,
+    "EOBJECT1": 2004519,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT2": 2004520,
+    "EOBJECT3": 2004521,
+    "EOBJECT4": 2004443,
+    "EVENT_ACTION_PROCESS_UPPER_MIDDLE": 32,
+    "EOBJECT5": 2004444,
+    "ACTOR2": 1009199,
+    "LOC_ACTOR0": 1009592,
+    "LOC_ACTOR1": 1009593,
+    "LOC_POS_ACTOR0": 4892133,
+    "MOT_EVENT_ACT_TALK": 972,
+    "MOT_EVENT_JOY": 953,
+    "MOT_EVENT_CATFIGHT": 970,
+    "MOT_EVENT_DIRECTION": 971,
+    "LOC_BGM1": 78,
+    "HOW_TO_1": 227
+  },
+  "steps": [
+    {
+      "talk": 1009294,
+      "layout": 4760560,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000612,
+      "layout": 1146873,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2004442,
+      "layout": 4891873,
+      "what": "EOBJECT0",
+      "scenes": [
+        {
+          "scene": 4,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ],
+          "bar": 3
+        },
+        {
+          "scene": 5,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 3,
+        "vars": "001000000000",
+        "notices": [
+          [
+            1,
+            [
+              26316
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000612,
+      "layout": 1146873,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 14,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 15,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 4,
+        "vars": "001000000000",
+        "notices": [
+          [
+            2,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2004443,
+      "layout": 4892061,
+      "what": "EOBJECT4",
+      "scenes": [
+        {
+          "scene": 23,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ],
+          "bar": 32
+        },
+        {
+          "scene": 24,
+          "flags": "0xf8406ef3",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "001000000000",
+        "notices": [
+          [
+            3,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1009199,
+      "layout": 4753811,
+      "what": "ACTOR2",
+      "scenes": [
+        {
+          "scene": 35,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 36,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

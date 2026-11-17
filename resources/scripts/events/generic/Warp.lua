@@ -49,7 +49,8 @@ function go(player)
     if warp ~= nil and warp.gil > 0 then
         player:modify_currency(CURRENCY_GIL, -warp.gil)
     end
-    player:finish_event()
+    -- The event ends after the warp's PrepareZoning, as retail's (ActorControlSelf 147 with the warp between them:
+    -- the Wolves' Den ferry, warp 131131, Bob's Chronofoil capture 7a4214b7; `ZoneConnection::warp_prepared`.)
     player:warp(EVENT_ID)
 end
 

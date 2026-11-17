@@ -690,6 +690,19 @@ impl LuaPlayer {
         self.queued_tasks.push(LuaTask::ReturnToHomepoint {});
     }
 
+    /// Whether attuning to this aethernet shard is the last its city's aethernet lacks (`GameData::aethernet_extras`:
+    /// every other shard of its group is attuned), which opens the aethernet's other destinations.
+    fn completes_aethernet(&self, lua: &mlua::Lua, shard: u32) -> mlua::Result<bool> {
+        let game_data = match lua.globals().get::<mlua::Value>("GAME_DATA")? {
+            mlua::Value::UserData(ud) => ud.borrow::<Arc<Mutex<GameData>>>()?.clone(),
+            _ => unreachable!(),
+        };
+        let groups = game_data.lock().aethernet_extras();
+        Ok(last_shard_of_its_group(&groups, shard, |id| {
+            self.player_data.aetheryte.unlocked.contains(id)
+        }))
+    }
+
     fn has_aetheryte(&self, aetheryte_id: u32) -> bool {
         self.player_data.aetheryte.unlocked.contains(aetheryte_id)
     }
@@ -810,6 +823,17 @@ impl LuaPlayer {
 
         self.current_level >= level
     }
+}
+
+/// Whether `shard` is one of a group's shards and every other shard of that group is attuned (`has`.)
+pub fn last_shard_of_its_group(
+    groups: &[(u8, Vec<u32>, Vec<(u32, u32)>)],
+    shard: u32,
+    has: impl Fn(u32) -> bool,
+) -> bool {
+    groups.iter().any(|(_, shards, _)| {
+        shards.contains(&shard) && shards.iter().all(|other| *other == shard || has(*other))
+    })
 }
 
 impl UserData for LuaPlayer {
@@ -1088,6 +1112,10 @@ impl UserData for LuaPlayer {
                 Ok(())
             },
         );
+        methods.add_method_mut("npc_trade_taken", |_, this, ()| {
+            this.queued_tasks.push(LuaTask::NpcTradeTaken);
+            Ok(())
+        });
         methods.add_method_mut("take_handed_in_items", |_, this, ()| {
             this.queued_tasks.push(LuaTask::TakeHandedInItems);
             Ok(())
@@ -1431,6 +1459,9 @@ impl UserData for LuaPlayer {
             this.return_to_homepoint();
             Ok(())
         });
+        methods.add_method("completes_aethernet", |lua, this, shard: u32| {
+            this.completes_aethernet(lua, shard)
+        });
         methods.add_method("has_aetheryte", |_, this, aetheryte_id: u32| {
             Ok(this.has_aetheryte(aetheryte_id))
         });
@@ -1642,5 +1673,24 @@ impl UserData for LuaPlayer {
         fields.add_field_method_get("max_hp", |_, this| Ok(this.max_hp));
         fields.add_field_method_get("mp", |_, this| Ok(this.mp));
         fields.add_field_method_get("max_mp", |_, this| Ok(this.max_mp));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::last_shard_of_its_group;
+
+    /// Ul'dah's aethernet in Bob's Chronofoil capture 7a4214b7 (2026-11-17): shards 43 and 48 played their scene with
+    /// {1, 1}, and 42, attuned last, with {2, 2} and the other destinations (45, 46 and 93.) The group's shards here
+    /// are those three for the test's sake; the server reads them from the Aetheryte sheet.
+    #[test]
+    fn the_last_shard_completes_the_aethernet() {
+        let groups = vec![(2u8, vec![42, 43, 48], vec![(45, 0), (46, 0), (93, 0)])];
+        let has = |attuned: &'static [u32]| move |id: u32| attuned.contains(&id);
+        assert!(!last_shard_of_its_group(&groups, 43, has(&[])));
+        assert!(!last_shard_of_its_group(&groups, 48, has(&[43])));
+        assert!(last_shard_of_its_group(&groups, 42, has(&[43, 48])));
+        // An aetheryte that's no shard of any group never does.
+        assert!(!last_shard_of_its_group(&groups, 9, has(&[42, 43, 48])));
     }
 }

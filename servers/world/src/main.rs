@@ -223,6 +223,7 @@ async fn initial_setup(
                     old_position: Position::default(),
                     old_rotation: 0.0,
                     teleport_reason: TeleportReason::NotSpecified,
+                    warp_started: None,
                     active_minion: 0,
                     party_id: 0,
                     rejoining_party: false,
@@ -1107,6 +1108,7 @@ async fn process_packet(
                                             as u8,
                                         buddy_equip_row_ids: connection.companion_profile().barding,
                                         completed_lovm_stages: 255, // TODO: placeholder to show them in the Duty Finder
+                                        beast_reputation_rank: connection.allied_society_ranks(),
                                         ..Default::default()
                                     }),
                                 );
@@ -1355,6 +1357,7 @@ async fn process_packet(
                                 ClientTriggerCommand::ShownActiveHelp { id } => {
                                     // Save this so it isn't shown again on next login
                                     connection.player_data.unlock.seen_active_help.set(id);
+                                    connection.active_help_shown(id).await;
                                 }
                                 ClientTriggerCommand::SeenCutscene { id } => {
                                     connection.player_data.unlock.cutscene_seen.set(id);
@@ -1477,6 +1480,15 @@ async fn process_packet(
                                 }
                                 ClientTriggerCommand::RequestAchievementProgress { id } => {
                                     connection.send_achievement_progress(id).await;
+                                }
+                                ClientTriggerCommand::RequestChallengeLogCategory {
+                                    category,
+                                    ..
+                                } => {
+                                    connection.send_challenge_log_category(category).await;
+                                }
+                                ClientTriggerCommand::RequestChallengeLogTimes => {
+                                    connection.send_challenge_log_times().await;
                                 }
                                 ClientTriggerCommand::RequestAchievementState { id } => {
                                     connection.send_achievement_state(id).await;
@@ -4954,7 +4966,12 @@ async fn process_server_msg(
                 connection.rejoining_party = true;
             }
             FromServer::PacketSegment(ipc, from_actor_id) => {
+                let data = ipc.data.clone();
                 connection.send_ipc_from(from_actor_id, ipc).await;
+                // A warp event ends after its PrepareZoning, as retail's (`warp_prepared`.)
+                if connection.warp_prepared(&data).await && !events.is_empty() {
+                    connection.event_finish(events).await;
+                }
             }
             FromServer::NewTasks(mut tasks) => {
                 // Run them now (e.g. the warp from casting Teleport): left queued, they'd wait for the client's next

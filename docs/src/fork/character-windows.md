@@ -51,6 +51,7 @@ Types 2 and 9 missed their first ID.
 | 3 | 267 | The class or job Key at level Data[0] | level / wanted |
 | 6 | 382 | Every quest in Key and Data | done / listed |
 | 7 | (not counted) | The Hunting Log Key (its index: 5 the Conjurer's) finished, every rank ("Bump on a Log"; 733 is Key 5, Data empty) | 0 or 1 of 1 |
+| 15 | (not counted) | The allied society Key (its BeastTribe row: 2 the Sylphs) at rank Data[0] ("Sylph-conscious I", 867: Key 2, Data 1) | the rank of Data[0] |
 | 8 | 202 | Every part of map Key discovered ("Mapping the Realm"): Map's DiscoveryFlag, of every map that shares its discovery slot (DiscoveryIndex); A Realm Reborn's field zones are revealed whole on the first visit (below) | parts / all |
 | 9 | 10 | Any quest in Key and Data | 0 or 1 of 1 |
 | 20 | 30 | Every aether current of AetherCurrentCompFlgSet Key ("Freebird") | 0 or 1 of 1 |
@@ -133,6 +134,46 @@ seen on retail). 941 isn't sent: `[6, 1]` once, and what it tells the client isn
 ClassJob and the ring's; the player was a White Mage). 1011 is answered with 600 (`send_achievement_state`: complete
 or not, and its progress). How the client knows a reward is still to be claimed isn't known: nothing the server sent
 at the completion or as the window opened says so, and the Achievements packet's last 26 bytes were zeros before it.
+
+## Allied societies (`servers/world/src/zone_connection/allied_society.rs`)
+
+The rank a character has with each society (the BeastTribe sheet's rows: 2 the Sylphs) is saved a byte a society
+(`unlock.allied_society_ranks`, migration `update-2026-11-17-2_allied_societies`) and sent in PlayerSetup's
+`beast_reputation_rank`.
+
+Retail met the Sylphs as **Voyce of Concern** (1253) was rewarded (Bob's Chronofoil capture 7a4214b7, 2026-11-17):
+
+| When | Server |
+|---|---|
+| the reward's scene shows Active Help 152 (client trigger 306 `[152]`) | ActorControlSelf **524** `[1]`, at once (no other Active Help in the capture was answered; what it does isn't known) |
+| the reward, after the gil's log line and slot | ActorControlSelf **520** `[2, 1]`: the society and its rank |
+| right after | the achievement Sylph-conscious I (867; Achievement Type 15, Key 2, Data 1): ActorControlSelf 515 and ActorControl 518 |
+| then | the map markers, the journal, FinishQuest |
+
+Kawari: `grant_quest_society_rank` in `finish_quest`, before the markers: the rank from `QUEST_SOCIETY_RANKS` (the
+quests retail was seen giving a rank with: 1253 so far), saved, 520, then the achievements' check (Type 15,
+`KIND_ALLIED_SOCIETY`); `active_help_shown` answers Active Help 152 with 524. A Bad Bladder (1486), the Ixal's first
+quest, gave no rank in the same capture. Reputation, the daily quests, their allowances and the societies' vendors
+aren't built: no capture has one (see [known issues](known-issues.md)).
+
+## The Challenge Log (`servers/world/src/zone_connection/challenge_log.rs`)
+
+**Rising to the Challenge** (1431) unlocks it: ActorControlSelf 41 `[92, 1]` (unlock link 92) with its reward
+(capture 7a4214b7; the quest has no REWARD variable for it, so it's a recorded unlock, `RECORDED_QUEST_UNLOCKS`).
+Bob then opened the window:
+
+| Client | Server |
+|---|---|
+| trigger **310** `[1, 0, 0, 0, 0]` as the window opens (the first category) | **ChallengeLogCategory** (opcode **395**, 80 bytes): the category u32, then 76 bytes, zeros for a character with nothing under way |
+| trigger **1301** `[0]`, right after | ActorControlSelf **336** `[1794929751, 0, 1795507210]`: the server's time and the week's end (Tuesday 08:00:10 UTC), Unix seconds |
+| trigger **310** `[category, 0, 0, 0, 1]` for each tab pressed (2, 3, 4, 5, 8, then 1 again) | the category's ChallengeLogCategory |
+| trigger **310** `[12, 0, 0, 0, 1]` | ActorControlSelf **525** `[12]` and no packet |
+
+Kawari answers the same way (`send_challenge_log_category`, `send_challenge_log_times`: the week's end is the next
+Tuesday 08:00 UTC, `week_end`; category 12 alone gets 525, `CATEGORIES_WITHOUT_PACKET`: why retail answered it
+differently isn't known, and categories 6, 7, 9 to 11, 13 and 14 weren't opened). The 76 bytes are sent as zeros:
+nothing is counted, completed or rewarded yet, since no capture has a challenge under way (the ContentsNote sheet has
+the entries: their category in ContentType, RequiredAmount, the reward).
 
 ## Achievement Certificates (Jonathas)
 

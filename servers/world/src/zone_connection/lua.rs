@@ -35,6 +35,10 @@ const SUMMONING_BELL_SCENE_NO_RETAINER: u16 = 1001;
 /// scene 1000, flags 0x2000, no arguments, and EventFinish once it returned.)
 const SUMMONING_BELL_SCENE_NO_APPROVAL: u16 = 1000;
 
+/// The second number of retail's NpcTradeTaken packet, 18 in all eleven seen (Bob's Chronofoil captures 7a4214b7 and
+/// 0cafbf61.)
+const NPC_TRADE_TAKEN_VALUE: u32 = 18;
+
 impl ZoneConnection {
     pub async fn process_lua_player(
         &mut self,
@@ -349,6 +353,13 @@ impl ZoneConnection {
                 }
                 LuaTask::ToggleOrchestrion { id } => {
                     self.toggle_orchestrion(*id).await;
+                }
+                LuaTask::NpcTradeTaken => {
+                    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::NpcTradeTaken {
+                        unk1: 0,
+                        unk2: NPC_TRADE_TAKEN_VALUE,
+                    });
+                    self.send_ipc_self(ipc).await;
                 }
                 LuaTask::TakeHandedInItems => {
                     if self.player_data.inventory.take_handed_in() > 0 {

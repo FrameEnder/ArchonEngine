@@ -29,7 +29,12 @@ CustomTalk 720969, `events/custom/000/ComDefGrandCompanyOfficer_00073.lua`. Ever
   Hunting Log, the seals) and, when it can be had, asks for it (GrandCompanyRankUp) and returns 1; otherwise 0, as in
   all three captures. On 1 the server promotes (`player:promote_grand_company()`, `ZoneConnection::promote_grand_company`):
   the rank's RequiredSeals paid from the company's seals (GrandCompanyRank: 2,000 from Private Third Class, then
-  3,000, 4,000…), the rank raised, GrandCompanyInfo sent. Then **scene 4**, the ceremony, which returns the reward the
+  3,000, 4,000…), the rank raised, GrandCompanyInfo sent, then the quest markers again (UpdateMapMarkers: a rank
+  opens quests). That is retail's order in the first promotion captured (Bob's Chronofoil capture 7a4214b7,
+  2026-11-17, Private Third Class to Second in the Twin Adder: scene 1 returned 2, scene 2 returned 1, then the seals'
+  slot with 1,444 left of 3,444, GrandCompanyInfo with company 2 at rank 2, UpdateMapMarkers32, scene 4, which
+  returned nothing, and EventFinish: no menu after it. Until 2026-11-17 the script played the menu again after a
+  ceremony without a reward.) Then **scene 4**, the ceremony, which returns the reward the
   new rank brings (the client's IsRankReward): 1 expert delivery (rank 6, scene 5), 2 the level 30 company leves
   (rank 5, scene 6), 3 the level 45 leves (rank 8, scene 9), 4 changing companies (rank 9, scene 10), 0 none; the
   menu plays after.
@@ -40,7 +45,9 @@ CustomTalk 720969, `events/custom/000/ComDefGrandCompanyOfficer_00073.lua`. Ever
 GCShop events 1441793 (the Maelstrom's), 1441794 (the Twin Adders') and 1441795 (the Immortal Flames'),
 `events/gc_shop.rs`:
 
-1. Scene 0 (flags 0x2001, no parameters), which the client ends with no results; then scene 10, the list (0x2001).
+1. After the EventStart, ActorControlSelf 138 with the shop's event (`[1441794]`, Bob's Chronofoil capture
+   7a4214b7 of 2026-11-17; sent since then), then scene 0 (flags 0x2001, no parameters), which the client ends with
+   no results; then scene 10, the list (0x2001).
 2. A purchase is scene 10 returning 7 results: 0, the item's place in its tab, the item, its price in seals for the
    count, the company, the count, the tab. The tab is GCScripShopItem's row, a GCScripShopCategory: the company,
    tier and kind (1 the Maelstrom's Materiel, 10 the Twin Adders', 19 the Flames'). The server checks the item, the

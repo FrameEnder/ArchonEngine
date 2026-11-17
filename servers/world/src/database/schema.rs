@@ -161,6 +161,7 @@ diesel::table! {
         player_currencies -> Text,
         hunting_log -> Text,
         gold_saucer -> Text,
+        allied_society_ranks -> Text,
     }
 }
 

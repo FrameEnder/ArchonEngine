@@ -2503,6 +2503,26 @@
         "end": "5a69c4b8414e10ae9090d3c9bd3d03a98553ca8b605686daae3de09848ad4bc9317faeabebc6cefab2c18cf8570c03e9ddab92cbfa25871a0695a8d8e27c4c09aea30e38d3a4422819667aae502fbd691a9e62cae361edba02f527b9fc5ba189a60eaaea3736099a8e656fd9f7d7f529b46d630a8b0a257a9cc427f9a403d9493fddab2aa470e8d770a8801c38bcb8996cea595cc5e35ac9",
         "group": 1
       }
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "ChallengeLogCategory",
+      "opcode": 395,
+      "case": "de23b8818aec4a9810e705ae",
+      "case_group": 1,
+      "handler_at": 11849696,
+      "end": "de23b8818aec4a9810e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "NpcTradeTaken",
+      "opcode": 412,
+      "case": "59326ac09f5703775d6d18ba10e705ae",
+      "case_group": 1,
+      "handler_at": 11838976,
+      "end": "59326ac09f5703775d6d18ba10e705ae",
+      "end_group": 1
     }
   ],
   "client": [

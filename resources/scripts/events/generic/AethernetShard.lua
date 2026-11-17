@@ -26,10 +26,15 @@ function onTalk(target, player)
 end
 
 function onEventActionCast(player)
+    -- The city's last shard (the aethernet's other destinations come with it) plays the scene with {2, 2}: Ul'dah's
+    -- shard 42 with the gates and the airship landing, 45, 46 and 93 (Bob's Chronofoil capture 7a4214b7,
+    -- 2026-11-17; shards 43 and 48 before it had {1, 1}.)
+    local last = player:completes_aethernet(aetheryteId())
     player:unlock_aetheryte(1, aetheryteId())
     -- "You have aethernet access" and its effect, then the event ends. Flags and params as retail sent them (Bob's
     -- Chronofoil capture of 2026-10-18, an aethernet shard in Limsa Lominsa: scene 3, 0x2001, {1, 1}.)
-    player:play_scene(SCENE_HAVE_AETHERNET_ACCESS, HIDE_HOTBAR | NO_DEFAULT_CAMERA, {1, 1})
+    local kind = last and 2 or 1
+    player:play_scene(SCENE_HAVE_AETHERNET_ACCESS, HIDE_HOTBAR | NO_DEFAULT_CAMERA, {kind, kind})
 end
 
 function onReturn(scene, results, player)

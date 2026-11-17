@@ -138,6 +138,12 @@ impl GrandCompanyShopEventHandler {
 
 #[async_trait]
 impl EventHandler for GrandCompanyShopEventHandler {
+    /// Retail sent ActorControlSelf 138 with the shop's event after the EventStart, before scene 0 (the Twin
+    /// Adders' quartermaster, 1441794: Bob's Chronofoil capture 7a4214b7, 2026-11-17.)
+    fn disable_event_pos_rollback(&self) -> bool {
+        true
+    }
+
     async fn on_talk(&self, _event: &Event, _target_id: ObjectTypeId, player: &mut LuaPlayer) {
         player.play_scene(Self::SCENE_GREETING, Self::flags(), Vec::new());
     }

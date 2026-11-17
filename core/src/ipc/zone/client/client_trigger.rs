@@ -416,6 +416,21 @@ pub enum ClientTriggerCommand {
     #[brw(magic = 1011u32)]
     RequestAchievementState { id: u32 },
 
+    /// The Challenge Log asks for one category's entries (the ContentsNote rows' ContentType): `first` is 0 as the
+    /// window opens and 1 for a tab pressed (Bob's Chronofoil capture 7a4214b7, 2026-11-17: categories 1 to 5, 8 and
+    /// 12.) Answered with the ChallengeLogCategory packet.
+    #[brw(magic = 310u32)]
+    RequestChallengeLogCategory {
+        category: u32,
+        #[brw(pad_before = 12)]
+        tab_pressed: u32,
+    },
+
+    /// The Challenge Log asks for its clock as it opens, right after its first category (capture 7a4214b7.) Answered
+    /// with `ActorControlCategory::ChallengeLogTimes`.
+    #[brw(magic = 1301u32)]
+    RequestChallengeLogTimes,
+
     /// When a player opens the Shared FATE window.
     #[brw(magic = 1009u32)]
     OpenSharedFATEWindow {
@@ -850,6 +865,24 @@ mod tests {
         assert_eq!(
             trigger.trigger,
             ClientTriggerCommand::RequestAchievementState { id: 3818 }
+        );
+    }
+
+    /// Retail's client pressing the Challenge Log's second tab (Bob's Chronofoil capture 7a4214b7: client trigger
+    /// 310, `[2, 0, 0, 0, 1]`.)
+    #[test]
+    fn read_request_challenge_log_category() {
+        let mut bytes = vec![0u8; 32];
+        bytes[..2].copy_from_slice(&310u16.to_le_bytes());
+        bytes[4..8].copy_from_slice(&2u32.to_le_bytes());
+        bytes[20..24].copy_from_slice(&1u32.to_le_bytes());
+        let trigger = ClientTrigger::read_le(&mut Cursor::new(&bytes)).unwrap();
+        assert_eq!(
+            trigger.trigger,
+            ClientTriggerCommand::RequestChallengeLogCategory {
+                category: 2,
+                tab_pressed: 1
+            }
         );
     }
 

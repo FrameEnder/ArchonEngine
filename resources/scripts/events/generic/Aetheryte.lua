@@ -27,8 +27,9 @@ end
 
 function onEventActionCast(player)
     player:unlock_aetheryte(1, aetheryteId())
-    -- Attuned: the event ends here, as on Sapphire. (Retail also shows an "attuned" message, which still needs a
-    -- recording to know how it's sent.)
+    -- Attuned: retail's LearnTeleport, then the aetheryte's notice 0 with one argument, 0 (EventNotice2), then the
+    -- event ends (Bob's Chronofoil capture 7a4214b7, 2026-11-17: Moraby Drydocks' aetheryte, 10, and 55.)
+    player:event_notice(EVENT_ID, 0, {0})
     player:finish_event()
 end
 

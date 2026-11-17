@@ -418,6 +418,32 @@ pub enum ActorControlCategory {
         unlocked: bool,
     },
 
+    /// A warp event is taking the player away: the Warp's event ID, with the PrepareZoning and before the EventFinish
+    /// (Bob's Chronofoil capture 7a4214b7, 2026-11-17: the Wolves' Den ferry from Moraby Drydocks, warp 131131, and
+    /// nothing else in the capture.)
+    #[brw(magic = 147u32)]
+    WarpStarted { warp_id: u32 },
+
+    /// The Challenge Log's clock, the answer to client trigger 1301 as the window opens: the server's time and when
+    /// the week ends, in Unix seconds (capture 7a4214b7: 1794929751 and 1795507210, Tuesday 08:00 UTC.)
+    #[brw(magic = 336u32)]
+    ChallengeLogTimes { now: u32, unk1: u32, week_ends: u32 },
+
+    /// An allied society's rank changed: the BeastTribe row and the rank. Retail sent `[2, 1]` as Voyce of Concern
+    /// was rewarded, the Sylphs at rank 1 (capture 7a4214b7), after the gil and before the achievement.
+    #[brw(magic = 520u32)]
+    SetAlliedSocietyRank { society: u32, rank: u32 },
+
+    /// Unknown purpose. Retail sent `[1]` right after the client showed Active Help 152 (the allied societies', in
+    /// Voyce of Concern's last scene; capture 7a4214b7), and to no other Active Help in the capture.
+    #[brw(magic = 524u32)]
+    UnkAlliedSocietyHelp { unk1: u32 },
+
+    /// The answer to the Challenge Log asking for a category (client trigger 310) that has no ChallengeLogCategory
+    /// packet: the category. Retail answered category 12 this way (capture 7a4214b7.)
+    #[brw(magic = 525u32)]
+    ChallengeLogCategoryEmpty { category: u32 },
+
     /// Calls into some GCSupply function, unsure what it does yet.
     #[brw(magic = 137u32)]
     UnkGCSupplyRelated {

@@ -14,6 +14,7 @@
 //!   first visit, `WHOLE_MAP_DISCOVERY`, which completes theirs)
 //! * 7: the Hunting Log Key (its index) finished, every rank ("Bump on a Log")
 //! * 9: any quest in Key and Data
+//! * 15: the allied society Key (its BeastTribe row) at rank Data[0] or above ("Sylph-conscious I")
 //! * 20: every aether current in a zone (AetherCurrentCompFlgSet Key), "Freebird"
 
 use kawari::{
@@ -43,6 +44,10 @@ const KIND_MAP: u8 = 8;
 /// trigger 9003 `[slot, 22, achievement]`, the same capture.)
 pub const ACHIEVEMENT_REWARD_COMMAND: u32 = 22;
 const KIND_ANY_QUEST: u8 = 9;
+/// An allied society at a rank (Sylph-conscious I, 867: Type 15, Key 2, the Sylphs, Data 1; retail completed it right
+/// after ActorControlSelf 520 `[2, 1]` as Voyce of Concern was rewarded: Bob's Chronofoil capture 7a4214b7,
+/// 2026-11-17.)
+const KIND_ALLIED_SOCIETY: u8 = 15;
 const KIND_AETHER_CURRENTS: u8 = 20;
 
 /// "Defeat N enemies" (To Crush Your Enemies): an enemy the player had enmity with died, as quests count kills.
@@ -362,6 +367,11 @@ impl ZoneConnection {
                 let mut ids = listed;
                 (ids.any(|id| self.quest_completed(id)) as u32, 1)
             }
+            KIND_ALLIED_SOCIETY => {
+                let rank = self.allied_society_rank(rule.key.max(0) as u8) as u32;
+                let wanted = rule.data[0].max(0) as u32;
+                (rank.min(wanted), wanted)
+            }
             KIND_HUNTING_LOG => {
                 let index = rule.key.max(0) as u8;
                 let done = (index as usize) < crate::HUNTING_LOGS
@@ -456,6 +466,7 @@ impl ZoneConnection {
                         | KIND_MAP
                         | KIND_AETHER_CURRENTS
                         | KIND_HUNTING_LOG
+                        | KIND_ALLIED_SOCIETY
                 ) || (rule.kind == KIND_COUNTER && COUNTED.contains(&(rule.key.max(0) as u32)))
             })
             .cloned()

@@ -2,6 +2,7 @@
     "hitbox_radius": 0.5,
     "autoattack_action_id": 870,
     "from_pull": true,
+    "timeline_always_plays": false,
     "recorded_amounts": {
         "870": {
             "npcs": 94

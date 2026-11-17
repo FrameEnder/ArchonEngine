@@ -3,6 +3,48 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Bob's Chronofoil capture 7a4214b7 (2026-11-17)
+
+None of what was built from it is tested in game: quests 1105, 1252, 1253, 1431 and 1486 (they pass replay), the
+Sylphs' rank and its achievement, the Challenge Log's window, a promotion's markers and ending, the warp's 147 and
+the event ending after its PrepareZoning, a city's last shard, a main aetheryte's notice.
+
+* **Beauty Is Only Scalp Deep** (1210) was accepted and not finished in the capture (it wants a Carpenter): not
+  scripted.
+* **The Challenge Log** opens and shows nothing under way: the 76 bytes after a category's number aren't understood
+  (zeros in all seven of retail's), so nothing is counted, completed or rewarded, and the week's end only shows.
+  Category 12 is answered with ActorControlSelf 525 because retail did; why isn't known, and categories 6, 7, 9 to 11,
+  13 and 14 weren't opened on retail (they're sent as packets).
+* **Allied societies** stop at the Sylphs' first rank (Voyce of Concern): reputation, daily quests and allowances,
+  the vendors, and the other societies' first quests (which quest gives the rank isn't in a sheet column that has
+  been checked, so only the one seen is recorded: `QUEST_SOCIETY_RANKS`). PlayerSetup's `beast_reputation_rank` is
+  upstream's field: retail's was all zeros at the capture's login (before the rank), so the offset isn't confirmed
+  with a rank in it.
+* **NpcTradeTaken** (opcode 412) is sent only by the three scripts of 2026-11-17 that hand a key item over (1431,
+  1486 twice); the older scripts with key-item trades don't send it, questkit's fixtures don't record it and
+  `transcribe` doesn't write it. In a quest's last trade it comes just ahead of the reward's log line; retail's came
+  after. What the client does with it isn't known (nothing has been seen to depend on it).
+* **The daily reset** was captured (15:00 UTC, 2322.3 s in): ActorControlSelf 907 `[1, 20774]`, 146 `[0]`, sixteen
+  583s (`[0, 4]`, `[1, 1]`, `[2, 4]`, `[3, 10]`, `[6, 2]`, `[7, 2]`, `[8, 15]`, `[10, 7]`, `[11, 7]`, `[12, 15]`,
+  `[14, 5]`, `[15, 10]`, `[16, 15]`, `[18, 5]`, `[19, 8]`, `[20, 6]`), 144 `[93]`, the DailyQuests packet (1, then
+  zeros) and, a second later, opcode 153 (8 bytes: 1). Kawari has no daily reset; what each of these resets isn't
+  worked out.
+* **Opcode 879** (520 bytes: 1, then what looks like a bitmask that differs by zone) first came in the Wolves' Den,
+  answering client trigger 1201 `[0, 0, 0, 0, 1]`, and then on arriving in each zone after it (four in all). Not
+  sent: what it is isn't known.
+* **The Wolves' Den** itself (territory 250): ActorControlSelf 505 `[1, 0, 2000, 0, 1]` twice on arriving and
+  `[0, 0, 2000, 0, 1]` on leaving aren't sent (upstream's `UnkLimitBreakController`; the PvP profile isn't built).
+* **ActorControls seen and not sent**, with what came with them: 267 `[0]` (ActorControl, three times, each with
+  54 `[1]`); 700 `[579, 13, 171]` and 701 `[598]`, `[563]` (ActorControlSelf, during FATEs); 310 `[31014, 2]` and 311
+  `[31054]`, `[31024]`, `[31035]` (gathering points' numbers); 801 `[1]`, 3103 and 805 together (twice); 148
+  `[actor, actor, 0, 868]` and 1509 `[2864 or 2876, actor, actor]` (other players); 3220, 3451 and 3100 at login.
+* **Opcode 243** (8 zero bytes, named `KeyboundOver` for where it was first seen) is the open world's too: before
+  every teleport's and warp's PrepareZoning and often in fights (hundreds in this capture). Kawari sends it only in
+  Keybound Brawler.
+* **Opcode 538** (16 bytes) answered client trigger 812 (entering a running FATE) each time: the Fate row u16, a
+  u16 (0x1019 for FATE 149, 0x0C4B for 174), then zeros and a byte (5, 3) at 13. Not sent: what the numbers are
+  isn't known.
+
 ## Events and Keybound Brawler (2026-11-15)
 
 None of it played yet.
@@ -1750,10 +1792,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 See [Grand Companies](grand-company.md). Untested in game (2026-10-29).
 
-* **Promotions** follow the client's script; retail's packets for one aren't recorded (no capture reached a
-  promotion), so the order (seals, rank, GrandCompanyInfo, then the ceremony) is a guess, and what follows a rank's
-  reward scene (5, 6, 9, 10) too. What the new rank unlocks isn't given: expert delivery, the company leves, changing
-  companies.
+* **Promotions** are played as retail's one captured (Private Third Class to Second, capture 7a4214b7, 2026-11-17),
+  a rank without a reward; what follows a rank's reward scene (5, 6, 9, 10) is still a guess. What the new rank
+  unlocks isn't given: expert delivery, the company leves, changing companies.
 * **Changing companies** (the officer's scene 7, for a member of another company) isn't done; the event ends.
 * **Supply and provisioning missions** open and close, but handing items in (seals, EXP) isn't recorded or done.
 * **The quartermaster** sends no InventoryTransactions (retail sent three a purchase). Ventures (21072, which Kawari

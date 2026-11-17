@@ -80,10 +80,10 @@ function onReturn(scene, results, player)
         local reward = REWARD_SCENES[result]
         if reward ~= nil then
             player:play_scene(reward, FLAGS, {})
-        else
-            menu(player)
+            return
         end
-        return
+        -- No reward with the rank: the ceremony returns nothing and the event ends there, not at the menu (retail's
+        -- promotion to Private Second Class, Bob's Chronofoil capture 7a4214b7 of 2026-11-17.)
     elseif scene == SCENE_EXPLAIN or scene == SCENE_RETURNED_FROM_NEST or scene == 5 or scene == 6 or scene == 9
         or scene == 10 then
         menu(player)

@@ -555,8 +555,24 @@ impl ZoneConnection {
         }
     }
 
+    /// What follows a warp event's PrepareZoning on retail (Bob's Chronofoil capture 7a4214b7, 2026-11-17: the
+    /// Wolves' Den ferry, warp 131131): ActorControlSelf 147 with the warp, then the event's EventFinish. Whether the
+    /// packet just sent was that PrepareZoning; the caller then finishes the event still open.
+    pub async fn warp_prepared(&mut self, sent: &ServerZoneIpcData) -> bool {
+        if !matches!(sent, ServerZoneIpcData::PrepareZoning(_)) {
+            return false;
+        }
+        let Some(warp_id) = self.warp_started.take() else {
+            return false;
+        };
+        self.actor_control_self(ActorControlCategory::WarpStarted { warp_id })
+            .await;
+        true
+    }
+
     pub async fn warp(&mut self, warp_id: u32) {
         self.teleport_reason = TeleportReason::NotSpecified;
+        self.warp_started = Some(warp_id);
         self.handle
             .send(ToServer::Warp(
                 self.id,

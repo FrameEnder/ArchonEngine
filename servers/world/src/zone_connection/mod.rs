@@ -40,6 +40,8 @@ use super::{
 
 mod achievement;
 mod actor;
+mod allied_society;
+mod challenge_log;
 mod chat;
 mod chocobo_taxi;
 mod companion;
@@ -169,6 +171,9 @@ pub struct ZoneConnection {
     pub game_data: Arc<Mutex<GameData>>,
 
     pub teleport_reason: TeleportReason,
+    /// The Warp event that's taking the player away, until its PrepareZoning has gone out: retail's ActorControlSelf
+    /// 147 with the warp and the event's EventFinish follow it (`warp_prepared`.)
+    pub warp_started: Option<u32>,
     pub active_minion: u32,
     /// The player's party id number, used for networking party-related events
     pub party_id: u64,
@@ -939,8 +944,8 @@ impl ZoneConnection {
     /// Promotes the player in their Grand Company, as the personnel officer does once the client's checks pass (its
     /// script's scene 2: the rank-up quest, the Hunting Log and the seals): the seals the rank asks for are paid
     /// (GrandCompanyRank's RequiredSeals of the rank held: 2,000 from Private Third Class), then the rank, then
-    /// GrandCompanyInfo. Retail's packets for it aren't recorded (Bob's captures never reached a promotion.) Returns
-    /// false if there's no company, no next rank, or not enough seals.
+    /// GrandCompanyInfo and the quest markers, as retail's first recorded promotion (below). Returns false if there's
+    /// no company, no next rank, or not enough seals.
     pub async fn promote_grand_company(&mut self) -> bool {
         let company = self.player_data.grand_company.active_company;
         let Some(rank) = self.grand_company_rank(company) else {
@@ -969,6 +974,10 @@ impl ZoneConnection {
             .await;
         self.set_grand_company_rank(rank + 1);
         self.send_grand_company_info().await;
+        // Retail's order (Bob's Chronofoil capture 7a4214b7 of 2026-11-17, Private Third Class to Second in the
+        // Twin Adder for 2,000 seals): the seals' slot, GrandCompanyInfo, the quest markers again (a rank opens
+        // quests), then the officer's scene 4.
+        self.send_map_markers(crate::MAP_MARKERS_CHANGED).await;
         tracing::info!("Grand Company {company:?}: promoted to rank {}", rank + 1);
         true
     }

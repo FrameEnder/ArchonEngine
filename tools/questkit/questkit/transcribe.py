@@ -637,6 +637,22 @@ class Transcript:
             return lines + self._group_outcome(handler, indent)
         if handler.accepted:
             lines.append(f"{indent}player:accept_quest(EVENT_ID)")
+        lines.extend(self._effect_lines(handler, indent))
+        for notice, args in handler.notices:
+            lines.append(f"{indent}player:event_notice(EVENT_ID, {notice}, {lua_list(args)})")
+        if handler.after is not None:
+            for byte in range(6):
+                if handler.after[byte] != handler.before[byte] or (handler.accepted and handler.after[byte]):
+                    lines.append(f"{indent}player:set_quest_var(EVENT_ID, {byte}, 0x{handler.after[byte]:02X}) "
+                                 f"-- UI8{'ABCDEF'[byte]}")
+        if handler.after_sequence is not None and (handler.after_sequence != handler.sequence or handler.accepted):
+            lines.append(f"{indent}player:quest_sequence(EVENT_ID, {handler.after_sequence})")
+        return lines
+
+    def _effect_lines(self, handler: Handler, indent: str) -> list[str]:
+        """What retail unlocked with the step (a duty, an aetheryte, an unlock), a completing step's too (A Pup No
+        Longer's duty came with the reward, capture 7a4214b7.)"""
+        lines = []
         for effect in handler.effects:
             if "content" in effect:
                 lines.append(f"{indent}player:unlock_content("
@@ -647,15 +663,6 @@ class Transcript:
             elif "unlock" in effect:
                 name = next((n for n, v in self.params.items() if v == effect["unlock"] and "UNLOCK" in n), None)
                 lines.append(f"{indent}player:unlock({name or effect['unlock']})")
-        for notice, args in handler.notices:
-            lines.append(f"{indent}player:event_notice(EVENT_ID, {notice}, {lua_list(args)})")
-        if handler.after is not None:
-            for byte in range(6):
-                if handler.after[byte] != handler.before[byte] or (handler.accepted and handler.after[byte]):
-                    lines.append(f"{indent}player:set_quest_var(EVENT_ID, {byte}, 0x{handler.after[byte]:02X}) "
-                                 f"-- UI8{'ABCDEF'[byte]}")
-        if handler.after_sequence is not None and (handler.after_sequence != handler.sequence or handler.accepted):
-            lines.append(f"{indent}player:quest_sequence(EVENT_ID, {handler.after_sequence})")
         return lines
 
     def _zone_lines(self, handler: Handler, indent: str) -> list[str]:
@@ -741,6 +748,7 @@ class Transcript:
                 if handler.completed:
                     lines.append("        player:finish_event()")
                     lines.append("        player:finish_quest(EVENT_ID, chosen)")
+                    lines.extend(self._effect_lines(handler, "        "))
                     lines.extend(line for line in self._zone_lines(handler, "        ")
                                  if line.strip() not in ("player:finish_event()", "return"))
                     lines.append("        return")

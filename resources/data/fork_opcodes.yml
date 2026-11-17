@@ -805,3 +805,19 @@ ServerZoneIpcType:
   size: 240
   found_on: 2026.11.03.0000.0000
   how_to_find: On retail with Chronofoil, finish a game of Keybound Brawler - the 240-byte packet beginning 1, 52322.
+- name: ChallengeLogCategory
+  comment: One category of the Challenge Log - the category, then its entries' progress (zeros for a new character.)
+  # 395 on 2026.11.03 (Bob's Chronofoil capture 7a4214b7, 2026-11-17: seven of them, 80 bytes, each answering client
+  # trigger 310 with the same category.) No finder yet.
+  opcode: 395
+  size: 80
+  found_on: 2026.11.03.0000.0000
+  how_to_find: On retail with Chronofoil, open the Challenge Log and press its tabs - the 80-byte packet after each client trigger 310, starting with the tab's category.
+- name: NpcTradeTaken
+  comment: Sent as a quest takes the key items handed over in a trade - 0, 18 and 48 zero bytes.
+  # 412 on 2026.11.03 (Bob's Chronofoil captures 7a4214b7, three key-item trades, and 0cafbf61, eight: 56 bytes,
+  # after the trade's last scene and before the step's notice or the reward's InventoryActionAck.) No finder yet.
+  opcode: 412
+  size: 56
+  found_on: 2026.11.03.0000.0000
+  how_to_find: On retail with Chronofoil, hand a quest's key item to its NPC - the 56-byte packet (0, 18, zeros) before the quest's update.

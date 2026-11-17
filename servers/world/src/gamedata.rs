@@ -699,8 +699,9 @@ fn donut_hole_from_omen(path: &str) -> Option<f32> {
 
 /// Unlock links retail granted as these quests were finished (ActorControlSelf ToggleUnlock right before FinishQuest,
 /// Bob's Chronofoil capture afe32479, 2026-10-25), by quest (short ID): The Scions of the Seventh Dawn's retainers,
-/// Color Your World's dyeing, If I Had a Glamour's glamours.
-const RECORDED_QUEST_UNLOCKS: [(u32, u32); 3] = [(509, 3), (699, 14), (3017, 15)];
+/// Color Your World's dyeing, If I Had a Glamour's glamours; and Rising to the Challenge's Challenge Log (92, capture
+/// 7a4214b7, 2026-11-17.)
+const RECORDED_QUEST_UNLOCKS: [(u32, u32); 4] = [(509, 3), (699, 14), (3017, 15), (1431, 92)];
 /// The first Quest row (quest 1's), as event IDs count them.
 const QUEST_ROW_START: u32 = 65536;
 

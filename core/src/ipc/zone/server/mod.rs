@@ -1363,6 +1363,23 @@ pub enum ServerZoneIpcData {
         #[brw(pad_after = 128)]
         account_ids: [u64; 4],
     },
+    /// One category of the Challenge Log, the answer to client trigger 310 (Bob's Chronofoil capture 7a4214b7,
+    /// 2026-11-17: categories 1 to 5 and 8, 80 bytes each): the category, then 76 bytes that were zeros for a
+    /// character who had just unlocked it (its entries' progress isn't read yet.)
+    ChallengeLogCategory {
+        #[brw(pad_after = 76)]
+        category: u32,
+    },
+    /// What retail sends as a quest takes what was handed over in a key-item trade (NpcTrade with
+    /// NPC_TRADE_INVENTORY_MODE_EVENT): 0, 18 and 48 zero bytes every time, before the step's notice or the reward's
+    /// inventory packets (captures 7a4214b7, three trades, and 0cafbf61, eight.) What the client does with it isn't
+    /// known.
+    NpcTradeTaken {
+        unk1: u32,
+        /// 18 in every one.
+        #[brw(pad_after = 48)]
+        unk2: u32,
+    },
     /// The answer to the player's `LootRoll` (the same capture): `result` 1 with the `roll` (need or greed), 4 passed,
     /// 8 refused (a unique item they had already.)
     LootRollResult {
@@ -2123,6 +2140,31 @@ mod tests {
             roll: 44,
         });
         assert_eq!(result, hex("34120040 00000000 01000010 2c000000"));
+    }
+
+    /// Retail's Challenge Log category 2 for a character who had just unlocked it, and what it sent as a quest took
+    /// a key item handed over, byte for byte (Bob's Chronofoil capture 7a4214b7, 2026-11-17.)
+    #[test]
+    fn challenge_log_and_trade_layouts() {
+        use binrw::BinWrite;
+
+        let write = |data: ServerZoneIpcData| {
+            let mut cursor = std::io::Cursor::new(Vec::new());
+            data.write_le(&mut cursor).unwrap();
+            cursor.into_inner()
+        };
+        let mut category = vec![0u8; 80];
+        category[0] = 2;
+        assert_eq!(
+            write(ServerZoneIpcData::ChallengeLogCategory { category: 2 }),
+            category
+        );
+        let mut taken = vec![0u8; 56];
+        taken[4] = 0x12;
+        assert_eq!(
+            write(ServerZoneIpcData::NpcTradeTaken { unk1: 0, unk2: 18 }),
+            taken
+        );
     }
 
     fn hex(bytes: &str) -> Vec<u8> {

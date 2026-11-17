@@ -217,6 +217,9 @@ retail changed when the last one ends. Header: one line per step, by sequence. I
 * **Answers**: a scene answered with a yield of 1 that more follows (an offer, a trade, a quest battle's yes/no, a
   reward) goes on only on 1; a closed reward window sets `REWARD_CLOSED` (0x11). The reward's item goes to the scenes
   after it that showed it as their parameter (`{ chosen }`).
+* **A completing step's unlocks**: what retail unlocked with the reward (the step's `effects`: a duty, an aetheryte,
+  an unlock) is written after `finish_quest` (`_effect_lines`; until 2026-11-17 a completing step's effects were
+  dropped, and A Pup No Longer (Twin Adder), 1105, failed replay for want of its duty.)
 * **Bars**: a scene followed by a progress bar (the fixture's `bar`) starts that event action, named by the quest's
   `EVENT_ACTION_*` parameter, and plays the next scene in `onEventActionCast`.
 * **Runs merged**: the same step in several runs (fixtures) is one branch; a run broken off (a bar interrupted, a

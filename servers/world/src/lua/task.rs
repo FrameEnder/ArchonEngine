@@ -110,6 +110,8 @@ pub enum LuaTask {
     },
     /// Takes what was handed in through the NPC's trade window (`Inventory::take_handed_in`.)
     TakeHandedInItems,
+    /// A key-item trade's items are taken: retail's NpcTradeTaken packet (`player:npc_trade_taken()`.)
+    NpcTradeTaken,
     UnlockContent {
         id: u16,
     },

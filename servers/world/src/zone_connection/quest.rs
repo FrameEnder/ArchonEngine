@@ -369,6 +369,10 @@ impl ZoneConnection {
         // A job's first quest gives its soul crystal, after the EXP as retail.
         self.give_job_soul_crystal(id).await;
 
+        // The allied society it introduces, and the achievement for meeting it, before the markers as retail (Voyce of
+        // Concern, Bob's Chronofoil capture 7a4214b7.)
+        self.grant_quest_society_rank(adjusted_id).await;
+
         // Retail's map markers come before the journal's update, already without this quest and with what it
         // opened (flags 27: `send_map_markers`.)
         self.player_data.quest.completed.set(adjusted_id);

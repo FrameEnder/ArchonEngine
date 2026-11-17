@@ -10,6 +10,13 @@ Aetherytes, attunement, Teleport and maps.
   animation, Sapphire's `ACTION_ATTUNE`) instead of unlocking it instantly.
 * When the bar completes (`onEventActionCast`) the aetheryte is unlocked (`unlock_aetheryte`). Shards then play scene 3
   ("you have aethernet access" and its effect, flags `0x2001` and params `{1, 1}` as retail: Bob's 2026-10-18 capture of a Limsa Lominsa shard; the attunement itself, EventAction 19 for 5 s then LearnTeleport, already matched); main aetherytes end the event.
+* **A city's last shard** plays scene 3 with params `{2, 2}`: Ul'dah's shard 42, with the LearnTeleports of the
+  aethernet's other destinations (45, 46 and 93) before the scene; shards 43 and 48 before it had `{1, 1}` (Bob's
+  Chronofoil capture 7a4214b7, 2026-11-17). `player:completes_aethernet(shard)` tells the script
+  (`last_shard_of_its_group`: every other shard of its AethernetGroup is attuned).
+* **A main aetheryte** attuned outside a quest: LearnTeleport, then the aetheryte's event notice 0 with one argument,
+  0 (EventNotice2: `0a000500 00 01 …`), then EventFinish (the same capture: aetherytes 10 and 55). Kawari sent no
+  notice until 2026-11-17.
 * Attuning while Ul'dah's Close to Home asks for it nests the aetheryte's event in the quest's and plays the same
   bar, then the aetheryte's notice 0 and the quest's scenes (quests, "Attuning inside a quest").
 * Already attuned: the aetheryte menu (scene 2) as upstream.
@@ -98,6 +105,12 @@ reads it through `player:warp_info(id)` (`GameData::get_warp_details`) and plays
   Limsa Lominsa to Ul'dah, warp 31), then warps. The **fare** is taken as the warp goes (retail's gil slot came with
   PrepareZoning: Aleport's 40 gil, the airship's 120); Kawari took none until 2026-10-29 (Bob's bundle
   20261029-154625.)
+* **As the warp goes**, retail sends PrepareZoning, then ActorControlSelf **147** with the Warp's event ID
+  (`[131131]`), then the event's EventFinish (the Wolves' Den ferry from Moraby Drydocks, warp 131131 with its
+  ConditionSuccessEvent 590632, Bob's Chronofoil capture 7a4214b7, 2026-11-17; before the PrepareZoning came the 8
+  zero bytes of opcode 243 and a Condition). `player:warp()` remembers the warp (`ZoneConnection::warp_started`);
+  when its PrepareZoning has gone out, 147 follows and the event still open is finished (`warp_prepared`), so
+  `Warp.lua` no longer finishes the event itself. Until 2026-11-17 the EventFinish came first and 147 wasn't sent.
 * **The class level** is the player's current class's (the synced one while synced). Event scripts saw level 0 until
   2026-10-30 (`LuaPlayer::current_level` was only filled in for actions), so every warp asking for a level turned the
   player away: Romarique's ferry to Sweetbloom Pier (warp 131077, WarpCondition 4: level 10, no quests or fare)
