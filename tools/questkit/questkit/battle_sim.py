@@ -127,6 +127,11 @@ def _number_after(text: str, word: str) -> int | None:
         return None
 
 
+CONTROL_SET_BATTLE = 4
+# What stands in for the player who pulled an NPC (`info[layout].target`.)
+PLAYER_ID = 0x10000001
+
+
 def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
     """A battle fixture from a battle run (`questkit chronofoil --battle`, or a Recorder battle file)."""
     # (The Recorder writes scene numbers signed: 60000 is -5536.)
@@ -218,6 +223,11 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
         if str(actor["LayoutId"]) in npcs:
             if spawn > 1.0:
                 events.append([spawn, "spawn", actor["LayoutId"]])
+            elif npcs[str(actor["LayoutId"])]["spawn"] is None:
+                # Several of one layout ID there from the start (The Ultimate Weapon's last battle's four of base
+                # 14697): how many, so a script bringing all of them out isn't taken to bring too many.
+                first = npcs[str(actor["LayoutId"])]
+                first["count"] = first.get("count", 1) + 1
             continue
         npcs[str(actor["LayoutId"])] = {
             "spawn": spawn if spawn > 1.0 else None,
@@ -307,6 +317,17 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
         fixture["casts"] = casts
     if landed:
         fixture["landed"] = landed
+    # When each NPC took the fight up (ActorControl 4, SetBattle `[1]`): a script that waits for its boss to have
+    # someone to go for (`info[layout].target`) sees it then, which can be before anything has hit it (The Ultimate
+    # Weapon's last battle's boss, 5.4 s before the first hit in one run.)
+    pulled = {}
+    for control in run.get("Controls", []):
+        actor = actors.get(str(control.get("Id"))) or actors.get(control.get("Id"))
+        if actor and control.get("Category") == CONTROL_SET_BATTLE and (control.get("Params") or [0])[0] == 1 \
+                and control["S"] >= commence:
+            pulled.setdefault(str(actor["LayoutId"]), rel(control["S"]))
+    if pulled:
+        fixture["pulled"] = pulled
     return fixture
 
 
@@ -572,7 +593,11 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                     hp = 1 if 0 < pct <= 0.1 else round(pct * max_hp / 100)
                 else:
                     hp, max_hp = pct, 100
-                info_table[layout] = lua.table_from({"hp": hp, "max_hp": max_hp, "x": x, "y": y, "z": z})
+                entry = {"hp": hp, "max_hp": max_hp, "x": x, "y": y, "z": z}
+                pulled = (fixture.get("pulled") or {}).get(str(layout))
+                if pulled is not None and t - offset >= pulled:
+                    entry["target"] = PLAYER_ID
+                info_table[layout] = lua.table_from(entry)
             player_pct = _health_then(fixture["player"], t) if fixture.get("player") else 100.0
             # The player falling, as the server tells the director (a lost run: Like Mother, Like Daughter's kept
             # spawning after retail's run had ended.)
@@ -718,7 +743,7 @@ def spawn_problems(fixture: dict, calls: list[tuple]) -> list[str]:
     retail_count: dict[int, int] = {}
     for layout, info in fixture["npcs"].items():
         if info.get("spawn") is None:
-            retail_count[int(layout)] = 1
+            retail_count[int(layout)] = info.get("count", 1)
     for event in fixture["events"]:
         if event[1] == "spawn":
             layout = pooled.get(event[2], event[2])

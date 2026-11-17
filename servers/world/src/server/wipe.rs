@@ -182,7 +182,7 @@ pub fn wipe_tick(
     }
     let Some(mut wipe) = instance.party_wipe else {
         let players = players(instance);
-        if !players.is_empty() && players.iter().all(|(_, hp)| *hp == 0) {
+        if !instance.wipe_held && !players.is_empty() && players.iter().all(|(_, hp)| *hp == 0) {
             tracing::info!("Party wipe: every player is down");
             instance.party_wipe = Some(PartyWipe {
                 fell: now,

@@ -1,0 +1,467 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 29345,
+    "attack_range": 3.0,
+    "from_pull": true,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "29345": {
+            "players": 145
+        },
+        "29327": {
+            "players": 1171
+        },
+        "29340": {
+            "players": 832.5
+        },
+        "29341": {
+            "players": 908.5
+        },
+        "29342": {
+            "players": 911
+        }
+    },
+    "timepoints": [
+        {
+            "time": 6.1,
+            "data": {
+                "type": "action",
+                "action_id": 29327,
+                "target": "itself"
+            },
+            "comment": "first part, 6.1 s after the pull"
+        },
+        {
+            "time": 16.3,
+            "data": {
+                "type": "action",
+                "action_id": 29328,
+                "target": "itself"
+            },
+            "comment": "first part, 16.3 s after the pull"
+        },
+        {
+            "time": 27.7,
+            "data": {
+                "type": "action",
+                "action_id": 29331,
+                "target": "itself"
+            },
+            "comment": "first part, 27.7 s after the pull"
+        },
+        {
+            "time": 37.8,
+            "data": {
+                "type": "action",
+                "action_id": 29340,
+                "target": "player"
+            },
+            "comment": "first part, 37.8 s after the pull"
+        },
+        {
+            "time": 46.9,
+            "data": {
+                "type": "action",
+                "action_id": 29332,
+                "target": "itself"
+            },
+            "comment": "first part, 46.9 s after the pull"
+        },
+        {
+            "time": 62.0,
+            "data": {
+                "type": "action",
+                "action_id": 29336,
+                "target": "nobody"
+            },
+            "comment": "first part, 62.0 s after the pull (no cast)"
+        },
+        {
+            "time": 64.3,
+            "data": {
+                "type": "action",
+                "action_id": 29334,
+                "target": "itself"
+            },
+            "comment": "first part, 64.3 s after the pull"
+        },
+        {
+            "time": 70.5,
+            "data": {
+                "type": "action",
+                "action_id": 29759,
+                "target": "itself"
+            },
+            "comment": "first part, 70.5 s after the pull"
+        },
+        {
+            "time": 81.3,
+            "data": {
+                "type": "action",
+                "action_id": 29755,
+                "target": "itself"
+            },
+            "comment": "first part, 81.3 s after the pull"
+        },
+        {
+            "time": 98.5,
+            "data": {
+                "type": "action",
+                "action_id": 29332,
+                "target": "itself"
+            },
+            "comment": "first part, 98.5 s after the pull"
+        },
+        {
+            "time": 111.2,
+            "data": {
+                "type": "action",
+                "action_id": 29336,
+                "target": "nobody"
+            },
+            "comment": "first part, 111.2 s after the pull (no cast)"
+        },
+        {
+            "time": 113.3,
+            "data": {
+                "type": "action",
+                "action_id": 29757,
+                "target": "itself"
+            },
+            "comment": "first part, 113.3 s after the pull"
+        },
+        {
+            "time": 120.7,
+            "data": {
+                "type": "action",
+                "action_id": 29337,
+                "target": "itself"
+            },
+            "comment": "first part, 120.7 s after the pull"
+        },
+        {
+            "time": 130.9,
+            "data": {
+                "type": "action",
+                "action_id": 29761,
+                "target": "itself"
+            },
+            "comment": "first part, 130.9 s after the pull"
+        },
+        {
+            "time": 141.2,
+            "data": {
+                "type": "action",
+                "action_id": 29331,
+                "target": "itself"
+            },
+            "comment": "first part, 141.2 s after the pull"
+        },
+        {
+            "time": 153.4,
+            "data": {
+                "type": "action",
+                "action_id": 29338,
+                "target": "itself"
+            },
+            "comment": "first part, 153.4 s after the pull"
+        },
+        {
+            "time": 159.3,
+            "data": {
+                "type": "action",
+                "action_id": 29340,
+                "target": "player"
+            },
+            "comment": "first part, 159.3 s after the pull"
+        },
+        {
+            "time": 165.3,
+            "data": {
+                "type": "action",
+                "action_id": 29341,
+                "target": "player"
+            },
+            "comment": "first part, 165.3 s after the pull (no cast)"
+        },
+        {
+            "time": 167.2,
+            "data": {
+                "type": "action",
+                "action_id": 29336,
+                "target": "nobody"
+            },
+            "comment": "first part, 167.2 s after the pull (no cast)"
+        },
+        {
+            "time": 169.9,
+            "data": {
+                "type": "action",
+                "action_id": 29753,
+                "target": "itself"
+            },
+            "comment": "first part, 169.9 s after the pull"
+        },
+        {
+            "time": 15.4,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29339,
+                "target": "itself"
+            },
+            "comment": "second part, 15.4 s after talk 33704 (328.1 s after the pull)"
+        },
+        {
+            "time": 21.4,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29340,
+                "target": "player"
+            },
+            "comment": "second part, 21.4 s after talk 33704 (334.1 s after the pull)"
+        },
+        {
+            "time": 27.3,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29341,
+                "target": "player"
+            },
+            "comment": "second part, 27.3 s after talk 33704 (340.0 s after the pull) (no cast)"
+        },
+        {
+            "time": 29.2,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29342,
+                "target": "player"
+            },
+            "comment": "second part, 29.2 s after talk 33704 (341.9 s after the pull) (no cast)"
+        },
+        {
+            "time": 36.3,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29332,
+                "target": "itself"
+            },
+            "comment": "second part, 36.3 s after talk 33704 (349.0 s after the pull)"
+        },
+        {
+            "time": 44.4,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29761,
+                "target": "itself"
+            },
+            "comment": "second part, 44.4 s after talk 33704 (357.1 s after the pull)"
+        },
+        {
+            "time": 82.7,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29328,
+                "target": "itself"
+            },
+            "comment": "second part, 82.7 s after talk 33704 (395.4 s after the pull)"
+        },
+        {
+            "time": 88.8,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29761,
+                "target": "itself"
+            },
+            "comment": "second part, 88.8 s after talk 33704 (401.5 s after the pull)"
+        },
+        {
+            "time": 97.9,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29336,
+                "target": "nobody"
+            },
+            "comment": "second part, 97.9 s after talk 33704 (410.6 s after the pull) (no cast)"
+        },
+        {
+            "time": 100.3,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29331,
+                "target": "itself"
+            },
+            "comment": "second part, 100.3 s after talk 33704 (413.0 s after the pull)"
+        },
+        {
+            "time": 108.4,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29336,
+                "target": "nobody"
+            },
+            "comment": "second part, 108.4 s after talk 33704 (421.1 s after the pull) (no cast)"
+        },
+        {
+            "time": 110.9,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29334,
+                "target": "itself"
+            },
+            "comment": "second part, 110.9 s after talk 33704 (423.6 s after the pull)"
+        },
+        {
+            "time": 117.1,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29759,
+                "target": "itself"
+            },
+            "comment": "second part, 117.1 s after talk 33704 (429.8 s after the pull)"
+        },
+        {
+            "time": 128.0,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29755,
+                "target": "itself"
+            },
+            "comment": "second part, 128.0 s after talk 33704 (440.7 s after the pull)"
+        },
+        {
+            "time": 135.1,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29336,
+                "target": "nobody"
+            },
+            "comment": "second part, 135.1 s after talk 33704 (447.8 s after the pull) (no cast)"
+        },
+        {
+            "time": 137.6,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29337,
+                "target": "itself"
+            },
+            "comment": "second part, 137.6 s after talk 33704 (450.3 s after the pull)"
+        },
+        {
+            "time": 145.8,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29332,
+                "target": "itself"
+            },
+            "comment": "second part, 145.8 s after talk 33704 (458.5 s after the pull)"
+        },
+        {
+            "time": 158.4,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29336,
+                "target": "nobody"
+            },
+            "comment": "second part, 158.4 s after talk 33704 (471.1 s after the pull) (no cast)"
+        },
+        {
+            "time": 160.5,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29757,
+                "target": "itself"
+            },
+            "comment": "second part, 160.5 s after talk 33704 (473.2 s after the pull)"
+        },
+        {
+            "time": 167.8,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29337,
+                "target": "itself"
+            },
+            "comment": "second part, 167.8 s after talk 33704 (480.5 s after the pull)"
+        },
+        {
+            "time": 181.0,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29339,
+                "target": "itself"
+            },
+            "comment": "second part, 181.0 s after talk 33704 (493.7 s after the pull)"
+        },
+        {
+            "time": 186.9,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29340,
+                "target": "player"
+            },
+            "comment": "second part, 186.9 s after talk 33704 (499.6 s after the pull)"
+        },
+        {
+            "time": 192.9,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29341,
+                "target": "player"
+            },
+            "comment": "second part, 192.9 s after talk 33704 (505.6 s after the pull) (no cast)"
+        },
+        {
+            "time": 194.8,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29342,
+                "target": "player"
+            },
+            "comment": "second part, 194.8 s after talk 33704 (507.5 s after the pull) (no cast)"
+        },
+        {
+            "time": 199.8,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29332,
+                "target": "itself"
+            },
+            "comment": "second part, 199.8 s after talk 33704 (512.5 s after the pull)"
+        },
+        {
+            "time": 207.9,
+            "after": 33704,
+            "data": {
+                "type": "action",
+                "action_id": 29761,
+                "target": "itself"
+            },
+            "comment": "second part, 207.9 s after talk 33704 (520.6 s after the pull)"
+        }
+    ],
+    "comment": "The Ultimate Weapon's last battle's boss (InstanceContent 5061; BNpcBase 14643, BNpcName 2143, layout 9161273): level 50, 119119 HP. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.14: won in 528 s from the pull) and Bob's 9ba7d981 (2026-11-17, visit 0.22: won in 527 s; 0.20, left after 29 s): the two runs' casts were the same to within half a second for 527 s, so the whole fight is one clock from the pull. Auto-attacks (29345) every 3.0 s for 116 to 160; 29327 1031 to 1230, 29340 553 to 1019 (and status 3122 for 13 s), 29341 816 to 1067, 29342 811 to 1033; its other casts hit no one themselves: what follows them is the director's (content/questbattle/5061.lua), as is the middle of the fight (176 to 313 s: `restart_timeline` with anchor 33701 stops this, 33704 starts the second part.) Past the second part's last point (213.8 s in; both runs ended at 215) nothing is known. Hitbox and range not recorded."
+}

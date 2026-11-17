@@ -9,9 +9,15 @@
         },
         "28882": {
             "players": 448
+        },
+        "29330": {
+            "players": 708
+        },
+        "29758": {
+            "players": 218.5
         }
     },
     "timeline_always_plays": false,
     "timepoints": [],
-    "comment": "BNpcBase 9020, the director's helper (layout 0, level 1, 44 HP, never seen): twelve of them in Cape Westwind, on the boss's spot until the director puts one somewhere to cast. 28865 (3.7 s cast, no target: 810 and 832), 28869 (7.7 s: 1015, 1105; 913 parried), 28880 (0.2 s on the player: Knockback 17), 28882 (2.7 s: 448). No auto-attack. Cape Westwind (InstanceContent 5060, Operation Archon's solo duty; content/questbattle/5060.lua). From Bob's Chronofoil capture 667a68c5 of 2026-11-16 (`questkit chronofoil --battle 0.16`: one run, won, a level 50 White Mage synced to 49): `players` is the damage to the player, times from its pull or the part's start."
+    "comment": "BNpcBase 9020, the director's helper (layout 0, level 1, 44 HP, never seen): twelve of them in Cape Westwind, on the boss's spot until the director puts one somewhere to cast. 28865 (3.7 s cast, no target: 810 and 832), 28869 (7.7 s: 1015, 1105; 913 parried), 28880 (0.2 s on the player: Knockback 17), 28882 (2.7 s: 448). No auto-attack. Cape Westwind (InstanceContent 5060, Operation Archon's solo duty; content/questbattle/5060.lua). From Bob's Chronofoil capture 667a68c5 of 2026-11-16 (`questkit chronofoil --battle 0.16`: one run, won, a level 50 White Mage synced to 49): `players` is the damage to the player, times from its pull or the part's start. The Ultimate Weapon's last battle (InstanceContent 5061; content/questbattle/5061.lua; Connor's Chronofoil capture af05916c (2026-11-09, visit 0.14: won in 528 s from the pull) and Bob's 9ba7d981 (2026-11-17, visit 0.22: won in 527 s; 0.20, left after 29 s)): 29330 (no cast: 708 once), 29758 (4.7 s: 192 to 248), 29788 (no cast, on the player: Knockback 68 and status 1614), 29565 (no cast, on the player: 9999999), and 29329, 29335, 29756 and 29760, which hit no one in the runs."
 }

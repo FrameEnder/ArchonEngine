@@ -1364,6 +1364,40 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
 * Timelines `QB36*_<base>.json`, with retail's recorded amounts. `questkit battle-sim 36` (the won run, NPC health held
   between hits): every step within 2 s.
 
+### The Ultimate Weapon's last battle (`content/questbattle/5061.lua`)
+
+* InstanceContent 5061 (the quest's QUESTBATTLE0, like Cape Westwind's 5060: a solo duty, director 0x800313C5),
+  territory 1052, duty 867. Drop-in `territory_1052.json` (layer `QB_5061`: the boss, the orbs, the ally, the four
+  of base 14697, the four of base 14699 and the helper, with retail's layout IDs, HP and flags). Two retail runs:
+  Connor's Chronofoil capture af05916c (2026-11-09, visit 0.14) and Bob's 9ba7d981 (2026-11-17, visit 0.22; 0.20
+  was left after 29 s).
+* **One clock from the pull.** The two runs' boss casts, helper casts and spots, orbs, talks and yells were the same
+  to within half a second for 527 s, and both ended as his health reached 0 at 528 and 527 s. So the script is that
+  clock: his timeline (`QB5061Boss_14643.json`: 46 points, the first part from the pull, the second from talk 33704)
+  and the script's tables, generated from Connor's run (78 helper casts with their spots, seven moves, five waves of
+  orbs, four casts of the four of base 14697, 13 talks and 5 yells). The pull is his taking the fight up (he had the
+  player 5.4 s before the first hit landed in one run).
+* **Round him**: helpers (base 9020) cast where the director puts them, 29335 where the player stands, and 29329 is
+  followed by 29330 from the same spot 7.7 s after it began; nine or eight orbs (base 14644) come five times, cast
+  29333 7.7 s later and go after 22.5 s; the four of base 14697 come out on one of two sets of four spots of the
+  arena's edge (19.5 yalms out, at random: A, A, B, B in one run, B, B, B, A in the other) to cast 29762; his 29336
+  takes him away and SnapNextMove brings him out 1.8 s later where his next cast begins.
+* **The middle** (176 to 316 s) is the director's: he can't be targeted; four of base 14699 tethered to the player
+  (ActorControl 35) while a gauge climbs (the director's 0x8000000C `[61, n]` to 10000 in 35.7 s); a helper's 29788
+  (Knockback 68, status 1614), then its 29565 for 9999999, which **fells the player**; 36 s later the ally's 29344
+  (statuses 3123 and 2056), and 24 s after that the player is up, whole, and the second part begins. For it the
+  director has `hold_wipe(held)` (every player down isn't a party wipe meanwhile) and `revive_players()` (the fallen
+  get up where they lie with full HP and MP, no loading screen): `LuaDirectorTask::HoldWipe` and `RevivePlayers`,
+  `Instance::wipe_held`.
+* His health at 0: untargetable, his cast cancelled (ActorControl 537), the map effect off, scene 4 (0x0C002001) in
+  a GameComplete event, the quest to sequence 7 and out to the Waking Sands at (-11.07, 0.01, 0.07).
+* Timelines `QB5061Boss_14643`, `QB5061Orb_14644`, `QB5061Ally_14645`, `QB5061Statue_14697`, `QB5061Shade_14699`,
+  and the helper's amounts in `Helper_9020`; 33 action scripts (`QB5061Boss_*`, `QB5061Helper_*`, `QB5061Orb_29333`,
+  `QB5061Statue_29762`, `QB5061Ally_29344`). `questkit battle-sim 5061`: both runs, all 66 events each within 2 s.
+* Not known (see the script's header): what happens past 527 s; what the gauge counts and whether felling the four
+  changes anything; the player's HP doubling with status 3123 (not done); what the controls, commands and statuses
+  do; the damage of what never hit anyone.
+
 ### Quest battle 82 — the Summoner's level 50 quest's (`content/questbattle/82.lua`)
 
 * Territory 326, whose level isn't known: a drop-in of its own (`territory_326.json`, layer `QB_82`), four NPCs with

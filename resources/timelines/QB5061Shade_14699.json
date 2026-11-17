@@ -1,0 +1,8 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {},
+    "timepoints": [],
+    "comment": "The Ultimate Weapon's last battle's four of base 14699 (BNpcName 11355, layout 9277809: level 50, 3080 HP): out for 38 s in the middle of the fight, tethered to the player (ActorControl 35); they never acted. No auto-attack; the director's (content/questbattle/5061.lua). From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.14: won in 528 s from the pull) and Bob's 9ba7d981 (2026-11-17, visit 0.22: won in 527 s; 0.20, left after 29 s). Hitbox not recorded."
+}

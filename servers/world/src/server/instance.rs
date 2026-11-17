@@ -343,6 +343,8 @@ pub struct Instance {
     pub duty_flags: u8,
     /// A party wipe under way (`server/wipe.rs`.)
     pub party_wipe: Option<crate::server::wipe::PartyWipe>,
+    /// Every player being down isn't a wipe just now (`director:hold_wipe`): the fight itself fells them.
+    pub wipe_held: bool,
     /// Where players start in a quest battle, and which way they face.
     pub quest_battle_start: Option<(Position, f32)>,
     /// NPCs that damage leaves at this much health at the least (`director:set_health_floor`): Cape Westwind's boss

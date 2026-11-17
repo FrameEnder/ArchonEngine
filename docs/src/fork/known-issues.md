@@ -10,9 +10,11 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
 
 * **Read so far**: the Waking Sands' layer keys (92223, 92224); the five quests' steps (second fixtures, all
   matching); The Ultimate Weapon's reward (flying, riding speed); Cape Westwind's two runs (`quest-battles.md`).
-* **Not read yet**: Castrum Meridianum (visit 0.12, 28 min), the Praetorium (0.14 and 0.16, 32 and 34 min), the
-  Porta Decumana (0.18, 19 min) and The Ultimate Weapon's quest battle 5061 (0.20, left after 40 s, and 0.22, 9 min),
-  none of which is scripted; what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
+* **The Ultimate Weapon's last battle** (5061) is unplayed. The director's `hold_wipe` and `revive_players` are
+  new and have no test of their own beyond the script's two fixtures; if the player isn't got up at 312 s, or a wipe
+  is called while they lie, that is where to look. Its unknowns are in `quest-battles.md`.
+* **Not read yet**: Castrum Meridianum (visit 0.12, 28 min), the Praetorium (0.14 and 0.16, 32 and 34 min) and the
+  Porta Decumana (0.18, 19 min), none of which is scripted (Connor's capture af05916c has each once more); what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
   back in from Western Thanalan; the script's `onPartyWipe` is a guess); what came after the story (from 9688 s:
   warps 131089 and 131091, aetherytes, events 0xB0013 and 0xB0002, quest 524's completion with 4522's).
 
@@ -511,9 +513,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   **Cape Westwind** (5060, 4521) is built since 2026-11-17 from one retail run and not played in game: [Quest
   battles](quest-battles.md) lists what's guessed (his parts past what the run showed, losing) and unknown (what seven
   statuses and three ActorControls do, 28870's damage), and its drop-in names its territory because 1049's level isn't
-  known here (if nothing spawns, that or the helpers' layout ID 0 is where to look). **Not scripted**: 5061
-  (Devastation, 4522; it would be entered the same way), so that quest stops at
-  its battle (65 is since 2026-11-12, `quest-battles.md`); and the duties Castrum
+  known here (if nothing spawns, that or the helpers' layout ID 0 is where to look). **5061** (The Ultimate
+  Weapon's last battle) is built since 2026-11-17 from two retail runs and not played in game (`quest-battles.md`;
+  65 is since 2026-11-12). **Not scripted**: the duties Castrum
   Meridianum (InstanceContent 15, 3873), the Praetorium (86) and the Porta Decumana (20082, 4522), Thornmarch (Hard)
   (20011, 1190) and the Whorleater (Hard) (20017, 1361): their quests move on when one is cleared and let out where
   retail did (`set_duty_exit`), but the duties themselves don't exist yet.

@@ -1,0 +1,8 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {},
+    "timepoints": [],
+    "comment": "The Ultimate Weapon's last battle's ally (BNpcBase 14645, BNpcName 2183, layout 9161275: level 50, 2589 HP): it stands aside from the pull and once, 288 s in, comes to the middle and uses 29344 on the fallen player (statuses 3123 and 2056). No auto-attack; the director's (content/questbattle/5061.lua). From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.14: won in 528 s from the pull) and Bob's 9ba7d981 (2026-11-17, visit 0.22: won in 527 s; 0.20, left after 29 s). Hitbox not recorded."
+}

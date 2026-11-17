@@ -251,6 +251,14 @@ pub enum LuaDirectorTask {
         position: Position,
         rotation: f32,
     },
+    /// Whether every player being down is left alone (true) instead of being a party wipe: a fight that fells the
+    /// player itself and gets them up again (The Ultimate Weapon's last battle, InstanceContent 5061.)
+    HoldWipe {
+        held: bool,
+    },
+    /// Every fallen player gets up where they lie, whole (the same battle: 60 s after falling, retail's player had
+    /// full health and their conditions back, with no loading screen.)
+    RevivePlayers,
     /// Lose a quest battle, which sends the players back to where they entered it.
     FailQuestBattle,
     /// Make a BNpc use an action on another BNpc (by layout ID), or on the player if there's no target.
@@ -1168,6 +1176,16 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
+        methods.add_method_mut("hold_wipe", |_, this, held: Option<bool>| {
+            this.tasks.push(LuaDirectorTask::HoldWipe {
+                held: held.unwrap_or(true),
+            });
+            Ok(())
+        });
+        methods.add_method_mut("revive_players", |_, this, _: ()| {
+            this.tasks.push(LuaDirectorTask::RevivePlayers);
+            Ok(())
+        });
         methods.add_method_mut("leave_quest_battle", |_, this, _: ()| {
             this.tasks.push(LuaDirectorTask::LeaveQuestBattle);
             Ok(())
@@ -3088,6 +3106,41 @@ pub fn director_tick(
                     FromServer::PlayDirectorScene(director_id, *scene, *flags),
                     DestinationNetwork::ZoneClients,
                 );
+            }
+            LuaDirectorTask::HoldWipe { held } => {
+                instance.wipe_held = *held;
+                if *held {
+                    instance.party_wipe = None;
+                }
+            }
+            LuaDirectorTask::RevivePlayers => {
+                let fallen: Vec<ObjectId> = instance
+                    .actors
+                    .iter()
+                    .filter(|(_, actor)| {
+                        matches!(actor, NetworkedActor::Player { .. })
+                            && actor.get_common_spawn().health_points == 0
+                    })
+                    .map(|(id, _)| *id)
+                    .collect();
+                for actor_id in fallen {
+                    if let Some(actor) = instance.find_actor_mut(actor_id) {
+                        let common = actor.get_common_spawn_mut();
+                        common.health_points = common.max_health_points;
+                        common.resource_points = common.max_resource_points;
+                    }
+                    crate::server::actor::update_actor_hp_mp(network.clone(), instance, actor_id);
+                    let mut network = network.lock();
+                    crate::server::actor::set_character_mode(
+                        instance,
+                        &mut network,
+                        actor_id,
+                        kawari::common::CharacterMode::Normal,
+                        0,
+                        true,
+                    );
+                    crate::server::action::set_casting(&mut network, actor_id, false);
+                }
             }
             LuaDirectorTask::WarpPlayers { position, rotation } => {
                 let players: Vec<ObjectId> = instance
