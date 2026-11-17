@@ -1,7 +1,7 @@
 {
   "quest": 108,
   "script": "ManSea002_00108",
-  "source": "adapted from 109's retail fixture (Bob's Chronofoil capture of the Limsa opening, 2026-10-20) and the client script; no retail recording of this version",
+  "source": "Bob's Chronofoil capture 0cafbf61 (2026-11-17): a new Marauder",
   "params": {
     "ACTOR0": 1002697,
     "ITEM0": 2000104,
@@ -25,6 +25,7 @@
   "steps": [
     {
       "talk": 1002697,
+      "layout": 4102072,
       "what": "ACTOR0",
       "scenes": [
         {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
@@ -34,6 +35,7 @@
     },
     {
       "talk": 8,
+      "layout": 3693860,
       "what": "AETHERYTE0",
       "scenes": [
         {"scene": 2, "flags": "0x2000", "results": [0, 0]},
@@ -47,6 +49,7 @@
     },
     {
       "talk": 1001217,
+      "layout": 2093197,
       "what": "ACTOR1",
       "scenes": [
         {"scene": 4, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
@@ -56,6 +59,7 @@
     },
     {
       "talk": 1000926,
+      "layout": 1673096,
       "what": "ACTOR2",
       "scenes": [
         {"scene": 6, "flags": "0x2000", "results": [0, 0]}
@@ -64,6 +68,7 @@
     },
     {
       "talk": 1000972,
+      "layout": 1673081,
       "what": "ACTOR3",
       "scenes": [
         {"scene": 7, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}

@@ -2478,6 +2478,44 @@ pub fn execute_action(
                 }
             }
 
+            // A director hears of a battle NPC's action that landed on players, as it lands (`onActionLanded`.)
+            {
+                let mut data = data.lock();
+                if let Some(instance) = data.find_actor_instance_mut(from_actor_id)
+                    && !instance.directors.is_empty()
+                    && let Some(NetworkedActor::Npc { .. }) = instance.find_actor(from_actor_id)
+                {
+                    let layout_id = instance
+                        .find_actor(from_actor_id)
+                        .map(|actor| actor.get_common_spawn().layout_id)
+                        .unwrap_or_default();
+                    let players: Vec<ObjectId> = landed_on
+                        .iter()
+                        .copied()
+                        .filter(|target| {
+                            matches!(
+                                instance.find_actor(*target),
+                                Some(NetworkedActor::Player { .. })
+                            )
+                        })
+                        .collect();
+                    if layout_id != 0
+                        && let Some(first) = players.first()
+                    {
+                        instance.insert_task(
+                            ClientId::default(),
+                            *first,
+                            EFFECT_RESULT_AFTER,
+                            QueuedTaskData::ActionLanded {
+                                layout_id,
+                                action_id: request.action_id,
+                                players: players.len() as u32,
+                            },
+                        );
+                    }
+                }
+            }
+
             // Each target the effect showed on gets its result as the hit lands: its health, under the effect's
             // global sequence (EffectResultBasic; EffectResult when it gained statuses, above and below.) The client
             // holds an action's damage until then, so without it each hit only showed when the next action's effect

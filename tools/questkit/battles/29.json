@@ -1,6 +1,6 @@
 {
   "quest_battle": 29,
-  "source": "chronofoil ee0909d9-6c05-4536-9caf-58ce1b0da578 2026.10.16.0000.0000",
+  "source": "chronofoil ee0909d9-6c05-4536-9caf-58ce1b0da578 2026.10.16.0000.0000; the breath's landing put in from the sequence it brought, 1.3 s before it (the capture isn't at hand)",
   "tolerance": 2.0,
   "npc_health": "held",
   "scenes": {
@@ -449,5 +449,8 @@
     [129.35, "talk", 84],
     [177.88, "sequence", 10],
     [177.88, "won"]
+  ],
+  "landed": [
+    [39.9, 4082418, 445, 1]
   ]
 }

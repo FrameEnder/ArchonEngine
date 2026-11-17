@@ -76,7 +76,10 @@ Then two checks:
   timeline too, and it's checked the same way: battle talk (`talk`, against `battle_talk`), each laid-out NPC's
   ActionTimelines (`timeline [layout, id]`, ActorControl 407, against `play_action_timeline`) and every NPC brought out
   after the start (`appear`, against `spawn_bnpc`); older fixtures don't have these kinds, and they're compared only
-  where a fixture has them. An `appear` is the fight's only when the script brings the NPC out: one the drop-in has
+  where a fixture has them. battle-sim fixtures can hold what landed on the player (`landed`: `[[t, layout, action,
+  players], ...]`, written by `--make` from retail's ActionEffects with the player among the targets and not missed,
+  auto-attacks left out), which the script hears as `onActionLanded` half a second later, as the server's does. An
+  `appear` is the fight's only when the script brings the NPC out: one the drop-in has
   out from the start (not `nonpop`) or the script brings out in `onSetup` shows on retail when the party comes near
   enough to be sent it, and is skipped (the Stone Vigil's 37 of trash and two bosses, and its whirlwind helpers, in
   seven runs); and a script's helper (BNpcBase 9020) the fixture has no NPC for isn't held against it (retail's have

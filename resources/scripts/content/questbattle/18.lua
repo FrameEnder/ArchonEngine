@@ -54,9 +54,6 @@ PHASES = {
             { 0, "talk", TEXT_FIRST },
             { 0, "sequence", 4 },
             { 5, "action", ACTION_SAND_BREATH },
-            { 10, "sequence", 5 },
-            { 10, "talk", TEXT_SECOND },
-            { 0, "sequence", 6 },
         },
     },
     {
@@ -84,6 +81,17 @@ PHASES = {
         },
     },
 }
+
+-- The first of its breaths that lands on the player (`onActionLanded`): sequence 5 as it does, the masked mage's
+-- second line and sequence 6 5.1 s later (retail's: 1.1 s after True Grit hit in Spirithold Broken, Bob's capture
+-- of 2026-10-14). Stepped out of, it brings neither: Just Deserts with a Marauder went from its first line straight to
+-- 45 % (his capture 0cafbf61 of 2026-11-17).
+BREATH_LANDED_STEPS = {
+    { 1, "sequence", 5 },
+    { 10, "talk", TEXT_SECOND },
+    { 0, "sequence", 6 },
+}
+local breath_landed = false
 
 -- Once it falls: "Duty Complete" straight away, then the closing cutscene, then they're sent back.
 WON_STEPS = {
@@ -196,6 +204,14 @@ function onUpdate(director, health, player_health)
         queue(PHASES[next_phase].steps)
         next_phase = next_phase + 1
     end
+end
+
+function onActionLanded(director, layout_id, action_id, players)
+    if over or breath_landed or layout_id ~= BNPC_GOLEM or action_id ~= ACTION_SAND_BREATH then
+        return
+    end
+    breath_landed = true
+    queue(BREATH_LANDED_STEPS)
 end
 
 function onActorDeath(director, layout_id, position)

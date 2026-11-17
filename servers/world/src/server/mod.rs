@@ -2210,6 +2210,19 @@ pub async fn server_main_loop(
                                     director.seal_boss_wall(*id, *place_name);
                                 }
                             }
+                            QueuedTaskData::ActionLanded {
+                                layout_id,
+                                action_id,
+                                players,
+                            } => {
+                                let mut data = data.lock();
+                                if let Some(instance) =
+                                    data.find_actor_instance_mut(task.from_actor_id)
+                                    && let Some(director) = &mut instance.directors.first_mut()
+                                {
+                                    director.on_action_landed(*layout_id, *action_id, *players);
+                                }
+                            }
                             QueuedTaskData::PacketSegment { segment } => {
                                 let mut network = network.lock();
                                 network.send_to(

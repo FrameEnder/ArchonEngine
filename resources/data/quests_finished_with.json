@@ -1,6 +1,12 @@
 {
-  "about": "Quests retail finishes together with another: when the first (the key) is completed, the server finishes each of the listed ones too, which the player never plays (most are the main scenario quests the streamlined ones replaced: Dressed for Conquest 3871 finishes the old 1003). Read from Bob's Chronofoil captures (June to November 2026): every FinishQuest that came at the same moment as another quest's, for a quest with no talk, scene or update of its own in the capture; seen in one to three captures each. Retail sends the key's FinishQuest first, then the others' in ascending order, back to back. Numbers only; `zone_connection::quest::finished_with`. 1553 (Into the Valley of the Skull) finishes 1016, the quest its QST_ACCEPT_CHECK names (Bob's capture 651981e7, 2026-11-16).",
+  "about": "Quests retail finishes together with another: when the first (the key) is completed, the server finishes each of the listed ones too, which the player never plays (most are the main scenario quests the streamlined ones replaced: Dressed for Conquest 3871 finishes the old 1003). Read from Bob's Chronofoil captures (June to November 2026): every FinishQuest that came at the same moment as another quest's, for a quest with no talk, scene or update of its own in the capture; seen in one to three captures each. Retail sends the key's FinishQuest first, then the others' in ascending order, back to back. Numbers only; `zone_connection::quest::finished_with`. 1553 (Into the Valley of the Skull) finishes 1016, the quest its QST_ACCEPT_CHECK names (Bob's capture 651981e7, 2026-11-16). 397 finishes 398 and 402 finishes 404 (his capture 0cafbf61, 2026-11-17: a new Marauder).",
   "quests": {
+    "397": [
+      398
+    ],
+    "402": [
+      404
+    ],
     "445": [
       196
     ],

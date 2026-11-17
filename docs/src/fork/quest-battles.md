@@ -68,6 +68,7 @@ Callbacks:
 | `onCommence(director)` | The player is in: spawn NPCs, set the first sequence, start the chatter. A dungeon's script that defines it hears it as the duty commences (DutyCommence, since 2026-11-03): Brayflox's Longstop's dragon flies off 3.7 s later. |
 | `onUpdate(director, health, player_health, info)` | Every logic tick (500 ms). `health` maps each living NPC's layout ID to its health %, `player_health` the player's; `info` has everyone's real numbers and position (`info[layout] = { hp, max_hp, x, y, z }`, `info.player` the same, and the party's NPCs, which have no layout ID, as `info.party1`, `info.party2`...), for highest-HP and nearest choices. Waves, thresholds and timed steps live here. Since 2026-10-30 every player is in `info` too, as `player1`, `player2`... (`player` is one of them), and an NPC targeting a party NPC (no layout ID) has `target` `"party"` (it had none, so a boss pulled by a Duty Support tank looked unpulled.) Since 2026-11-06 each entry has its actor ID (`id`) and its target's (`target_id`, when it has one): whom the Navel's Weight of the Land isn't under, and where a gaoled player stands. |
 | `onActorCast(director, layout_id, action_id, actor_id, x, y, z, target_id)` | An NPC began an action from its timeline or rotation (its cast bar, or an instant one). Optional. For scripts that answer what a boss does: the Copperbell Mines' Kottos' 28543 sets off its markers and leaps. Since 2026-10-30 also where its target stood as it began (`x, y, z`, nil without one): the Thousand Maws of Toto-Rak's last boss's eggs land where its 698 was aimed. Since 2026-11-06 the target's actor ID after them (`target_id`, nil without one): the Navel's Rock Throw gaols that one. |
+| `onActionLanded(director, layout_id, action_id, players)` | A battle NPC's action landed on players (it wasn't dodged or missed), half a second after it went off, as its result does (`QueuedTaskData::ActionLanded`, from `execute_action`); `players` is how many. Optional. The clay golems' breath (quest battles 15, 18, 29): sequence and second line only when it hit (2026-11-17). |
 | `onActorDeath(director, layout_id, position)` | An NPC died. Optional (the server skips it when a script, or a FATE's, doesn't define it). |
 | `onPlayerDeath(director)` | The player fell. |
 | `onPartyWipe(director)` | A duty's party wipe (every player down, `server/wipe.rs`), as everyone is sent back to the start: reset the fight (the Bowl of Embers takes Ifrit away and brings him back). Whatever the script had `delay`ed is dropped first. Optional. |
@@ -1308,6 +1309,17 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
 
 ### Quest battle 35 — Lurkers in the Grotto (`content/questbattle/35.lua`)
 
+* **A third run** (Bob's capture 0cafbf61 of 2026-11-17, `--battle 0.7`: a Marauder, won in 79 s;
+  `battles/35-0cafbf61.json`) showed the boss's health every second or two (the October runs': every 6 to 10 s) and
+  corrected what the waves and lines go by:
+  * the waves at the boss's **70 %** and **40 %** (72.2 % 1.6 s before sequence 3, 69.0 % 1.1 s after; 40.4 % 0.3 s
+    before sequence 4), not 65 and 41;
+  * the ally's **84 comes 22 s after sequence 3** (22.07 and 22.06 s in the two won runs), **86 as the boss falls to
+    15 %** (in the moment a hit took it to 13.3 %), **87 13 s after 86** (the October run; the Marauder's boss was
+    down 7.3 s after 86 and 87 never came). They were read as the player's health (below 80, 40 and 15 %): the
+    Marauder was at 97 % at 84 and 83 % at 86. 87's clock is from one run.
+  * `battles/35.json` (October, won) allows 4 s now: its sparse health can't place 70 % and 40 % closer.
+
 * Territory 252, a copy of Middle La Noscea (retail's positions in it are Middle La Noscea's, where the quest's stone
   monument stands, so its NPCs are layer `QB_ManSea005_001` of the `sea_s1f1` drop-in, `nonpop`; that 252 loads that
   drop-in, i.e. has Middle La Noscea's Bg, is assumed until a run shows it): the ally beside you (4083622, level 50,
@@ -1397,6 +1409,16 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
   0.3 s and sequence 3 5.5 s early (see above).
 
 ### Quest battle 29 — Just Deserts (`content/questbattle/29.lua`)
+
+* **The golem's breath has to land** (Bob's Chronofoil capture 0cafbf61 of 2026-11-17, `--battle 0.29`: a Marauder,
+  won in 60 s; `battles/29-0cafbf61.json`). He stepped out of the Sand Breath after the first line (its ActionEffect
+  had no targets) and retail went from sequence 4 straight to 7 at 45 %: no sequence 5, no second line (83), no
+  sequence 6. In the October run it hit, and sequence 5 came 1.3 s after the action; in Spirithold Broken True Grit
+  hit and its sequence 4 came 1.08 s after (the capture of 2026-10-14, read again). The three golem scripts (15, 18,
+  29) had the sequence and the line on a clock after the first line; now `onActionLanded` queues them (the first
+  breath that lands: the sequence an update later, the line and the next sequence 5 s on). The fixtures of 15, 18 and
+  29 have a `landed` list for it (18's and 29's October captures aren't at hand: theirs is put in from the sequence
+  it brought, which their `source` says).
 
 * Territory 272, taken to be a copy of Middle La Noscea as 252 is (retail's positions are Middle La Noscea's), so the
   clay golem is layer `QB_SubSea057_001` of the `sea_s1f1` drop-in: layout 4082418, base 549, level 10, 844 HP, display

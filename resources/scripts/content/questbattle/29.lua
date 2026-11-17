@@ -62,9 +62,6 @@ PHASES = {
             { 0, "talk", TEXT_FIRST },
             { 0, "sequence", 4 },
             { 6, "action", ACTION_SAND_BREATH },
-            { 10, "sequence", 5 },
-            { 10, "talk", TEXT_SECOND },
-            { 0, "sequence", 6 },
         },
     },
     {
@@ -94,6 +91,17 @@ PHASES = {
         },
     },
 }
+
+-- The first Sand Breath that lands on the player (`onActionLanded`): sequence 5 as it does (1.3 s after the action
+-- on retail), the masked mage's second line and sequence 6 5.1 s later. A Marauder who stepped out of it had neither:
+-- sequence 4, then 7 at 45 % (Bob's Chronofoil capture 0cafbf61 of 2026-11-17, `battles/29-0cafbf61.json`; Spirithold
+-- Broken's True Grit the same way, 1.1 s after it hit, his capture of 2026-10-14.)
+BREATH_LANDED_STEPS = {
+    { 1, "sequence", 5 },
+    { 10, "talk", TEXT_SECOND },
+    { 0, "sequence", 6 },
+}
+local breath_landed = false
 
 -- Once it falls: "Duty Complete" 2 s later (its health reached 0 at 209.8, sequence 10 came at 211.9 as its death
 -- animation ended), then the closing cutscene, then they're sent back.
@@ -212,6 +220,14 @@ function onUpdate(director, health, player_health)
         queue(PHASES[next_phase].steps)
         next_phase = next_phase + 1
     end
+end
+
+function onActionLanded(director, layout_id, action_id, players)
+    if over or breath_landed or layout_id ~= BNPC_GOLEM or action_id ~= ACTION_SAND_BREATH then
+        return
+    end
+    breath_landed = true
+    queue(BREATH_LANDED_STEPS)
 end
 
 function onActorDeath(director, layout_id, position)

@@ -1,0 +1,27 @@
+{
+  "quest": 397,
+  "script": "SubSea100_00397",
+  "source": "Bob's Chronofoil capture 0cafbf61 (2026-11-17): a new Marauder",
+  "params": {"ACTOR0": 1000972, "ACTOR1": 1003239},
+  "steps": [
+    {
+      "talk": 1000972,
+      "layout": 1673081,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1003239,
+      "layout": 3921195,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 5824, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

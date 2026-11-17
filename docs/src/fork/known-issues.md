@@ -77,6 +77,12 @@ Nineteen quests transcribed from Bob's Chronofoil capture 651981e7 and the clien
   their spots (4290121, 4290123: known of, not where). Whether enemies leave a downed guard alone as retail's did
   rests on `set_targetable` (an untargetable NPC isn't noticed; one already being fought wasn't tried). 1084's
   ACTOR1, ACTOR2 and EOBJECT1 at sequence 1 aren't scripted (not talked to on retail).
+* **The Marauder's class quests** (311, 313, 314, 316) aren't scripted: Bob's capture 0cafbf61 (2026-11-17) has all
+  four played through, and 313's quest battle (territory 262, ContentFinderCondition 328, won in 2.0 minutes); they
+  wait for their quest dumps and client scripts.
+* **Lurkers in the Grotto's** 87 (13 s after 86) is from one run, and 86's 15 % from one exact and one sparse.
+* The clay golems' second line follows the breath that lands (2026-11-17); in 18's and 29's October fixtures the
+  landing is put in from the sequence it brought (those captures aren't at hand).
 * 1036 isn't scripted: retail finished it with 4521 (Operation Archon), as 1016 with 1553.
 * 1016 isn't scripted: retail finished it with 1553 (`quests_finished_with.json`), the quest its accept check
   names, and Bob's character never played it.
@@ -617,8 +623,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   sailors' and Yellowjacket's lines meanwhile (scenes 4, 6–20) are matched to them by order, unseen on retail. The
   quest's other unlock parameters (UNLOCK_LFG_PARTY, COLLECT_PARTY_UNLOCK, UNLOCK_ADD_NEW_CONTENT_TO_CF, the screen
   images) sent nothing on retail: the client shows them itself.
-* Gridania's Lancer and Archer **Close to Home** (85, 123) and Limsa Lominsa's Marauder one (108) come from their client
-  scripts only, with fixtures adapted from 124's and 109's (no retail recording). Gridania's three still attune the
+* Gridania's Lancer and Archer **Close to Home** (85, 123) come from their client scripts only, with fixtures adapted
+  from 124's (no retail recording). Limsa Lominsa's Marauder one (108) has its own since 2026-11-17 (Bob's capture
+  0cafbf61) and matched as written. Gridania's three still attune the
   simple way (no bar or nested aetheryte event, as 124's 2026-10-14 fixture showed).
 * **Making a Name** (111) is the only way out of the Limsa opening's zone (181) in Kawari, as in Bob's retail run; if
   some other exit exists on retail, it isn't recorded. Its ferry back (scene 15, sequence 2) is from the client script

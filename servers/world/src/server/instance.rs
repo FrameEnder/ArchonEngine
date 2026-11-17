@@ -124,6 +124,13 @@ pub enum QueuedTaskData {
     WalkToCasterEnd { pose: u32 },
     /// Seal a boss wall.
     SealBossWall { id: u32, place_name: u32 },
+    /// A battle NPC's action landed on players (not missed or dodged): the director hears of it as the hit lands
+    /// (`onActionLanded`: the clay golems' Sand Breath and True Grit, whose second line comes only when they hit.)
+    ActionLanded {
+        layout_id: u32,
+        action_id: u32,
+        players: u32,
+    },
     /// Generically send a packet segment, only used for `do_change_zone`. Don't abuse this as a generic task, you almost certainly want to create a new variant.
     PacketSegment { segment: ServerZoneIpcSegment },
     /// A mount appearing under `from_actor_id` (its Mount packet), sent to everyone near, itself too (`action.rs`.)

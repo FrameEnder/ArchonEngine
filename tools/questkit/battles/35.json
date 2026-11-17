@@ -1,7 +1,7 @@
 {
   "quest_battle": 35,
-  "source": "Bob's Chronofoil capture of 2026-10-21 (ee0909d9, visit 0.9: won); talk 86 came 0.5 s and 4.1 s after the player first fell below 40% in the two runs, hence its 4.5 s",
-  "tolerance": 2.0,
+  "source": "Bob's Chronofoil capture of 2026-10-21 (ee0909d9, visit 0.9: won); talk 86 came 0.5 s and 4.1 s after the player first fell below 40% in the two runs, hence its 4.5 s; its boss's health has a point every 6 to 10 s, so the 70 % and 40 % the Marauder's run of 2026-11-17 gave (35-0cafbf61) are met within 4 s here, not 2",
+  "tolerance": 4.0,
   "scenes": {
     "6": 0.3
   },

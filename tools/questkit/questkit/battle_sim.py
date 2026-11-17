@@ -39,6 +39,11 @@ Casts: a fixture can hold the NPCs' casts (`casts`: `[[t, layout, action], ...]`
 their health), which the script hears as `onActorCast(director, layout, action, 0)`, as the server calls it when an
 NPC begins an action (the magitek vanguard's Drill Cannons move battles 46-48 on). Instant actions aren't in it.
 
+Landed: a fixture can hold the NPCs' actions that landed on the player (`landed`: `[[t, layout, action, players], ...]`,
+from retail's ActionEffects with the player among the targets and not missed; auto-attacks left out), which the script
+hears as `onActionLanded(director, layout, action, players)` half a second later, as the server's does when the result
+lands (the clay golems' breath, quest battles 15, 18 and 29: dodged, their director stays where it is.)
+
 Object talks: a fixture can hold when the player talked to an event object the director brought out (`object_talks`:
 `[[t, base, bar], ...]`, from retail's StartTalkEvent on it, and how long the event action that followed took), which
 the script hears as `onObjectTalk(director, 1, 2, base)` if it has spawned that object by then (`spawn_eobj`); an
@@ -86,6 +91,8 @@ LOST_SEQUENCE = 0xFE
 DONE_SEQUENCES = (LOST_SEQUENCE, 0xFF)  # set by the server once a battle is over, not by the script
 DEFAULT_TOLERANCE = 2.0
 AFTER_LAST_EVENT = 30.0  # how long to keep simulating after retail's last event
+AUTO_ATTACKS = {870, 871, 872, 873}  # not told to a director as landing
+LANDS_AFTER = 0.5  # the server's EFFECT_RESULT_AFTER: when it tells the director an action landed
 SETUP_CLOCK = -1000.0  # onSetup's time: before the opening, never compared
 
 
@@ -264,6 +271,19 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
             continue
         casts.append([rel(event["S"]), actor["LayoutId"], action])
 
+    # The NPCs' actions that landed on the player (an ActionEffect with the player among its targets and something
+    # other than a miss on them), by layout ID.
+    you = {k for k, a in run.get("Actors", {}).items() if a.get("Kind") == "you"}
+    landed = []
+    for action in run.get("Actions", []):
+        actor = actors.get(str(action.get("Source")))
+        if actor is None or rel(action["S"]) < 0:
+            continue
+        hit = sum(1 for target in action.get("Targets") or []
+                  if str(target.get("Id")) in you and any(e and e[0] not in (0, 1) for e in target.get("Effects") or []))
+        if hit and action.get("Action") not in AUTO_ATTACKS:
+            landed.append([rel(action["S"]), actor["LayoutId"], action["Action"], hit])
+
     durations = {}
     for t, n in scenes:
         if n in (SCENE_COMMENCE, SCENE_COMPLETE) or t < commence:
@@ -281,6 +301,8 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
         fixture["player"] = player
     if casts:
         fixture["casts"] = casts
+    if landed:
+        fixture["landed"] = landed
     return fixture
 
 
@@ -289,7 +311,7 @@ def save(fixture: dict, path: Path | None = None) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     npcs = ",\n".join(f'    "{k}": {json.dumps(v)}' for k, v in fixture["npcs"].items())
     events = ",\n".join(f"    {json.dumps(e)}" for e in fixture["events"])
-    head = {k: v for k, v in fixture.items() if k not in ("npcs", "events", "positions", "casts")}
+    head = {k: v for k, v in fixture.items() if k not in ("npcs", "events", "positions", "casts", "landed")}
     text = json.dumps(head, indent=2)[:-2] + f',\n  "npcs": {{\n{npcs}\n  }},\n  "events": [\n{events}\n  ]'
     if fixture.get("positions"):
         positions = ",\n".join(f'    "{k}": {json.dumps(v)}' for k, v in fixture["positions"].items())
@@ -297,6 +319,9 @@ def save(fixture: dict, path: Path | None = None) -> Path:
     if fixture.get("casts"):
         casts = ",\n".join(f"    {json.dumps(c)}" for c in fixture["casts"])
         text += f',\n  "casts": [\n{casts}\n  ]'
+    if fixture.get("landed"):
+        landed = ",\n".join(f"    {json.dumps(c)}" for c in fixture["landed"])
+        text += f',\n  "landed": [\n{landed}\n  ]'
     text += "\n}\n"
     json.loads(text)
     path.write_text(text)
@@ -423,6 +448,7 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     known = dropin_layouts()
     standing, _ = retail_line_up(fixture)  # the event NPCs retail had there, which a fixture's NPCs don't list
     cast_heard: set[tuple] = set()
+    landed_heard: set[tuple] = set()
     eobjs: set[int] = set()  # the event objects the script brought out (spawn_eobj), by base
     talks_due = [list(talk) for talk in fixture.get("object_talks", [])]
     bars_due: list[float] = []  # when the event actions the script started on an object talk end
@@ -488,6 +514,17 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                     cast_heard.add((at, layout, action))
                     if g.onActorCast is not None:
                         g.onActorCast(director, layout, action, 0)
+                    follow_calls()
+            # What landed on the player, half a second after the action as the server tells the director.
+            for hit in fixture.get("landed", []):
+                at, layout, action, players = hit
+                if layout not in alive or (at, layout, action) in landed_heard:
+                    continue
+                info = npcs.get(layout) or {}
+                if t >= at + LANDS_AFTER + spawned[layout] - (info.get("spawn") or 0.0):
+                    landed_heard.add((at, layout, action))
+                    if g.onActionLanded is not None:
+                        g.onActionLanded(director, layout, action, players)
                     follow_calls()
             # The player talking to an object the script brought out, and the event action it answered with.
             for talk in [d for d in talks_due if d[0] <= t and d[1] in eobjs]:

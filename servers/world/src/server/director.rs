@@ -2022,6 +2022,37 @@ impl DirectorData {
         }
     }
 
+    /// A battle NPC's action landed on `players` players (it wasn't dodged), half a second after it went off, as
+    /// its result does: `onActionLanded(director, layout_id, action_id, players)`. Retail's clay golems (quest
+    /// battles 15, 18 and 29) move their director on and have the masked mage speak only when their breath hit: 1.1
+    /// and 1.3 s after the action in two fights, and not at all in the one where Bob stepped out of it (his capture
+    /// 0cafbf61, 2026-11-17.)
+    pub fn on_action_landed(&mut self, layout_id: u32, action_id: u32, players: u32) {
+        if self
+            .lua
+            .0
+            .globals()
+            .get::<Function>("onActionLanded")
+            .is_err()
+        {
+            return;
+        }
+        let mut run_script = || {
+            let mut lua_director = self.create_lua_director();
+            let err = self.lua.0.scope(|scope| {
+                let data = scope.create_userdata_ref_mut(&mut lua_director)?;
+                let func: Function = self.lua.0.globals().get("onActionLanded")?;
+                func.call::<()>((data, layout_id, action_id, players))?;
+                Ok(())
+            });
+            self.apply_lua_director(lua_director);
+            err
+        };
+        if let Err(err) = run_script() {
+            tracing::warn!("Syntax error during onActionLanded: {err:?}");
+        }
+    }
+
     pub fn on_actor_death(&mut self, bnpc_id: u32, position: Position) {
         // A room with several bosses (`boss_room` called for each with the same wall: Haukke Manor's pair) opens as
         // the last of them falls (Bob's Chronofoil captures of 2026-11-02, four runs: whichever of the two died
@@ -5150,6 +5181,37 @@ mod tests {
                 ..
             }
         )));
+    }
+
+    /// The clay golem's breath moves its director on only when it lands (Just Deserts with a Marauder who stepped out
+    /// of it, Bob's Chronofoil capture 0cafbf61 of 2026-11-17: sequence 4, then 7, and no second line): the script
+    /// hears of an action that landed, with the NPC's layout ID, the action and how many players it hit.
+    #[test]
+    fn a_script_hears_of_an_action_that_landed() {
+        let mut director = DirectorData::default();
+        director
+            .lua
+            .0
+            .load(
+                "function onActionLanded(director, layout_id, action_id, players)
+                    if layout_id == 4082418 and action_id == 445 and players == 1 then
+                        director:set_sequence(5)
+                    end
+                end",
+            )
+            .exec()
+            .unwrap();
+        let moved_on = |director: &DirectorData| {
+            director
+                .tasks
+                .iter()
+                .any(|task| matches!(task, LuaDirectorTask::SetSequence { sequence: 5 }))
+        };
+        // Its Plaincracker isn't what the script waits for.
+        director.on_action_landed(4082418, 482, 1);
+        assert!(!moved_on(&director));
+        director.on_action_landed(4082418, 445, 1);
+        assert!(moved_on(&director));
     }
 
     /// A room's floor keeps the party in from the pull on, not before (Brayflox's Longstop's last boss's terrace.)

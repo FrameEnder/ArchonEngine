@@ -9,13 +9,19 @@
 -- Timed against those runs (seconds from the fight starting, the director's scene 60000, Kawari's onCommence):
 --   0      director sequence 2 (sequence 1 is set before the opening cutscene)
 --   10     the ally: battle talk 82 (10.0 s both runs)
---   the boss at 75% (75.3% and 73.5% the last health seen before it): sequence 3 and the first wave (4083606/07); the
---          ally's 83 seven seconds later (7.1, 7.0)
---   the boss at 45% (45.5% seen 5 s before it in the won run; 75.3% then 30.1% in the lost one): sequence 4 and the
---          second wave (4083608/09)
---   10 s after sequence 4 (10.0, 10.1): sequence 5 and the third wave (4083610/11) with the ally's 85
---   the player below 80% (78%, 79%): the ally's 84; below 40%: 86 (0.5 s and 4 s after it in the two runs, so a
---          guess); below 15% (14%, 2%): 87; once each
+--   the boss at 70%: sequence 3 and the first wave (4083606/07); the ally's 83 seven seconds later (7.1, 7.0, 7.1)
+--          and 84 22 s after the sequence (22.07 and 22.06 s in the two won runs)
+--   the boss at 40%: sequence 4 and the second wave (4083608/09)
+--   10 s after sequence 4 (10.0, 10.1, 10.1): sequence 5 and the third wave (4083610/11) with the ally's 85
+--   the boss at 15%: the ally's 86, and 87 13.0 s after it (one run)
+-- The health marks and the lines' clocks are from a third run, a Marauder's (Bob's Chronofoil capture 0cafbf61 of
+-- 2026-11-17, `--battle 0.7`, won in 79 s: `battles/35-0cafbf61.json`), which showed the boss's health far more
+-- often: 72.2 % 1.6 s before sequence 3 and 69.0 % 1.1 s after it; 40.4 % 0.3 s before sequence 4 (then a tick of the
+-- ally's Aero: 37.6 %); 86 in the moment a hit took it from about 18 % to 13.3 %. The October runs' samples were 6 to
+-- 10 s apart, hence the 65 % and 41 % here before, and 84, 86 and 87 were read as the player's health (below 80, 40
+-- and 15 %: 78 and 79 % at 84 in those two): the Marauder was at 97 % at 84 and 83 % at 86. The boss was down 7.3 s
+-- after 86 in that run, and 87 never came; in the October run that won, 86 and 87 were 13.0 s apart, with the boss's
+-- health seen at 20.5 % 3.7 s before 86 and not again until it fell.
 --   everyone down: 2 s later (the last one's death animation, as retail waits) sequence 6, "Duty Complete", the quest
 --          battle's scene 6 (0x2001) and back out; the quest moves to sequence 2 with UI8BH = 1 (ITEM0) in the same
 --          update
@@ -34,8 +40,8 @@ START_ROTATION = 0.122
 BNPC_ALLY = 4083622
 BNPC_BOSS = 4083604
 WAVES = {
-    { health = 65, sequence = 3, adds = { 4083606, 4083607 } },
-    { health = 41, sequence = 4, adds = { 4083608, 4083609 } },
+    { health = 70, sequence = 3, adds = { 4083606, 4083607 } },
+    { health = 40, sequence = 4, adds = { 4083608, 4083609 } },
 }
 -- The third wave comes on a timer after the second, with sequence 5.
 LAST_WAVE = { sequence = 5, adds = { 4083610, 4083611 } }
@@ -63,12 +69,14 @@ SPEAKER_ALLY = { layout = BNPC_ALLY, name = 1374, icon = 73187 }
 -- Steps: { updates after the step before, kind, ... } (Battle:steps)
 START_STEPS = { { 20, "talk", SPEAKER_ALLY, 82 } }
 FIRST_WAVE_STEPS = { { 14, "talk", SPEAKER_ALLY, 83 } }
--- The ally's lines as the player's health drops: below this percent, once each.
-PLAYER_HEALTH_TALK = {
-    { below = 80, text = 84 },
-    { below = 40, text = 86 },
-    { below = 15, text = 87 },
-}
+-- The ally's other lines: 84 this long after sequence 3 (22 s), 86 as the boss falls to 15 %, 87 this long after 86
+-- (13 s), in updates.
+TALK_84 = 84
+TALK_84_AFTER_UPDATES = 44
+TALK_86 = 86
+TALK_86_BOSS_HEALTH = 15
+TALK_87 = 87
+TALK_87_AFTER_UPDATES = 26
 LAST_WAVE_TALK = 85
 
 -- The battle's outline (content/lib/Battle.lua): the ally, a conjurer, plays the support: on the boss first, then the
@@ -96,6 +104,9 @@ for _, id in ipairs(LAST_WAVE.adds) do
     BATTLE:enemy(id, { group = "adds" })
 end
 
+-- Updates until each of the ally's timed lines, by its text.
+talk_in = {}
+
 local function lastWave(director)
     director:set_sequence(LAST_WAVE.sequence)
     BATTLE:spawn(director, LAST_WAVE.adds)
@@ -108,16 +119,21 @@ for n, wave in ipairs(WAVES) do
         BATTLE:spawn(director, wave.adds)
         if n == 1 then
             BATTLE:steps(FIRST_WAVE_STEPS)
+            talk_in[TALK_84] = TALK_84_AFTER_UPDATES
         else
             BATTLE:steps({ { LAST_WAVE_AFTER_UPDATES, "call", lastWave } })
         end
     end)
 end
 
+BATTLE:onHealth(BNPC_BOSS, TALK_86_BOSS_HEALTH, function(director)
+    director:battle_talk(SPEAKER_ALLY.layout, SPEAKER_ALLY.name, TALK_86, SPEAKER_ALLY.icon)
+    talk_in[TALK_87] = TALK_87_AFTER_UPDATES
+end)
+
 local over = false
 local fail_in = nil
 local won_in = nil
-local said = {}
 
 function onSetup(director)
     director:set_sequence(SEQUENCE_START)
@@ -153,12 +169,13 @@ function onUpdate(director, health, player_health, info)
     if over then
         return
     end
-    if player_health ~= nil then
-        for i, line in ipairs(PLAYER_HEALTH_TALK) do
-            if not said[i] and player_health < line.below then
-                said[i] = true
-                director:battle_talk(SPEAKER_ALLY.layout, SPEAKER_ALLY.name, line.text, SPEAKER_ALLY.icon)
-            end
+    -- The lines on their own clocks (not the steps': the waves' come after whatever waits there.)
+    for text, updates in pairs(talk_in) do
+        if updates <= 1 then
+            talk_in[text] = nil
+            director:battle_talk(SPEAKER_ALLY.layout, SPEAKER_ALLY.name, text, SPEAKER_ALLY.icon)
+        else
+            talk_in[text] = updates - 1
         end
     end
     BATTLE:update(director, health, player_health, info)
