@@ -28,9 +28,11 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
 * **Duty Support's fourth set** (at 50) fights by what it did in the Porta Decumana alone, a fight that kept breaking
   its turns; its Conjurer's area heals (29321, 29320) are new in the party bot's healer (`party-npcs.md`).
 * **Bob's capture 50e72631** (the same day, the same story again): the Porta Decumana's and the last battle's third
-  runs are read (`dungeons.md`, `quest-battles.md`). Open from it: **Rock the Castrum's two side talks** at sequence
-  2 (layouts 4332251, scene 11, and 4332249, scene 10: the script doesn't answer them; the quest's dump is needed for
-  who they are), and **quest 1047**, whose last two steps it shows (no script, no dump).
+  runs are read (`dungeons.md`, `quest-battles.md`). Rock the Castrum's two talks at sequence 2 (layouts 4332251 and
+  4332249, scenes 11 and 10) are the quest's side talks, which the server already answered with those scenes
+  (`quest_side_talks.json`: 1007683 and 1007682); quest 1047 is scripted from it. **AcceptQuest**: retail sent none
+  as 1047 was taken (it goes straight to sequence 255), in two captures; Kawari sends one with every `accept_quest`.
+  What the client shows differently isn't known.
 * **Not read yet**: Castrum Meridianum (visit 0.12, 28 min) and the Praetorium (0.14 and 0.16, 32 and 34 min),
   neither of which is scripted (Connor's capture af05916c has each once more); what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
   back in from Western Thanalan; the script's `onPartyWipe` is a guess); what came after the story (from 9688 s:
