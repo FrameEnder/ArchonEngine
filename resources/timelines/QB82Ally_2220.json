@@ -1,0 +1,44 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "attack_range": 6.0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "127": {
+            "npcs": 412
+        },
+        "121": {
+            "npcs": 109
+        },
+        "132": {
+            "npcs": 107
+        },
+        "119": {
+            "npcs": 318
+        },
+        "120": {
+            "players": 990
+        }
+    },
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 121,
+                "every": 24,
+                "comment": "Aero: 4 uses, 12.2 to 72.3 s apart"
+            },
+            {
+                "action": 132,
+                "every": 31.7,
+                "comment": "Aero II: 2 uses, 31.7 s apart"
+            },
+            {
+                "action": 127,
+                "comment": "Stone II: 5 uses, 7.6 to 44.6 s apart"
+            }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Quest battle 82's ally (BNpcName 1640, base 2220, layout 4302956): level 50, 13592 HP. From Bob's Chronofoil capture a75e1390 (2026-11-17: one run, won in 132 s, a Summoner of 50; `questkit chronofoil --battle 0.4`): no auto-attack; Stone II (412), Aero (109), Aero II (107) and Stone once (318) on the master, Cure on the player four times at 39 to 55 % for 968 to 1013 (the script's), and 129 on the player twice and itself once (a 2.7 s cast; not played). It stopped 6.0 yalms from the master. Hitbox not recorded."
+}

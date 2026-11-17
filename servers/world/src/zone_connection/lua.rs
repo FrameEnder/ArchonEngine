@@ -354,6 +354,13 @@ impl ZoneConnection {
                 LuaTask::ToggleOrchestrion { id } => {
                     self.toggle_orchestrion(*id).await;
                 }
+                LuaTask::LogMessage { log_message, value } => {
+                    self.actor_control_self(ActorControlCategory::LogMessage {
+                        log_message: *log_message,
+                        id: *value,
+                    })
+                    .await;
+                }
                 LuaTask::NpcTradeTaken => {
                     let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::NpcTradeTaken {
                         unk1: 0,

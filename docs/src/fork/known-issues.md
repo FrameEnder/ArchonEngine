@@ -3,6 +3,18 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Quest battle 82, the Summoner's level 50 quest and Broadening Horizons (2026-11-17)
+
+* **The Summoner's quest (1096) isn't scripted**: its dump hasn't come, so quest battle 82 can't be entered in play.
+  Retail's steps are in capture a75e1390 (scenes 0 and 1; 2 and 4 with notices 0 and 1; the range's scene 6 into
+  the battle; scene 13 with notice 3; the reward's scene 14).
+* **Quest battle 82** is unplayed, from one retail run. Guessed: that the creature's health moves sequences 3 and 4
+  on. Not played: the master's health coming back as it takes its creature (1348), its 1159, 31085 and 31086, the
+  creature's 1294, the ally's 129, what the add's Fire III hits for (it never landed).
+* **Broadening Horizons** (802) is unplayed (it passes replay). Whether retail gives aethernet destination 54
+  without Gridania's shards attuned isn't known; the script gives it regardless. Its ACTOR0 gives the key item and
+  sequence 255 as the quest is accepted, which is why capture 898dd0b9 had only its last two talks.
+
 ## Quest battle 69 and the Paladin's level 50 quest (2026-11-17)
 
 * **The quest (1060) isn't scripted**: its dump hasn't come, so quest battle 69 can't be entered in play. Retail's
@@ -243,8 +255,7 @@ None of it played yet; the page not used against the running server.
 
 ## Bob's Chronofoil captures of 2026-11-12
 
-* Not scripted yet: 802 (Broadening Horizons: only its last two talks are in any capture, 898dd0b9). 1003 needs none:
-  retail finishes it with 3871 ([Quests](quests.md#quests-finished-together)).
+* 1003 needs no script: retail finishes it with 3871 ([Quests](quests.md#quests-finished-together)).
 * Quest battle 68 (Parley in the Sagolii, 2026-11-12) is from one won run: no lost run, the boss's 1098 and 1099 do
   nothing (no effect seen) and his 1056's statuses 293 and 294 last a guessed 30 s; not played in game.
 * The Paladin's 1056-1059, the White Mage's 1080-1083 and 1162 (2026-11-12) are each from one run (1162 three), none

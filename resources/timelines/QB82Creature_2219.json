@@ -1,0 +1,26 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "attack_range": 6.0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "players": 188
+        },
+        "1295": {
+            "players": 330
+        }
+    },
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 1295,
+                "every": 16.8,
+                "comment": "4 uses, 8.1 to 18.8 s apart (median 16.8): 328 to 338 on the player"
+            }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Quest battle 82's creature (BNpcName 2148, base 2219, layout 4302979): level 50, 12945 HP. From Bob's Chronofoil capture a75e1390 (2026-11-17: one run, won in 132 s, a Summoner of 50; `questkit chronofoil --battle 0.4`): auto-attacks on the player every 3.0 s for up to 198 (median 188), 1295 every 16.8 s (330), and 1294 on itself three times, 18.8 s apart (a 1.7 s cast; not played: what it does isn't recorded). It stopped 6.0 yalms from the player. Hitbox not recorded."
+}

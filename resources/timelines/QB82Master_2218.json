@@ -1,0 +1,45 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "attack_range": 25.0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "1349": {
+            "players": 1431
+        },
+        "1287": {
+            "npcs": 1143
+        },
+        "168": {
+            "npcs": 13.5
+        }
+    },
+    "rotation": {
+        "pace": 12.0,
+        "actions": [
+            {
+                "action": 1287,
+                "every": 13.7,
+                "on_ally": 2219,
+                "comment": "2 uses, 13.7 s apart, on the creature beside it (1137 to 1169): a 2.7 s cast"
+            },
+            {
+                "action": 168,
+                "every": 34,
+                "comment": "2 uses, 34.0 s apart, on the ally (0 to 27)"
+            },
+            {
+                "action": 169,
+                "every": 100,
+                "comment": "2 uses, 101.4 s apart, on the ally"
+            },
+            {
+                "action": 164,
+                "every": 60,
+                "comment": "1 use, on the ally"
+            }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Quest battle 82's master (BNpcName 1651, base 2218, layout 4302960): level 50, 11391 HP. From Bob's Chronofoil capture a75e1390 (2026-11-17: one run, won in 132 s, a Summoner of 50; `questkit chronofoil --battle 0.4`): it stood where it was (1.2 yalms) and never auto-attacked; on the ally: 168, 169, 164, 31085 and 31086 (0 to 41: not played but for the first three); 1287 on its creature (a heal of 1143) and, from the creature's going, on itself; 1159 twice on its side (not played); and the script's: 1348 on the creature, 1349 at the player (1319 and 1543) every 28.8 s and 1163 on itself every 28.9 s (content/questbattle/82.lua). The range is a guess (it never walked). Hitbox not recorded."
+}

@@ -1112,6 +1112,16 @@ impl UserData for LuaPlayer {
                 Ok(())
             },
         );
+        methods.add_method_mut(
+            "log_message",
+            |_, this, (log_message, value): (u32, Option<u32>)| {
+                this.queued_tasks.push(LuaTask::LogMessage {
+                    log_message,
+                    value: value.unwrap_or(0),
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("npc_trade_taken", |_, this, ()| {
             this.queued_tasks.push(LuaTask::NpcTradeTaken);
             Ok(())

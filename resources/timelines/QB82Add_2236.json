@@ -1,0 +1,18 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "attack_range": 11.5,
+    "timeline_always_plays": false,
+    "recorded_amounts": {},
+    "rotation": {
+        "pace": 6.0,
+        "actions": [
+            {
+                "action": 152,
+                "comment": "Fire III: once by each of the two, 3.0 and 3.3 s after it came, a 3.2 s cast on the player (it missed, and the other fell before it landed)"
+            }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Quest battle 82's adds, which the master's 1163 brings (BNpcName 1974, base 2236, layout 4328234, two in the run): level 48, 714 HP. From Bob's Chronofoil capture a75e1390 (2026-11-17: one run, won in 132 s, a Summoner of 50; `questkit chronofoil --battle 0.4`): they lived 9 and 4 s; each began Fire III (152) on the player from 11.5 yalms. What it hits for isn't recorded. Hitbox not recorded."
+}

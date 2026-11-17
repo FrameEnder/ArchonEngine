@@ -30,6 +30,11 @@ the city's `AethernetGroup`; the group's visible shards (not `IsAetheryte`, so t
 must all be attuned. A destination with a `RequiredQuest` waits for that quest too (row 54, the White Wolf Gate, for
 quest 66338).
 
+The White Wolf Gate (54) came with Broadening Horizons' reward on retail (Bob's Chronofoil capture a75e1390,
+2026-11-17): LearnTeleport 54, then ActorControlSelf 517 `[1366, 54]` (LogMessage 1366 with the destination), before
+the journal's update; the quest's script does both (`quests.md`, 802), ahead of `finish_quest`, so
+`learn_aethernet_extras` finds it learnt.
+
 Retail (Bob's Chronofoil capture cc62ad94, 2026-10-28, all three cities) sent a LearnTeleport (ActorControlSelf 509)
 for each of them right after the last shard's, in the same burst; the character's aetheryte bitmask at its next login
 (PlayerSetup: the unlocks' 92 bytes start 64 bytes after the name, the aetherytes' 30 follow) had them all set.

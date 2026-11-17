@@ -1,0 +1,79 @@
+{
+  "quest": 802,
+  "script": "GaiUsa907_00802",
+  "source": "Bob's Chronofoil capture a75e1390 (2026-11-17)",
+  "params": {
+    "ACTOR0": 1006259,
+    "ITEM0": 2000791,
+    "ACTOR1": 1000171
+  },
+  "steps": [
+    {
+      "talk": 1006259,
+      "layout": 4259686,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "001000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000171,
+      "layout": 1141157,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 3,
+          "flags": "0x2000",
+          "results": [
+            1,
+            5825,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "effects": [
+        {
+          "aetheryte": 54
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

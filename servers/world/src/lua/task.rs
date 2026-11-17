@@ -110,6 +110,11 @@ pub enum LuaTask {
     },
     /// Takes what was handed in through the NPC's trade window (`Inventory::take_handed_in`.)
     TakeHandedInItems,
+    /// A LogMessage row in the player's log with one value (ActorControlSelf 517; `player:log_message(id, value)`.)
+    LogMessage {
+        log_message: u32,
+        value: u32,
+    },
     /// A key-item trade's items are taken: retail's NpcTradeTaken packet (`player:npc_trade_taken()`.)
     NpcTradeTaken,
     UnlockContent {

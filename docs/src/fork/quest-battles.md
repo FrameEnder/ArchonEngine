@@ -1364,6 +1364,28 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
 * Timelines `QB36*_<base>.json`, with retail's recorded amounts. `questkit battle-sim 36` (the won run, NPC health held
   between hits): every step within 2 s.
 
+### Quest battle 82 — the Summoner's level 50 quest's (`content/questbattle/82.lua`)
+
+* Territory 326, whose level isn't known: a drop-in of its own (`territory_326.json`, layer `QB_82`), four NPCs with
+  retail's layout IDs, levels, HP, spots, gear and flags (Bob's Chronofoil capture a75e1390 of 2026-11-17,
+  `--battle 0.4`, ContentFinderCondition 375: one run, won in 132 s, a Summoner of 50). The quest (1096) isn't
+  scripted yet (no dump). The player starts at (479.62, -0.87, -794.01), facing 1.119; the opening scene 1 is
+  0xF841AEFB.
+* A master (4302960, 11391 HP, which never moves and goes for the ally) and its creature (4302979, 12945 HP, for
+  you) against you and an ally (4302956, 13592 HP: Stone II and Aero on the master, Cure on you at 39 to 55 %).
+  Sequence 2, the master's 103 at 5.0 s and the ally's 104 at 10.0. **The creature at 80 %**: sequence 3, 105 5.1 s
+  later; **at 50 %**: sequence 4 and 106, the master's 1348 on its creature 1.1 s later (a 4.2 s cast: it took all
+  the creature's health and filled the master's), and 6.5 s after the sequence, sequence 5 with the creature fading
+  out (607); talks 107, 108, 109 at 7.1, 15.1 and 20.1 s. Each of the two came 1.7 to 1.8 s after the health had
+  passed the mark (`HEALTH_NOTICED_AFTER`).
+* Alone, the master casts 1349 at you (5.1 s after sequence 5, then every 28.8 s: 1319 and 1543) and 1163 on itself
+  (13.7 s after, then every 28.9 s), which brings an add (4328234, level 48, 714 HP, Fire III on you) 4.5 s after
+  the cast begins: the script's, each on its own clock. The master's health at 0: at once sequence 6 and "Duty
+  Complete", scene 6 (0xF8402EFB) 3.1 s later; the quest moves to 4.
+* Timelines `QB82Master_2218`, `QB82Creature_2219` (1295, script `QB82Creature_01295`), `QB82Ally_2220`,
+  `QB82Add_2236`; scripts `QB82Master_01348` (does nothing itself: the script takes the creature away, and the
+  master's health isn't restored) and `QB82Master_01349`. `questkit battle-sim 82`: every step within 0.4 s.
+
 ### Quest battle 69 — the Paladin's level 50 quest's (`content/questbattle/69.lua`)
 
 * Territory 313, whose level isn't known, so it has a drop-in of its own (`territory_313.json`, layer `QB_69`): 17
