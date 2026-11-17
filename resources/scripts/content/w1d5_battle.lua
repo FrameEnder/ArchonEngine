@@ -1,10 +1,11 @@
 -- The Porta Decumana (ContentFinderCondition 830, territory 1048, director 0x80034E72): the trial at the end of The
 -- Ultimate Weapon, two fights with a cutscene between them.
 --
--- Two retail runs with Duty Support: Connor's Chronofoil capture af05916c (2026-11-09, visit 0.12, a healer with the
--- Marauder, the Thaumaturge and the Lancer) and Bob's 9ba7d981 (2026-11-17, visit 0.18, a damage dealer with the
--- Marauder, the Conjurer and the Thaumaturge); `questkit chronofoil --battle` and the visits' packets. Both fights
--- are **one clock from their pull** in both runs (every cast, talk and map effect the same to 0.3 s), up to the
+-- Three retail runs with Duty Support: Connor's Chronofoil capture af05916c (2026-11-09, visit 0.12, a healer with
+-- the Marauder, the Thaumaturge and the Lancer), Bob's 9ba7d981 (2026-11-17, visit 0.18, a damage dealer with the
+-- Marauder, the Conjurer and the Thaumaturge) and his 50e72631 (the same day, visit 0.7, a healer again);
+-- `questkit chronofoil --battle` and the visits' packets. Both fights are **one clock from their pull** in every
+-- run (every cast, talk and map effect the same to 0.3 s), up to the
 -- places the boss's health decides, so the tables below are that clock, Connor's run's numbers. Numbers only.
 --
 -- The first fight (the arena round (-772, -600), 20 yalms): the boss (9088367, base 14587, BNpcName 2137, 262421
@@ -16,26 +17,26 @@
 --     29003 (287.8 on, 29003 again every 40.9 s); each goes for good (ActionTimelines 4575, 4576, 4578) as the boss
 --     uses 28994, 28993, 28995;
 --   * helpers (base 9020, layout 0; retail had 25): 29001 on ten spots, twice (47.0 and 51.1 s, then 87.4 and 91.5:
---     the two sets in either order the second time), 28980 from the middle every 5.1 s after the boss's 28979, three
+--     the two sets in either order each time), 28980 from the middle every 5.1 s after the boss's 28979, three
 --     or eight 28983s with each of its 28982s, twelve 28991s with its 28990;
 --   * 105.8 to 135.1: its 28987, four of base 14590 (9088370) brought in at 111.9, their 28989 and its 29435 (32.7 s
 --     casts) from 116.0; the map effect 4 and weather 105 at 119.9 with the lines under BNpcName 2183 (their battle
 --     talk's style byte is 6), the helpers' 28511 on the party at 132.0, and at 134.9 both casts are stopped
 --     (ActorControl 15 [537, 1, action]) and the four fall; 244.8 to 262.9 the same for its 28510 (27.7 s), and
 --     after the 36 % line for its 28990 (31.7 s);
---   * from 301.7 its 28982 three times in 20.6 s, and again every 40.9 s until its health is at 40 % as that round
---     ends or the next begins (Connor's: 35.3 % as the second began; Bob's: 42 % then, 36.3 % 4.2 s after the
---     second round's third; taken as a 40 % line looked at then). Then talk 33214 and a set chain: 28628 at 5.1 s,
+--   * from 301.7 its 28982 three times in 20.6 s, and again every 40.9 s until its health is below 36 % (the talk
+--     came at 342.6, 367.5 and 356.4 s in the three runs, the last two rounds in, between its second and third
+--     28982). Then talk 33214 and a set chain: 28628 at 5.1 s,
 --     28990 at 7.6, the map effect at 17.5, the party's 28511 at 26.6, the casts stopped at 29.5, 28995 at 29.6,
 --     talk 33218 at 41.8;
---   * at 21.7 and 21.1 % (62.0 and 71.1 s into the chain; a 22 % line here) the cutscene: the director's scene 3
+--   * below 22 % (62.0, 71.1 and 50.0 s into the chain) the cutscene: the director's scene 3
 --     with cutscene 120 `[0, 150, 0, 0]`, everything of the first fight gone as it begins.
 --
 -- As the cutscene ends everyone is put by the second arena's east (-689.55, -185.73, 480.35, PrepareZoning and
 -- ActorSetPos) and the second boss (9088373, base 14592, 244634 HP) stands at (-713, 480) with ten helpers. From its
 -- pull (talk 33219: 39.4 and 10.4 s after the cutscene's end), `PortaDecumanaBoss2_14592.json` and:
---   * a helper's 29008, 29009, 29010 from where the boss stands with its 29005, 29006, 29007 (2.4 s apart), each
---     facing somewhere of its own; 29012 on every one of the party with its 29011; 29014 on one of them with its
+--   * a helper's 29008, 29009, 29010 from where the boss stands with its 29005, 29006, 29007 (2.4 s apart): the way
+--     it faces, then 45 degrees to either side; 29012 on every one of the party with its 29011; 29014 on one of them with its
 --     29013;
 --   * its 29015 (57.4 s) throws everyone to the edge, and four of base 14594 (9088375) come at the arena's four
 --     corners 0.8 s later, set off for the middle 5 s on, and each uses 29016 on whoever of the party it reaches and
@@ -59,7 +60,7 @@
 -- that changes (they stood until 134.9 in both: nothing here); the first boss below the cutscene's line before the
 -- chain (a floor of 1 HP here: it never fell on retail); the second fight past 325.7 s without the last part (the
 -- question again every 15.4 s); what ActorControls 20, 49, 62 and 70 on the bosses and statuses 3009 to 3012 do
--- (sent and given as retail did); where the helpers' 29008-29010 face (someone of the party here). After a wipe
+-- (sent and given as retail did). After a wipe
 -- the fight its party fell in begins again (retail's wasn't seen.)
 
 -- Which way players face as they come in (retail's, facing the boss in the west.)
@@ -101,10 +102,12 @@ SECOND_COMES_AFTER = 2.5
 CUTSCENE_END = 121
 CUTSCENE_END_PARAMS = { 1, 18, 0, 0 }
 
--- Its health, in whole percent as the server gives it, below these: the first fight's chain (looked at as a round of
--- 28982 ends or begins: 40.7 % wasn't enough, 36.3 % was) and cutscene, the second fight's last part (looked at
--- 310.3 s in and every 15.4 s from then: 32.9 % wasn't enough, 29.4 % was.)
-CHAIN_AT = 40
+-- Its health, in whole percent as the server gives it, below these: the first fight's chain (once the rounds of 28982
+-- have begun; three runs: the talk came 1.6 s after 35.95 %, as 36.3 became 35.97 %, and 3.2 s after 35.94 %, the
+-- third in the middle of a round it had begun at 36.7 %) and cutscene (21.96, 21.7 and 21.9 % 0.1 to 2.4 s
+-- before), the second fight's last part (looked at 310.3 s in and every 15.4 s from then: 32.9 % wasn't enough;
+-- 28.0, 29.4 and 29.7 % were.)
+CHAIN_AT = 36
 CUTSCENE_AT = 22
 LAST_PART_AT = 30
 
@@ -174,8 +177,8 @@ FIRST = {
     { 25.7, "cast", THREE_A, 28999, "edge" },
     { 33.1, "cast", THREE_A, 29000, "same" },
     { 38.3, "timeline", THREE_A, 7737 },
-    { 47.0, "helpers", 29001, 1 },
-    { 51.1, "helpers", 29001, 2 },
+    { 47.0, "helpers", 29001, "either" },
+    { 51.1, "helpers", 29001, "other" },
     { 66.0, "cast", THREE_A, 28999, "edge" },
     { 73.4, "cast", THREE_A, 29000, "same" },
     { 78.5, "timeline", THREE_A, 7737 },
@@ -248,7 +251,6 @@ FIRST = {
 -- round, from its first 28982.
 ROUND_FIRST = 301.7
 ROUND_EVERY = 40.9
-ROUND_THIRD_LANDED = 24.8 -- 4.2 s after the third began: the 40 % line is looked at
 ROUND = {
     { 13.6, "timeline", THREE_C, 7747 },
     { 14.9, "cast", THREE_C, 29003, "middle" },
@@ -345,6 +347,7 @@ ROW_CROSS = { { -687.0, 491.3, -2.356 }, { -692.7, 496.9, -2.356 }, { -712.5, 46
 
 -- The four of base 14594: they set off for the middle 5.0 s after coming, 1.7 yalms a second, and use 29016 on
 -- whoever of the party is within 2 yalms.
+FAN_ANGLE = 0.7854
 CORNER_SETS_OFF = 5.0
 CORNER_SPEED = 1.7
 CORNER_REACH = 2.0
@@ -379,6 +382,9 @@ cutscene_may_come = false
 party = {}
 boss_at = nil
 boss_health = nil
+boss_target = nil
+fan_facing = nil
+rounds_begun = false
 last_three = nil
 
 -- Runs fn so many seconds from now (an update is half a second; a call made outside onUpdate waits for the next.)
@@ -456,6 +462,7 @@ function reset()
     last_set = nil
     last_three = nil
     cutscene_may_come = false
+    rounds_begun = false
 end
 
 function onSetup(director)
@@ -576,13 +583,25 @@ function threeCast(director, layout, action, where)
     director:actor_use_action(three[layout] or layout, action)
 end
 
--- A helper's line from where the boss stands, towards someone of the party.
+-- A helper's line from where the boss stands: 29008 the way the boss faces (towards whom it's fighting), 29009 45
+-- degrees to one side of that and 29010 45 to the other (all nine in the three runs; 29010 came before 29009 once.)
 function lineFromBoss(director, action)
     local at = boss_at or MIDDLE_2
-    local whom = someoneOfTheParty()
-    local facing = 0.0
-    if whom ~= nil then
-        facing = math.atan(whom.x - at.x, whom.z - at.z)
+    if action == 29008 or fan_facing == nil then
+        local whom = nil
+        for _, member in ipairs(party) do
+            if member.id == boss_target then
+                whom = member
+            end
+        end
+        whom = whom or someoneOfTheParty()
+        fan_facing = (whom ~= nil) and math.atan(whom.x - at.x, whom.z - at.z) or 0.0
+    end
+    local facing = fan_facing
+    if action == 29009 then
+        facing = fan_facing - FAN_ANGLE
+    elseif action == 29010 then
+        facing = fan_facing + FAN_ANGLE
     end
     local helper = helperAt(director, at.x, at.z, facing)
     if helper ~= nil then
@@ -806,23 +825,19 @@ function pullFirst(director)
     part = "first"
     director:party_npc_yell("ranged", LINE_PULL)
     schedule(director, FIRST, "first")
-    after(ROUND_FIRST + ROUND_THIRD_LANDED, function(d) chainOrNot(d, true) end)
+    after(ROUND_FIRST, function(d)
+        if part == "first" then
+            rounds_begun = true
+        end
+    end)
 end
 
--- As a round of 28982 ends (`ended`), and half a second before the next begins: the chain if its health is below
--- the line, or the same question at the next of the two.
-function chainOrNot(director, ended)
-    if part ~= "first" then
-        return
-    end
-    if boss_health ~= nil and boss_health < CHAIN_AT then
+-- Once the rounds of 28982 have begun: the chain as soon as its health is below the line, whatever the round is at.
+function chainOrNot(director)
+    if part == "first" and rounds_begun and boss_health ~= nil and boss_health < CHAIN_AT then
         part = "chain"
         director:restart_timeline(BOSS_1, PART_CHAIN)
         schedule(director, CHAIN, "chain")
-    elseif ended then
-        after(ROUND_EVERY - ROUND_THIRD_LANDED - 0.5, function(d) chainOrNot(d, false) end)
-    else
-        after(ROUND_THIRD_LANDED + 0.5, function(d) chainOrNot(d, true) end)
     end
 end
 
@@ -921,12 +936,14 @@ function watch(director, health, info)
         return
     end
     boss_at = { x = him.x, z = him.z }
+    boss_target = him.target_id or him.target
     local pulled = him.target ~= nil or (boss_health ~= nil and boss_health < 100)
     if part == "first-wait" and pulled then
         pullFirst(director)
     elseif part == "second-wait" and pulled then
         pullSecond(director)
     end
+    chainOrNot(director)
     if part == "chain" and cutscene_may_come and boss_health ~= nil and boss_health < CUTSCENE_AT then
         cutscene(director)
     end

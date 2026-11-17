@@ -21,12 +21,16 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
   every 15.4 s); a wipe in either fight (that fight begins again; in the second everyone is sent back to the second
   arena, `set_start`); what ActorControls 20, 49, 62 and 70 on the bosses and statuses 3009-3012 do (sent and given
   as retail did; that 28976-28978 give the statuses is a guess); the damage of the six actions that hit no one. The
-  three health lines are read from two runs each: 40 % (between 36.3 and 40.7), 22 % (the cutscene came at 21.7
-  and 21.1) and 30 % (between 29.4 and 32.9). `stop_cast`, `set_start`, the battle talk's style byte, the rows'
+  three health lines are read from three runs each (50e72631 the third, which moved the first from 40 to 36 %):
+  36 % (the talk came up to 3.2 s after it), 22 % and 30 % (between 29.7 and 32.9). `stop_cast`, `set_start`, the battle talk's style byte, the rows'
   leaps (`jump_bnpc` for ten at once) and the party warp after the cutscene are new or first used this way: if the
   second fight never begins, look at `onSceneFinished` (scene 3) first.
 * **Duty Support's fourth set** (at 50) fights by what it did in the Porta Decumana alone, a fight that kept breaking
   its turns; its Conjurer's area heals (29321, 29320) are new in the party bot's healer (`party-npcs.md`).
+* **Bob's capture 50e72631** (the same day, the same story again): the Porta Decumana's and the last battle's third
+  runs are read (`dungeons.md`, `quest-battles.md`). Open from it: **Rock the Castrum's two side talks** at sequence
+  2 (layouts 4332251, scene 11, and 4332249, scene 10: the script doesn't answer them; the quest's dump is needed for
+  who they are), and **quest 1047**, whose last two steps it shows (no script, no dump).
 * **Not read yet**: Castrum Meridianum (visit 0.12, 28 min) and the Praetorium (0.14 and 0.16, 32 and 34 min),
   neither of which is scripted (Connor's capture af05916c has each once more); what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
   back in from Western Thanalan; the script's `onPartyWipe` is a guess); what came after the story (from 9688 s:
