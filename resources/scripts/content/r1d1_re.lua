@@ -195,29 +195,28 @@ FROST_BREATH_AFTER = 9.2
 SHEET_AFTER = 16.4
 FIRST_SHEET_AFTER = 17.3
 DECIDE_AFTER = 26.0
--- Between the Frost Breath and the Sheet of Ice it looks at its health once more: below 50 % 11.3 s into a round, its
--- new round's Rime Wreath came at 16.3 s, when the Sheet would have (visit 0.14 of Bob's capture 216f28eb,
--- 2026-11-17); below at 12.3 to 13.4 s, it came 4.1 s after the Sheet's time (20.3-20.4 s, four pulls), and below
--- before the Frost Breath, 4.0 s after that one's (13.1-13.2 s, two). So it looks between 11.3 and 12.3 s in; when
--- exactly isn't known (4.1 s before the Sheet, 12.2 s, would fit its other moves.) Early in that window here: the
--- pull that fell below at 12.28 s is in duty-sim's fixtures, whose clock is up to a second behind retail's by then.
-LOOK_AFTER = 11.4
+-- Between the Frost Breath and the Sheet of Ice it looks at its health once more: below 50 % 11.3, 11.4 and 11.6 s
+-- into a round, its new round's Rime Wreath came at 16.3 s, when the Sheet would have (three pulls of Bob's captures
+-- 216f28eb and d1f99707, 2026-11-17); below at 12.3 to 13.4 s, it came 4.1 s after the Sheet's time (20.3-20.4 s,
+-- five pulls), and below before the Frost Breath, 4.0 s after that one's (13.1-13.2 s, four). So it looks between
+-- 11.6 and 12.3 s in; when exactly isn't known (4.1 s before the Sheet, 12.2 s, would fit its other moves.) Early in
+-- that window here: the script's clock is behind retail's by the tick that found the pull, and duty-sim's by up to a
+-- second (11.7 fails the two pulls that fell below at 12.28 and 12.32 s there).
+LOOK_AFTER = 11.6
 FIRST_CHECK_AFTER = 21.9
 FIRST_DECIDE_AFTER = 29.8
 NEXT_ROUND_AFTER = 4.1
--- When it flies (its health, in percent, in the thirteen pulls): the first time as soon as it's below 85 % while its
--- round's Frost Breath or Sheet of Ice is still to come, once it isn't casting (0, 0.4 and 1.8 s after it fell below,
--- three pulls); with the Sheet of Ice cast, at the round's first decision if it's below 85 % by then (below at 27.1 to
--- 29.5 s after the pull, up at 30.0-30.1 s: four of the seven pulls of 2026-11-17), else at its second (below at 30.4
--- and 31.0 s, up at 38.0 s: two; not as soon as it fell below); once more between 50 and 70 % at a round's end (59.7-
--- 66.0 % three times; at 48-55 % it didn't, three times); then below 40 % at every round's end, with the Sheets of Ice
--- (34.6-35.7 %, 16.3 %, 12.3 %, 23.0 %). Below 50 % when a Frost Breath or Sheet of Ice is due (or at its look
--- between them, LOOK_AFTER), it begins a new round 4.1 s later instead, as after a round's end (the conjurer's run,
--- and all seven pulls of 2026-11-17).
+-- When it flies (its health, in percent): the first time at the first of its moves that finds it below 85 %, not as
+-- it falls below. In the round after the pull that was the Sheet of Ice's time in six pulls (below 14.0 to 16.1 s
+-- into the round, up at 17.3 s in each: the five of Bob's capture d1f99707 and one of 216f28eb, 2026-11-17; the
+-- script had it up as soon as it fell below, 1 to 3 s early), the round's first look in four (below at 27.1 to 29.5 s
+-- after the pull, up at 30.0-30.1 s) and its second in two (below at 30.4 and 31.0 s, up at 38.0 s). Once more between
+-- 50 and 70 % at a round's end (59.7-66.0 % three times; at 48-55 % it didn't, three times); then below 40 % at
+-- every round's end, with the Sheets of Ice (34.6-35.7 %, 16.3 %, 12.3 %, 23.0 %). Below 50 % when a Frost Breath or
+-- Sheet of Ice is due (or at its look between them, LOOK_AFTER), it begins a new round 4.1 s later instead, as after
+-- a round's end (the conjurer's run, and all twelve pulls of 2026-11-17).
 FLY_FIRST_BELOW = 85
 NEW_ROUND_BELOW = 50
--- How long after a move it doesn't take off (the longest of its casts, Rime Wreath's 2.7 s, and a moment.)
-CASTING_FOR = 3.0
 FLY_SECOND = { 50, 70 }
 FLY_SHEETS_BELOW = 40
 -- Its flights (from SetTargetable off and ActionTimeline 1385): over the spot of each Cauterize 4.1 s later (an
@@ -274,9 +273,14 @@ COFFER_CLEAR = 185
 -- one of the three said its own line at the start: the Thaumaturge's 14368 twice, the Lancer's 14369 three times, the
 -- Conjurer's 14370 twice. With no tank of theirs, the Thaumaturge said 14372 as the first boss fell (six runs of the
 -- seven, as its health reached 0) and the Lancer 14377 in the last room (all seven, 1.1 to 2.7 s after its cutscene.)
-LINES_START = { { "ranged", 14368 }, { "melee", 14369 }, { "healer", 14370 } }
+-- With a Summoner (his capture d1f99707, five runs with the Marauder, the Conjurer and the Thaumaturge) the Marauder's
+-- 14367 three times and the Thaumaturge's 14368 twice. The line comes as a player sets off, not by the clock: 0.7 to
+-- 1.1 s after their first step in all twelve runs (8 s late in the one where Bob stood 8 s), the player 7 to 10 yalms
+-- from the entrance by then.
+LINES_START = { { "tank", 14367 }, { "ranged", 14368 }, { "melee", 14369 }, { "healer", 14370 } }
 LINE_START = 14368
-LINE_START_AFTER = 4.3
+ENTRANCE = { x = 0.0, z = 306.0 }
+LINE_START_FROM = 5.0
 LINE_BOSS1 = 14371
 LINE_BOSS1_NO_TANK = 14372
 LINE_BOSS2_ROOM = 14374
@@ -300,6 +304,7 @@ typhoons = 0
 whirlwinds = {}
 whirlwind_helpers = {}
 boss2_line = false
+start_line = false
 door_open = false
 boss3_started = false
 boss3_line = false
@@ -358,10 +363,30 @@ function inRange(position, id)
     return math.abs(lx) <= range.sx and math.abs(dy) <= range.sy and math.abs(lz) <= range.sz
 end
 
+-- Whether any of them is in a range, or went through it since the last update: the ranges ahead of the perched
+-- dragons and the ice walls are 4 yalms deep, and a run is 3 a tick with the client's position a third of a second
+-- old (the fourth run of Bob's capture d1f99707, 2026-11-17, had the player 0.36 yalms short of the first dragon's
+-- at one update and 0.24 past it at the next: halfway between counts too.)
+seen_at = {}
 function anyoneIn(list, id)
     for _, who in ipairs(list) do
         if inRange(who, id) then
             return true
+        end
+        local key = who.id or who
+        local seen = seen_at[key]
+        if seen == nil then
+            seen = { clock = clock, now = { x = who.x, y = who.y, z = who.z } }
+            seen_at[key] = seen
+        elseif seen.clock ~= clock then
+            seen.before, seen.now, seen.clock = seen.now, { x = who.x, y = who.y, z = who.z }, clock
+        end
+        local before = seen.before
+        if before ~= nil and math.abs(before.x - who.x) + math.abs(before.z - who.z) < 10 then
+            local halfway = { x = (before.x + who.x) / 2, y = (before.y + who.y) / 2, z = (before.z + who.z) / 2 }
+            if inRange(halfway, id) then
+                return true
+            end
         end
     end
     return false
@@ -418,9 +443,6 @@ function onSetup(director)
 end
 
 function onCommence(director)
-    -- One of them, its own; the Thaumaturge (in both parties recorded) when that one isn't here.
-    local first = LINES_START[math.random(#LINES_START)]
-    director:party_npc_yell(first[1], first[2], LINE_START_AFTER, "ranged", LINE_START)
 end
 
 function onUpdate(director, health, player_health, info)
@@ -441,6 +463,19 @@ function onUpdate(director, health, player_health, info)
 
     local everyone = players(info)
     local all = party(info)
+
+    -- The start's line, as a player sets off: one of the members', its own; the Thaumaturge's (in every party
+    -- recorded) when that one isn't here.
+    if not start_line then
+        for _, who in ipairs(everyone) do
+            if math.abs(who.x - ENTRANCE.x) + math.abs(who.z - ENTRANCE.z) >= LINE_START_FROM then
+                start_line = true
+                local first = LINES_START[math.random(#LINES_START)]
+                director:party_npc_yell(first[1], first[2], 0, "ranged", LINE_START)
+                break
+            end
+        end
+    end
 
     for _, dragon in ipairs(DRAGONS) do
         if not dragons_breathed[dragon.layout] and anyoneIn(everyone, dragon.range) then
@@ -499,18 +534,12 @@ function onUpdate(director, health, player_health, info)
             step = 1,
             first = true,
             new_round = false,
-            moved_at = -CASTING_FOR,
         }
     end
     if isgebind ~= nil and not boss3_dead and not isgebind.flying then
         local boss = info ~= nil and info[BNPC_BOSS3] or nil
         local hp = health ~= nil and health[BNPC_BOSS3] or 100
-        -- Below 85 % with its Frost Breath or Sheet of Ice to come: up at once, once it isn't casting.
-        if boss ~= nil and isgebind.flights == 0 and hp < FLY_FIRST_BELOW and (isgebind.step == 2 or isgebind.step == 3)
-            and clock - isgebind.moved_at >= CASTING_FOR then
-            isgebind.at = clock
-            fly(director, false, boss.id)
-        elseif clock >= isgebind.next then
+        if clock >= isgebind.next then
             -- When this move was due, not the tick that found it (half a second apart at the most): the next ones
             -- count from it, or every round came a little later than retail's (0.8 s a flight over the seven pulls
             -- of 2026-11-17.)
@@ -684,11 +713,6 @@ function isgebindStep(director, health, info)
     end
     local hp = health ~= nil and health[BNPC_BOSS3] or 100
     local state = isgebind
-    -- Below 85 % for the first time, at any of its moves: it flies instead.
-    if state.flights == 0 and hp < FLY_FIRST_BELOW then
-        fly(director, false, boss.id)
-        return
-    end
     -- It looks once more between its Frost Breath and its Sheet of Ice: below 50 % then, the new round comes when
     -- the Sheet would have.
     if state.step == 3 and state.look then
@@ -700,15 +724,17 @@ function isgebindStep(director, health, info)
         end
         return
     end
+    -- Below 85 % for the first time, at any of its moves: it flies instead.
+    if state.flights == 0 and hp < FLY_FIRST_BELOW then
+        fly(director, false, boss.id)
+        return
+    end
     -- Below 50 % for the first time with a move of its round to come: a new round instead.
     if not state.new_round and hp < NEW_ROUND_BELOW and (state.step == 2 or state.step == 3) then
         state.new_round = true
         state.step = 1
         state.next = state.at + NEXT_ROUND_AFTER
         return
-    end
-    if state.step ~= 4 then
-        state.moved_at = clock
     end
     if state.step == 1 then
         director:actor_use_action(boss.id, ACTION_RIME_WREATH)

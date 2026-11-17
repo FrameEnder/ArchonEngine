@@ -89,6 +89,23 @@ fought, the same in all seven:
   the Lancer's 13965 and 13966 (15 and 7 times; its `chatter` now), the Thaumaturge's 13978-13979, the Conjurer's
   13985. The script's lines: [Dungeons](dungeons.md#the-stone-vigil).
 
+**The set at 41 with a ranged damage dealer** (the Stone Vigil again, Bob's capture d1f99707 of 2026-11-17: five
+runs, a Summoner synced to 43): slots 0-2 held the Marauder, the Conjurer and the Thaumaturge (44, 47, 46) with
+2422, 1678 and 1662 HP, as on 2026-11-07.
+
+* **The Marauder** fought as its kit says (29299, 29300, 29301 twice round, then 26230, 29303, 29764, 29765, 29768,
+  29766), but **29301 and 29768 had no action script**: in the kit since Brayflox's Longstop, they did nothing in
+  Kawari (a third of its fillers). `DutySupport_29301` and `_29768` now, and the third set, which has no timeline to
+  scale its hits, hits by the scripts' potencies: 29299 and 29300 100 (54 and 53 in the median), 29301 145 (78.5),
+  29764 300 (163), 29765 500 (270), 29768 430 (233); the Conjurer's Aero 1040 to Stone II's 100 (469 and 45). Also
+  seen and not built: 25136 on itself (26 times, between its fillers), 29296 (10), 29297 (5, 484 a hit), 29777 (10).
+* **The Thaumaturge** as with the Paladin (29314, 29315, 29316 and 29313: 345, 312, 286 and 220 uses), but **no
+  17995 and no 27839 in any of the five**: its big hit at the second boss came only in the Paladin's runs. 3269 on
+  itself came 39 times here (seven there, once a run).
+* **Their lines**: the Marauder's own at the start, 14367 (three runs; the Thaumaturge's 14368 in the other two), its
+  14371 and 14376 as before; between fights its 13954-13956, the Thaumaturge's 13978-13979, the Conjurer's 13985 and
+  13991.
+
 **`pet_id` is the slot's**, not the member's: 1, 5 and 9 for slots 0, 1 and 2, whoever is in them (the Marauder had 1
 in slot 0 in Sastasha, the Conjurer 1 in slot 0 with a tank; the Thaumaturge 5 and the Lancer 9 in slots 1 and 2 in
 every run).
@@ -294,7 +311,8 @@ Their lines are NpcYell packets from the member, under its BNpcName:
   recorded (no line then).
 * The Conjurer's Medica, Esuna and instant Cure aren't cast, and the third set's still heals with 29317 (retail's:
   29318).
-* The Thaumaturge's 17995 (once a run, as the Stone Vigil's second boss was pulled) isn't built, the Lancer's 29778
+* The Thaumaturge's 17995 (once a run as the Stone Vigil's second boss was pulled, with a Paladin; never with a
+  Summoner) isn't built, nor the Marauder's 25136, 29296, 29297 and 29777, the Lancer's 29778
   isn't used (what calls for it isn't known) and its 29771 doesn't heal it. The third set's Lancer has its kit of 41
   at 32 and 34 too (not recorded there), with guessed HP.
 * What 26230, 29303, 29766, 29311, 29767, 25082 and 25083 do (statuses, enmity) isn't known: they're only their

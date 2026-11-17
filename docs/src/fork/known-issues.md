@@ -297,8 +297,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   whatever made retail's members speak.
 * The third set at 41 (2026-11-17, from seven Stone Vigil runs with a Paladin; untested in game): the Lancer's kit
   and the Thaumaturge's third spell and 29313 are built; not the Thaumaturge's 3269, 27839 and 17995 as the
-  second boss was pulled, once a run (a limit break by the look of it; whether it's that boss's or a gauge's doing
-  seven runs of one duty can't say, and Kawari's party NPCs have no limit gauge: Bob's call), the Lancer's 29778 (what calls for it isn't known) and 29771's heal, 29313's other targets, nor the
+  second boss was pulled, once a run (a limit break by the look of it: in all seven of the Paladin's runs and none of the Summoner's five, so
+  it goes by the party, not the boss alone; Kawari's party NPCs have no limit gauge: Bob's call), the Lancer's 29778 (what calls for it isn't known) and 29771's heal, 29313's other targets, nor the
   Conjurer's 29318, Medica and Esuna. Where the Lancer goes for the bosses' big moves (`party_spots`' `dps` is the
   Thaumaturge's) wasn't measured.
 * The bots' diamond formation (also the Player NPCs') is measured with a healer player only.
@@ -1287,7 +1287,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   last boss's flights below 85 % (at once if its round isn't over), between 50 and 70 % at a round's end and below
   40 %, and a new round as it falls below 50 % mid-round (seen once, then in all seven runs of 2026-11-17, which
   also gave the first round's two looks at 85 %; its look between the Frost Breath and the Sheet of Ice is from one
-  pull, 11.3 to 12.3 s into the round). Where its
+  pull, then two more: 11.6 to 12.3 s into the round). Its first flight is at a move's time, not as it falls below
+  85 % (six pulls at the Sheet of Ice's; below 85 % before the Frost Breath isn't recorded: the script flies at
+  that one's time then). Where its
   rounds and flights stand when it's pulled again after a wipe follows the script's reset, not retail's (not seen).
 * The first boss's run to its spot is a `sweep_bnpc` at 9 yalms a second (ActorMoves every 500 ms tick, retail's
   every 0.31 s), kept from acting on its own for the run (`busy_bnpc`); it turns to its target as it arrives.

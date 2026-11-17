@@ -979,14 +979,30 @@ Support, a Paladin synced to 43 with the Conjurer, the Thaumaturge and the Lance
 * **Below 50 %**: at a Frost Breath's or Sheet of Ice's time it began a new round 4.0-4.1 s later instead (below
   before the Frost Breath: the next Rime Wreath 13.1-13.2 s after the last, two pulls; below 12.3 to 13.4 s into the
   round: 20.3-20.4 s, four), and it looks once between the two as well: below at 11.3 s, the new round came at 16.3 s,
-  when the Sheet would have (one pull). The script's `LOOK_AFTER` is 11.4 s: somewhere from 11.3 to 12.3.
+  when the Sheet would have (one pull; see the five runs below).
 * **The whirlwinds' helpers** (14544, 9061123) are there from the start: the four were sent with the second boss as
   the party neared it, 118 to 181 s before its pull, in all seven. The script brought them out at the first Typhoon;
   now in `onSetup` (`bringWhirlwindHelpers`), until the boss falls.
 * **Lines without a tank of theirs**: [Party NPCs](party-npcs.md). `party_npc_yell`'s other role and line give the
-  Thaumaturge's 14372 for the tank's 14371 and the Lancer's 14377 for its 14376; the start's is one of 14368, 14369
-  and 14370, from whoever is there.
-* With those the script is within 1.6 s of all seven (48 NPCs and 78-82 events a run: the perched dragons' and
+  Thaumaturge's 14372 for the tank's 14371 and the Lancer's 14377 for its 14376; the start's is one of 14367, 14368,
+  14369 and 14370, from whoever is there.
+* **Five more the same day** (his capture d1f99707, visits 0.3, 0.5, 0.7, 0.9 and 0.11: a Summoner synced to 43
+  with the Marauder, the Conjurer and the Thaumaturge, 20 to 21 minutes each, no wipes; `duties/11-d1f99707-*.json`)
+  put three of these right:
+  * **The first flight comes at one of Isgebind's moves, not as it falls below 85 %.** All five were below 85 %
+    14.0 to 16.1 s into the first round and flew at 17.3 s, when its Sheet of Ice was due (25.4 s after the pull;
+    so did the one of the seven above that flew "at once"). The script took off as it fell below, 1 to 3 s early;
+    that path is gone, and the check at each move is what's left.
+  * **Its look below 50 %** is 11.6 to 12.3 s into a round (below at 11.4 and 11.6 s in two of the five: the new
+    round at 16.3 s). `LOOK_AFTER` is 11.6.
+  * **The start's line comes as a player sets off**, 0.7 to 1.1 s after their first step in all twelve runs (Bob
+    stood 8 s in one; he watched the opening cutscene for 29 s in the five), not 4.3 s after the duty began: the
+    script says it when a player is 5 yalms from the entrance (`LINE_START_FROM`). The Marauder has one too, 14367
+    (three of the five; the Thaumaturge's 14368 the other two).
+  * **The dragons' and ice walls' ranges** are 4 yalms deep, and in one run the player was 0.36 yalms short of the
+    first dragon's at one update and 0.24 past it at the next: `anyoneIn` counts halfway between a player's last
+    two positions too.
+* With those the script is within 1.6 s of all twelve (48 NPCs and 78-82 events a run: the perched dragons' and
   Isgebind's ActionTimelines, the ice sprites, the music, the objectives).
 
 **The entrance.** Its entrance circle is EObj 2001869 (layout 4239683, layer LVD_gimmick), bound to the SharedGroup
