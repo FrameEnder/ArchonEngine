@@ -76,7 +76,7 @@ state after it:
 | `{"kill": [base, layout]}` | A battle NPC with this BNpcBase and layout ID died (`onBNpcKill`) |
 | `{"event_item": [item, base], "layout": …}` | A key item used on this NPC or object (`onEventItem`, after the server's EventItem event starts) |
 | `{"range": arg}` | Walked into an event range (`onEnterTrigger`) |
-| `{"action": [action, base], "layout": …}` | An action (its Action row) used on this NPC or object, which the quest listens for (`onActionResult`, after the server's ActionResult event starts): Trial by Water's Cure on the wounded Wood Wailer |
+| `{"action": [action, base], "layout": …}` | An action (its Action row) used on this NPC or object, which the quest listens for (`onActionResult`, after the server's ActionResult event starts): Trial by Water's Cure on the wounded Wood Wailer; `fixture --chronofoil` writes it from retail's EventStart of type 18 and `transcribe` its handler (2026-11-17: the Marauder's rocks) |
 | `{"emote": [emote, base], "layout": …}` | An emote used on this NPC (`onEmote`, after the server's Emote event starts); `fixture --chronofoil` writes it from retail's EventStart of type 2 |
 | `{"enter_territory": id}` | Zoned in (`onEnterTerritory`) |
 | `{"battle_won": sequence}` | A quest battle was won (the director sets the sequence, with the battle script's `QUEST_VARS_AFTER_WIN`; its `QUEST_LOG` is the step's `logs`) |

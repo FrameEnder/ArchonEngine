@@ -95,6 +95,8 @@ def _trigger(step: dict) -> tuple | None:
         return ("item", step["event_item"][0], step["event_item"][1])
     if "emote" in step:
         return ("emote", step["emote"][0], step["emote"][1])
+    if "action" in step:
+        return ("action", step["action"][0], step["action"][1])
     if "range" in step:
         return ("range", step["range"])
     if "enter_territory" in step:
@@ -266,7 +268,7 @@ class Transcript:
         groups = []
         sequences = sorted({h.sequence for h in self.handlers if h.sequence is not None})
         for sequence in sequences:
-            for kind in ("talk", "emote", "item"):
+            for kind in ("talk", "emote", "item", "action"):
                 members = [h for h in self.handlers if h.trigger[0] == kind and h.sequence == sequence
                            and h.after is not None and not h.accepted and (h.after != h.before or h.notices)]
                 if len(members) < 2:
@@ -356,6 +358,9 @@ class Transcript:
         kind = handler.trigger[0]
         if kind == "talk":
             parts.append(f"BASE_ID == {self.name(handler.trigger[1])}")
+        elif kind == "action":
+            parts.append(f"action_id == {self.param(handler.trigger[1], 'ACTION') or handler.trigger[1]}")
+            parts.append(f"BASE_ID == {self.name(handler.trigger[2])}")
         elif kind in ("item", "emote"):
             what = self.param(handler.trigger[1], "ITEM") if kind == "item" else None
             parts.append(f"{'item' if kind == 'item' else 'emote'} == {what or handler.trigger[1]}")
@@ -382,6 +387,9 @@ class Transcript:
             what = self.label(self.name(handler.trigger[1]))
         elif kind == "item":
             what = f"key item {handler.trigger[1]} on {self.label(self.name(handler.trigger[2]))}"
+        elif kind == "action":
+            what = (f"action {self.param(handler.trigger[1], 'ACTION') or handler.trigger[1]} on "
+                    f"{self.label(self.name(handler.trigger[2]))}")
         elif kind == "emote":
             what = f"emote {handler.trigger[1]} on {self.label(self.name(handler.trigger[2]))}"
         elif kind == "range":
@@ -429,7 +437,7 @@ class Transcript:
                 out.append(f"-- Sequence {label}:")
             out.append(f"--   {self.describe(handler)}")
         for g in self.any_order:
-            what = {"talk": "talks", "emote": "emotes", "item": "key item uses"}[g["kind"]]
+            what = {"talk": "talks", "emote": "emotes", "item": "key item uses", "action": "actions used"}[g["kind"]]
             out.append(f"-- The {g['needed']} {what} of sequence {g['sequence']} work in any order: "
                        f"UI8{'ABCDEF'[g['counter'][0]]}{'H' if g['counter'][1] else 'L'} counts them and each sets its "
                        f"BitFlag8 (retail's), the last moves the quest on.")
@@ -491,6 +499,7 @@ class Transcript:
         lines = []
         for kind, signature in (("talk", "onTalk(target, player)"), ("item", "onEventItem(item, target, player)"),
                                 ("emote", "onEmote(emote, target, player)"),
+                                ("action", "onActionResult(action_id, target, player)"),
                                 ("range", "onEnterTrigger(player, arg)"),
                                 ("territory", "onEnterTerritory(player)")):
             handlers = [h for h in self.handlers if h.trigger[0] == kind]

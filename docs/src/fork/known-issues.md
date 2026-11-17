@@ -77,9 +77,13 @@ Nineteen quests transcribed from Bob's Chronofoil capture 651981e7 and the clien
   their spots (4290121, 4290123: known of, not where). Whether enemies leave a downed guard alone as retail's did
   rests on `set_targetable` (an untargetable NPC isn't noticed; one already being fought wasn't tried). 1084's
   ACTOR1, ACTOR2 and EOBJECT1 at sequence 1 aren't scripted (not talked to on retail).
-* **The Marauder's class quests** (311, 313, 314, 316) aren't scripted: Bob's capture 0cafbf61 (2026-11-17) has all
-  four played through, and 313's quest battle (territory 262, ContentFinderCondition 328, won in 2.0 minutes); they
-  wait for their quest dumps and client scripts.
+* **The Marauder's class quests** (311, 313, 314, 316; 2026-11-17, from Bob's capture 0cafbf61 and their dumps):
+  untested in game. Heavy Swing on the rocks and the boulder rides the path Trial by Water's Cure took (an action on
+  something the server has no actor for), which an instant weaponskill hasn't been tried on. Quest battle 25's wave
+  counts are from one run. 314's enemies' cast (317) does nothing here: it hit no one in six uses, and what it does
+  isn't recorded. The timelines for BNpcBases 2 and 28 (`ClsExc100Enemy_2`, `ClsExc150Enemy_28`) apply to the open
+  world's 34 spots of those kinds too (they had none). Territory 262 is taken to be Lower La Noscea's copy. 310 (the
+  quest other classes take the Marauder's guild's offer by) isn't scripted.
 * **Lurkers in the Grotto's** 87 (13 s after 86) is from one run, and 86's 15 % from one exact and one sparse.
 * The clay golems' second line follows the breath that lands (2026-11-17); in 18's and 29's October fixtures the
   landing is put in from the sequence it brought (those captures aren't at hand).

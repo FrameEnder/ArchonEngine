@@ -1,0 +1,41 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "attack_range": 14.0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "127": {
+            "npcs": 175
+        },
+        "119": {
+            "npcs": 125
+        },
+        "121": {
+            "npcs": 47.5
+        },
+        "120": {
+            "players": 410
+        }
+    },
+    "rotation": {
+        "pace": 6.5,
+        "actions": [
+            {
+                "action": 121,
+                "every": 37,
+                "comment": "Aero: 2 uses, 37.1 s apart"
+            },
+            {
+                "action": 119,
+                "every": 19,
+                "comment": "Stone: 3 uses, 3.6 to 34.1 s apart"
+            },
+            {
+                "action": 127,
+                "comment": "Stone II: 9 uses, every 5.6 to 21.0 s (median 9.4)"
+            }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Axe in the Stone's first ally (quest battle 25, layer QB_ClsExc050_001), a conjurer: level 35, 1220 HP. From Bob's Chronofoil capture 0cafbf61 of 2026-11-17 (one run, won, a Marauder of 8; `questkit chronofoil --battle 0.15`): no auto-attack; Stone II, Stone and Aero on the enemies from about 14 yalms (median damage), and one Cure (120, cast by the director's heals) on the player at 60 % for 410. Hitbox not recorded."
+}

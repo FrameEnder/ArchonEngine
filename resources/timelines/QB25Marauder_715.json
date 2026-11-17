@@ -1,0 +1,58 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 94
+        },
+        "31": {
+            "npcs": 147.5
+        },
+        "35": {
+            "npcs": 203
+        },
+        "37": {
+            "npcs": 240
+        },
+        "47": {
+            "npcs": 282
+        }
+    },
+    "rotation": {
+        "pace": 4.5,
+        "actions": [
+            {
+                "action": 47,
+                "every": 60,
+                "comment": "1 use, 24.7 s after it came"
+            },
+            {
+                "action": 35,
+                "every": 40,
+                "comment": "1 use, 13.5 s after it came"
+            },
+            {
+                "action": 37,
+                "every": 40,
+                "comment": "1 use, 41.8 s after it came"
+            },
+            {
+                "action": 31,
+                "comment": "Heavy Swing: 2 uses, 27.1 s apart"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 18.0,
+            "data": {
+                "type": "action",
+                "action_id": 34,
+                "target": "itself"
+            },
+            "comment": "34 on itself, once, 18.0 s after it came"
+        }
+    ],
+    "comment": "Axe in the Stone's second ally (quest battle 25, layer QB_ClsExc050_001), a marauder who comes with the third wave: level 40, 1601 HP. From Bob's Chronofoil capture 0cafbf61 of 2026-11-17 (one run, won, a Marauder of 8; `questkit chronofoil --battle 0.15`): auto-attacks for 89 to 98; Defiance (48) on itself as it comes (the script's), Heavy Swing, 35, 34 on itself, 47 and Maim over its 52 s (median damage). Hitbox not recorded."
+}

@@ -1,0 +1,25 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "attack_range": 6.0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 20
+        },
+        "567": {
+            "npcs": 31
+        }
+    },
+    "rotation": {
+        "pace": 6.4,
+        "actions": [
+            {
+                "action": 567,
+                "comment": "13 uses by 4 of the 5: every 6.4 s (8.4 s for the first of them)"
+            }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Axe in the Stone's big enemies (quest battle 25, layer QB_ClsExc050_001): level 15, 797 HP, five of them. From Bob's Chronofoil capture 0cafbf61 of 2026-11-17 (one run, won, a Marauder of 8; `questkit chronofoil --battle 0.15`): auto-attacks every 3.0 s for 18 to 26 and 567 every 6.4 to 8.4 s for 26 to 47 (median 31), on the two allies only, from 5.7 to 6.4 yalms centre to centre. Hitbox not recorded."
+}

@@ -1,0 +1,13 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "attack_range": 4.6,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "players": 6
+        }
+    },
+    "timepoints": [],
+    "comment": "Axe in the Stone's small enemies (quest battle 25, drop-in layer QB_ClsExc050_001): level 5, 65 HP, eleven of them. From Bob's Chronofoil capture 0cafbf61 of 2026-11-17 (one run, won, a Marauder of 8; `questkit chronofoil --battle 0.15`): auto-attacks on the player every 3.0 s for 4 to 10 (median 6), from 4.5 to 4.9 yalms centre to centre. Hitbox not recorded."
+}

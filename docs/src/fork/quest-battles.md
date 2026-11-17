@@ -1364,6 +1364,26 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
 * Timelines `QB36*_<base>.json`, with retail's recorded amounts. `questkit battle-sim 36` (the won run, NPC health held
   between hits): every step within 2 s.
 
+### Quest battle 25 — Axe in the Stone (`content/questbattle/25.lua`)
+
+* Territory 262, taken to be a copy of Lower La Noscea (as 249 is), layer `QB_ClsExc050_001` of the `sea_s1f2`
+  drop-in: 18 NPCs with retail's layout IDs, levels, HP, spots, gear and flags (Bob's Chronofoil capture 0cafbf61 of
+  2026-11-17, `--battle 0.15`, ContentFinderCondition 328: one run, won in 110 s, a Marauder of 8). A conjurer
+  (4107368, base 713, level 35, 1220 HP) is beside you from the start, a marauder (4107369, base 715, level 40,
+  1601 HP) from the third wave; eleven small megalocrabs (714, level 5, 65 HP) go for you, five big ones (957, level
+  15, 797 HP) for the allies. The player starts at (158.82, 33.73, 89.79), facing 0.436; the opening scene 1 is
+  0xF841AEFB.
+* Sequence 2 at the start with the conjurer and the first wave standing; 3 3.1 s later, when they set on each other;
+  the conjurer's 84 and 85 5.1 and 10.1 s after it. **Two small crabs down**: sequence 4 and the second wave 0.5 s
+  later; **four**: sequence 5, the third wave and the marauder (Defiance at once), its 86 10.0 s later; **eight**:
+  sequence 6 and the fourth wave, its 87 5.1 s later; everyone down: sequence 7, "Duty Complete", scene 7
+  (0xF8402EFB) and out; the quest moves to 255. Each came 1.6 to 2.1 s after the health that brought it (the death
+  animation: `DEATH_NOTICED_AFTER`).
+* The counts are read from one run: a count of all enemies (three, five, ten) fits it as well; "the wave is down"
+  doesn't (a small crab and big ones were still up). Timelines `QB25Megalocrab_714`, `QB25Megalocrab_957` (action
+  567, script `QB25Megalocrab_00567`), `QB25Conjurer_713` (Stone II, Stone, Aero; its one Cure on the player at 60 %
+  is the director's), `QB25Marauder_715`. `questkit battle-sim 25`: every step within 0.7 s.
+
 ### Quest battle 24 — Victory in Peril (`content/questbattle/24.lua`)
 
 * The watcher stands there since 2026-11-14 (event NPC 4103652, ENpcBase 1002702, at (247.35, 14.16, 611.86),

@@ -68,8 +68,9 @@ EVENT_EMOTE = 2
 # A key item used on an event object (EventStart type 8: the actor is the object, the argument the item; Bob's
 # Chronofoil captures of 2026-11-12, Drowning Out the Voices and Fool Me Twice.)
 EVENT_ITEM = 8
+EVENT_ACTION_RESULT = 18  # one of the player's actions used on an NPC or object the quest listens on
 AFTER_FINISH = 1.0  # seconds after its event finished that a quest update still belongs to the step
-ACTIONS = ("talk", "event_item", "emote", "kill", "range", "enter_territory", "battle_won", "duty_cleared")
+ACTIONS = ("talk", "event_item", "emote", "action", "kill", "range", "enter_territory", "battle_won", "duty_cleared")
 NOTICE_LEAD = 0.5  # notices arrive just before the quest change they go with
 
 
@@ -287,6 +288,8 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
             known[step["layout"]] = step["event_item"][1]
         elif "emote" in step and step.get("layout"):
             known[step["layout"]] = step["emote"][1]
+        elif "action" in step and step.get("layout"):
+            known[step["layout"]] = step["action"][1]
 
     steps: list[dict] = []
     state: dict = {}
@@ -384,6 +387,16 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
                     step["todo"] = f"item {data['arg']} used on actor {actor} in territory {event.zone}: its base ID isn't known"
                     step["_actor"] = actor
                     step["_kind"] = "event_item"
+            elif data["type"] == EVENT_ACTION_RESULT:
+                # An action on an NPC or object: the event's argument is the action, its actor what it was used on.
+                actor = data["actor"]
+                step["layout"] = actor
+                if actor in known:
+                    step["action"] = [data["arg"], known[actor]]
+                else:
+                    step["todo"] = f"action {data['arg']} used on actor {actor} in territory {event.zone}: its base ID isn't known"
+                    step["_actor"] = actor
+                    step["_kind"] = "action"
             else:
                 step["todo"] = f"event type {data['type']} (argument {data['arg']}) in territory {event.zone}"
         elif kind == "scene" and step is not None:
