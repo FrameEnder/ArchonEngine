@@ -1,0 +1,42 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "attack_range": 4.0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 137
+        },
+        "9": {
+            "npcs": 205
+        },
+        "11": {
+            "npcs": 288
+        },
+        "21": {
+            "npcs": 148
+        },
+        "120": {
+            "npcs": 372.5
+        }
+    },
+    "rotation": {
+        "pace": 9.0,
+        "actions": [
+            {
+                "action": 21,
+                "comment": "4 uses in the third part, 27.8 to 38.9 s apart"
+            },
+            {
+                "action": 11,
+                "comment": "7 uses, 7.8 to 43.1 s apart"
+            },
+            {
+                "action": 9,
+                "comment": "7 uses, 13.7 to 39.2 s apart"
+            }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Quest battle 69's first ally (BNpcName 1421, base 1558; layouts 4293474, 4293788 and 4302195 in layer QB_69): level 50, 10356 HP. From Bob's Chronofoil captures 36c7d119 (2026-11-17: one run, won, a Paladin of 50; `questkit chronofoil --battle 0.1`) and b98a60bc (the first 97 s of another): auto-attacks every 3.0 s for 101 to 213 (median 137), 9, 11 and 21 one after another about every 28 s (205, 288 and 148), 17 and 26 on itself once each (not played), and Cure on itself at 45 to 53 % for 368 to 377 (the script's). It stopped 4.0 yalms from whom it was after. Hitbox not recorded."
+}

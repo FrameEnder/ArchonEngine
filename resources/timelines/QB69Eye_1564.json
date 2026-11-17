@@ -1,0 +1,36 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "attack_range": 14.0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "970": {
+            "players": 98.5
+        }
+    },
+    "rotation": {
+        "pace": 3.1,
+        "actions": [
+            {
+                "action": 514,
+                "every": 13.5,
+                "comment": "2 uses in each run, 13.5 and 13.6 s apart, the first 17.4 s in: on the allies' side, no damage"
+            },
+            {
+                "action": 970,
+                "comment": "every 3.1 s between the others, on the player"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 6.0,
+            "data": {
+                "type": "action",
+                "action_id": 513
+            },
+            "comment": "513 once, 6.0 s after the fight began (a 2.7 s cast; it missed both allies)"
+        }
+    ],
+    "comment": "Quest battle 69's first part's small enemy (BNpcName 1897, base 1564, layout 4293479): level 50, 5178 HP. From Bob's Chronofoil captures 36c7d119 (2026-11-17: one run, won, a Paladin of 50; `questkit chronofoil --battle 0.1`) and b98a60bc (the first 97 s of another): no auto-attack; 970 on the player every 3.1 s for 84 to 112 (median 98.5), 513 once 6.0 s in and 514 from 17.4 s in, every 13.5 s (what 513 and 514 do to whom they hit isn't recorded: they missed or did no damage). It barely moved (2.1 yalms): the range is a guess. Hitbox not recorded."
+}

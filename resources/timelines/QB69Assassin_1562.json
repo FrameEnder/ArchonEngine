@@ -1,0 +1,28 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 872,
+    "attack_range": 3.0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "872": {
+            "players": 64,
+            "npcs": 64
+        },
+        "57": {
+            "npcs": 814
+        }
+    },
+    "rotation": {
+        "pace": 10.0,
+        "actions": [
+            {
+                "action": 57,
+                "every": 120,
+                "self_hp_below": 50,
+                "comment": "once each, on itself, for 789 to 1220: when it was hurt (the health it came at isn't recorded)"
+            }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Quest battle 69's assassins (BNpcName 1895, base 1562, layouts 4293534 to 4293536): level 47, 694 HP. From Bob's Chronofoil captures 36c7d119 (2026-11-17: one run, won, a Paladin of 50; `questkit chronofoil --battle 0.1`) and b98a60bc (the first 97 s of another) (they lived 21 to 26 s): auto-attacks (872) every 3.0 to 3.6 s for 46 to 107 (median 64), 57 on itself once each (a heal of 789 to 1220), and 55, 59 and 60 on itself (not played). They stopped 3.0 yalms away. Hitbox not recorded."
+}

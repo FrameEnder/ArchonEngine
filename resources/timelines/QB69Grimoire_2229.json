@@ -1,0 +1,7 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest battle 69's grimoire (BNpcName 2145, base 2229, layout 4293997): level 50, 4660 HP. From Bob's Chronofoil captures 36c7d119 (2026-11-17: one run, won, a Paladin of 50; `questkit chronofoil --battle 0.1`) and b98a60bc (the first 97 s of another): it never moved or acted in 47 s (held by the script, content/questbattle/69.lua), and was left at 10 % when the player went out of its sight. Hitbox not recorded."
+}

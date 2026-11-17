@@ -1,0 +1,35 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "attack_range": 3.1,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 276.5
+        },
+        "9": {
+            "npcs": 426
+        },
+        "11": {
+            "npcs": 274
+        },
+        "120": {
+            "npcs": 482.5
+        }
+    },
+    "rotation": {
+        "pace": 30.0,
+        "actions": [
+            {
+                "action": 11,
+                "comment": "1 use in the first part"
+            },
+            {
+                "action": 9,
+                "comment": "1 use in the first part"
+            }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Quest battle 69's second ally (BNpcName 1808, base 1557; layouts 4293473, 4293791 and 4302196 in layer QB_69): level 50, 14757 HP. From Bob's Chronofoil captures 36c7d119 (2026-11-17: one run, won, a Paladin of 50; `questkit chronofoil --battle 0.1`) and b98a60bc (the first 97 s of another): auto-attacks every 3.0 to 4.5 s for 257 to 413 (median 276.5), 9 and 11 once each in the first part's 75 s (426 and 274), and Cure on the first ally at 49 to 68 % for 477 to 500, 5.9 to 10.6 s apart (the script's). It stopped 3.1 yalms from whom it was after. Hitbox not recorded."
+}

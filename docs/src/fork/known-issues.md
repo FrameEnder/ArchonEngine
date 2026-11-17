@@ -3,6 +3,23 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Quest battle 69 and the Paladin's level 50 quest (2026-11-17)
+
+* **The quest (1060) isn't scripted**: its dump hasn't come, so quest battle 69 can't be entered in play. Retail's
+  steps are in captures b98a60bc and 36c7d119 (scenes 0 and 1, 2, the range's scene 3 into the battle, the reward's
+  scene 12 with items 3220 and 20642, LogMessage 789 `[3220]`, achievement 407, and EventLogMessage 3616 as the
+  battle was won).
+* **Quest battle 69** is unplayed, from one whole retail run and the start of another
+  ([Quest battles](quest-battles.md)). Guessed: what brings the grimoire (the master at 60 %), sequence 13's clock,
+  the vyraals' 24.8 s while the grimoire stands, where the second NPCs wander. Not played: the master's Eye for an
+  Eye (1159) on its own side, the adds' and allies' self-buffs (12, 14, 17, 26, 55, 59, 60), what the eye's 513
+  and 514 and the vyraals' 414 leave on whom they hit (statuses not read), the master's first targets (the helper,
+  then the first ally, before the player: it's sent straight at the player). Territory 313's level isn't known, so
+  nothing of the open world it copies is there.
+* Capture df713f2f (2026-11-17) holds only twelve lobby packets: nothing to read.
+* Seen in these captures and not looked into: ActorControlSelf 701 `[598]` six times through the battle's last
+  part, 112, 274 and 925.
+
 ## Bob's Chronofoil capture 7a4214b7 (2026-11-17)
 
 None of what was built from it is tested in game: quests 1105, 1252, 1253, 1431 and 1486 (they pass replay), the

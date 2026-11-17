@@ -1,0 +1,43 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "attack_range": 11.0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "31085": {
+            "players": 189
+        },
+        "31086": {
+            "players": 132
+        },
+        "1116": {
+            "npcs": 3230
+        }
+    },
+    "rotation": {
+        "pace": 5.0,
+        "actions": [
+            {
+                "action": 169,
+                "every": 90,
+                "comment": "2 uses, 90.8 s apart, the first as it came for the player: status 182 on them"
+            },
+            {
+                "action": 164,
+                "every": 60,
+                "comment": "2 uses, 60.7 s apart: status 179 on the player"
+            },
+            {
+                "action": 31086,
+                "every": 11.5,
+                "comment": "9 uses, every 4.6 to 42.8 s (median 11.5)"
+            },
+            {
+                "action": 31085,
+                "comment": "9 uses, a 1.2 s cast, every 2.6 to 32.9 s (median 12.1)"
+            }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Quest battle 69's master (BNpcName 1894, base 1561, layout 4293553): level 50, 11650 HP. From Bob's Chronofoil captures 36c7d119 (2026-11-17: one run, won, a Paladin of 50; `questkit chronofoil --battle 0.1`) and b98a60bc (the first 97 s of another): no auto-attack; 31085 (189) and 31086 (132) on the player, 18 of them in 120 s, 169 and 164 on the player (statuses 182 and 179), 1159 on one of its own side twice (status 185; not played), and 1116 once, at the helper, the script's (2959 and 3501 on the two it hit). It stopped 11.0 yalms from the player. Hitbox not recorded."
+}

@@ -1364,6 +1364,42 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
 * Timelines `QB36*_<base>.json`, with retail's recorded amounts. `questkit battle-sim 36` (the won run, NPC health held
   between hits): every step within 2 s.
 
+### Quest battle 69 — the Paladin's level 50 quest's (`content/questbattle/69.lua`)
+
+* Territory 313, whose level isn't known, so it has a drop-in of its own (`territory_313.json`, layer `QB_69`): 17
+  NPCs with retail's layout IDs, levels, HP, spots, gear and flags (Bob's Chronofoil captures 36c7d119 of 2026-11-17,
+  `--battle 0.1`, ContentFinderCondition 362: one run, won in 324 s, a Paladin of 50; and b98a60bc, `--battle 0.4`:
+  the first 97 s of a run the client crashed in). The quest (1060) isn't scripted yet (no dump), so nothing leads
+  into it. The player starts at (-766.28, 225.27, 26.3), facing -0.784; the opening scene 1 is 0xF841AEFB.
+* **Three parts**, the two allies (BNpcNames 1421 and 1808, bases 1558 and 1557, level 50) a new NPC in each.
+  1. An ogre (4293477, 14576 HP) and an eye (4293479) against you and the allies. Sequence 2; talks 100 and 101 at
+     3.0 and 8.1 s (both runs). The ogre's Defeated: sequence 3, talks 102 to 104 at 3.1, 8.1 and 13.1 s, and at
+     18.1 s sequence 4 and scene 4 (0xF8412FFF): the allies fade and their second NPCs stand nearby; the scene over,
+     a loading screen to (-768.71, 224.08, 33.80) (`warp_players`), sequence 5 and an event object (EObj 2002296,
+     layout 4293747, state 1) 124 yalms west.
+  2. The walk. The second NPCs wander off and never fight. **The object used** (the director's event action 6, 2.0
+     s, `onObjectTalk` and `onEventActionCast`): sequence 6 and scene 6 (0xF8412FFF) with the allies' third NPCs
+     and a helper (4323575, base 2201, 4400 HP) at the object; sequence 7 and scene 7 (0x2001), which the client
+     ended 17.1 s on, with talks 105 to 107 at 3.1, 9.1 and 15.1 s; then sequence 8 and the master (4293553, 11650
+     HP) half a second later; 5.0 s on sequence 9, talk 108 and its Star Map (1116) at the helper; 7.4 s later
+     sequence 10: the helper and the object fade (607) and the fight is on. Talks 109 and 110 at 6.1 and 11.1 s.
+  3. 13.1 s after sequence 10, sequence 11 and five adds (two of base 1560, three of 1562), talks 111 to 113 at
+     3.0, 7.0 and 12.1 s. **The master at 60 %**: sequence 12 (with the hit that took it to 59.6 %), a grimoire
+     (4293997, 4660 HP, which does nothing) and a vyraal (4293999) 0.4 s later, another vyraal 24.8 s after the
+     first, talks 114 to 116 at 10.1, 15.1 and 20.1 s; 50.4 s after sequence 12, sequence 13. The master's
+     Defeated: sequence 14, "Duty Complete", scene 14 (0xF8402EFB); the quest moves to 255.
+* Read from one run, so guesses: that 60 % brings the grimoire (the adds' falling fits less well: the sequence came
+  before the last one's Defeated); that sequence 13 is a clock; that a vyraal comes every 24.8 s while the grimoire
+  stands (the third was only seen 9 s late, as Bob came back into sight of it, and no fourth came: the first ally
+  had left the grimoire for the master by then, so it's taken to have fallen); where the second NPCs wander. Used
+  again before the helper goes, the object plays its bar and nothing more (retail's, once).
+* Timelines `QB69Ally1_1558`, `QB69Ally2_1557`, `QB69Ogre_1559` (618, script `QB69Ogre_00618`), `QB69Eye_1564`,
+  `QB69Executioner_1560`, `QB69Assassin_1562`, `QB69Master_1561` (1116, `QB69Master_01116`), `QB69Vyraal_2228`
+  (414, 415), `QB69Grimoire_2229`; the allies' Cures are the director's (the first on itself at 45-53 %, the second
+  on the first at 49-68 %). `questkit battle-sim 69` (both runs, NPC health held between hits): every step within
+  2 s; the fixture's object talks, the allies' and vyraals' spawn times and the grimoire's fall were set by hand
+  (its `notes`).
+
 ### Quest battle 25 — Axe in the Stone (`content/questbattle/25.lua`)
 
 * Territory 262, taken to be a copy of Lower La Noscea (as 249 is), layer `QB_ClsExc050_001` of the `sea_s1f2`
