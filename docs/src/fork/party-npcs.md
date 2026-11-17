@@ -349,8 +349,8 @@ Their lines are NpcYell packets from the member, under its BNpcName:
   recorded (no line then).
 * The Conjurer's Medica, Esuna and instant Cure aren't cast, and the third set's still heals with 29317 (retail's:
   29318).
-* The fourth set (at 50) is recorded in the Porta Decumana only: in Castrum Meridianum and the Praetorium its members
-  come with their own level and HP (50; the same) until those duties' `DUTY_LEVELS` rows are read. Its Marauder's
+* The fourth set's kits are from the Porta Decumana only; in Castrum Meridianum and the Praetorium its members had
+  the same level and HP (50; 4375, 3132, 2770, 2796 in every run), which are their own (`FOURTH_MEMBERS`). Its Marauder's
   29296, 25136 and 29297, its Thaumaturge's 3269 and its Lancer's heal from 29773 aren't built; the earlier sets'
   Conjurers still have no area heal (29320 and 29321 weren't seen below 50).
 * The Thaumaturge's 17995 (once a run as the Stone Vigil's second boss was pulled, with a Paladin; never with a

@@ -1,0 +1,95 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "attack_range": 3.0,
+    "from_pull": true,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 262
+        },
+        "28785": {
+            "npcs": 713
+        }
+    },
+    "timepoints": [
+        {
+            "time": 11.1,
+            "data": {
+                "type": "action",
+                "action_id": 28778,
+                "target": "itself"
+            },
+            "comment": "11.1 s after the pull (10.6 to 11.4): a 3.7 s cast; a helper's 28779 from one of three spots 4.9 s in"
+        },
+        {
+            "time": 28.5,
+            "data": {
+                "type": "action",
+                "action_id": 28780,
+                "target": "itself"
+            },
+            "comment": "17.4 s after the first 28778: a 3.8 s cast with helpers' 28781 and 28782 from the middle"
+        },
+        {
+            "time": 38.6,
+            "data": {
+                "type": "action",
+                "action_id": 28785,
+                "target": "target"
+            },
+            "comment": "27.5 s after it: a 4.7 s cast on its target"
+        },
+        {
+            "time": 52.2,
+            "every": 53.8,
+            "data": {
+                "type": "action",
+                "action_id": 28778,
+                "target": "itself"
+            },
+            "comment": "41.1 s after the first 28778, then every 53.8 s"
+        },
+        {
+            "time": 64.4,
+            "every": 53.8,
+            "data": {
+                "type": "action",
+                "action_id": 29146,
+                "target": "itself"
+            },
+            "comment": "53.3 s after it: a 2.7 s cast, a cone before it; then every 53.8 s"
+        },
+        {
+            "time": 71.9,
+            "every": 53.8,
+            "data": {
+                "type": "action",
+                "action_id": 28783,
+                "target": "itself"
+            },
+            "comment": "60.8 s after it: a 3.7 s cast; a helper's 28784 under each of the party 6.4 s in; then every 53.8 s"
+        },
+        {
+            "time": 80.5,
+            "every": 53.8,
+            "data": {
+                "type": "action",
+                "action_id": 28780,
+                "target": "itself"
+            },
+            "comment": "69.4 s after it, then every 53.8 s"
+        },
+        {
+            "time": 93.7,
+            "every": 53.8,
+            "data": {
+                "type": "action",
+                "action_id": 28785,
+                "target": "target"
+            },
+            "comment": "82.6 s after it, then every 53.8 s"
+        }
+    ],
+    "comment": "Castrum Meridianum's second boss (BNpcBase 14541, BNpcName 2116, layout 9060849): level 50, 77022 HP. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.8) and Bob's 9ba7d981 (visit 0.12) and 50e72631 (visit 0.3) of 2026-11-17, all with Duty Support: no talk at its pull; its first 28778 came 10.6 to 11.4 s after the duty's battle music began, and from it the three runs' casts were the same to 0.5 s: 28780 at 17.4 s, 28785 at 27.5, then a round of 53.8 s (28778, 29146, 28783, 28780, 28785 at 41.1, 53.3, 60.8, 69.4 and 82.6 s, and again at 94.9, 107.0, 114.5 and 123.1). It fell 123 to 132 s after its first cast. Auto-attack 870 (262 to the tank), 28785 713 to the tank; its other casts are the helpers' to carry out (content/w1d4_re.lua). Hitbox and range not recorded."
+}

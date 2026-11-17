@@ -75,6 +75,10 @@ ACTION_TIMELINE = 407  # ActorControl: an NPC plays an ActionTimeline (its first
 # fixture has them.
 FIGHT_KINDS = ("talk", "timeline", "appear")
 HELPER_BASE = 9020
+# A player's summoned pets (the Summoner's and Scholar's: BNpcBases 13498 to 13504): not of the party. A fixture made
+# before 2026-11-17 from a Summoner's run has them as members (Castrum Meridianum's ambush came 15 s early in the
+# simulator: a pet had run ahead.)
+SUMMONED_PETS = frozenset(range(13498, 13505))
 
 
 # --- making a fixture -----------------------------------------------------------------------------------------------
@@ -159,6 +163,7 @@ def fixture_from_run(run: dict, script: str, source: str = "", unlaid: dict[int,
     others = [k for k, a in sorted(actors.items(), key=lambda item: item[1].get("Seen", 0))
               if k != you and (a.get("Kind") == "player"
                                or (a.get("Kind") == "battle npc" and not a.get("LayoutId") and a.get("Battalion") == 0
+                                   and a.get("BaseId") not in SUMMONED_PETS
                                    and a.get("MaxHp", 0) > 1 and len(positions.get(k, [])) > 20))]
     players = []
     for index, key in enumerate(others[:7], 1):

@@ -1,0 +1,30 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "6497": {
+            "players": 105,
+            "npcs": 37
+        },
+        "29170": {
+            "npcs": 115
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Castrum Meridianum's BNpcBase 14568: what it did in three retail runs (Connor's Chronofoil capture af05916c (2026-11-09, visit 0.8) and Bob's 9ba7d981 (visit 0.12) and 50e72631 (visit 0.3) of 2026-11-17, all with Duty Support; `questkit sources --duty 15`: its rotation's pace and each action's median amounts). A draft from Bob's Chronofoil captures (50e72631, 9ba7d981, af05916c), not yet checked in game: ContentFinderCondition 15, BNpcBase 14568, BNpcName 2105, level 50, 7663 HP, 15 seen in 4 runs. `players` and `npcs` are the median damage to each, `every` the median time between uses.",
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 6497,
+                "every": 3.0,
+                "comment": "160 uses"
+            },
+            {
+                "action": 29170,
+                "every": 15.1,
+                "comment": "14 uses"
+            }
+        ]
+    }
+}

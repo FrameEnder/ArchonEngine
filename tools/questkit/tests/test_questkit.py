@@ -2660,17 +2660,22 @@ end
 
     def test_fixture_from_a_run(self):
         you, boss, mate = 0x1000_0001, 0x4000_0001, 0x1000_0002
+        pet = 0x4000_0009
         def director(t, event, arg=0):
             return {"S": t, "Id": you, "Category": 109, "Params": [0x8003_0001, event, arg, 0], "Packet": "ActorControlSelf"}
         run = {
             "ContentFinderCondition": 999, "Source": "chronofoil abcdef0123 2026.10.16",
             "Actors": {str(you): {"Kind": "you", "MaxHp": 1000, "Seen": 0.0, "Position": [0, 0, 0]},
                        str(mate): {"Kind": "player", "MaxHp": 1000, "Seen": 0.0, "Position": [0, 0, 0]},
+                       # A Summoner's pet (no layout, the party's side, plenty of positions): not a member.
+                       str(pet): {"Kind": "battle npc", "BaseId": 13498, "LayoutId": 0, "Battalion": 0, "MaxHp": 2329,
+                                  "Seen": 0.0, "Position": [0, 0, 0]},
                        str(boss): {"Kind": "battle npc", "LayoutId": 5000001, "BaseId": 77, "MaxHp": 2000, "Seen": 12.0,
                                    "LastSeen": 90.0, "Died": 80.0, "Position": [5.0, 0.0, 5.0], "Battalion": 4}},
             "Samples": [{"S": 12.0, "Id": boss, "Hp": 2000, "P": [5.0, 0.0, 5.0]}, {"S": 30.0, "Id": boss, "T": you},
                         {"S": 40.0, "Id": boss, "Hp": 1000}, {"S": 80.0, "Id": boss, "Hp": 0},
-                        {"S": 11.0, "Id": you, "P": [1.0, 0.0, 1.0]}, {"S": 20.0, "Id": mate, "P": [2.0, 0.0, 2.0]}],
+                        {"S": 11.0, "Id": you, "P": [1.0, 0.0, 1.0]}, {"S": 20.0, "Id": mate, "P": [2.0, 0.0, 2.0]}]
+                       + [{"S": 11.0 + n, "Id": pet, "P": [3.0 + n, 0.0, 3.0]} for n in range(25)],
             "Actions": [],
             "Events": [{"S": 31.0, "Kind": "cast", "Id": boss, "Text": "action 903 spell 903"},
                        {"S": 32.0, "Kind": "battle talk", "Id": boss, "Text": "text 3700 name 1644 icon 0 5000 ms"},

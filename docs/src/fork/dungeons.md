@@ -18,6 +18,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Howling Eye (Garuda) | 58 | 1047 | `content/r1fa_re.lua` | one run with Duty Support (6a5244ec) and two Duty Finder runs (09ecf8e7, 6c495fc4), 2026-11-08 |
 | Brayflox's Longstop | 8 | 1041 | `content/s1d2_re.lua` | one run with Duty Support (44df02fc) and one Duty Finder run (c9145fdc), 2026-11-03 |
 | The Stone Vigil | 11 | 1042 | `content/r1d1_re.lua` | one run with Duty Support (1cefedf4) and one Duty Finder run (341808b0), 2026-11-07 |
+| Castrum Meridianum | 15 | 1043 | `content/w1d4_re.lua` | three runs with Duty Support: Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
 | The Porta Decumana | 830 | 1048 | `content/w1d5_battle.lua` | three runs with Duty Support: Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
 
 Every duty script in this table is checked against AutoDuty's route for its territory (`questkit autoduty`, see
@@ -1064,6 +1065,94 @@ Typhoon goes), and the whirlwinds go by `director:sweep_bnpc` ([Party Bots](part
 10500, 181 31533, 183 31518, 184 31525, 185 10438 and 7033, 7033 and 2176, or 7033, 31528 and 1927. The tank's run's
 first boss gave 10438 and its second 31518 and 31527, the conjurer's 1927, and 31519 and 31520, from coffers not told
 apart. The conjurer's run's exit can't be read (the capture ends in the loading screen to New Gridania).
+
+## Castrum Meridianum
+
+ContentFinderCondition 15 (ShortCode `w1d4_re`), territory 1043, director 0x8003000F, during Rock the Castrum (quest
+3873). Built on 2026-11-17 (Bob: "start on the bosses now … between 3 runs") from Connor's Chronofoil capture
+af05916c (visit 0.8, a healer; his party fell twice at the last boss) and Bob's 9ba7d981 (visit 0.12, a damage
+dealer) and 50e72631 (visit 0.3, a healer), all with Duty Support's fourth set. **Untested in game, and built without
+the duty's layout**: its event ranges aren't known, so what the party sets off by walking somewhere is set off by
+where they were when it happened in the runs (the script's `WHERE_*` lines; Bob's two runs agree to a yalm or two).
+
+**Who's there** (drop-in `territory_1043.json`, `questkit chronofoil --dropin 1043` over the three captures: 82 battle
+NPCs). The enemies on the way stand from the start, as the three runs met them; `nonpop` (the director's) are the
+first boss's three waves, the five that come out of hiding, the last boss and the helpers. Their timelines
+(`CastrumMeridianumEnemy_<base>.json`, sixteen kinds) are what each did in the runs (`questkit sources --duty 15`).
+Five non-hostile ones (BNpcBases 6358, 14580, 14618, 14671, 14672) stand as retail's did and do nothing; 14580
+(BNpcName 1486) is who the duty's talks are under.
+
+**The way** (all three runs; seconds are 50e72631's, from the duty's start):
+
+| What | When |
+|---|---|
+| Talk 33506 (with the director's 0x80000007 `[42]`), 33507 7.0 s on | As the party sets off: 8 yalms from the entrance (1.4 s; 31.1 s in the run Bob stood) |
+| Map effects 2 and 3 (timeline 2, state 2) | West of x = 208 (6.9 s) |
+| Map effect 0 (2, 1) | The six of layouts 9088382-9088387 dead (122.2 s) |
+| Map effect 1 (2, 1), 2 and 3 (4, 4) | The five of 9088400-9088404 dead (246.2 s) |
+| Objective 0 done | Into the first boss's room (252.9 s, 2.2 s before its pull) |
+| The first boss: music 37 at its pull, its wall (EObj 2000587) shut 15 s on (EventLogMessage 2012 with PlaceName 434) | 255.1 s |
+| It fallen: music 148, 0x80000007 `[42]`, objective 1, talk 33508, map effect 4, the wall and line (2000588) open, EObj 2000597 usable (SetTargetable, state 0); talk 33509 7.0 s on | 445.5 s |
+| EObj 2000597 used (EventAction 23, 1.0 s): PrepareZoning and everyone at (-11.0, 56.4, 205.9) | 452.8 s |
+| Talk 33510 (0x80000007 `[42]`) | South of z = 230 after it (467.0 s) |
+| Map effects 8 and 9 (2, 2) | West of x = -36 there (473.2 s) |
+| Map effect 5 (2, 1) | The three of 9088917-9088919 dead (589.4 s) |
+| Map effect 6 (2, 1), 8 and 9 (4, 4) | The two of 9088929 and 9088930 dead (711.5 s) |
+| Objective 2 done; music 37 at the second boss's pull 2.0 s on, its wall (2000589) shut 15 s on (PlaceName 433) | 719.9 s |
+| It fallen: music 148, 0x80000007 `[42]`, objective 3, talk 33511, map effect 7, map effect 10 2.1 s on, talk 33521 7.0 s on | 856.5 s |
+| Three come out of hiding by the first boss's room (9088949-9088951: spawned unseen, Appear with ActionTimeline 142 0.7 s on, targetable a second after that) | Someone north of z = -18 there (869.3 s) |
+| Talk 33512; 3.0 s on map effect 11 and EObj 2007457's ActorControl 409 `[1, director]` | The three dead (950.7 s) |
+| Talks 33513, 33514 | Past z = -77, then west of x = -42 (957.8, 968.1 s) |
+| Two more come out (9088956, 9088957), talk 33522 as they appear | Three of the six of 9088952-9088955, 9162432, 9162434 dead (1024.1 s) |
+| The cutscene: scene 3 with cutscene 275 `[0, 151, 0, 0]`; EObj 2012983 opened; map effects 12-14 a second on; the last boss and its 50 helpers there | Those two dead (1099.3 s) |
+| Everyone at (-83.9, 72.0, -35.2) (PrepareZoning, ActorSetPos); objective 4 done 1.8 s on | The cutscene's end (1213.1 s) |
+| The last boss (wall 2000593, line 2002735, PlaceName 428); it fallen: the way out (EObj 2000596), the duty complete, scene 3 with cutscene 277 `[1, 18, 0, 0]` | 1221.1 to 1431.4 s |
+
+No coffers came in any of the three (Duty Support, the story's first clear). Retail's objectives are five (0 to 4);
+nothing is marked at the clear.
+
+**The first boss** (9060841, BNpcBase 14538, 66977 HP; `CastrumMeridianumBoss1_14538.json`): one clock from its pull,
+talk 33523 (the three runs to 0.3 s): 28773 at 5.3 s, 28774 at 14.6 (talk 33524), 29268 at 23.0, 28775 at 30.3, 28774
+at 40.8 (talk 33525), 28773 at 69.1, 28774 at 78.3 (talk 33526), then 28773, 29268, 28775 every 31.5 s from 106.6,
+119.0 and 129.5. Four soldiers stand with it; each 28774 brings a wave a second after it lands: six (three of base
+14539, three of 14540), two of base 14668, then six (two of each). 29268 is followed by three helpers' 29269 on
+everyone (286 to a player) 5.1, 5.6 and 6.2 s after it begins; 28775 lands where someone stands. It fell at 192 to
+197 s.
+
+**The second boss** (9060849, BNpcBase 14541, 77022 HP; `CastrumMeridianumBoss2_14541.json`): its first 28778 comes
+10.6 to 11.4 s after its pull and the rest follow it to 0.5 s: 28780 at 17.4 s, 28785 (on its target) at 27.5, then a
+round of 53.8 s: 28778, 29146, 28783, 28780, 28785 (41.1, 53.3, 60.8, 69.4, 82.6 s). A helper's 28779 (7 s, a circle
+of 20: 743) comes from one of three spots ((-5.1, 19.3), (-20.9, 42.7), (-24.7, 23.1): no order to them) 4.9 s into
+each 28778; helpers' 28781 and 28782 (a circle of 10 and a ring from 12.5: 1288) from the middle with each 28780; a
+helper's 28784 (a circle of 5) under each of the party 6.4 s into each 28783.
+
+**The last boss** (9060634, BNpcBase 14542, 119560 HP; `CastrumMeridianumBoss3_14542.json`): one clock from its pull,
+talk 33515, in five pulls (to 0.2 s): 28033 at 5.1 s, 28788 (it goes, and is in the middle 0.7 s later) at 17.3,
+28786 at 19.0 with eight helpers' 28787 on a ring of the room and 29163 in the middle, 28798 (on its target) at
+32.5, 28791 at 45.9, then from 91.3 s a round of 74.2 s (28788, 29357, 28789, 28798; 28788, 29357, 28795; 28788,
+28786; 28033). After 28791: **four volleys** 2.5 s apart from 47.4 s, each a helper's 28793 at the room's edge and
+six 28794s in three pairs 0.2 s apart marching across the room (four fixed lines; the first two came in either
+order), the boss showing itself (ActionTimeline 7747) four times from 55.5 s and using 28792 as each lands; two
+28797s in the middle at 61.9 s (its 28796 at 63.9) and with each 28795. With 28789 six 28790s (three sets of spots
+seen) and 29164 in the middle. 9.6 s into each 29357, 29356 from two opposite spots of the ring (any pair), four the
+next time, two the time after. **Below 20 %** (the talk came at 20.0, 15.6, 20.0 and 11.7 %: at once when it was
+free, 3.1 and 3.3 s after its 28798 when it was casting) talk 33520 and its last part: 28788, 29354 at 1.9 s, 29352
+at 8.0 and 25.3, three 29353s at 14.8 to 18.5. It fell 19 to 31 s into that.
+
+**A fall with Duty Support** (Connor's two): no PartyWipe or DutyRecommence came from the director; he was back in
+the last room 31 and 73 s later (a warp), and the boss and its helpers were new as he came. Kawari's wipe
+(`server/wipe.rs`) is what happens here: the script takes the boss away, sends everyone back to the last room
+(`set_start`) and brings it back at `onDutyRecommence`.
+
+**Not known, so guessed or left out** (also in `known-issues.md`): the event ranges; the rounds past what the runs
+show (they go on); the last part past 25 s (its casts every 17.3 s); where 28788 takes the boss the once it wasn't
+the middle; what the wave soldiers' 28777 status (290) does; what 0x80000007 `[42]` and EObj 2007457's ActorControl
+409 are; the damage of 28773, 28781, 28787 and 29146, which hit no one.
+
+**Tests**: duty fixtures `15-af05916c`, `15-9ba7d981`, `15-50e72631` (`questkit duty-sim`: 224, 105 and 105 of
+retail's events: the talks, music, objectives, every NPC brought out, the last boss's ActionTimelines, the clear;
+and a rehearsed wipe at each boss). Connor's two falls are in his fixture by hand (`wipes`), as the director sent
+nothing for them.
 
 ## The Porta Decumana
 

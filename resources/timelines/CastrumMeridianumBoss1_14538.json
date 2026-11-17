@@ -1,0 +1,112 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 28776,
+    "attack_range": 3.0,
+    "from_pull": true,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "28776": {
+            "players": 643,
+            "npcs": 264
+        },
+        "28775": {
+            "npcs": 1224
+        }
+    },
+    "timepoints": [
+        {
+            "time": 5.3,
+            "data": {
+                "type": "action",
+                "action_id": 28773,
+                "target": "itself"
+            },
+            "comment": "5.3 s after the pull: a 4.7 s cast"
+        },
+        {
+            "time": 14.6,
+            "data": {
+                "type": "action",
+                "action_id": 28774,
+                "target": "itself"
+            },
+            "comment": "14.6 s: a 3.7 s cast; the first wave comes a second after it lands"
+        },
+        {
+            "time": 23.0,
+            "data": {
+                "type": "action",
+                "action_id": 29268,
+                "target": "itself"
+            },
+            "comment": "23.0 s: a 2.7 s cast; three helpers' 29269 follow"
+        },
+        {
+            "time": 30.3,
+            "data": {
+                "type": "action",
+                "action_id": 28775,
+                "target": "other"
+            },
+            "comment": "30.3 s: a 2.7 s cast where someone of the party stands"
+        },
+        {
+            "time": 40.8,
+            "data": {
+                "type": "action",
+                "action_id": 28774,
+                "target": "itself"
+            },
+            "comment": "40.8 s: the second wave"
+        },
+        {
+            "time": 69.1,
+            "data": {
+                "type": "action",
+                "action_id": 28773,
+                "target": "itself"
+            },
+            "comment": "69.1 s"
+        },
+        {
+            "time": 78.3,
+            "data": {
+                "type": "action",
+                "action_id": 28774,
+                "target": "itself"
+            },
+            "comment": "78.3 s: the third wave"
+        },
+        {
+            "time": 106.6,
+            "every": 31.5,
+            "data": {
+                "type": "action",
+                "action_id": 28773,
+                "target": "itself"
+            },
+            "comment": "106.6 s, then every 31.5 s (138.0, 169.6)"
+        },
+        {
+            "time": 119.0,
+            "every": 31.5,
+            "data": {
+                "type": "action",
+                "action_id": 29268,
+                "target": "itself"
+            },
+            "comment": "119.0 s, then every 31.5 s (150.5, 182.0)"
+        },
+        {
+            "time": 129.5,
+            "every": 31.5,
+            "data": {
+                "type": "action",
+                "action_id": 28775,
+                "target": "other"
+            },
+            "comment": "129.5 s, then every 31.5 s (161.1, 191.4)"
+        }
+    ],
+    "comment": "Castrum Meridianum's first boss (ContentFinderCondition 15, territory 1043; BNpcBase 14538, BNpcName 557, layout 9060841): level 50, 66977 HP. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.8) and Bob's 9ba7d981 (visit 0.12) and 50e72631 (visit 0.3) of 2026-11-17, all with Duty Support: its casts were the same to 0.3 s from its pull (battle talk 33523) in all three runs, and it fell at 192 to 197 s. Auto-attack 28776 every 3.2 s (643 to a player, 264 to Duty Support's tank); 28773 (4.7 s, a rectangle 50 by 4 before it: it hit no one), 28775 (2.7 s, where someone of the party stands: 1224 to a member), 28774 (3.7 s: a wave of its soldiers a second after it lands; the director's, content/w1d4_re.lua), 29268 (2.7 s: three helpers' 29269 on everyone 5.1, 5.6 and 6.2 s after it begins). Past 191 s the three-cast round goes on every 31.5 s as it had. Hitbox and range not recorded."
+}

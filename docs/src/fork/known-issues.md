@@ -33,8 +33,16 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
   (`quest_side_talks.json`: 1007683 and 1007682); quest 1047 is scripted from it. **AcceptQuest**: retail sent none
   as 1047 was taken (it goes straight to sequence 255), in two captures; Kawari sends one with every `accept_quest`.
   What the client shows differently isn't known.
-* **Not read yet**: Castrum Meridianum (visit 0.12, 28 min) and the Praetorium (0.14 and 0.16, 32 and 34 min),
-  neither of which is scripted (Connor's capture af05916c has each once more); what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
+* **Castrum Meridianum** (duty 15) is built from three runs (`dungeons.md`) and unplayed, **without its layout**: the
+  places that set things off on the way (the first talks, map effects 2-3 and 8-9, the three in hiding, talks 33510,
+  33513 and 33514, the objectives as a boss's room is entered) are where the party was in the runs, not the game's
+  event ranges; a party that takes another line may set them off early, late or not at all (the script's `WHERE_*`).
+  What the map effects are (gates, lights) isn't known either: they're sent when retail sent them, and whether
+  Kawari's collision lets the party through before them is untested. The device after the first boss sends every
+  player on at once (`warp_players`), not only who used it. Also guessed: the bosses' rounds past the runs, the last
+  boss's last part past 25 s, a wipe.
+* **Not read yet**: the Praetorium (duty 16: Connor's af05916c 0.10, Bob's 9ba7d981 0.14 and 0.16, 50e72631 0.5),
+  which isn't scripted; what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
   back in from Western Thanalan; the script's `onPartyWipe` is a guess); what came after the story (from 9688 s:
   warps 131089 and 131091, aetherytes, events 0xB0013 and 0xB0002, quest 524's completion with 4522's).
 

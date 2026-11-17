@@ -1,0 +1,302 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 872,
+    "attack_range": 3.0,
+    "from_pull": true,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 264
+        },
+        "28033": {
+            "players": 937,
+            "npcs": 768
+        },
+        "28798": {
+            "npcs": 827
+        },
+        "29352": {
+            "players": 353,
+            "npcs": 298
+        },
+        "29353": {
+            "players": 362,
+            "npcs": 308
+        }
+    },
+    "timepoints": [
+        {
+            "time": 5.1,
+            "data": {
+                "type": "action",
+                "action_id": 28033,
+                "target": "itself"
+            },
+            "comment": "5.1 s after the pull: a 4.7 s cast on everyone"
+        },
+        {
+            "time": 17.3,
+            "data": {
+                "type": "action",
+                "action_id": 28788,
+                "target": "nobody"
+            },
+            "comment": "17.3 s: no cast, it goes to the middle"
+        },
+        {
+            "time": 19.0,
+            "data": {
+                "type": "action",
+                "action_id": 28786,
+                "target": "itself"
+            },
+            "comment": "19.0 s: a 4.1 s cast; eight helpers' 28787 and 29163"
+        },
+        {
+            "time": 32.5,
+            "data": {
+                "type": "action",
+                "action_id": 28798,
+                "target": "target"
+            },
+            "comment": "32.5 s: a 4.7 s cast on its target"
+        },
+        {
+            "time": 45.9,
+            "data": {
+                "type": "action",
+                "action_id": 28791,
+                "target": "itself"
+            },
+            "comment": "45.9 s: a 4.6 s cast; the four volleys"
+        },
+        {
+            "time": 51.0,
+            "data": {
+                "type": "action",
+                "action_id": 28788,
+                "target": "nobody"
+            },
+            "comment": "51.0 s"
+        },
+        {
+            "time": 53.8,
+            "data": {
+                "type": "action",
+                "action_id": 28792,
+                "target": "itself"
+            },
+            "comment": "53.8 s: no cast, as a volley lands"
+        },
+        {
+            "time": 56.3,
+            "data": {
+                "type": "action",
+                "action_id": 28792,
+                "target": "itself"
+            },
+            "comment": "56.3 s: no cast, as a volley lands"
+        },
+        {
+            "time": 58.8,
+            "data": {
+                "type": "action",
+                "action_id": 28792,
+                "target": "itself"
+            },
+            "comment": "58.8 s: no cast, as a volley lands"
+        },
+        {
+            "time": 61.3,
+            "data": {
+                "type": "action",
+                "action_id": 28792,
+                "target": "itself"
+            },
+            "comment": "61.3 s: no cast, as a volley lands"
+        },
+        {
+            "time": 63.9,
+            "data": {
+                "type": "action",
+                "action_id": 28796,
+                "target": "itself"
+            },
+            "comment": "63.9 s: no cast, with two helpers' 28797"
+        },
+        {
+            "time": 79.0,
+            "data": {
+                "type": "action",
+                "action_id": 28798,
+                "target": "target"
+            },
+            "comment": "79.0 s"
+        },
+        {
+            "time": 91.3,
+            "every": 74.2,
+            "data": {
+                "type": "action",
+                "action_id": 28788,
+                "target": "nobody"
+            },
+            "comment": "91.3 s: no cast, then every 74.2 s (the round from 91.3 s came again from 165.6 in every run that got there)"
+        },
+        {
+            "time": 92.9,
+            "every": 74.2,
+            "data": {
+                "type": "action",
+                "action_id": 29357,
+                "target": "itself"
+            },
+            "comment": "92.9 s: a 3.7 s cast; helpers' 29356 9.6 s in, then every 74.2 s (the round from 91.3 s came again from 165.6 in every run that got there)"
+        },
+        {
+            "time": 99.0,
+            "every": 74.2,
+            "data": {
+                "type": "action",
+                "action_id": 28789,
+                "target": "itself"
+            },
+            "comment": "99.0 s: a 3.0 s cast; six helpers' 28790 and 29164, then every 74.2 s (the round from 91.3 s came again from 165.6 in every run that got there)"
+        },
+        {
+            "time": 110.5,
+            "every": 74.2,
+            "data": {
+                "type": "action",
+                "action_id": 28798,
+                "target": "target"
+            },
+            "comment": "110.5 s: on its target, then every 74.2 s (the round from 91.3 s came again from 165.6 in every run that got there)"
+        },
+        {
+            "time": 122.8,
+            "every": 74.2,
+            "data": {
+                "type": "action",
+                "action_id": 28788,
+                "target": "nobody"
+            },
+            "comment": "122.8 s: no cast, then every 74.2 s (the round from 91.3 s came again from 165.6 in every run that got there)"
+        },
+        {
+            "time": 124.4,
+            "every": 74.2,
+            "data": {
+                "type": "action",
+                "action_id": 29357,
+                "target": "itself"
+            },
+            "comment": "124.4 s, then every 74.2 s (the round from 91.3 s came again from 165.6 in every run that got there)"
+        },
+        {
+            "time": 130.6,
+            "every": 74.2,
+            "data": {
+                "type": "action",
+                "action_id": 28795,
+                "target": "itself"
+            },
+            "comment": "130.6 s: a 1.2 s cast; two helpers' 28797, then every 74.2 s (the round from 91.3 s came again from 165.6 in every run that got there)"
+        },
+        {
+            "time": 139.2,
+            "every": 74.2,
+            "data": {
+                "type": "action",
+                "action_id": 28788,
+                "target": "nobody"
+            },
+            "comment": "139.2 s, then every 74.2 s (the round from 91.3 s came again from 165.6 in every run that got there)"
+        },
+        {
+            "time": 140.9,
+            "every": 74.2,
+            "data": {
+                "type": "action",
+                "action_id": 28786,
+                "target": "itself"
+            },
+            "comment": "140.9 s, then every 74.2 s (the round from 91.3 s came again from 165.6 in every run that got there)"
+        },
+        {
+            "time": 154.4,
+            "every": 74.2,
+            "data": {
+                "type": "action",
+                "action_id": 28033,
+                "target": "itself"
+            },
+            "comment": "154.4 s, then every 74.2 s (the round from 91.3 s came again from 165.6 in every run that got there)"
+        },
+        {
+            "time": 0.1,
+            "after": 33520,
+            "data": {
+                "type": "action",
+                "action_id": 28788,
+                "target": "nobody"
+            },
+            "comment": "the last part (below 20 %, the director's talk 33520): to the middle"
+        },
+        {
+            "time": 1.9,
+            "after": 33520,
+            "data": {
+                "type": "action",
+                "action_id": 29354,
+                "target": "itself"
+            },
+            "comment": "1.9 s into it: a 3.7 s cast, a status on itself"
+        },
+        {
+            "time": 8.0,
+            "every": 17.3,
+            "after": 33520,
+            "data": {
+                "type": "action",
+                "action_id": 29352,
+                "target": "itself"
+            },
+            "comment": "8.0 s: a 4.7 s cast on everyone, and 25.3 s; every 17.3 s here"
+        },
+        {
+            "time": 14.8,
+            "every": 17.3,
+            "after": 33520,
+            "data": {
+                "type": "action",
+                "action_id": 29353,
+                "target": "itself"
+            },
+            "comment": "14.8 s: no cast, on everyone; again every 17.3 s here (not seen: it fell 19 to 31 s into the last part)"
+        },
+        {
+            "time": 16.7,
+            "every": 17.3,
+            "after": 33520,
+            "data": {
+                "type": "action",
+                "action_id": 29353,
+                "target": "itself"
+            },
+            "comment": "16.7 s: no cast, on everyone; again every 17.3 s here (not seen: it fell 19 to 31 s into the last part)"
+        },
+        {
+            "time": 18.5,
+            "every": 17.3,
+            "after": 33520,
+            "data": {
+                "type": "action",
+                "action_id": 29353,
+                "target": "itself"
+            },
+            "comment": "18.5 s: no cast, on everyone; again every 17.3 s here (not seen: it fell 19 to 31 s into the last part)"
+        }
+    ],
+    "comment": "Castrum Meridianum's last boss (BNpcBase 14542, BNpcName 2118, layout 9060634): level 50, 119560 HP, there as the cutscene before its room begins. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.8) and Bob's 9ba7d981 (visit 0.12) and 50e72631 (visit 0.3) of 2026-11-17, all with Duty Support: five pulls (Connor's party fell twice), all the same to 0.2 s from the pull (battle talk 33515). Auto-attack 872 (264 to the tank); 28033 937 to a player and 768 to a member; 28798 827 to the tank; the last part's 29352 353 and 298, 29353 362 and 308. What goes with its other casts is the director's (content/w1d4_re.lua): the helpers' 28787, 29163, 28793, 28794, 28797, 28790, 29164 and 29356. Below 20 % the director starts the last part (`restart_timeline` with 33520). Hitbox and range not recorded."
+}
