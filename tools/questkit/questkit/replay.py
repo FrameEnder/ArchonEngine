@@ -55,6 +55,7 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
         result.error = str(error)
         return result
     harness.world.aetherytes.update(fixture.get("aetherytes", []))
+    harness.game = fixture.get("game", {})
     # A run recorded from the middle of the quest (a capture started after it was accepted): it's already active.
     if "from" in fixture:
         start = fixture["from"]
@@ -72,6 +73,7 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
             harness.territory = step.get("territory")
             layers_before = _layer_entries(harness, quest)
             harness.interrupt_bar = bool(step.get("interrupted"))
+            harness.random = list(step.get("random", []))
             if "talk" in step:
                 outcome = harness.talk(step["talk"], results, trace, step.get("layout"))
             elif "event_item" in step:

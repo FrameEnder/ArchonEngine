@@ -2992,6 +2992,26 @@ impl GameData {
             .and_then(|row| row.columns.get(1)?.into_string().cloned())
     }
 
+    /// The emote a line of quest text spells with its capital letters, read in any order: The Greatest Story Never
+    /// Told's (1437) third clues name the emote to use that way, and nothing else in the quest's data does (its
+    /// Emote listeners name none). Text and emote names are both read in the server's language. None when the line
+    /// isn't found or its capitals are no emote's name.
+    pub fn emote_spelled_by(&mut self, text_key: &str) -> Option<u32> {
+        let text = self.get_quest_text(text_key)?.to_string();
+        let sheet =
+            EmoteSheet::read_from(&mut self.resource, get_config().world.language()).ok()?;
+        let names: Vec<(u32, String)> = sheet
+            .into_iter()
+            .flatten_subrows()
+            .map(|(id, row)| (id, row.Name.to_string()))
+            .collect();
+        let emote = emote_spelled(&text, &names);
+        if emote.is_none() {
+            tracing::warn!("The capitals of {text_key} spell no emote's name");
+        }
+        emote
+    }
+
     /// A quest's battle talk lines (their keys contain "BATTLETALK"), as (key, text) sorted by key, e.g. for its quest
     /// battle's enemies to say. Logs what it found, so the order can be checked against a recording.
     pub fn get_quest_battle_talk(&mut self, quest_id: u32) -> Vec<(String, SeString)> {
@@ -5080,6 +5100,9 @@ impl mlua::UserData for GameData {
         methods.add_method_mut("lookup_ikd_route_content", |_, this, id: u32| {
             Ok(this.lookup_ikd_route_content(id))
         });
+        methods.add_method_mut("emote_spelled_by", |_, this, text_key: String| {
+            Ok(this.emote_spelled_by(&text_key))
+        });
         methods.add_method_mut("find_eobj_base_id", |_, this, id: u32| {
             Ok(this.find_eobj_base_id(id))
         });
@@ -5398,6 +5421,52 @@ pub fn mount_speed_places(rows: &[(u32, u32, u32, u32)], quest: u32) -> Vec<u32>
         }
     }
     places
+}
+
+/// Which of `names` (an emote's row and name) the capital letters of `text` spell, in any order: the lowest row whose
+/// name has exactly those letters. A text with no capitals spells nothing.
+fn emote_spelled(text: &str, names: &[(u32, String)]) -> Option<u32> {
+    fn letters(text: impl Iterator<Item = char>) -> Vec<char> {
+        let mut letters: Vec<char> = text.flat_map(char::to_uppercase).collect();
+        letters.sort_unstable();
+        letters
+    }
+    let capitals = letters(text.chars().filter(|c| c.is_uppercase()));
+    if capitals.is_empty() {
+        return None;
+    }
+    names
+        .iter()
+        .filter(|(_, name)| letters(name.chars().filter(|c| c.is_alphabetic())) == capitals)
+        .map(|(id, _)| *id)
+        .min()
+}
+
+#[cfg(test)]
+mod emote_spelled_tests {
+    use super::emote_spelled;
+
+    /// Made-up lines in the shape of The Greatest Story Never Told's third clues (1437: capitals scattered through a
+    /// phrase, the sentence's own first capital among them), against made-up emote names.
+    #[test]
+    fn capitals_in_any_order_name_the_emote() {
+        let names = [
+            (3, "Wave".to_string()),
+            (7, "Bow".to_string()),
+            (9, "Stand Up".to_string()),
+            (12, "Bow".to_string()),
+        ];
+        assert_eq!(emote_spelled("the rEd Value of A Winter", &names), Some(3));
+        assert_eq!(emote_spelled("Often Buried, never Won", &names), Some(7));
+        assert_eq!(
+            emote_spelled("An UNlit Path, Still, Deep and Tall", &names),
+            Some(9)
+        );
+        // One letter too many, one too few, and none at all.
+        assert_eq!(emote_spelled("the rEd Value of A Winter Sea", &names), None);
+        assert_eq!(emote_spelled("the red Value of A Winter", &names), None);
+        assert_eq!(emote_spelled("nothing here", &names), None);
+    }
 }
 
 #[cfg(test)]

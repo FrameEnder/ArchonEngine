@@ -257,6 +257,23 @@ class FakePlayer:
         return call
 
 
+class FakeGameData:
+    """What a script's `GAME_DATA` is: only what the fixture knows of the game's data (its "game"), nothing else."""
+
+    def __init__(self, harness: "Harness"):
+        self._h = harness
+
+    def emote_spelled_by(self, *args):
+        """The emote a quest text's capitals spell (`GameData::emote_spelled_by`): the fixture's
+        "game": {"emote_spelled_by": {key: emote}}, nil for a line it doesn't give (as for one that spells none)."""
+        return self._h.game.get("emote_spelled_by", {}).get(str(args[-1]))
+
+    def __getattr__(self, name):
+        if name.startswith("_"):
+            raise AttributeError(name)
+        raise HarnessError(f"GAME_DATA:{name} isn't simulated")
+
+
 class Harness:
     """One player and one quest script."""
 
@@ -277,6 +294,11 @@ class Harness:
         self.copy = World()
         self.tasks: list[Task] = []
         self.territory: int | None = None  # where the current step happens, when its fixture says
+        # What the fixture knows of the game's data, for `GAME_DATA` (its "game").
+        self.game: dict = {}
+        # The numbers `math.random` gives in the current step, in order (the step's "random": what retail rolled).
+        # A script that rolls without them fails: its replay would differ from run to run.
+        self.random: list[int] = []
 
     def quest_number(self, value) -> int:
         value = int(value)
@@ -305,9 +327,16 @@ class Harness:
             lua.execute((repo.QUEST_SCRIPTS / "Travel.lua").read_text())
         if base_id is not None:
             globals_.BASE_ID = base_id
+        globals_.GAME_DATA = FakeGameData(self)
+        globals_.math.random = self._random
         self.lua = lua
         self.player = FakePlayer(self)
         return globals_
+
+    def _random(self, *args):
+        if not self.random:
+            raise HarnessError("the script rolled a random number: the step needs \"random\": [what retail rolled]")
+        return self.random.pop(0)
 
     def _call(self, name: str, *args) -> list[Task]:
         """Calls one of the script's callbacks with a fresh copy of the player, then runs what it queued."""

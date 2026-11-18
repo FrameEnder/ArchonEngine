@@ -89,6 +89,8 @@ state after it:
 | `"what"` | Which parameter the target is (for reading) |
 | `"from": {"sequence", "vars"}` | A run recorded from the middle of the quest (the capture began after it was accepted): the quest is active in that state before the first step (701's run in capture 9df4ff01) |
 | `"interrupted": true` (a step) | Retail broke the step's progress bar off (moving, a hit, paralysis: CancelCast with kind 4 in the capture): the script's `event_action` ends the event there, without `onEventActionCast` (Seeing Eye to Winged Eye's look-out in captures 412ba91d and b166797f, by hand; `fixture --chronofoil` writes it since 2026-11-09 when the step's last scene was followed by a bar and nothing came of it) |
+| `"random": [n, …]` (a step) | What `math.random` gives the script in this step, in order: what retail rolled (The Greatest Story Never Told's groups, read from the variables retail set). A script that rolls in a step without it fails the replay, since it would differ from run to run |
+| `"game": {"emote_spelled_by": {key: emote}}` | What the fixture knows of the game's data, for the script's `GAME_DATA` (only `emote_spelled_by` is simulated; a key not given is `nil`) |
 | `"bar": action` (a scene) | A progress bar followed this scene (retail's ActorControlTarget 3, EventAction, with 1 and the EventAction row); `fixture --chronofoil` writes it, `transcribe` reads it |
 | `"pop_ranges": [id]`, `"arrivals": [[x, y, z, rotation]]` (a step) | Where the step's zone change put the player: ZoneInit's pop range, and the spot (ZoneInit's position and the client's first rotation, or retail's ActorSetPos for a move within the territory, which has no ZoneInit); written by `fixture --chronofoil`, read by `transcribe` |
 

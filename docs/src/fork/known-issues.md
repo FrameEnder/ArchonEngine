@@ -526,10 +526,14 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * 230's four enemies have one action each from a few seconds' fight; base 778's auto-attack wasn't seen (870 here).
 * 1210: six of its side talks (ENpcs 1005515 and 1005516 while the quest is open) aren't answered; the client's
   scenes and the sheet's listeners don't line up and they weren't read by hand.
-* **1437, The Greatest Story Never Told, isn't scripted.** It's a hunt in three rounds: each round the server
-  picks one of several answers (three explorers, nine objects, nine more to emote at, three merchants) and the
-  capture has the one Bob was given. The fixture made from it is kept out of the repository until the objects he
-  used are known for sure (their bases aren't in the capture) and the way the answer is picked is worked out.
+* **1437, The Greatest Story Never Told**: scripted from the client's script and one retail run of its 27 paths,
+  unplayed. Not seen on retail: the other two companies' and the other groups' objects; what a wrong emote does
+  (nothing here); the scenes between puzzles (which is whose goes by the client's script). The emote each of the
+  nine third clues wants is read from the clue's capitals at runtime (`GAME_DATA:emote_spelled_by`), never run
+  against a game install: if a clue's line spells no emote the log says so and any emote is taken. The objects'
+  Emote listeners are the Quest sheet's; whether the client lets the `???`s be targeted for an emote here is
+  untested. A character with none of The Company You Keep done can't get past the first clue (the client's scenes
+  cancel), as the client's script has it.
 
 ## Fall damage
 

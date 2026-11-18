@@ -2373,6 +2373,85 @@ class SideTalkTest(unittest.TestCase):
             self.assertEqual([p["scene"] for p in probe.talk(base, {}, [])["played"]][:1], [scene])
 
 
+class GreatestStoryTest(unittest.TestCase):
+    """The Greatest Story Never Told (1437) off retail's one path (capture dba9b575: groups 2, 2 and 3): the other
+    groups, another company's object, the wrong emote, and what the harness gives a script that rolls or reads the
+    game's data."""
+
+    def setUp(self):
+        from questkit import harness
+        self.harness = harness
+        self.script = next(repo.QUEST_SCRIPTS.rglob("*_01437.lua"))
+        self.params = json.loads((repo.FIXTURES / "1437.json").read_text())["params"]
+
+    def probe(self, sequence, variables, spelled=None):
+        probe = self.harness.Harness(self.script, 1437, self.params)
+        probe.world.quests[1437] = self.harness.Quest(sequence, list(variables))
+        probe.game = {"emote_spelled_by": spelled or {}}
+        return probe
+
+    @staticmethod
+    def scenes(outcome):
+        return [p["scene"] for p in outcome["played"]]
+
+    def test_only_the_rolled_group_answers(self):
+        p = self.params
+        # Second puzzle, group 3: EOBJECT7-9 are scenes 25, 27, 29, then the bar and the scene after it.
+        for index, name in enumerate(("EOBJECT7", "EOBJECT8", "EOBJECT9")):
+            probe = self.probe(3, [0, 0, 0x13, 0, 0, 0])
+            self.assertEqual(self.scenes(probe.talk(p[name], {}, [])), [25 + 2 * index, 26 + 2 * index])
+            self.assertEqual(probe.state()["sequence"], 4)
+            self.assertEqual(probe.state()["vars"], "001000000000")
+        probe = self.probe(3, [0, 0, 0x13, 0, 0, 0])
+        self.assertEqual(self.scenes(probe.talk(p["EOBJECT4"], {}, [])), [])
+        # Fourth puzzle: group 1 is the message itself (scene 61), group 2 EOBJECT20 (62).
+        for group, name, scene in ((1, "EOBJECT0", 61), (2, "EOBJECT20", 62)):
+            probe = self.probe(7, [0, 0, 0x10 | group, 0, 0, 0])
+            self.assertEqual(self.scenes(probe.talk(p[name], {}, [])), [scene])
+            self.assertEqual(probe.state()["sequence"], 8)
+        probe = self.probe(7, [0, 0, 0x12, 0, 0, 0])
+        self.assertEqual(self.scenes(probe.talk(p["EOBJECT21"], {}, [])), [])
+
+    def test_a_cancelled_scene_changes_nothing(self):
+        p = self.params
+        # Another company's place: the client's scene cancels itself (error code 50), so no bar and no progress.
+        probe = self.probe(3, [0, 0, 0x12, 0, 0, 0])
+        outcome = probe.talk(p["EOBJECT5"], {"21": {"results": [0, 0], "error": 50}}, [])
+        self.assertEqual(self.scenes(outcome), [21])
+        self.assertEqual(probe.state()["sequence"], 3)
+        # Another company's explorer.
+        probe = self.probe(1, [0] * 6)
+        outcome = probe.talk(p["ACTOR3"], {"4": {"results": [0, 0], "error": 50}}, [])
+        self.assertEqual(self.scenes(outcome), [4])
+        self.assertEqual(probe.state(), {"sequence": 1, "vars": "000000000000"})
+
+    def test_the_emote_is_the_one_the_objects_clue_spells(self):
+        p = self.params
+        # EOBJECT17: group 3, the second company's: line 140 + 3 * 1 + 2.
+        spelled = {"TEXT_SUBFST999_01437_IBUN01437_000_145": 26}
+        probe = self.probe(5, [0, 0, 0x13, 0, 0, 0], spelled)
+        self.assertEqual(self.scenes(probe.emote(21, p["EOBJECT17"], {}, [])), [])
+        self.assertEqual(probe.state()["sequence"], 5)
+        self.assertEqual(self.scenes(probe.emote(26, p["EOBJECT17"], {}, [])), [53])
+        self.assertEqual(probe.state()["sequence"], 6)
+        # Not the group's object: nothing, whatever the emote.
+        probe = self.probe(5, [0, 0, 0x11, 0, 0, 0], spelled)
+        self.assertEqual(self.scenes(probe.emote(26, p["EOBJECT17"], {}, [])), [])
+        # A clue the server can't read an emote from lets any through.
+        probe = self.probe(5, [0, 0, 0x13, 0, 0, 0])
+        self.assertEqual(self.scenes(probe.emote(5, p["EOBJECT17"], {}, [])), [53])
+
+    def test_a_roll_needs_the_steps_numbers(self):
+        p = self.params
+        probe = self.probe(2, [0, 0x10, 0, 0, 0, 0])
+        with self.assertRaises(self.harness.HarnessError):
+            probe.talk(p["ACTOR0"], {}, [])
+        probe = self.probe(2, [0, 0x10, 0, 0, 0, 0])
+        probe.random = [1]
+        probe.talk(p["ACTOR0"], {}, [])
+        self.assertEqual(probe.state(), {"sequence": 3, "vars": "000011000000"})
+
+
 class ClientCheckTest(unittest.TestCase):
     """questkit clientcheck against a made-up client listing laid out as kawari-questdump writes them."""
 
