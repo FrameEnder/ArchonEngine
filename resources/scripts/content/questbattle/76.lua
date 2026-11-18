@@ -114,8 +114,19 @@ ACTION_CURE_II = 135
 
 BATTLE = Battle.new()
 BATTLE:ally(BNPC_PRAYER, { still = true })
--- Each guard Cured the one who prays every 8-10 s whatever their health (at 19-100 %) and Cure II about every 20 s
--- (at 16-66 %), and fought whoever was on it.
+-- Each guard Cures the one who prays every 8-10 s and Cure IIs them about every 20 s, but only once they're below
+-- about 65 %: in the three runs no guard healed them above 64 % (the first Cure came 30.6 to 33.4 s in, at 60 to
+-- 63 %, the first Cure II at 58 to 61 %; their health rebuilt from every tick, heal and hit, since the samples of it
+-- are 6 s apart), so retail's are never kept topped up and drop a third in the first half-minute. The script Cured
+-- from 100 % (the first write-up read "at 19-100 %" off the sparse samples), which held them above 46 % all through
+-- Bob's run of 2026-11-18 with 8,300 of his own healing, where retail's lost run needed 26,000 and still fell ("the
+-- balance of this battle seemed a tad different then in retail".) Between heals they also Stoneskin (129) one of
+-- themselves or the player about every 45 s each (15 uses in the 240 s run, the lowest of them here) and Regen
+-- (137) a hurt one about every two minutes, which takes those casts from the one who prays as retail's did. Divine Seal
+-- (138) and Holy (139) aren't played.
+ACTION_STONESKIN = 129
+ACTION_REGEN = 137
+HEAL_PRAYER_BELOW = 65
 for _, guard in ipairs(GUARDS) do
     BATTLE:ally(guard, {
         role = "dps",
@@ -124,8 +135,10 @@ for _, guard in ipairs(GUARDS) do
         order = "oldest",
         range = 15,
         heals = {
-            { action = ACTION_CURE_II, targets = { BNPC_PRAYER }, below = 67, every = 20 },
-            { action = ACTION_CURE, targets = { BNPC_PRAYER }, below = 100, every = 9 },
+            { action = ACTION_STONESKIN, targets = { GUARD_A, GUARD_B, GUARD_C, "player" }, below = 101, every = 45 },
+            { action = ACTION_REGEN, targets = { GUARD_A, GUARD_B, GUARD_C, "player" }, below = 90, every = 120 },
+            { action = ACTION_CURE_II, targets = { BNPC_PRAYER }, below = HEAL_PRAYER_BELOW, every = 20 },
+            { action = ACTION_CURE, targets = { BNPC_PRAYER }, below = HEAL_PRAYER_BELOW, every = 9 },
         },
     })
 end

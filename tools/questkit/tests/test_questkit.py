@@ -767,6 +767,23 @@ class BattleSimPlayerTest(unittest.TestCase):
                                        for point in away["positions"]["player"]]
         self.assertFalse([1 for _, name, args in last_part(away) if name == "gain_effect" and args[1] == 2194])
 
+    def test_heart_of_the_forests_guards_heal_below_65(self):
+        """Bob, 2026-11-18: "the balance of this battle seemed a tad different then in retail". Retail's three guards
+        never healed the one who prays above 64 % (three runs, his Chronofoil capture 667a68c5: the first Cure 30.6
+        to 33.4 s after sequence 2); the script's Cured from 100 %, from the first second. They Stoneskin from the
+        start, as retail's did (4.1 s in.)"""
+        for name in ("76", "76-lost-20", "76-lost-22"):
+            fixture = json.loads((battle_sim.BATTLES / f"{name}.json").read_text())
+            result = battle_sim.simulate(fixture)
+            self.assertIsNone(result.error)
+            began = next(event[0] for event in fixture["events"] if event[1:] == ["sequence", 2])
+            used = [(t - began, args[1]) for t, call, args in result.calls
+                    if call == "use_action" and len(args) > 1 and args[1] in (120, 135, 129)]
+            first_heal = min(t for t, action in used if action in (120, 135))
+            self.assertGreater(first_heal, 27.0, name)
+            self.assertLess(first_heal, 40.0, name)
+            self.assertLess(min(t for t, action in used if action == 129), 5.0, name)
+
     def test_placed_from_a_run(self):
         """A run's helpers (battle NPCs with no layout ID) give `placed` and everyone's positions; a few HP isn't the
         floor's 0.1 %."""

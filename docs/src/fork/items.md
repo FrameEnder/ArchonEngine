@@ -65,6 +65,15 @@ sends the slot only.
 
 ## Gear coffers
 
+**A job quest's attire coffer** holds the same for whoever opens it (`FIXED_COFFERS` in `items/Coffer.lua`;
+`player:open_coffer`'s third argument, since 2026-11-18). The Cleric's Attire Coffer (20648, Heart of the Forest's
+reward): Connor's Chronofoil capture e834e436 has a White Mage open it, action 4647 as every gear coffer's, and
+1.65 s after its ActionEffect five ActorControlSelf 527 `[1232, 0, item]`, the coffer's slot emptied, and items
+6074 to 6078 into the Armoury Chest's head, body, hands, legs and feet (containers 3201, 3202, 3203, 3205, 3206),
+each with LogMessage 788 (the Level 18 Weapon Coffer's pieces came with 789: not looked into, 789 is sent). The
+script had no entry for it, so Bob's gave nothing (2026-11-18). The other jobs' coffers aren't in a capture.
+Test `an_attire_coffer_gives_its_set_to_whoever_opens_it`.
+
 Every gear coffer (the "Level N Weapon Coffer"s, the raid and tome coffers, also the ward potions) has ItemAction
 **388**, whose action is **4647** (ItemAction 2462 has it too); `items/Items.lua` sends action 4647 to
 `items/Coffer.lua`. What a coffer holds isn't in the client: its AdditionalData (1000238 for the Level 18 Weapon

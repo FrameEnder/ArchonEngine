@@ -677,7 +677,13 @@ Retail's falls (Bob's Chronofoil captures, 2026-10-28: 49 falls that hurt and 47
   falls). In combat (Condition InCombat) a fall can kill (a long-time player's note, Bob, 2026-10-28).
 * **What's sent**: ActorControl 45 `FallDamage` (the damage, 1) from the player to them and everyone around, then
   their StatusEffectList. No ActionEffect.
-* Not hurt: mounted, dead, or in a gimmick jump.
+* Not hurt: dead, or in a gimmick jump. **A mounted player is hurt as one on foot** (since 2026-11-18): Connor's
+  capture e834e436 has a mounted fall (character mode 4) of about 12 yalms for 241, and no capture has a mounted
+  drop of 10 yalms that didn't hurt. Kawari spared the mounted, with nothing behind it, and Bob rode off a cliff in
+  the Central Shroud (55.9 to 16.7 yalms' height, 39.6 from where he last stood, in 2.05 s) for nothing ("no fall
+  damage from cliff"). What the client sends while flying wasn't looked at, so a mounted drop that took much
+  longer than a fall of its height would (1.6 times and 0.6 s more, by a fall's 18.7 yalms a second each second:
+  `fell_freely`) is taken for a flight and spared: a guess. Test `a_mounted_fall_hurts`.
 
 **A mounted player isn't attacked** (since 2026-11-10, `npc_behavior`'s `mounted_players`): an enemy after one waits,
 neither casting nor swinging, until they're off (retail's ambush ridden into, capture 1fac2416: the enemies came out

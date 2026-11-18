@@ -202,11 +202,25 @@ LOOT_COFFERS = {
     },
 }
 
+-- Coffers that hold the same for whoever opens them (`player:open_coffer`'s third argument): a job quest's attire.
+-- 20648, the Cleric's Attire Coffer (the White Mage's level 50 quest, Heart of the Forest): Connor's Chronofoil
+-- capture e834e436 has it opened by a White Mage, action 4647 as every gear coffer's, and 1.65 s after its
+-- ActionEffect items 6074, 6075, 6076, 6077 and 6078 in that order, into the Armoury Chest's head, body, hands, legs
+-- and feet. The other jobs' coffers aren't in a capture yet.
+FIXED_COFFERS = {
+    [20648] = { 6074, 6075, 6076, 6077, 6078 },
+}
+
 function doAction(player, item_id)
     local effects = EffectsBuilder()
     local loot = LOOT_COFFERS[item_id]
     if loot ~= nil then
         player:open_loot_coffer(item_id, loot)
+        return effects
+    end
+    local fixed = FIXED_COFFERS[item_id]
+    if fixed ~= nil then
+        player:open_coffer(item_id, { fixed }, true)
         return effects
     end
     local contents = COFFERS[item_id]

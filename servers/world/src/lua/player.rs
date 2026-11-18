@@ -1516,9 +1516,12 @@ impl UserData for LuaPlayer {
         // A gear coffer (items/Coffer.lua): the current class's pieces of what it holds given, the coffer used up.
         methods.add_method_mut(
             "open_coffer",
-            |_, this, (item_id, contents): (u32, Vec<Vec<u32>>)| {
-                this.queued_tasks
-                    .push(LuaTask::OpenCoffer { item_id, contents });
+            |_, this, (item_id, contents, for_anyone): (u32, Vec<Vec<u32>>, Option<bool>)| {
+                this.queued_tasks.push(LuaTask::OpenCoffer {
+                    item_id,
+                    contents,
+                    for_anyone: for_anyone.unwrap_or(false),
+                });
                 Ok(())
             },
         );

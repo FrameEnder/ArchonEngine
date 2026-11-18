@@ -380,6 +380,8 @@ pub enum LuaTask {
     OpenCoffer {
         item_id: u32,
         contents: Vec<Vec<u32>>,
+        /// Its one set is whoever opens it's (a job quest's attire coffer), not chosen by their class.
+        for_anyone: bool,
     },
     /// A coffer of one thing out of many opened (`ZoneConnection::open_loot_coffer`): its rows of item, quantity,
     /// high quality and weight.

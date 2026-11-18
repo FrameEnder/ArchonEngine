@@ -192,8 +192,11 @@ Nineteen quests transcribed from Bob's Chronofoil capture 651981e7 and the clien
 * The five quest enemies (`QB_GaiUsb405_001`, `QB_GaiUsb408_001`, `QB_GaiUsb409_001` in
   `sea_s1f6_planmap.json`) have timelines from one fight of 10 to 38 s each: how often each action comes is a guess
   from one or two uses, and what statuses 63 and 207 (their self-buffs, 553 and 429) do isn't scripted.
-* **Heart of the Forest** (1084) and its quest battle 76 (2026-11-16, [Quest battles](quest-battles.md)): not played
-  in game. From three retail runs, one won. Guessed: everyone down before the third wave's minute is up, a downed
+* **Heart of the Forest** (1084) and its quest battle 76 (2026-11-16, [Quest battles](quest-battles.md)): played
+  once by Bob on 2026-11-18 ("the balance of this battle seemed a tad different then in retail": the guards healed
+  the one who prays from full health, fixed that day, unplayed since; their heals on them are still about a fifth
+  more than retail's 8,000 to 9,600 per 20 s, since Divine Seal and Holy aren't cast and Stoneskin and Regen only
+  roughly as often). From three retail runs, one won. Guessed: everyone down before the third wave's minute is up, a downed
   guard at the win. Not played: the guards' Stoneskin (retail's kept the one who prays' ticks off about 6 s at a
   time, so the battle is somewhat harder here), Regen, Divine Seal and Holy; the bursting ones' slow walk; two of
   their spots (4290121, 4290123: known of, not where). Whether enemies leave a downed guard alone as retail's did
@@ -513,6 +516,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Fall damage
 
+* Mounted falls hurt since 2026-11-18 (one retail fall says so), unplayed. What a flying mount's take-off and
+  landing look like in the client's position packets isn't known: the guard against hurting a flight (a drop that
+  took far longer than a fall would) is a guess, and a mount that dives as fast as a fall would be hurt.
 * Untested in game (2026-10-28). The formula fits the 19 retail falls whose height could be measured within 1.2 %
   (4 % at worst); falls higher than those measured aren't checked. The drop is from the last
   height the player stood at, as Kawari reads the client's UpdatePositionHandler: a fall that starts from a slope or

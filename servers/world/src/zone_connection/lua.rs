@@ -1046,8 +1046,12 @@ impl ZoneConnection {
                 LuaTask::RedeemMgpVoucher { item_id, mgp } => {
                     self.redeem_mgp_voucher(*item_id, *mgp).await;
                 }
-                LuaTask::OpenCoffer { item_id, contents } => {
-                    self.open_coffer(*item_id, contents).await;
+                LuaTask::OpenCoffer {
+                    item_id,
+                    contents,
+                    for_anyone,
+                } => {
+                    self.open_coffer(*item_id, contents, *for_anyone).await;
                 }
                 LuaTask::OpenLootCoffer { item_id, loot } => {
                     self.open_loot_coffer(*item_id, loot).await;

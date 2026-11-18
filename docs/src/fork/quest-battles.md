@@ -1950,7 +1950,19 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
   all through**: status 324 from 0.1 s in, a tick every 3 s from no one (ActorControl 1541 `[0, amount, 0xE0000000,
   0xFFFFFFFF]`: 1763-1940 during the first wave and the wait after it, 2186-2413 from the second wave on, when retail
   took the status off and gave it again), which no enemy does: the enemies go for the guards and you. The guards'
-  Cures (120 every 8-10 s each, 135 about every 20 s) don't keep up with it; the player's healing wins the battle.
+  Cures (action 120 every 8-10 s each, for 1160 to 1390; Cure II, 135, about every 20 s, for 1690 to 2030) don't
+  keep up with it; the player's healing wins the battle. **They heal the one who prays only below about 65 %**: no
+  guard's heal landed on them above 64 % in the three runs (their health rebuilt from every tick, heal and hit),
+  the first Cure 30.6 to 33.4 s in at 60 to 63 %; for the first half-minute they Stoneskin (129) themselves and
+  the player, Regen (137) and fight. So retail's one who prays is a third down before anyone heals them and sinks
+  from there: 64 % at 40 s, 41 % at 100 s, 15 % at 180 s in the lost run with 26,000 of the player's healing.
+  **Bob's run of 2026-11-18** ("the balance of this battle seemed a tad different then in retail"): the script's
+  guards Cured from 100 % from the first second, so the one who prays never went below 46 % (no talk 114), with
+  8,300 of his healing; the waves fell in 22 and 15 s (retail's lost run: 41 and 113 s). Since then the guards heal
+  below 65 % (`HEAL_PRAYER_BELOW`), Stoneskin one of themselves or the player about every 45 s each (15 uses in
+  retail's 240 s run) and Regen a hurt one about every two minutes, before their Cures. Their heals on the one who
+  prays still come to about 10,500 per 20 s against retail's 8,000 to 9,600 (Divine Seal, 138, and Holy, 139,
+  aren't cast). questkit test `test_heart_of_the_forests_guards_heal_below_65`.
   The script gives the status with its tick (`gain_effect`'s fifth argument, 1850 then 2300).
 * **Flow**: sequence 2, talks 107 and 108 (4290072) at 5.0 and 10.0. **The first wave down** (three of base 1705,
   three of 1701, out from the start, one of each on each guard): sequence 3 at once; 20.05 s later sequence 4 and the

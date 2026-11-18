@@ -21,6 +21,13 @@ use kawari::{
 use physis::equipment::EquipSlot;
 use strum::IntoEnumIterator;
 
+/// What a coffer that holds the same for whoever opens it gives: its one set (`player:open_coffer`'s third argument.)
+/// The Cleric's Attire Coffer (20648, the White Mage's level 50 quest's reward) gave Connor its five pieces
+/// (6074-6078; his Chronofoil capture e834e436); with no set listed for it Bob's gave nothing (2026-11-18.)
+pub(crate) fn coffer_for_anyone(contents: &[Vec<u32>]) -> Vec<u32> {
+    contents.first().cloned().unwrap_or_default()
+}
+
 impl ZoneConnection {
     /// Inform other clients (including yourself) that you changed your equipped model ids.
     pub async fn inform_equip(&mut self) {
@@ -441,7 +448,7 @@ impl ZoneConnection {
     /// item's ClassJobCategory) is given, as an event gives an item, and the coffer used up. Nothing for the class, not
     /// in the bags, no room for the set, or in instanced content (the item's description: it can't be opened there):
     /// nothing happens and the coffer is kept. Retail's own packets for this aren't recorded yet.
-    pub async fn open_coffer(&mut self, coffer_id: u32, contents: &[Vec<u32>]) {
+    pub async fn open_coffer(&mut self, coffer_id: u32, contents: &[Vec<u32>], for_anyone: bool) {
         if self.content_finder_condition_id != 0 || self.content_handler_id.is_some() {
             tracing::info!("Coffer {coffer_id} not opened: in instanced content");
             return;
@@ -451,7 +458,9 @@ impl ZoneConnection {
             return;
         }
         let class_job = self.player_data.classjob.current_class as u8;
-        let given: Vec<u32> = {
+        let given: Vec<u32> = if for_anyone {
+            coffer_for_anyone(contents)
+        } else {
             let mut game_data = self.game_data.lock();
             contents
                 .iter()
@@ -1112,6 +1121,20 @@ pub fn draw_loot(
 #[cfg(test)]
 mod loot_coffer_tests {
     use super::draw_loot;
+
+    /// Bob, 2026-11-18: the Cleric's Attire Coffer (20648) "doesn't give anything". Retail's gave a White Mage its
+    /// five pieces (Connor's Chronofoil capture e834e436); the script lists them, for whoever opens it.
+    #[test]
+    fn an_attire_coffer_gives_its_set_to_whoever_opens_it() {
+        let script = std::fs::read_to_string("../../resources/scripts/items/Coffer.lua").unwrap();
+        let lua = mlua::Lua::new();
+        lua.load(&script).exec().unwrap();
+        let fixed: mlua::Table = lua.globals().get("FIXED_COFFERS").unwrap();
+        let set: Vec<u32> = fixed.get(20648).unwrap();
+        assert_eq!(set, vec![6074, 6075, 6076, 6077, 6078]);
+        assert_eq!(super::coffer_for_anyone(&[set.clone()]), set);
+        assert!(super::coffer_for_anyone(&[]).is_empty());
+    }
 
     /// Bob, 2026-11-15: the Keybound Coffer "completely non-functional". Its rows are retail's 40 openings: each is
     /// drawn as often as it came.

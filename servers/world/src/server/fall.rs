@@ -6,8 +6,14 @@
 //! measured, 4 % at most), and out of combat never below 1 HP (retail's 272 of 273 and 33,381 of 33,382 after the
 //! highest falls); in combat a fall can kill (a long-time player's note, Bob, 2026-10-28).
 //! Retail showed it with ActorControl 45 (the damage, 1) from the player, then their StatusEffectList.
+//! A mounted player is hurt as one on foot is (since 2026-11-18): Connor's capture e834e436 has one, mounted (mode 4),
+//! down 12 yalms for 241, and no capture has a mounted drop of 10 yalms that didn't hurt; Kawari spared the mounted,
+//! and Bob rode off a cliff in the Central Shroud, 39.6 yalms, for nothing ("no fall damage from cliff".) What the
+//! client sends in flight wasn't seen, so a mounted drop that took much longer than a fall of its height would
+//! (`fell_freely`) is taken for a flight and spared.
 
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use parking_lot::Mutex;
 
@@ -34,11 +40,41 @@ const FALL_DAMAGE_PER_SQUARE_YALM: f32 = 0.228;
 /// ActorControl 45's second value (retail's, every fall but two at level 87.)
 const FALL_DAMAGE_UNK: u32 = 1;
 
-/// Where a player stood last and, while they're in the air, where they left the ground from.
+/// How fast a fall gathers speed, in yalms a second each second: Bob's 39.3 yalms off the Central Shroud's cliff took
+/// 2.05 s between the client's leaving the ground and landing (the server's capture of 2026-11-18.)
+const FALL_GRAVITY: f32 = 18.7;
+/// A mounted drop that took longer than this many times a fall of its height, and this much more, was a flight (a
+/// guess: no flight has been looked at.)
+const FLIGHT_TIMES_A_FALL: f32 = 1.6;
+const FLIGHT_SLACK: f32 = 0.6;
+
+/// Where a player stood last and, while they're in the air, where they left the ground from and when.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct FallState {
     grounded_y: Option<f32>,
     from_y: Option<f32>,
+    left_at: Option<Instant>,
+}
+
+/// Whether a drop of `drop` yalms that took `airborne` was a fall (and not a mount flying down.)
+pub fn fell_freely(drop: f32, airborne: Duration) -> bool {
+    if drop <= 0.0 {
+        return true;
+    }
+    let fall = (2.0 * drop / FALL_GRAVITY).sqrt();
+    airborne.as_secs_f32() <= fall * FLIGHT_TIMES_A_FALL + FLIGHT_SLACK
+}
+
+/// Whether a landing hurts at all: not the dead, not a gimmick's jump (its own landing), and a mounted player only
+/// when they fell (`fell_freely`.)
+pub fn landing_hurts(
+    mounted: bool,
+    dead: bool,
+    gimmick_jump: bool,
+    drop: f32,
+    airborne: Duration,
+) -> bool {
+    !dead && !gimmick_jump && (!mounted || fell_freely(drop, airborne))
 }
 
 /// What a fall of `drop` yalms takes from someone with `max_hp` and `hp` now (0: nothing): out of combat it leaves
@@ -71,13 +107,19 @@ pub fn player_moved(
     match anim_state {
         MoveAnimationState::LeavingCollision if state.from_y.is_none() => {
             state.from_y = Some(state.grounded_y.unwrap_or(y));
+            state.left_at = Some(Instant::now());
             return;
         }
         MoveAnimationState::EnteringCollision => {
             let from = state.from_y.take();
+            let airborne = state
+                .left_at
+                .take()
+                .map(|left| left.elapsed())
+                .unwrap_or_default();
             state.grounded_y = Some(y);
             if let Some(from) = from {
-                hurt(network, instance, actor_id, from - y);
+                hurt(network, instance, actor_id, from - y, airborne);
             }
             return;
         }
@@ -96,6 +138,7 @@ fn hurt(
     instance: &mut Instance,
     actor_id: ObjectId,
     drop: f32,
+    airborne: Duration,
 ) {
     let Some(NetworkedActor::Player {
         spawn,
@@ -107,11 +150,14 @@ fn hurt(
         return;
     };
     let common = &mut spawn.common;
-    // Riding, already down, or a gimmick's jump (its own landing), nothing happens.
-    if common.mode == CharacterMode::Mounted
-        || common.mode == CharacterMode::Dead
-        || *executing_gimmick_jump
-    {
+    // Already down, a gimmick's jump (its own landing) or a mount flying down: nothing happens.
+    if !landing_hurts(
+        common.mode == CharacterMode::Mounted,
+        common.mode == CharacterMode::Dead,
+        *executing_gimmick_jump,
+        drop,
+        airborne,
+    ) {
         return;
     }
     let in_combat = conditions.has_condition(Condition::InCombat);
@@ -164,5 +210,37 @@ mod tests {
         assert_eq!(fall_damage(40.0, 273, 273, false), 272);
         assert_eq!(fall_damage(40.0, 273, 1, false), 0);
         assert_eq!(fall_damage(40.0, 273, 273, true), 273);
+    }
+
+    /// Bob, 2026-11-18 ("no fall damage from cliff"): he rode off a cliff in the Central Shroud, 39.6 yalms down in
+    /// 2.05 s, and took nothing, because the mounted were spared. Retail hurts them (Connor's capture e834e436: 241
+    /// for 12 yalms, mounted.) A mount that took far longer than a fall would is flying, and isn't hurt.
+    #[test]
+    fn a_mounted_fall_hurts() {
+        let fall = Duration::from_secs_f32(2.05);
+        assert!(landing_hurts(true, false, false, 39.6, fall));
+        assert!(landing_hurts(false, false, false, 39.6, fall));
+        assert_eq!(fall_damage(39.6, 2242, 2242, false), 2241);
+        // The dead and a gimmick's jump, as before.
+        assert!(!landing_hurts(false, true, false, 39.6, fall));
+        assert!(!landing_hurts(true, false, true, 39.6, fall));
+        // Flying down the same height in ten seconds; on foot nobody flies.
+        assert!(!landing_hurts(
+            true,
+            false,
+            false,
+            39.6,
+            Duration::from_secs(10)
+        ));
+        assert!(landing_hurts(
+            false,
+            false,
+            false,
+            39.6,
+            Duration::from_secs(10)
+        ));
+        // Connor's: 12 yalms is a fall of 1.1 s.
+        assert!(fell_freely(12.0, Duration::from_secs_f32(1.2)));
+        assert!(!fell_freely(12.0, Duration::from_secs_f32(4.0)));
     }
 }
