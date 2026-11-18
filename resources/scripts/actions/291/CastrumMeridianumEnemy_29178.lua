@@ -1,12 +1,10 @@
--- Castrum Meridianum's enemies' 29178 (BNpcBase 14574): a 1.2 s cast; it hit no one measured (Connor's Chronofoil
--- capture af05916c of 2026-11-09 and Bob's 9ba7d981 and 50e72631 of 2026-11-17, three runs.) Its area is the Action
--- sheet's; the enemies' timelines' `recorded_amounts` scale it (the potency only has to make some damage).
-
-local POTENCY = 250
+-- Castrum Meridianum's enemies' 29178 (BNpcBase 14574): a 1.2 s cast on one of its own side: a heal, 747 (Bob's
+-- Chronofoil capture 6320ae56 of 2026-11-18, its one use in four runs: on a BNpcBase 14571 at 4 % of 7663.) Its
+-- timeline uses it on the most hurt of its side (`ally_hp_below`).
+local HEAL = 747
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, POTENCY))
-
+    effects:heal(HEAL)
     return effects
 end

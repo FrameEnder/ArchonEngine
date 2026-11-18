@@ -79,7 +79,11 @@ Then two checks:
   timeline too, and it's checked the same way: battle talk (`talk`, against `battle_talk`), each laid-out NPC's
   ActionTimelines (`timeline [layout, id]`, ActorControl 407, against `play_action_timeline`) and every NPC brought out
   after the start (`appear`, against `spawn_bnpc`); older fixtures don't have these kinds, and they're compared only
-  where a fixture has them. battle-sim fixtures can hold what landed on the player (`landed`: `[[t, layout, action,
+  where a fixture has them. A fixture's NPC health is to a hundredth of a percent since 2026-11-18 (a tenth hid the
+  Porta Decumana's 36 % line crossed at 35.98 % until the next hit 5 s later). A battle-sim fixture's `random`
+  (`[2, ...]`) is what `math.random` gives the script's first rolls, retail's choices where a run shows them (The
+  Ultimate Weapon's two sets of 29756 in either order, `5061-6320ae56`); a quest fixture's step has the same
+  ([questkit](questkit.md)). battle-sim fixtures can hold what landed on the player (`landed`: `[[t, layout, action,
   players], ...]`, written by `--make` from retail's ActionEffects with the player among the targets and not missed,
   auto-attacks left out), which the script hears as `onActionLanded` half a second later, as the server's does. An
   `appear` is the fight's only when the script brings the NPC out: one the drop-in has

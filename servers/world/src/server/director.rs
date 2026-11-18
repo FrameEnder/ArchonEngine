@@ -221,6 +221,11 @@ pub enum LuaDirectorTask {
     UpdateShortcut {
         poprange_id: u32,
     },
+    /// Point the duty's shortcut at a spot instead of a pop range (`update_shortcut_spot`).
+    UpdateShortcutSpot {
+        position: Position,
+        rotation: f32,
+    },
     /// Send this player through a shortcut: to `pop_range_id`, or (without one) to where the duty's shortcut
     /// points now (`update_shortcut`).
     UseShortcut {
@@ -1179,6 +1184,21 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::UpdateShortcut { poprange_id });
             Ok(())
         });
+        // The shortcut pointed at a spot, for a duty whose pop ranges aren't known: where retail's shortcut put the
+        // player (Castrum Meridianum's, outside the last room: Bob's Chronofoil capture 6320ae56.)
+        methods.add_method_mut(
+            "update_shortcut_spot",
+            |_, this, (x, y, z, rotation): (f32, f32, f32, f32)| {
+                this.tasks.push(LuaDirectorTask::ShowEObj {
+                    base_id: EOBJ_SHORTCUT,
+                });
+                this.tasks.push(LuaDirectorTask::UpdateShortcutSpot {
+                    position: Position(glam::Vec3A::new(x, y, z)),
+                    rotation,
+                });
+                Ok(())
+            },
+        );
         // Send a player somewhere in the duty, as a shortcut does (a gimmick of the script's own.)
         methods.add_method_mut(
             "warp_to_pop_range",
@@ -1861,11 +1881,77 @@ pub struct DirectorData {
     pub bosses: HashMap<u32, DirectorBoss>,
     /// What the shortcut is currently pointing to.
     pub shortcut_poprange_id: Option<u32>,
+    /// Where the shortcut points when it's a spot and not a pop range (`update_shortcut_spot`): the last set of the
+    /// two is the one used.
+    pub shortcut_spot: Option<(Position, f32)>,
     /// For quest battles, the quest it belongs to.
     pub quest_battle_quest_id: u32,
 }
 
+/// A player put somewhere else in the same territory as retail sent it: a normal warp, the character hidden, the
+/// usual fade (the director's `warp_players`, and its shortcut when it points at a spot.)
+fn warp_player_within(
+    instance: &mut Instance,
+    network: &mut NetworkState,
+    actor_id: ObjectId,
+    position: Position,
+    rotation: f32,
+) {
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PrepareZoning(PrepareZoning {
+        territory_type_id: instance.zone.id,
+        warp_type: WarpType::Normal,
+        hide_character: 1,
+        fade_out_delay: 1,
+        ..Default::default()
+    }));
+    network.send_to_by_actor_id(
+        actor_id,
+        FromServer::PacketSegment(ipc, actor_id),
+        DestinationNetwork::ZoneClients,
+    );
+    let Some(client_id) = network
+        .clients
+        .iter()
+        .find(|(_, (handle, _))| handle.actor_id == actor_id)
+        .map(|(id, _)| *id)
+    else {
+        return;
+    };
+    let segment = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(ActorSetPos {
+        position,
+        rotation,
+        warp_type: WarpType::Normal,
+        arg: 2,
+        ..Default::default()
+    }));
+    instance.insert_task(
+        client_id,
+        actor_id,
+        WARP_DELAY,
+        QueuedTaskData::PacketSegment { segment },
+    );
+}
+
+/// Where a shortcut takes whoever uses it.
+#[derive(Debug, PartialEq)]
+pub enum ShortcutTo {
+    PopRange(u32),
+    Spot(Position, f32),
+}
+
 impl DirectorData {
+    /// Where a shortcut goes: to its own pop range if it has one (a gimmick that isn't the duty's shortcut), else
+    /// where the director last pointed the duty's (a pop range, `update_shortcut`, or a spot,
+    /// `update_shortcut_spot`); nowhere before it was pointed.
+    pub fn shortcut_goes(&self, own_pop_range: Option<u32>) -> Option<ShortcutTo> {
+        own_pop_range
+            .or(self.shortcut_poprange_id)
+            .map(ShortcutTo::PopRange)
+            .or(self
+                .shortcut_spot
+                .map(|(position, rotation)| ShortcutTo::Spot(position, rotation)))
+    }
+
     pub fn setup(&mut self) {
         let mut run_script = || {
             let mut lua_director = self.create_lua_director();
@@ -3320,43 +3406,7 @@ pub fn director_tick(
                     .collect();
                 let mut network = network.lock();
                 for actor_id in players {
-                    // As retail sent it: a normal warp, the character hidden, the usual fade.
-                    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PrepareZoning(
-                        PrepareZoning {
-                            territory_type_id: instance.zone.id,
-                            warp_type: WarpType::Normal,
-                            hide_character: 1,
-                            fade_out_delay: 1,
-                            ..Default::default()
-                        },
-                    ));
-                    network.send_to_by_actor_id(
-                        actor_id,
-                        FromServer::PacketSegment(ipc, actor_id),
-                        DestinationNetwork::ZoneClients,
-                    );
-                    let Some(client_id) = network
-                        .clients
-                        .iter()
-                        .find(|(_, (handle, _))| handle.actor_id == actor_id)
-                        .map(|(id, _)| *id)
-                    else {
-                        continue;
-                    };
-                    let segment =
-                        ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(ActorSetPos {
-                            position: *position,
-                            rotation: *rotation,
-                            warp_type: WarpType::Normal,
-                            arg: 2,
-                            ..Default::default()
-                        }));
-                    instance.insert_task(
-                        client_id,
-                        actor_id,
-                        WARP_DELAY,
-                        QueuedTaskData::PacketSegment { segment },
-                    );
+                    warp_player_within(instance, &mut network, actor_id, *position, *rotation);
                 }
             }
             LuaDirectorTask::LeaveQuestBattle => {
@@ -3718,23 +3768,36 @@ pub fn director_tick(
                 );
             }
             LuaDirectorTask::UpdateShortcut { poprange_id } => {
-                instance.directors.first_mut().unwrap().shortcut_poprange_id = Some(*poprange_id);
+                let director = instance.directors.first_mut().unwrap();
+                director.shortcut_poprange_id = Some(*poprange_id);
+                director.shortcut_spot = None;
+            }
+            LuaDirectorTask::UpdateShortcutSpot { position, rotation } => {
+                let director = instance.directors.first_mut().unwrap();
+                director.shortcut_spot = Some((*position, *rotation));
+                director.shortcut_poprange_id = None;
             }
             LuaDirectorTask::UseShortcut {
                 actor_id,
                 pop_range_id,
             } => {
-                let id = pop_range_id.or_else(|| {
-                    instance
-                        .directors
-                        .first()
-                        .and_then(|director| director.shortcut_poprange_id)
-                });
-                let Some(id) = id else {
-                    tracing::warn!(
-                        "The shortcut was used before the director pointed it anywhere!"
-                    );
-                    continue;
+                let id = match instance
+                    .directors
+                    .first()
+                    .and_then(|director| director.shortcut_goes(*pop_range_id))
+                {
+                    Some(ShortcutTo::PopRange(id)) => id,
+                    Some(ShortcutTo::Spot(position, rotation)) => {
+                        let mut network = network.lock();
+                        warp_player_within(instance, &mut network, *actor_id, position, rotation);
+                        continue;
+                    }
+                    None => {
+                        tracing::warn!(
+                            "The shortcut was used before the director pointed it anywhere!"
+                        );
+                        continue;
+                    }
                 };
                 instance.insert_task(
                     ClientId::default(),
@@ -5440,6 +5503,32 @@ fn capitalize_words(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Castrum Meridianum's shortcut on retail put Bob outside the last room after each of his two falls there
+    /// (Chronofoil capture 6320ae56, 2026-11-18: ActorSetPos to (-67.9, 69.5, -38.4) as its event ended). The
+    /// duty's pop ranges aren't known, so the script points the shortcut at that spot.
+    #[test]
+    fn a_shortcut_goes_where_it_was_last_pointed() {
+        let spot = (Position(glam::Vec3A::new(-67.9, 69.5, -38.4)), -1.396);
+        let mut director = DirectorData::default();
+        assert_eq!(director.shortcut_goes(None), None);
+        director.shortcut_spot = Some(spot);
+        assert_eq!(
+            director.shortcut_goes(None),
+            Some(ShortcutTo::Spot(spot.0, spot.1))
+        );
+        // A gimmick with a pop range of its own goes there whatever the duty's shortcut does.
+        assert_eq!(
+            director.shortcut_goes(Some(7)),
+            Some(ShortcutTo::PopRange(7))
+        );
+        director.shortcut_spot = None;
+        director.shortcut_poprange_id = Some(11438017);
+        assert_eq!(
+            director.shortcut_goes(None),
+            Some(ShortcutTo::PopRange(11438017))
+        );
+    }
 
     fn room(wall_id: u32) -> DirectorBoss {
         DirectorBoss {

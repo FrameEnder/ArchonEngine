@@ -18,8 +18,8 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Howling Eye (Garuda) | 58 | 1047 | `content/r1fa_re.lua` | one run with Duty Support (6a5244ec) and two Duty Finder runs (09ecf8e7, 6c495fc4), 2026-11-08 |
 | Brayflox's Longstop | 8 | 1041 | `content/s1d2_re.lua` | one run with Duty Support (44df02fc) and one Duty Finder run (c9145fdc), 2026-11-03 |
 | The Stone Vigil | 11 | 1042 | `content/r1d1_re.lua` | one run with Duty Support (1cefedf4) and one Duty Finder run (341808b0), 2026-11-07 |
-| Castrum Meridianum | 15 | 1043 | `content/w1d4_re.lua` | three runs with Duty Support: Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
-| The Porta Decumana | 830 | 1048 | `content/w1d5_battle.lua` | three runs with Duty Support: Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
+| Castrum Meridianum | 15 | 1043 | `content/w1d4_re.lua` | four runs with Duty Support (the fourth Bob's 6320ae56 of 2026-11-18, a Paladin): Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
+| The Porta Decumana | 830 | 1048 | `content/w1d5_battle.lua` | four runs with Duty Support (the fourth Bob's 6320ae56 of 2026-11-18, a Paladin): Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
 
 Every duty script in this table is checked against AutoDuty's route for its territory (`questkit autoduty`, see
 [questkit](questkit.md)): on 2026-11-13 each names every object AutoDuty uses, and Sastasha's keys are the one
@@ -1104,7 +1104,7 @@ Five non-hostile ones (BNpcBases 6358, 14580, 14618, 14671, 14672) stand as reta
 | Talk 33512; 3.0 s on map effect 11 and EObj 2007457's ActorControl 409 `[1, director]` | The three dead (950.7 s) |
 | Talks 33513, 33514 | Past z = -77, then west of x = -42 (957.8, 968.1 s) |
 | Two more come out (9088956, 9088957), talk 33522 as they appear | Three of the six of 9088952-9088955, 9162432, 9162434 dead (1024.1 s) |
-| The cutscene: scene 3 with cutscene 275 `[0, 151, 0, 0]`; EObj 2012983 opened; map effects 12-14 a second on; the last boss and its 50 helpers there | Those two dead (1099.3 s) |
+| The cutscene: scene 3 with cutscene 275 `[0, 151, 0, 0]`; EObj 2012983 opened; map effects 12-14 a second on; the last boss and its 50 helpers there | 2.1 to 2.4 s after the last of **all eight** fell (1099.3 s). The two alone looked enough in three runs; in the fourth (6320ae56) one of the six outlived them by 4.9 s and the cutscene waited for it |
 | Everyone at (-83.9, 72.0, -35.2) (PrepareZoning, ActorSetPos); objective 4 done 1.8 s on | The cutscene's end (1213.1 s) |
 | The last boss (wall 2000593, line 2002735, PlaceName 428); it fallen: the way out (EObj 2000596), the duty complete, scene 3 with cutscene 277 `[1, 18, 0, 0]` | 1221.1 to 1431.4 s |
 
@@ -1139,20 +1139,43 @@ next time, two the time after. **Below 20 %** (the talk came at 20.0, 15.6, 20.0
 free, 3.1 and 3.3 s after its 28798 when it was casting) talk 33520 and its last part: 28788, 29354 at 1.9 s, 29352
 at 8.0 and 25.3, three 29353s at 14.8 to 18.5. It fell 19 to 31 s into that.
 
-**A fall with Duty Support** (Connor's two): no PartyWipe or DutyRecommence came from the director; he was back in
-the last room 31 and 73 s later (a warp), and the boss and its helpers were new as he came. Kawari's wipe
-(`server/wipe.rs`) is what happens here: the script takes the boss away, sends everyone back to the last room
-(`set_start`) and brings it back at `onDutyRecommence`.
+**A fall with Duty Support** (Connor's two, and Bob's two as a Paladin on 2026-11-18, capture 6320ae56 with Kawari
+Witness): no PartyWipe or DutyRecommence came from the director. The player's fall (ActorControl 14, SetMode 2,
+ActorControlSelf 511 `[1]` and 512); 3.0 s later the screen faded (ActorControlSelf 263 `[1]`), and 4.5 s after the
+fall the player was **at the duty's entrance** (248, 87, -94), whole again (ActorControlSelf 236, then 200, 511
+`[63]`, 263 `[0]`, 253, 260 and three 276s; SetMode 1 3.4 s on), the members revived with them (ActorControls 266 at
++2.9 s, then SetMode 1, 60 and 1529 on each at +4.4 s). Both times he walked to **the shortcut by the entrance** (an
+object whose event is GimmickAccessor 74: scene 1, flags 0x2001, 1.4 s) and it put him outside the last room at
+(-67.9, 69.5, -38.4) facing -1.396, the members at his side; the boss and its 50 helpers were new 0.4 s after he came
+(11.5 and 9.7 s after the entrance; Connor's 31 and 73 s were his walk too). Kawari's wipe (`server/wipe.rs`) sends
+everyone to the entrance as in any duty; the script takes the boss away, brings it back at `onDutyRecommence`, and
+from the last room's cutscene on points the shortcut at that spot: **`director:update_shortcut_spot(x, y, z,
+rotation)`** (new: the shortcut's `update_shortcut` takes a pop range, and this duty's aren't known;
+`DirectorData::shortcut_goes`, test `a_shortcut_goes_where_it_was_last_pointed`). Where the shortcut goes before the
+last room, and when it first shows, isn't known: it was only used there.
+
+**The fourth run** (Bob's 6320ae56, visit 0.1, 2026-11-18: a Paladin, so the enemies went for a player; 1963.9 s,
+two falls at the last boss) fits the three otherwise: the first boss's casts to the round's 31.5 s through 196 s, the
+talks, waves and objectives. New from it: the cutscene's eight (above); the fall and the shortcut; **BNpcBase 14574's
+29178 is a heal** (747 on one of its own side at 4 % of its health, a 1.2 s cast begun with it at 4 to 9 %; it had
+been read as an attack that hit no one): its timeline uses it on the most hurt of its side below 10 %
+(`ally_hp_below`, [Combat](combat.md)); the soldiers' status 290 (28777) has no timer; and what the attacks that
+had hit no player do to one: 29170 114-157, 29169 136-188, 28785 939 and 1044, 28798 1202-1620 (2255 to the members
+it turned on), a helper's 28787 802. Those are a Paladin's: he took 1/1.75 of what Bob's damage dealer and healer
+had from the same enemies' auto-attacks and about 1/1.5 from the duty's spells, so the timelines' `players` amounts
+for them are the Paladin's times that (236, 298, 1488, 2112, 1203), an estimate.
 
 **Not known, so guessed or left out** (also in `known-issues.md`): the event ranges; the rounds past what the runs
 show (they go on); the last part past 25 s (its casts every 17.3 s); where 28788 takes the boss the once it wasn't
 the middle; what the wave soldiers' 28777 status (290) does; what 0x80000007 `[42]` and EObj 2007457's ActorControl
-409 are; the damage of 28773, 28781, 28787 and 29146, which hit no one.
+409 are; the damage of 28773, 28781 and 29146 to a player (29146 hit a member for 1098 in the fourth run); the
+shortcut before the last room.
 
-**Tests**: duty fixtures `15-af05916c`, `15-9ba7d981`, `15-50e72631` (`questkit duty-sim`: 224, 105 and 105 of
-retail's events: the talks, music, objectives, every NPC brought out, the last boss's ActionTimelines, the clear;
-and a rehearsed wipe at each boss). Connor's two falls are in his fixture by hand (`wipes`), as the director sent
-nothing for them.
+**Tests**: duty fixtures `15-af05916c`, `15-9ba7d981`, `15-50e72631` and `15-6320ae56` (`questkit duty-sim`: 224,
+105, 105 and 225 of retail's events: the talks, music, objectives, every NPC brought out, the last boss's
+ActionTimelines, the clear; and a rehearsed wipe at each boss). Connor's and Bob's two falls each are in their
+fixtures by hand (`wipes`: the fall and the boss's coming back), as the director sent nothing for them;
+`a_shortcut_goes_where_it_was_last_pointed` (`director.rs`), `a_heal_waits_for_an_ally_hurt_enough` (`rotation.rs`).
 
 ## The Porta Decumana
 
@@ -1195,7 +1218,7 @@ the pull, the bosses' own casts in their timelines (`PortaDecumanaBoss1_14587.js
 | 160.6-226.5 | Talk 33201, its 28976, ActorControl 70 `[8201054]`; base 14588 shown (4561) and hidden (4573) round its 28996 from the middle (162.0: 1593-1715) and three 28997s from edge spots (180.2, 195.2, 219.4); the boss's 28979 at 173.9 and 213.1, each followed by a helper's 28980 from the middle every 5.1 s (five, and four before the boss goes) |
 | 235.7-263.0 | Its 28984 (status 3012 on it), then 28510 (27.7 s) at 244.8: the map effect and weather at 249.7, the party's 28511 at 259.8, **the cast stopped at 262.7**, its 28993 (status 3009 off) and 14588 gone (4576) |
 | 286.4 | Talk 33213, its 28978, ActorControl 70 `[8201056]`; base 14591 shown and its 29002 from the middle at 287.8 (1625-1735) |
-| 301.7 on | **The rounds**: its 28982 (1.9 s) at 301.7, 306.0 and 322.3, with three helpers' 28983 15 yalms from the middle and one in it (three ways round seen) the first two times and eight 17 yalms out the third; 14591's 29003 (533-540, and everyone thrown to the edge: Knockback 67) 14.9 s into the round. The round again every 40.9 s |
+| 301.7 on | **The rounds**: its 28982 (1.9 s) at 301.7, 306.0 and 322.3, with three helpers' 28983 15 yalms from the middle and one in it (three ways round seen) the first two times and eight 17 yalms out the third; 14591's 29003 (533-540, and everyone thrown to the edge: Knockback 67) 14.9 s into the round (shown 1.3 s before it and hidden 6.1 s after it began: once shown it hides even if the chain has begun meanwhile, as in the fourth run, 0.4 s after the chain's talk). The round again every 40.9 s |
 | below 36 % | Once the rounds have begun, whatever the round is at (**third run**: it began a second round at 36.7 % and the talk came 9 s into it, between its second and third 28982; the first two runs, read alone, looked like a 40 % line asked only as a round ended or began). The talk came 1.6 s after 35.95 %, as 36.3 became 35.97 %, and 3.2 s after 35.94 %, at 342.6, 367.5 and 356.4 s. **The chain**, from talk 33214: 28628 at 5.1 s, talk 33215 and its 28990 (31.7 s) with twelve helpers' 28991 at 7.6, the map effect and weather at 17.5, the party's 28511 at 26.6, the casts stopped at 29.5, its 28995 (status 3011 off) at 29.6 and 14591 gone (4578), talk 33218 and ActorControl 70 `[8201058]` at 41.8 |
 | below 22 % | (21.96, 21.7 and 21.9 % 0.1 to 2.4 s before it, 62.0, 71.1 and 50.0 s into the chain.) **The cutscene**: the director's scene 3 (flags 0x08502403) with cutscene 120 and `[0, 150, 0, 0]`; every NPC of the first fight is taken away as it begins |
 
@@ -1216,7 +1239,7 @@ sends everyone back there (`director:set_start`, new; retail's wasn't seen).
 | 71.5 | Its 29013 (3.7 s) with a helper's 29014 (4.7 s: 829-948 to all four) on one of the party. Again at 144.6 and 247.7 |
 | 83.1, 128.6, 172.4, 231.6, 275.8 | **The rows**: ten of base 14593 come where the boss stands; 4.8 s later they leap (29018, then SnapNextMove) to ten places 4 yalms apart on a line through the middle and cast 29019 (3.7 s; 1140 the once it caught a player) across it; 7.7 s after the first leap another row; 7.4 s after that a third leap, and they're gone 22.2 s after coming. The rows were the east-west line (every other one facing the other way), a diagonal (each half its own way), or two half rows crossed: line and diagonal, diagonal and line, diagonal and crossed, diagonal and line, diagonal and crossed. Its 29020 (4.7 s) comes 5.2 and 3.3 s before them or 9.4 s after: the rows keep the fight's clock, not the cast's |
 | 119.2, 188.8, 222.2, 292.1 | Four helpers' 29021 (6.7 s: 135-248 a hit) 20 yalms north, south, east and west of the middle; map effects 0-3 (timeline 2, state 4) 1.9 s into the cast |
-| 310.3 | **Below 30 %** (28.0 % Connor's, 29.7 % the third run): the last part. Otherwise (32.9 %, Bob's first) its 29022 and the same question 15.4 s later (29.4 %: the last part) |
+| 310.3 | **Below 30 %** (28.0 % Connor's, 29.7 % the third run): the last part. Otherwise its 29022, and the question again every 7.6 s: Bob's first run (32.9 %; 30.7 % at 7.6 s) went on 15.5 s later at 29.4 %, his run of 2026-11-18 (32.5 %) 7.1 s later at 29.5 %, as the 29022 and its lock were over. One 29022 in each; here again every other look, a guess |
 | the last part | 28628 to the middle, 2.2 s on 29024 (a 70.7 s cast), talks 33223 and 33224 at 4.2 and 11.2 s, map effect 5 (2, 1), weather 106 and talk 33225 at 20.3, talk 33226 at 26.3, the map effect off (8, 4) and weather 2 at 32.3, a helper's 28542 on the party at 32.4, talk 33227 (BNpcName 2664) at 53.3 (and 33228 at 63.4 in Bob's) |
 | its health at 0 | (54 and 63 s into 29024.) The cast stopped (ActorControl 15 `[540, 1, 29024, 1]`), the duty complete (the director's 0x40000003, then 0x40000007 `[0, 0]` and `[1, 0]`), the closing cutscene (scene 3 with cutscene 121 and `[1, 18, 0, 0]`), ActionTimeline 73 on it a second later |
 
@@ -1239,10 +1262,14 @@ sends everyone back there (`director:set_start`, new; retail's wasn't seen).
 the four of base 14594 do at the middle (gone here); whether felling the four of base 14590 early changes anything;
 the first boss below 22 % before the chain (a 1 HP floor keeps it standing); the second fight past 325.7 s above
 30 %; what ActorControls 20 `[325]`, 49 `[16]`, 62 and 70 on the bosses and statuses 3009-3012 do (sent and given as
-retail did; that 28976-28978 give 3009-3011 is a guess from 28993-28995 taking them off); a wipe (the fight the
-party fell in begins again); the damage of what hit no one (28980, 28983, 28997, 29000, 29001, 29010).
+retail did: **3009 to 3011 are on the first boss from the first, with no timer**, as Kawari Witness saw them when it
+first saw the boss on 2026-11-18, and its 28976-28978 gave nothing but their own effect, so the script gives the
+three as it brings the boss and those casts do nothing; 3012, from 28984, has no timer either); a wipe (the fight the
+party fell in begins again); the damage of what hit no one (28980, 28983, 28997, 29000, 29001; 29010 hit a member
+for 1108 in the fourth run). 29023 on a player: 1473 and 1511 to Bob's Paladin, taken as 2238 to anyone else (he
+took 1/1.5 of what his other jobs had from this duty's attacks, nine actions compared).
 
-**Tests**: duty fixtures `830-af05916c`, `830-9ba7d981` and `830-50e72631` (`questkit duty-sim`: 109, 112 and 109 of retail's events; the third's tolerance is 3.5 s for the chain's talk, which retail's boss delayed 3.2 s that time; the
+**Tests**: duty fixtures `830-af05916c`, `830-9ba7d981`, `830-50e72631` and `830-6320ae56` (`questkit duty-sim`: 109, 112, 109 and 111 of retail's events; the third's tolerance is 3.5 s for the chain's talk, which retail's boss delayed 3.2 s that time; the
 talks, the three's ActionTimelines, every NPC's coming, the completion; and a rehearsed wipe); the fixture's `scenes`
 give the script the cutscene's end ([Testing](testing.md)); `a_cast_the_fight_stops_never_lands`
 (`bundle_tests.rs`).

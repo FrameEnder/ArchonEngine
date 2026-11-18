@@ -23,7 +23,7 @@
 --   179.3  the four can be targeted, each tethered to the player (ActorControl 35 [0, 197, player, 15]); a gauge
 --          (the director's 0x8000000C [61, n]) climbs from 0 to 10000 by 215.1, 28 a tenth of a second
 --   215.1  the four can't be targeted, ActorControl 70 [8201620], talk 33701, his 29787; 216.0 a helper in the middle
---          uses 29788 on the player (Knockback 68, status 1614); 218.4 his 29343 (2.2 s); 221.3 his 29780, 63 [0],
+--          uses 29788 on the player (Attract 68, status 1614); 218.4 his 29343 (2.2 s); 221.3 his 29780, 63 [0],
 --          the gauge gone (0x8000000C [61, 0xFFFFFFFF]), status 2999 on the player, the director's 0x8000001A [1, 1]
 --   251.9  a helper's 29565 on the player: 9999999. They fall. 257.2 the music off; 260.7 talk 33713; 279.9 music 81
 --   288.1  the ally in the middle: 29344 on the player (statuses 3123 and 2056); talks 33702 and 33703
@@ -140,6 +140,8 @@ FINISH_SCENE = 4
 FINISH_SCENE_FLAGS = 0x0C002001
 
 -- The helpers' casts: { seconds from the pull, action, x, z, facing }; x nil is where the player stands then.
+ACTION_SETS = 29756
+SETS_APART = 4.01 -- seconds between the first set of 29756 and the second (4.0 to 4.02 in the runs)
 HELPER_CASTS = {
     { 16.3, 29329, -714.02, 475.97, 1.57 },
     { 16.3, 29329, -711.02, 486.99, 1.57 },
@@ -513,8 +515,23 @@ function pull(director)
         after(control[1], function(d) d:bnpc_control(BOSS, CONTROL_70, { control[2] }) end)
     end
     after(T_MAP_EFFECT, function(d) d:map_effect(0, MAP_EFFECT_ON.timeline, MAP_EFFECT_ON.state) end)
+    -- The helpers' 29756 come as two sets of twelve 4.0 s apart, the diagonals and the cross, twice in the fight. The
+    -- first time the diagonals came first in all four runs; the second time in two of three, the cross first in
+    -- Bob's of 2026-11-18 (capture 6320ae56): either at random then.
+    local of_29756, cross_first = 0, false
     for _, row in ipairs(HELPER_CASTS) do
-        after(row[1], function(d) helperCast(d, row) end)
+        local at = row[1]
+        if row[2] == ACTION_SETS then
+            local occurrence, set = of_29756 // 24, (of_29756 % 24) // 12
+            if of_29756 == 24 then
+                cross_first = math.random(2) == 2
+            end
+            if occurrence == 1 and cross_first then
+                at = at + (set == 0 and SETS_APART or -SETS_APART)
+            end
+            of_29756 = of_29756 + 1
+        end
+        after(at, function(d) helperCast(d, row) end)
     end
     for _, move in ipairs(BOSS_MOVES) do
         after(move[1], function(d) d:jump_bnpc(BOSS, move[2], FLOOR_Y, move[3], move[4]) end)

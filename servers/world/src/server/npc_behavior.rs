@@ -533,12 +533,20 @@ pub fn npc_behavior(
         .lock()
         .get_battalion_enemies(crate::server::action::PLAYER_BATTALION);
     let mut allies_by_base: HashMap<(bool, u32), (u32, ObjectId)> = HashMap::new();
+    // And each living battle NPC's side and health in %, for entries with `ally_hp_below`.
+    let mut side_health: Vec<(bool, ObjectId, f32)> = Vec::new();
     for (id, actor) in &instance.actors {
         if let NetworkedActor::Npc { spawn, .. } = actor
             && matches!(spawn.common.object_kind, ObjectKind::BattleNpc(_))
             && spawn.common.health_points > 0
         {
             let hostile = crate::server::action::at_war(&players_enemies, actor);
+            side_health.push((
+                hostile,
+                *id,
+                spawn.common.health_points as f32 * 100.0
+                    / spawn.common.max_health_points.max(1) as f32,
+            ));
             let key = (hostile, spawn.common.base_id);
             let layout = spawn.common.layout_id;
             if allies_by_base
@@ -1756,12 +1764,26 @@ pub fn npc_behavior(
                 } else {
                     HashMap::new()
                 };
+                // The most hurt of its side, for an entry with `ally_hp_below` (a heal).
+                let hurt_ally = rotation
+                    .actions
+                    .iter()
+                    .any(|entry| entry.ally_hp_below.is_some())
+                    .then(|| {
+                        side_health
+                            .iter()
+                            .filter(|(side, ally, _)| *side == hostile && ally != id)
+                            .map(|(_, ally, health)| (*ally, *health))
+                            .min_by(|a, b| a.1.total_cmp(&b.1))
+                    })
+                    .flatten();
                 let situation = Situation {
                     now: Instant::now(),
                     target,
                     target_hp: health_percent.get(&target).copied().unwrap_or(100.0),
                     self_hp: health_percent.get(id).copied().unwrap_or(100.0),
                     allies,
+                    hurt_ally,
                 };
                 let mut game_data = game_data.lock();
                 let mut mechanics = |action| game_data.get_action_mechanics(action);

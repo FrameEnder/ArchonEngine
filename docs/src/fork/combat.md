@@ -301,6 +301,12 @@ Enemies still compute damage like players do (stat × potency), which is far too
   damage (retail 5–6 % on Bob, 7–9 % on tanks, 0.83×), and misses by how far the player is above the enemy
   (`npc_miss_percent`, from the captures): 2 % at the same level or below it, 12 % 1–2 levels above, 25 % 3–10 above,
   40 % more (retail 0–3 %, 12–14 %, 21–30 %, 32–53 %). It was a flat 8 %.
+* **A recorded amount is what a damage dealer or healer took.** Bob's Paladin (2026-11-18, capture 6320ae56, level
+  50 with Duty Support) took 1/1.75 of what his other jobs had from Castrum Meridianum's enemies' auto-attacks
+  (eight kinds: 1/1.67 to 1/1.87) and about 1/1.5 from its spells and from the Porta Decumana's attacks (nine
+  actions: 1/1.42 to 1/1.6); in the last quest battle of The Ultimate Weapon he took a quarter *more* than the runs
+  before (192 for 145, 1024 for 832). Kawari gives every player a timeline's `players` amount whatever their job:
+  a tank takes too much. Nothing scales it by the player's defence yet ([Known issues](known-issues.md)).
 * **Recorded amounts** come first: a timeline's `recorded_amounts` (`{"<action>": {"players": avg, "npcs": avg}}`)
   says what that NPC's action did on retail to a player and to another NPC. The hit is scaled to it (then varied,
   missed, parried or critical as above), and a heal (Cure) is set to it ±5 %. Used for quest battle allies and
@@ -658,6 +664,7 @@ Every tick (500 ms) the first ready entry is used:
 | `then` | The GCD action that comes next (a buff's follow-up). |
 | `target_hp_below`, `self_hp_below` | Only below that health %. |
 | `on_ally` | A BNpcBase: the action goes on a living NPC of that kind on its own side (the lowest layout ID of them) instead of its target, and waits while there's none (`Situation::allies`, `target_for`). Quest battle 17's boss drains (1127) a yodomi on its side every 26 s while one is out. |
+| `ally_hp_below` | (2026-11-18) A percentage: the action goes on the most hurt living NPC of its own side other than itself instead of its target, and waits while none is below it (`Situation::hurt_ally`). Castrum Meridianum's BNpcBase 14574 began its heal (29178: 747, a 1.2 s cast) on one at 4 to 9 % of its health, and not while the same one fell from 47 to 12 % (Bob's Chronofoil capture 6320ae56, its one use in four runs): 10 there. Test `a_heal_waits_for_an_ally_hurt_enough` |
 
 A rotation's action replaces that tick's auto-attack; casts work as for any NPC action (it stands still while casting).
 Heals on allies stay in the content's Lua (`runHeals`), since they pick a target other than the NPC's own.

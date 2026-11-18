@@ -65,11 +65,21 @@ pub struct Situation {
     pub self_hp: f32,
     /// The NPCs on its own side by BNpcBase, one of each (the lowest layout ID), for entries used `on_ally`.
     pub allies: HashMap<u32, ObjectId>,
+    /// The most hurt living NPC of its own side other than itself and its health in %, for entries with
+    /// `ally_hp_below`.
+    pub hurt_ally: Option<(ObjectId, f32)>,
 }
 
 impl Situation {
-    /// Whom an entry is used on: its ally for one `on_ally`, otherwise the NPC's target.
+    /// Whom an entry is used on: its ally for one `on_ally`, the hurt one for one with `ally_hp_below` (no one while
+    /// none is that hurt), otherwise the NPC's target.
     pub fn target_for(&self, entry: &RotationAction) -> Option<ObjectId> {
+        if let Some(below) = entry.ally_hp_below {
+            return self
+                .hurt_ally
+                .filter(|(_, health)| *health < below)
+                .map(|(ally, _)| ally);
+        }
         match entry.on_ally {
             Some(base) => self.allies.get(&base).copied(),
             None => Some(self.target),
@@ -333,6 +343,7 @@ mod tests {
                 target_hp: 100.0,
                 self_hp: 100.0,
                 allies: HashMap::new(),
+                hurt_ally: None,
             };
             if let Some(action) = state.choose(rotation, &situation, &mut mechanics) {
                 state.record(rotation, action, ObjectId(1), now, mechanics(action));
@@ -521,6 +532,7 @@ mod tests {
             target_hp: 100.0,
             self_hp: 100.0,
             allies: HashMap::new(),
+            hurt_ally: None,
         };
         assert_eq!(
             state.choose(&rotation, &on_other, &mut mechanics),
@@ -532,6 +544,7 @@ mod tests {
             target_hp: 100.0,
             self_hp: 100.0,
             allies: HashMap::new(),
+            hurt_ally: None,
         };
         assert_eq!(
             state.choose(&rotation, &on_same, &mut mechanics),
@@ -553,6 +566,7 @@ mod tests {
             target_hp: 50.0,
             self_hp: 100.0,
             allies: HashMap::new(),
+            hurt_ally: None,
         };
         assert_eq!(state.choose(&finisher, &healthy, &mut mechanics), None);
         let low = Situation {
@@ -561,10 +575,58 @@ mod tests {
             target_hp: 10.0,
             self_hp: 100.0,
             allies: HashMap::new(),
+            hurt_ally: None,
         };
         assert_eq!(
             state.choose(&finisher, &low, &mut mechanics),
             Some(TRUE_THRUST)
+        );
+    }
+    #[test]
+    fn a_heal_waits_for_an_ally_hurt_enough() {
+        // Castrum Meridianum's BNpcBase 14574 (Bob's Chronofoil capture 6320ae56): its heal began on an ally at 4 to
+        // 9 %, and never while the same ally went from 47 to 12 %.
+        // Thunder stands in for the heal: the test's mechanics know it as a spell.
+        const HEAL: u32 = THUNDER;
+        let rotation = Rotation {
+            pace: 3.1,
+            actions: vec![
+                RotationAction {
+                    action: HEAL,
+                    ally_hp_below: Some(10.0),
+                    ..Default::default()
+                },
+                RotationAction {
+                    action: TRUE_THRUST,
+                    ..Default::default()
+                },
+            ],
+        };
+        let state = RotationState::default();
+        let with = |hurt_ally| Situation {
+            now: Instant::now(),
+            target: ObjectId(1),
+            target_hp: 100.0,
+            self_hp: 100.0,
+            allies: HashMap::new(),
+            hurt_ally,
+        };
+        for none_hurt in [None, Some((ObjectId(7), 12.0))] {
+            let situation = with(none_hurt);
+            assert_eq!(
+                state.choose(&rotation, &situation, &mut mechanics),
+                Some(TRUE_THRUST)
+            );
+            assert_eq!(situation.target_for(&rotation.actions[0]), None);
+        }
+        let situation = with(Some((ObjectId(7), 8.0)));
+        assert_eq!(
+            state.choose(&rotation, &situation, &mut mechanics),
+            Some(HEAL)
+        );
+        assert_eq!(
+            situation.target_for(&rotation.actions[0]),
+            Some(ObjectId(7))
         );
     }
     #[test]
@@ -594,6 +656,7 @@ mod tests {
             target_hp: 100.0,
             self_hp: 100.0,
             allies: HashMap::new(),
+            hurt_ally: None,
         };
         assert_eq!(
             state.choose(&rotation, &alone, &mut mechanics),
@@ -601,6 +664,7 @@ mod tests {
         );
         let with_yodomi = Situation {
             allies: HashMap::from([(YODOMI, ObjectId(7))]),
+            hurt_ally: None,
             ..alone
         };
         assert_eq!(

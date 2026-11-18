@@ -57,6 +57,9 @@ the script hears as `onObjectTalk(director, 1, 2, base)` if it has spawned that 
 `event_action` it answers with ends `bar` seconds later (`onEventActionCast(director, 1, 2)`), as the server's does (In
 the Eyes of Gods and Men's rosary, quest battle 60.)
 
+`random` (`[2, 1, …]`) is what `math.random` gives the script's first rolls, in order: retail's choices, where a run
+shows them (which of two sets of helper casts came first.)
+
 Pools: NPCs retail brought out at random from a few, over and over (quest battle 86's bombs: one of three layouts each
 time), are listed in `pools` (`[[4317589, 4317648, 4317650]]`). A spawn of any of a pool matches a retail spawn of any
 other of it, the script can have several out at once, and they fall when the script has them fall (their retail deaths
@@ -501,6 +504,12 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     director = lua.eval("""setmetatable({}, { __index = function(_, name)
         return function(_, ...) LOG(name, ...) end
     end })""")
+    # What the script's first rolls give (`"random": [n, …]`: what retail drew, in the order the script asks), so a
+    # run where retail's choice shows (The Ultimate Weapon's two sets of 29756 in either order) is replayed as it
+    # went; past them, and without them, the rolls are the Lua state's own.
+    rolls = list(fixture.get("random", []))
+    lua_random = lua.globals().math.random
+    lua.globals().math.random = lambda *args: rolls.pop(0) if rolls else lua_random(*args)
     try:
         lua.execute(Path(script).read_text())
     except Exception as error:  # Lua errors

@@ -123,7 +123,9 @@ def fixture_from_run(run: dict, script: str, source: str = "", unlaid: dict[int,
                 health.setdefault(str(target["Id"]), []).append([rel(action["S"]), target["Hp"]])
 
     def percent(hp: int, max_hp: int) -> float:
-        return max(round(100 * hp / max_hp, 1), 0.1) if hp > 0 else 0.0
+        # To a hundredth: a tenth hid a line crossed by a hair (the Porta Decumana's 36 % at 35.98 %, which a fixture
+        # had as 36.0 until the next hit 5 s later: Bob's run of 2026-11-18.)
+        return max(round(100 * hp / max_hp, 2), 0.01) if hp > 0 else 0.0
 
     npcs: dict[str, list] = {}
     events: list = []
@@ -714,7 +716,7 @@ def _fights(fixture: dict) -> list[tuple[int, float, float]]:
 
 # What a script rightly tells the director once a duty, wipe or no wipe: the lines said and the shortcut opened on
 # first coming to a room.
-ONCE = {"party_npc_yell", "yell", "log_message", "update_shortcut", "battle_talk"}
+ONCE = {"party_npc_yell", "yell", "log_message", "update_shortcut", "update_shortcut_spot", "battle_talk"}
 
 
 def _calls_by_name(calls: list[tuple]) -> dict[str, int]:

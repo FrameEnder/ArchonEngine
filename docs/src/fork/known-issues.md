@@ -17,10 +17,10 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
   unplayed. Guessed or left out, because neither run shows it: what its last cast (29024, 70.7 s) does if it lands
   (9999999 here); what the four of base 14594 do if one reaches the middle (it's taken away); whether felling the
   four of base 14590 early matters; the first boss below 22 % before its chain (a floor of 1 HP keeps it standing
-  until the cutscene); the second fight after 325.7 s with the boss still above 30 % (29022 and the question again
-  every 15.4 s); a wipe in either fight (that fight begins again; in the second everyone is sent back to the second
+  until the cutscene); the second fight after 325.7 s with the boss still above 30 % (the question every 7.6 s
+  from 310.3 since 2026-11-18, 29022 every other time); a wipe in either fight (that fight begins again; in the second everyone is sent back to the second
   arena, `set_start`); what ActorControls 20, 49, 62 and 70 on the bosses and statuses 3009-3012 do (sent and given
-  as retail did; that 28976-28978 give the statuses is a guess); the damage of the six actions that hit no one. The
+  as retail did; 3009-3011 from the first since 2026-11-18); the damage of the five actions that hit no one. The
   three health lines are read from three runs each (50e72631 the third, which moved the first from 40 to 36 %):
   36 % (the talk came up to 3.2 s after it), 22 % and 30 % (between 29.7 and 32.9). `stop_cast`, `set_start`, the battle talk's style byte, the rows'
   leaps (`jump_bnpc` for ten at once) and the party warp after the cutscene are new or first used this way: if the
@@ -33,18 +33,35 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
   (`quest_side_talks.json`: 1007683 and 1007682); quest 1047 is scripted from it. **AcceptQuest**: retail sent none
   as 1047 was taken (it goes straight to sequence 255), in two captures; Kawari sends one with every `accept_quest`.
   What the client shows differently isn't known.
-* **Castrum Meridianum** (duty 15) is built from three runs (`dungeons.md`) and unplayed, **without its layout**: the
+* **Castrum Meridianum** (duty 15) is built from four runs (`dungeons.md`) and unplayed, **without its layout**: the
   places that set things off on the way (the first talks, map effects 2-3 and 8-9, the three in hiding, talks 33510,
   33513 and 33514, the objectives as a boss's room is entered) are where the party was in the runs, not the game's
   event ranges; a party that takes another line may set them off early, late or not at all (the script's `WHERE_*`).
   What the map effects are (gates, lights) isn't known either: they're sent when retail sent them, and whether
   Kawari's collision lets the party through before them is untested. The device after the first boss sends every
   player on at once (`warp_players`), not only who used it. Also guessed: the bosses' rounds past the runs, the last
-  boss's last part past 25 s, a wipe.
+  boss's last part past 25 s. A fall is retail's from the last room on (the entrance, then the shortcut to outside
+  the last room: `update_shortcut_spot`, unplayed); before it the shortcut isn't shown, since where retail's goes
+  then wasn't seen. The heal of BNpcBase 14574 (`ally_hp_below` 10) is from one use.
 * **Not read yet**: the Praetorium (duty 16: Connor's af05916c 0.10, Bob's 9ba7d981 0.14 and 0.16, 50e72631 0.5),
   which isn't scripted; what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
   back in from Western Thanalan; the script's `onPartyWipe` is a guess); what came after the story (from 9688 s:
   warps 131089 and 131091, aetherytes, events 0xB0013 and 0xB0002, quest 524's completion with 4522's).
+
+## Bob's Chronofoil captures 6320ae56 and 2852bd15 with Kawari Witness's facts (2026-11-18)
+
+1 h 46: Castrum Meridianum, the Praetorium, the Porta Decumana and The Ultimate Weapon's last battle as a Paladin,
+with `facts.json` (278 facts); and nine minutes in Thanalan.
+
+* **Read so far**: Castrum Meridianum, the Porta Decumana and the last battle against their fourth runs
+  (`dungeons.md`, `quest-battles.md`), with the facts about them.
+* **A tank takes a damage dealer's damage**: a timeline's `players` amount is given to every job
+  ([Combat](combat.md)). The Paladin's own numbers are only used, scaled up, where no other job's were recorded.
+* **Not read yet**: the Praetorium (visit 0.3, its fifth run, still unscripted); the facts about Duty Support's
+  fourth set (72: its Lancer's and the others' kits in Castrum Meridianum and the Praetorium, where it had been
+  built from the Porta Decumana alone), the open-world enemies whose timelines lack an action (bases 55, 62, 64,
+  131, 172, 187, 201, 342, 769, 771, 791, 795: 17 actions), Cape Westwind's (the last part past 115 s, 28879,
+  ActorControls 63 and 35), and ActorControls 20, 82, 911 and 2352.
 
 ## Battle talk without a portrait (2026-11-17)
 

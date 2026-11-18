@@ -17,6 +17,11 @@
         "pace": 3.1,
         "actions": [
             {
+                "action": 29178,
+                "ally_hp_below": 10,
+                "comment": "a 1.2 s cast: a heal (747) on the most hurt of its side, begun with it at 4 to 9 % (once in four runs: Bob's Chronofoil capture 6320ae56 of 2026-11-18; not used as the same ally fell from 47 to 12 %)"
+            },
+            {
                 "action": 969,
                 "every": 3.1,
                 "comment": "48 uses; 0.7 s cast"
@@ -25,10 +30,6 @@
                 "action": 6499,
                 "every": 4.1,
                 "comment": "40 uses"
-            },
-            {
-                "action": 29178,
-                "comment": "1 uses; 1.2 s cast; no damage"
             }
         ]
     }

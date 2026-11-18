@@ -129,6 +129,11 @@ pub struct RotationAction {
     /// Chronofoil capture df6f5af9.)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub on_ally: Option<u32>,
+    /// Use it on the most hurt living NPC of its own side (not itself) instead of its target, and only while one is
+    /// below this % of its health: Castrum Meridianum's BNpcBase 14574 began its heal (29178, 747) on one at 4 to
+    /// 9 % (Bob's Chronofoil capture 6320ae56 of 2026-11-18, its one use in four runs.)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ally_hp_below: Option<f32>,
     /// Where the numbers came from (ignored by the server.)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,

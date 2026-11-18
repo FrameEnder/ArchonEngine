@@ -116,6 +116,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `spawn_tethered_bnpc(layout_id, to, channeling)` | Spawns a drop-in NPC tethered to NPC `to` (layout ID): its spawn's tether target and Channeling row, the line the client draws between them until the NPC dies. The Tam-Tara Deepcroft's shields to Galvanth (Channeling 1). |
 | `stop_cast(npc, message)` | (2026-11-17) Cuts short what an NPC (actor ID or layout ID) is casting, as the fight itself does: the cast's task is dropped, so it never lands, and everyone near gets CancelCast (ActorControl 15) `[message, 1, action, 0]`; `message` is 537 unless given (retail's for a cast the fight stops; 538 is an interrupt's, 540 came with a caster's death). The Porta Decumana's 29435, 28510 and 28990, stopped 19.0, 17.9 and 21.9 s into their casts. `action::cut_cast_short`; test `a_cast_the_fight_stops_never_lands`. |
 | `set_start(x, y, z, rotation)` | (2026-11-17) Where a wipe sends everyone from now on (`Instance::quest_battle_start`, which a quest's solo duty has from its script), instead of the duty's entrance: the Porta Decumana's second arena. |
+| `update_shortcut_spot(x, y, z, rotation)` | (2026-11-18) Shows the duty's shortcut and points it at a spot, for a duty whose pop ranges aren't known (`update_shortcut` takes one): whoever uses it is put there as `warp_players` does it (PrepareZoning, then ActorSetPos). Castrum Meridianum's, outside its last room ([Dungeons](dungeons.md#castrum-meridianum)) |
 | `warp_players(x, y, z, rotation)` | Moves every player in the instance through a loading screen to a position in it (PrepareZoning to the same territory, then ActorSetPos). |
 | `set_notice(npc, notices)` | With `false`, an aggressive NPC no longer notices whoever comes close (players or allied NPCs, `AGGRO_RANGE`); it fights only when hit or sent after someone (`set_hate`). `true` restores it. Kept per layout ID for the instance (`Instance::unaware_npcs`). |
 | `set_invulnerable(npc, invulnerable)` | Whether NPC `npc` takes damage (its `currently_invulnerable`, as a timeline's invulnerability timepoint sets it). The Tam-Tara Deepcroft's last boss while a shield stands. |
@@ -1391,7 +1392,7 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
   takes him away and SnapNextMove brings him out 1.8 s later where his next cast begins.
 * **The middle** (176 to 316 s) is the director's: he can't be targeted; four of base 14699 tethered to the player
   (ActorControl 35) while a gauge climbs (the director's 0x8000000C `[61, n]` to 10000 in 35.7 s); a helper's 29788
-  (Knockback 68, status 1614), then its 29565 for 9999999, which **fells the player**; 36 s later the ally's 29344
+  (Attract 68, status 1614), then its 29565 for 9999999, which **fells the player**; 36 s later the ally's 29344
   (statuses 3123 and 2056), and 24 s after that the player is up, whole, and the second part begins. For it the
   director has `hold_wipe(held)` (every player down isn't a party wipe meanwhile) and `revive_players()` (the fallen
   get up where they lie with full HP and MP, no loading screen): `LuaDirectorTask::HoldWipe` and `RevivePlayers`,
@@ -1400,7 +1401,16 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
   a GameComplete event, the quest to sequence 7 and out to the Waking Sands at (-11.07, 0.01, 0.07).
 * Timelines `QB5061Boss_14643`, `QB5061Orb_14644`, `QB5061Ally_14645`, `QB5061Statue_14697`, `QB5061Shade_14699`,
   and the helper's amounts in `Helper_9020`; 33 action scripts (`QB5061Boss_*`, `QB5061Helper_*`, `QB5061Orb_29333`,
-  `QB5061Statue_29762`, `QB5061Ally_29344`). `questkit battle-sim 5061`: both runs, all 66 events each within 2 s.
+  `QB5061Statue_29762`, `QB5061Ally_29344`). `questkit battle-sim 5061`: four runs (66, 66, 48 and 58 events), each
+  within 2 s.
+* **The fourth run** (Bob's 6320ae56, 2026-11-18, a Paladin; his health at 0 at 500 s, before the last wave of
+  orbs) is on the same clock. New from it and Kawari Witness: the helpers' **29756 come as two sets of twelve 4.0 s
+  apart**, the diagonals and the cross; the diagonals came first the first time in all four runs, and the second
+  time (440 s) the cross came first in this one: either at random there (`cross_first`; the fixture's `random`
+  says which). **29788 is an Attract** (effect kind 32, row 68: the player drawn to the middle), not a knockback, and
+  its status 1614 has no timer (param 6174). 29338's and 29339's statuses (661, 662) have no timer either: the
+  server takes them off, as the script's durations already did. The player's fall in the middle, as Witness saw it:
+  ActorControlSelf 511 `[1]` and 512 as they fell, the director's 0x80000001 `[1]` 4.8 s later.
 * Not known (see the script's header): what happens past 527 s; what the gauge counts and whether felling the four
   changes anything; the player's HP doubling with status 3123 (not done); what the controls, commands and statuses
   do; the damage of what never hit anyone.

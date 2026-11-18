@@ -20,7 +20,7 @@
 --   * back past the first boss's room three come out of hiding (9088949-9088951: Appear with ActionTimeline 142);
 --     they dead: talk 33512, map effect 11 and EObj 2007457's ActorControl 409 3 s later;
 --   * the six of 9088952-9088955, 9162432 and 9162434: with three of them dead two more come out (9088956, 9088957,
---     talk 33522); those two dead: the cutscene (scene 3 with cutscene 275 `[0, 151, 0, 0]`), map effects 12-14;
+--     talk 33522); all eight dead: 2.3 s later the cutscene (scene 3 with cutscene 275 `[0, 151, 0, 0]`), map effects 12-14;
 --   * as it ends everyone is put in the last room (-83.9, 72.0, -35.2), objective 4, and the last boss is there.
 --
 -- The three bosses are **one clock from their pull** in every run (to 0.3 s; `CastrumMeridianumBoss1_14538.json`,
@@ -189,12 +189,16 @@ AMBUSH = { 9088949, 9088950, 9088951 }
 SIX = { 9088952, 9088953, 9088954, 9088955, 9162432, 9162434 }
 SIX_DEAD_FOR_TWO = 3
 TWO = { 9088956, 9088957 }
+CUTSCENE_LAST_AFTER = 2.3 -- seconds from the last of the eight's fall to the cutscene (2.1 to 2.4 in four runs)
 APPEAR_TIMELINE = 142
 APPEAR_AFTER = 0.7
 
 CUTSCENE_LAST = 275
 CUTSCENE_LAST_PARAMS = { 0, 151, 0, 0 }
 LAST_ROOM = { x = -83.88, y = 72.0, z = -35.23, rotation = -1.401 }
+-- Where the shortcut put Bob after a fall at the last boss (retail's ActorSetPos, capture 6320ae56, twice). Where it
+-- goes before the last room, and when it first shows, isn't known: it is shown and pointed from the last room on.
+SHORTCUT_LAST = { x = -67.92, y = 69.48, z = -38.36, rotation = -1.396 }
 CUTSCENE_END = 277
 CUTSCENE_END_PARAMS = { 1, 18, 0, 0 }
 
@@ -681,16 +685,20 @@ function onActorDeath(director, layout_id, position)
         comeOut(director, TWO)
         after(1.0, function(d) talk(d, 33522) end)
     end
-    if done.two and not done.cutscene and allDead(TWO) then
+    -- All eight, not the two alone: in Bob's run of 2026-11-18 (6320ae56) one of the six outlived the two by 4.9 s
+    -- and the cutscene waited for it. 2.1 to 2.4 s after the last of them fell in the four runs.
+    if done.two and not done.cutscene and allDead(TWO) and allDead(SIX) then
         once("cutscene")
-        director:play_cutscene(CUTSCENE_LAST, CUTSCENE_LAST_PARAMS)
-        director:hide_eobj(EOBJ_BEFORE_LAST)
-        after(1.0, function(d)
+        after(CUTSCENE_LAST_AFTER, function(d)
+            d:play_cutscene(CUTSCENE_LAST, CUTSCENE_LAST_PARAMS)
+            d:hide_eobj(EOBJ_BEFORE_LAST)
+            bringLastBoss(d)
+        end)
+        after(CUTSCENE_LAST_AFTER + 1.0, function(d)
             for index = 12, 14 do
                 d:map_effect(index, 2, 1)
             end
         end)
-        bringLastBoss(director)
     end
 end
 
@@ -699,7 +707,10 @@ function onSceneFinished(director, scene)
     if done.cutscene and not done.last_room then
         once("last_room")
         director:warp_players(LAST_ROOM.x, LAST_ROOM.y, LAST_ROOM.z, LAST_ROOM.rotation)
-        director:set_start(LAST_ROOM.x, LAST_ROOM.y, LAST_ROOM.z, LAST_ROOM.rotation)
+        -- A fall from here on sends the party to the entrance as anywhere (Bob's two falls of 2026-11-18, capture
+        -- 6320ae56: there 4.5 s after he fell, whole again), and the shortcut by it (GimmickAccessor 74) put him
+        -- outside the last room both times, the boss and its helpers new 0.4 s after he came.
+        director:update_shortcut_spot(SHORTCUT_LAST.x, SHORTCUT_LAST.y, SHORTCUT_LAST.z, SHORTCUT_LAST.rotation)
         after(1.8, function(d) d:objective(4, 5) end)
     end
 end

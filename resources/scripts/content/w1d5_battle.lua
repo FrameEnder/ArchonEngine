@@ -50,8 +50,8 @@
 --   * four helpers' 29021 (6.7 s) 20 yalms north, south, east and west of the middle, four times, the map effects
 --     0-3 1.9 s into the cast;
 --   * 310.3 s in, with its health at 30 % or less (28.0 %: Connor's) its last part: 28628, the 70.7 s cast 29024, the
---     lines, map effect 5 and weather 106, the helpers' 28542 on the party; above it (32.9 %: Bob's) 29022 and the
---     same question 15.4 s later (29.4 %: the last part.) It fell 54 and 63 s into 29024 in the runs.
+--     lines, map effect 5 and weather 106, the helpers' 28542 on the party; above it (32.9 and 32.5 %: Bob's) 29022
+--     and the same question every 7.6 s (the last part 15.5 and 7.1 s later.) It fell 54 to 63 s into 29024.
 -- Its health at 0: the cast stopped (ActorControl 15 [540, 1, 29024, 1]), the closing cutscene (scene 3 with
 -- cutscene 121 `[1, 18, 0, 0]`) and the duty complete.
 --
@@ -59,9 +59,9 @@
 -- 14594 do at the middle (none got there: gone); whether the party can fell the four of base 14590 early and what
 -- that changes (they stood until 134.9 in both: nothing here); the first boss below the cutscene's line before the
 -- chain (a floor of 1 HP here: it never fell on retail); the second fight past 325.7 s without the last part (the
--- question again every 15.4 s); what ActorControls 20, 49, 62 and 70 on the bosses and statuses 3009 to 3012 do
--- (sent and given as retail did). After a wipe
--- the fight its party fell in begins again (retail's wasn't seen.)
+-- question again every 7.6 s, 29022 every other time); what ActorControls 20, 49, 62 and 70 on the bosses and
+-- statuses 3009 to 3012 do (sent and given as retail did: 3009 to 3011 on the boss from the first). After a wipe the fight its party fell in begins again
+-- (retail's wasn't seen.)
 
 -- Which way players face as they come in (retail's, facing the boss in the west.)
 ENTRANCE_ROTATION = -1.5708
@@ -105,8 +105,9 @@ CUTSCENE_END_PARAMS = { 1, 18, 0, 0 }
 -- Its health, in whole percent as the server gives it, below these: the first fight's chain (once the rounds of 28982
 -- have begun; three runs: the talk came 1.6 s after 35.95 %, as 36.3 became 35.97 %, and 3.2 s after 35.94 %, the
 -- third in the middle of a round it had begun at 36.7 %) and cutscene (21.96, 21.7 and 21.9 % 0.1 to 2.4 s
--- before), the second fight's last part (looked at 310.3 s in and every 15.4 s from then: 32.9 % wasn't enough;
--- 28.0, 29.4 and 29.7 % were.)
+-- before), the second fight's last part (looked at 310.3 s in and every 7.6 s from then: 32.9, 30.7 and 32.5 %
+-- weren't enough; 28.0, 29.4, 29.7 and 29.5 % were.)
+STATUSES_FROM_THE_FIRST = { 3009, 3010, 3011 }
 CHAIN_AT = 36
 CUTSCENE_AT = 22
 LAST_PART_AT = 30
@@ -312,7 +313,11 @@ SECOND = {
     { 292.1, "fn", "fourSides" },
     { 310.3, "fn", "lastPartOrNot" },
 }
-STILL_ABOVE_EVERY = 15.4
+-- Seconds between looks at its health from 310.3 s on while it's above the line: the last part began 15.5 s after
+-- the first look in Bob's run of 2026-11-17 (9ba7d981: 30.7 % at 7.6 s, 29.4 % at 15.5) and 7.1 s after it in his run
+-- of 2026-11-18 (6320ae56: 29.5 % by then).
+STILL_ABOVE_EVERY = 7.6
+last_part_asks = 0
 -- From the second boss's last 28628.
 LAST = {
     { 1.7, "back" },
@@ -435,6 +440,11 @@ function bringFirst(director)
     attempts_of = "first"
     part = "first-wait"
     boss_1 = director:spawn_bnpc(BOSS_1) or BOSS_1
+    -- Statuses 3009 to 3011 are on it from the first, with no timer (Kawari Witness in Bob's run of 2026-11-18: on
+    -- it as it was first seen; its 28976 to 28978 gave nothing); its 28993 to 28995 take them off one by one.
+    for _, status in ipairs(STATUSES_FROM_THE_FIRST) do
+        director:gain_effect(boss_1, status, 0, 0)
+    end
     -- Never to 0 (retail's went to the cutscene at 21 %.)
     director:set_health_floor(BOSS_1, 1)
     three = {}
@@ -746,8 +756,15 @@ function bringRows(director)
     end)
 end
 
--- 310.3 s into the second fight, and every 15.4 s while its health is above the line: the last part, or 29022.
+-- 310.3 s into the second fight, and every 7.6 s while its health is above the line: the last part. Above it, 29022
+-- the first time (and every other time after, a guess: retail's two runs above the line had one 29022 each, and the
+-- last part 7.1 and 15.5 s after it began.)
 function lastPartOrNot(director)
+    last_part_asks = 0
+    askLastPart(director)
+end
+
+function askLastPart(director)
     if part ~= "second" then
         return
     end
@@ -756,10 +773,11 @@ function lastPartOrNot(director)
         director:restart_timeline(BOSS_2, PART_LAST)
         schedule(director, LAST, "last")
     else
-        if boss_2 ~= nil then
+        if boss_2 ~= nil and last_part_asks % 2 == 0 then
             director:actor_use_action(boss_2, ACTION_STILL_ABOVE)
         end
-        after(STILL_ABOVE_EVERY, lastPartOrNot)
+        last_part_asks = last_part_asks + 1
+        after(STILL_ABOVE_EVERY, askLastPart)
     end
 end
 
@@ -901,7 +919,20 @@ function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
             helpersCast(director, ACTION_ROUND_HELPER, SPOTS_28983_THREE[pick])
         end
         if nth == 1 then
-            schedule(director, ROUND, "first")
+            -- Base 14591 shows itself, casts and hides; once shown it hides again even if the chain has begun since
+            -- (Bob's run of 2026-11-18, 6320ae56: the chain's talk 20.6 s into a round, 14591 hidden 0.4 s after it).
+            -- A round the chain overtakes before it shows has none of the three (50e72631.)
+            after(ROUND[1][1], function(d)
+                if part == "first" then
+                    step(d, ROUND[1])
+                    after(ROUND[3][1] - ROUND[1][1], function(d2)
+                        if part == "first" or part == "chain" then
+                            step(d2, ROUND[3])
+                        end
+                    end)
+                end
+            end)
+            schedule(director, { ROUND[2] }, "first")
         end
     end
 end
