@@ -20,6 +20,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Stone Vigil | 11 | 1042 | `content/r1d1_re.lua` | one run with Duty Support (1cefedf4) and one Duty Finder run (341808b0), 2026-11-07 |
 | Castrum Meridianum | 15 | 1043 | `content/w1d4_re.lua` | four runs with Duty Support (the fourth Bob's 6320ae56 of 2026-11-18, a Paladin): Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
 | The Porta Decumana | 830 | 1048 | `content/w1d5_battle.lua` | four runs with Duty Support (the fourth Bob's 6320ae56 of 2026-11-18, a Paladin): Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
+| The Praetorium | 16 | 1044 | none yet | five runs read (2026-11-18): [what they show](#the-praetorium-read-not-scripted) |
 
 Every duty script in this table is checked against AutoDuty's route for its territory (`questkit autoduty`, see
 [questkit](questkit.md)): on 2026-11-13 each names every object AutoDuty uses, and Sastasha's keys are the one
@@ -1273,6 +1274,41 @@ took 1/1.5 of what his other jobs had from this duty's attacks, nine actions com
 talks, the three's ActionTimelines, every NPC's coming, the completion; and a rehearsed wipe); the fixture's `scenes`
 give the script the cutscene's end ([Testing](testing.md)); `a_cast_the_fight_stops_never_lands`
 (`bundle_tests.rs`).
+
+## The Praetorium (read, not scripted)
+
+ContentFinderCondition 16, territory 1044, director 0x80030056, InstanceContent 86, during The Ultimate Weapon (4522).
+**There is no script yet** (its name would be the ContentFinderCondition's ShortCode, `w1d5_re` by analogy, not
+checked against the sheet): this is what five retail runs with Duty Support show, read on 2026-11-18, to build it
+from. Connor's Chronofoil capture af05916c (visit 0.10, a healer), Bob's 9ba7d981 (0.14, left at the last boss, and
+0.16), 50e72631 (0.5) and 6320ae56 (0.3, a Paladin, with Kawari Witness). The five agree on everything below; the
+seconds are 6320ae56's from DutyCommence (0x40000001 `[7200]`, 70 s after the opening scene 1, flags 0x0C53A401).
+The bosses' and enemies' draft timelines are in kawari-diagnostics (`drafts/duty-16/`, `questkit sources --duty 16`
+over the five runs).
+
+| When | What |
+|---|---|
+| 2.1, ~50 | Talks 32920 and 32921 (BNpcName 1486; the second 9.7 to 94 s in: by where the party is). Four enemies stand by the entrance (9081944-9081947, bases 14557 and 14558), and BNpcBase 14567 (BNpcName 1486, 258900 HP, layout 9168666), which isn't fought: ActorControl 63 `[48]` moved it, `[11]` cleared a render flag and `[0]` took it away (Witness) |
+| 59.7-62.3 | **The lift** (EObj 2012811, GimmickAccessor 0x404): a one-second event, PrepareZoning, the screen's fade (ActorControlSelf 263 `[1]`, 236 `[1]`) and everyone 30 yalms down at (200.1, 156.5, 13.6). Five more enemies there (9081963-9081967) and, once they're met, ten in two packs (9081969-9081978); map effects 1, 2 and 4 (timeline 2, state 1) at 66.9, 121.5 and 132.4 as packs fall, 3 at 329.9 |
+| 343.0-345.6 | **A second lift** (EObj 2012813, GimmickAccessor 0x406) to (240.8, 71.5, 0.3) |
+| 355.4 | Objective 0 done (0x80000015 `[1]`, 0x80000016 `[0, 1]`) and **scene 3 with cutscene 280** `[5, 280, 1, 37, 0]` (flags 0x08502403; 185 s); the first boss is there 2.2 s into it |
+| 541.5-653.8 | **The first boss** (9054638, BNpcBase 14450, BNpcName 2134, 62291 HP; arena 15 yalms round (192, 0)): 28467, 28468 with helpers' 28469 and 28470 from eight spots each, 28471 with 28472 on the party, 28473, 28474 (the draft's numbers). 112 to 124 s in the five runs. It fallen: music 149 (0x80000001), objective 1, talk 32916 a second later |
+| 659.1-661.7 | **EObj 2012815** (GimmickAccessor 0x40E): everyone at (146.9, 102.0, -37.5). Talks 32917 and 32918 12.6 and 19.6 s after 32916 |
+| 674.8-842.2 | **The armour** (EObj 2012819, GimmickAccessor 0x40A): a one-second event and **Mount 17**; the player uses **action 1128** from it (39 times) on the enemies of the way: 9082001-9082005, 9082022-9082032, then after a PrepareZoning 739.0 (everyone at (108.7, -106.0, 0.5), still mounted) 9168161-9168164, 9168175-9168177, four of base 14566 one after another (9082092-9082095) and base 14616 (9089992, 34951 HP). Map effects 5, 8, 12, 9, 13, 10, 11, 14 and 18 on the way |
+| 842.2 | **Cutscene 392** `[5, 392, 1, 0, 0]` (107 s), map effects 6 and 7 with it; the mount is gone after it |
+| 960.3 | Objective 2 and **cutscene 283** `[5, 283, 1, 151, 0]` (240 s); the second boss there 2.3 s in |
+| 1208.2-1348.2 | **The second boss** (9054847, BNpcBase 14451, BNpcName 2135, 77877 HP; arena 20 yalms round (-164, 0)): talks 32900 as it's pulled (map effect 0, timeline 2 state 1), 32902 at 9.3 s, 32901 at 29.5, 32903 at 68.6 to 119.7 (by its health or its casts); two of base 14452 (9054848) at 33 and 97 s. 133 to 156 s. It fallen: objective 3, map effects 0 (8, 4) and 15, **cutscene 284** `[5, 284, 1, 149, 0]` (103 s) |
+| 1465.9 | **EObj 2012817** (GimmickAccessor 0x408; spawned as cutscene 283 began): objective 4, map effect 16, **cutscene 118** `[5, 118, 0, 152, 1]` (278 s); as it ends everyone at (-550.2, -268.0, 220.3) and the last boss there |
+| 1750.7-1995.3 | **The last boss** (9055066, BNpcBase 14453, BNpcName 2136, 93255 HP; a room 15 by 20 round (-562, 220)): talks 32904 (the pull), 32906, 32905, 32907 at 39.5, 62.1 and 80.5 s, 32919 at 142.8 (140 to 142 in four runs), 32908 and 32909 at 220.7 and 232.9; helpers of bases 14454, 14455 and 14456 (28 of the last) for its 28485-28498 and 29051-29052; a **gauge** from 151.3 s: the director's 0x8000000C `[58, n]` once a second, n up 111 a second (to 0xFFFFFFFF at the end). It fallen: the duty complete (0x40000003), **cutscene 374** `[5, 374, 0, 18, 0]`, then out |
+
+**A fall on the way** (Bob's, 157 s after the first pull, the members still up): no wipe; he was at the entrance 4 s
+later and took the lift again. What a fall at a boss does wasn't seen here.
+
+**What building it needs that the fork doesn't have yet**: the ride (a duty's mount given by an object, its action
+1128 against the enemies, the mount kept through a warp and taken at a cutscene); the two lifts and the two other
+objects (GimmickAccessors 0x404, 0x406, 0x40E, 0x408 with their destinations, which aren't pop ranges we know: the
+layout isn't dumped; `update_shortcut_spot`'s warp does the same for a spot); the last boss's gauge; and, as in
+Castrum Meridianum, where the party sets things off without the event ranges.
 
 ## At a wipe, duty by duty (2026-11-10)
 

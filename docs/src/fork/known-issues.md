@@ -43,8 +43,7 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
   boss's last part past 25 s. A fall is retail's from the last room on (the entrance, then the shortcut to outside
   the last room: `update_shortcut_spot`, unplayed); before it the shortcut isn't shown, since where retail's goes
   then wasn't seen. The heal of BNpcBase 14574 (`ally_hp_below` 10) is from one use.
-* **Not read yet**: the Praetorium (duty 16: Connor's af05916c 0.10, Bob's 9ba7d981 0.14 and 0.16, 50e72631 0.5),
-  which isn't scripted; what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
+* **Not read yet**: what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
   back in from Western Thanalan; the script's `onPartyWipe` is a guess); what came after the story (from 9688 s:
   warps 131089 and 131091, aetherytes, events 0xB0013 and 0xB0002, quest 524's completion with 4522's).
 
@@ -57,7 +56,11 @@ with `facts.json` (278 facts); and nine minutes in Thanalan.
   (`dungeons.md`, `quest-battles.md`), with the facts about them.
 * **A tank takes a damage dealer's damage**: a timeline's `players` amount is given to every job
   ([Combat](combat.md)). The Paladin's own numbers are only used, scaled up, where no other job's were recorded.
-* **Not read yet**: the Praetorium (visit 0.3, its fifth run, still unscripted); the facts about Duty Support's
+* **The Praetorium isn't scripted.** Its five runs are read and agree (`dungeons.md`: the way through, the six
+  cutscenes, the objects, the bosses' fights' lengths and lines); building it needs the ride (Mount 17 from an
+  object, action 1128 on the way's enemies), the lifts' destinations as spots, the last boss's gauge and the three
+  bosses' clocks from the drafts.
+* **Not read yet**: the facts about Duty Support's
   fourth set (72: its Lancer's and the others' kits in Castrum Meridianum and the Praetorium, where it had been
   built from the Porta Decumana alone), the open-world enemies whose timelines lack an action (bases 55, 62, 64,
   131, 172, 187, 201, 342, 769, 771, 791, 795: 17 actions), Cape Westwind's (the last part past 115 s, 28879,
