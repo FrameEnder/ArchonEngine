@@ -248,6 +248,16 @@ None of it played yet; the page not used against the running server.
   player back in, are from the client's script alone and unplayed (`quests.md`).
 * Ten upstream gathering drop-ins name no territory and still come out in every territory of their level.
 
+## Kawari Witness (2026-11-18)
+
+* A draft, built by GitHub Actions and never run in game: whether its hooks start, whether its facts read right, and
+  how noisy the lists made from every timeline are (an action with no recorded hit is often one that does no damage)
+  aren't known.
+* It settles what retail can show. Lines here that say "untested in game" are about Kawari and stay as they are.
+* Nothing reads `facts.json` back into the documentation: a fact is folded in by hand.
+* The hand-written 46 are the guesses with a number to watch for; a guess stated only in words (which quest's NPC,
+  which scene of several) is covered only where the quests' scene lists or the timelines' action lists catch it.
+
 ## Statuses enemies refuse (2026-11-18)
 
 * Only Stun is in `status_resistance.json` (the only status retail's enemies were seen to refuse: Holy's). Sleep,

@@ -99,6 +99,46 @@ Up to 2.3 the duty packets had no actor (every packet read actor 0 and size 0: t
 before the packet, which isn't its segment header) and no spawns (NPC spawns don't pass through the dispatcher hook),
 so which NPC did what had to be worked out from HP totals and hit counts (the 2026-10-16 To Guard a Guardian recording).
 
+## Kawari Witness (on retail, `witness/`, 0.1.0, 2026-11-18)
+
+Bob, 2026-11-18: "take all your guesses from the entirety of our documentation, and draft a dalamud plugin that would
+make all of them fact instantly if seen again". A Dalamud plugin (`/kwit`) that carries the list of what these pages
+say is guessed, unknown or never seen on retail, watches the live game for each, and writes it to `facts.json` in its
+config folder (numbers only; nobody's name or ID) with a line in chat the first time. **A draft: it builds (GitHub
+Actions, no warnings) and has not been run in game.**
+
+**The list** is `witness/KawariWitness/guesses.json`, built into the plugin and remade from a checkout of this
+repository with `python3 witness/tools/make_guesses.py ../archonengine` (in kawari-diagnostics). On 2026-11-18, from
+`ee453fe`:
+
+| Source | How many | What settles one |
+|---|---|---|
+| These pages, by hand (`CURATED` in the script) | 46 | by kind, below |
+| Timelines whose comments say they guess (`from_pull`) | 9 | what the enemy does past its timeline's last point |
+| Action scripts whose comments say they guess | 41 | the action's effects on whoever it lands on, and how long a status it gives lasts |
+| Quest fixtures and side talks | 339 quests | any scene of the quest no recording has: its number, flags, parameters |
+| Every timeline | 664 BNpcBases (996 actions with no recorded hit) | an action the base's timeline lacks; a clean hit on a player of one that has no `recorded_amounts` |
+
+| Kind | Watches | Example |
+|---|---|---|
+| `action` | an NPC's action landing: an unblocked, uncritical hit on a player (`want: damage`) or every effect, with the status it gives timed (`effects`) | Castrum Meridianum's 28773, 28781, 28787, 29146, which hit no one |
+| `status` | a status appearing on anyone (its time, param, who gave it) and going | 293 and 294's guessed 30 s |
+| `npc` | a BNpcBase arriving: level, HP, hitbox, scale | the Duty Support Lancer's HP at 24 to 34; Ifrit's and Titan's hitboxes |
+| `sequence` | an NPC's casts and uncast actions past a time from its pull, an action, or while above a health | Cape Westwind's boss past 114.9 s above 15 % |
+| `control` | an ActorControl by category: its numbers, and what changed on its actor within 0.7 s (targetable, mode, render flags, event state, statuses, HP, scale, position, target) | 63 and 35 at Cape Westwind |
+| `refusal` | Stun taking hold again on an enemy that had refused it, and the longest refusing seen | `forget_after`, 60 s here |
+| `guard` | hits on a guarded NPC by the angle off its facing, blocked or not, and whether the block was answered | the shield's 45 degrees |
+| `moment` | everyone's health when a BNpcBase arrives or a director command (ActorControlSelf 109) comes | what brings quest battle 69's grimoire |
+| `aftermath` | the scenes, controls and zone change of the 20 s after the player (in a duty) or a named NPC falls | losing wherever retail's wasn't seen |
+
+It hooks what Kawari Recorder hooks (ActionEffectHandler.Receive and PacketDispatcher's ActorControl, ActorCast and
+EventPlay handlers, through FFXIVClientStructs) and looks at everyone near four times a second.
+
+**What it can't settle**, and so isn't in the list: everything these pages call "untested in game" (that's about
+Kawari, not retail: most of `known-issues.md`'s lines); what a packet's unnamed bytes or an opcode mean; formulas (EXP,
+spiritbond, drop rates); anything waiting on a battle talk or NPC yell (not hooked yet). Facts come back by hand:
+*Copy facts* puts `facts.json` on the clipboard, and nothing reads it into these pages yet.
+
 ## Kawari Probe (on Kawari, `probe/`)
 
 A Dalamud plugin used on **Bob's server**: it reports what the client itself believes. Setup: add the DLL as a dev
