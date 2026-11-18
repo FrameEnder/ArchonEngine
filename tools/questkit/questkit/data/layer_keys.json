@@ -11124,6 +11124,15 @@
     522,
     255
    ]
+  },
+  {
+   "capture": "dba9b575",
+   "territory": 212,
+   "key": 92224,
+   "where": "ZoneInit",
+   "active": {},
+   "completed": null,
+   "after": null
   }
  ]
 }
