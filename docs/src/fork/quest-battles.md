@@ -1987,7 +1987,10 @@ Operation Archon's (4521) battle isn't a QuestBattle: the quest's QUESTBATTLE0 i
 Built on 2026-11-17 from one retail run and **reworked on 2026-11-18 from four** after Bob's first test of it (five
 marks; below): Bob's Chronofoil captures 667a68c5 of 2026-11-16 (`--battle 0.16`, won, 527 s; a level 50 White Mage)
 and 9ba7d981 of 2026-11-17 (a Summoner; visits 0.6, lost, and 0.8, won) and Connor's e834e436 (visit 0.240, a White
-Mage, won). The rework isn't played in game yet.
+Mage, won). **Two more runs on 2026-11-18** (Bob's capture 178b0de0, a level 50 Paladin: visit 0.4, lost in the
+second part, and 0.6, won, its first part 311 s long) with Kawari Witness's `facts.json` from them settled what
+the first part does past 114.9 s, which rows come, and smaller things ("The Paladin's two runs", below). None of
+it is played in game yet.
 
 **A quest's solo duty** (the reusable part; 5061, Devastation, is another):
 
@@ -2064,17 +2067,37 @@ given 28873 forty-three times in a row from 123.5 s.
   at 55.0 (talk 33424), and 4.1 s after it began the arena's map effect (index 0: timeline 2, state 1) with two
   helpers' 28869 on two of the arena's spots (7.7 s casts), the effect off (timeline 8, state 4) as they land; 28872
   and 28868 again with the other two spots (timeline 32, state 16); 28871 at 82.4, 28870 at 93.5 and 103.7, 28871
-  at 114.9. No run was above 15 % after that, so what comes next wasn't seen: the timeline goes round again from
-  28864 every 103.6 s (a guess; 28870 to 28864 was 10.2 s the first time), as the second part's does.
+  at 114.9. **Still above 15 % after that** (178b0de0's visit 0.6 alone, which stayed there for 292 s) he goes
+  round, and not through the first pass again: from 126.1 s, 28864; 28870 at 7.2 and 13.4 s into the round; 28872
+  at 19.6 and 28871 at 21.6; 28872 at 31.8, 28868 at 33.9 and 28870 at 39.2; the same three at 45.3, 47.4 and 52.6;
+  28872 at 58.7 and 28871 at 60.8; 28870 at 72.0; 28866 at 84.1 (63 `[7]` with it and `[0]` 12.9 s later, as the
+  first time); 28870 at 105.3; and 28864 again 117.5 s after the first (once whole and again as far as 59 s in,
+  each action 117.3 to 117.9 s after its first). The timeline's sixteen points from 126.1 with `every: 117.5`; it
+  was the first pass again every 103.6 s until then, a guess (core test
+  `cape_westwinds_first_part_goes_round_as_retails_did`). The talks 33403, 33402 and 33424 came with each action's
+  first use only (the script said them every time). 28868's third use on has the map effect (timeline 128, state
+  64) with spots 3 and 5, then (2, 1) with spots 1 and 2, turn about (`PATTERNS_ROUND`).
+* **Which row** 28864 uses is the one of the three **nearest the player** as the cast begins (the distance to the
+  line through its four spots): the second in the four older runs' six uses and the first in the Paladin's three,
+  nine of nine. The script always used the second. 28878's three come nearest first, furthest last (seven of seven:
+  1, 2, 3 three times, 3, 1, 2 twice, 1, 3, 2 twice; the script took one of the first two orders at random.)
+  `nearestRows` in the script.
 * **Below 15 %** in the first part he leaves the clock as soon as he's free (his cast landed and its animation lock
   over): 28872, talk 33425 2.2 s after it, and 28873 every 6.15 s from 2.4 s until his health is at its floor. The
-  four runs: 14.9 % during a 28871, the leap 2.1 s after it landed (its lock); 14.9 % 1.5 s after a 28870 landed,
-  the leap 3.2 s after it had (its lock, 3.1); 13.8 % as the clock's own leap went off, the next one 2.1 s later in
-  28868's place; 15.7 then 15.1 % between two hits with him free, the leap half a second after the second (16.2 %
-  and 15.7 % didn't do it, so the line is taken as 15). The script watches his health (`PUSH_BELOW`), waits out what
-  he's doing (`BUSY_SECONDS`: each action's cast and lock) and restarts the timeline at 33425.
+  six runs, by his health in the samples (the first write-up read it from the hits' own fields, which run ahead):
+  14.9 % during a 28871, the leap 2.1 s after it landed (its lock); 14.5 % in a 28870's lock, the leap as it ended;
+  13.8 % in the clock's own leap's lock, the next one as it ended in 28868's place; 15.27 % with him free and the
+  leap 0.7 s later (14.6 % in the next sample); 14.4 % with him free, the leap 1.1 s later; and in the long run
+  15.26 % as a round's 28868 began (no push) and 14.96 % half a second into it: he was free 5.1 s after it began,
+  cast the round's 28870 5.2 s after it all the same, and leapt as that one's lock ended. So the line is 15, and a
+  round's 28868 and the 28870 behind it go together (seen once). The script watches his health (`PUSH_BELOW`),
+  waits out what he's doing (`BUSY_SECONDS`: each action's cast and lock; `BUSY_SPOTS_THEN_LINE` for that pair,
+  and it looks again when the wait is over, since a cast begun meanwhile holds him longer) and restarts the
+  timeline at 33425 (questkit test `test_cape_westwinds_push_waits_for_the_line_behind_the_spots`).
 * **At 1 HP**: his cast stopped (ActorControl 15 `[537, 1, 28873, 0]`; `stop_cast`, where Kawari's 28873 went on and
-  landed), untargetable, talk 33404, ActionTimeline 10500, 63 `[27]` at 1.5 s; at 2.45 s three of base 14582 (2501
+  landed), untargetable, talk 33404 (at once in five runs, two of them inside a 28873's lock; in the Paladin's long
+  run 2.8 s after his health was at 1, as the lock of the 28873 that had just landed ended: not explained, and the
+  script goes at once), ActionTimeline 10500, 63 `[27]` at 1.5 s; at 2.45 s three of base 14582 (2501
   HP) and one of 14583 (5977 HP) where the player came in, standing; at 7.0 s talk 33405 and they **run in** (their
   first ActorMove at 7.2 s in every run) to four spots by the entrance, there by 10 s: 9283147 to (-683.2, 64.0,
   -806.7), 9283146 to (-678.8, 63.7, -807.9), 9082105 to (-676.9, 63.5, -811.7), 9082106 to (-678.7, 63.5, -815.6)
@@ -2091,27 +2114,34 @@ given 28873 forty-three times in a row from 123.5 s.
 * **The four down** (214.1): SetBGM 1; NpcYell 13809 and ActionTimeline 10502 at 5.0 s, talk 33409 at 15.1 s,
   ActionTimeline 10503 at 18.2 s, 63 `[0]` at 21.15 s, status 2056 (param 95) at 21.6 s, SetBGM 107 and NpcYell 13810
   at 22.2 s; at 26.2 s targetable again **at full health**, the commands with 33422, talk 33410.
-* **Second part** (from 240.3): 28875 on the player at 4.1 s (535 and status 2656 for 3.5 s), 28877 at 9.3 and 28876
+* **Second part** (from 240.3): 28875 on the player at 4.1 s (535 and status 2656 for 3 s), 28877 at 9.3 and 28876
   at 17.5 (5.7 s casts; NpcYells 13650 and 13649 the first two times each), 28878 at 30.7 (talk 33426) and 5.07 s
   after it began three rows of the helpers' 28865, four seconds apart; 28876 at 43.8; 28872 and 28868 (talk 33427)
   at 60.0 and 62.1 with all four spots (timeline 512, state 256), again at 74.2 and 76.3 with four (2048, 1024);
-  28877, 28876, 28877, 28878 at 88.5, 106.6, 125.8, 144.0.
+  28877, 28876, 28877, 28878 at 88.5, 106.6, 125.8, 144.0. Both of the Paladin's runs kept this clock to the tenth
+  as far as each got. Talk 33427 came with the first 28868 only. Status 2056 leaves him as his health reaches 1.
 * **At 1 HP again**: ActorControl 537 with himself, the casts the helpers are in stopped (ActorControl 15 `[537, 1,
   28865, 0]` from each of four in 667a68c5; `stop_cast` for his and every helper's), untargetable, NpcYell 13811,
   ActionTimeline 10506, 63 `[5]` at 2.0 s; at 6.0 s SetBGM 1 and the director's **scene 3** (flags 0x08502403,
-  cutscene 2874, then 0, 173, 0, 0), 47 s. As it ends: 63 `[0]`, him in the middle 0.73 higher, facing north; the
+  cutscene 2874, then 0, 173, 0, 0), 47 s. As it ends: 63 `[0]` and **his health 13534** (55 %: from 1 within 0.7 s
+  of the control, Kawari Witness), him in the middle 0.73 higher, facing north; the
   player put at (-680.02, 63.86, -810.64) 1.5 s on; at 6.0 s ActorControl 35 `[0, 10, player, 15]`, his 28879 on the
   player (status 3134) and 63 `[6]`; at 6.9 s a helper's 28880 from where the player stands (Knockback 17: 6.7
   yalms towards him); at 7.8 s targetable, talk 33414.
-* **The last part** (from 454.2): 28881 at once, **his health 13373** as it lands; a helper's 28882 beside him at
+* **The last part** (from 454.2): 28881 at once; a helper's 28882 beside him at
   4.1 s; **28883 every 13.15 s** from 9.5 s (4.7 s casts, 507-626), status 3008 on him one stack higher before each,
-  talks 33415-33419 with the first five; status 2194 on the player from 7.8 s to his death (523.2).
+  talks 33415-33419 with the first five; status 2194 on the player from 7.8 s to his death (523.2). 3008, 2194 and
+  28879's 3134 have no timer (Kawari Witness): 3134 stays on the player until they leave (it was given for ten
+  minutes here).
 
-`questkit battle-sim 5060`: four fixtures since 2026-11-18 (`5060.json`, `5060-9ba7d981-6.json`, the lost run, which
-now ends in scene 5 and `fail_quest_battle`, `5060-9ba7d981-8.json` and Connor's `5060-e834e436.json`); each run's
-talks, yells, spawns and the warp (38 in the first), to 2 s (the fight begins at DutyCommence
-there, not scene 60000; a cutscene's end is heard after retail's 47.4 s; the helpers, with no layout ID, aren't
-matched). NPCs: `resources/dropins/territory_1049.json`, layer `CAPE_WESTWIND` (the boss, the four, one helper),
+`questkit battle-sim 5060`: six fixtures since 2026-11-18 (`5060.json`, `5060-9ba7d981-6.json`, the lost run, which
+ends in scene 5 and `fail_quest_battle`, `5060-9ba7d981-8.json`, Connor's `5060-e834e436.json`, and the Paladin's
+`5060-178b0de0-4.json`, lost, and `-6.json`); each run's talks, yells, spawns and the warp (38 in the first), to 2 s
+(3 s in the long run, for its late talk 33404) (the fight begins at DutyCommence there, not scene 60000; a
+cutscene's end is heard after retail's 47.4 s). **The helpers are matched too** since the Paladin's runs: every
+fixture has `placed`, where each helper's cast came from on retail (188 casts in the six), and the players'
+positions, so the script's rows and spots are held to retail's ([Questkit](questkit.md)). The first fixture's
+health before the second floor was put right with it (32 HP had been written as the floor's 0.1 %). NPCs: `resources/dropins/territory_1049.json`, layer `CAPE_WESTWIND` (the boss, the four, one helper),
 whose `appends` is **`territory/1049`**: the territory's own level wasn't known where it was written, so a drop-in
 can name its territory instead of an LGB (`zone.rs`). Action scripts `actions/288/CapeWestwind*` (28864-28886).
 
@@ -2128,11 +2158,34 @@ hit, against Bob's own positions and hits in the server's capture of his test:
 | 28876 (5.7 s) | everything before him, 30 wide: hit in front (6.4 and 9.2 ahead), missed behind and beside (nine) | not reached | the sheet's shape, unchanged |
 | 28873, 28883 | everyone (hit at 4.7 to 11.1) | hit | unchanged |
 | 28875 (2.7 s, on the player) | 526 to 691 and status 2656 for 3.5 s; 0.6 s after it lands SnapNextMove and he is 2 yalms from them (his next cast began 2.0 off in all four) | he stayed where he was | `onActionLanded`: `jump_bnpc` to 2 yalms from the player |
-| 28878's rows | three rows of four 28865, four seconds apart, in the order 1, 2, 3 (three uses) or 3, 1, 2 (two) | always 1, 2, 3 | one of the two at random |
+| 28878's rows | three rows of four 28865, four seconds apart, in the order 1, 2, 3 (three uses) or 3, 1, 2 (two) | always 1, 2, 3 | one of the two at random; **nearest the player first** since the Paladin's runs (below) |
 | 28865 (helpers) | a circle of 7 on each spot, cast at no one; landing's animation target no one | the helper named | (the first pass) |
 | 28869 (helpers) | a circle of 11 on each spot, marker 5.5 s into the 7.7 s cast | marker from the start; 7 damage | (the first pass) |
-| 28881 | his health is 13534 (55 %) as the cast begins: first seen as 13425 after a 109 and 13461 after a 73 | 13373 as it landed, 3 s later | `HEALTH_LAST` 13534 at the cast |
+| 28881 | his health is 13534 (55 %) as the cast begins: first seen as 13425 after a 109 and 13461 after a 73 | 13373 as it landed, 3 s later | `HEALTH_LAST` 13534 at the cast; as the cutscene ends since the Paladin's runs (below) |
 | 35 `[0, 10, player, 15]` | the player's own client moves them 5 yalms to him at once (their position updates) | sent | unchanged |
+
+**The Paladin's two runs** (2026-11-18, the third pass: Bob's capture 178b0de0, "fighting Cape Westwind on my tank
+twice I died and then re-ran it to get some more data", with Kawari Witness's `facts.json`). What they showed wrong,
+each found by setting the script's simulated run beside the new fixtures:
+
+| What | Retail | The script until then | Now |
+|---|---|---|---|
+| The first part past 114.9 s | a round of 117.5 s from 126.1 (above) | the first pass again every 103.6 s (a guess) | the timeline's round |
+| 28864's row | the row nearest the player (9 of 9) | the second, always | `nearestRows()[1]` |
+| 28878's rows | nearest first, furthest last (7 of 7) | 1, 2, 3 or 3, 1, 2 at random | `nearestRows()` |
+| Talks 33403, 33402, 33424, 33427 | with the action's first use | every use (33424 and 33427 every other) | first use |
+| 28868's later uses in the first part | map effect (128, 64) with spots 3 and 5, then (2, 1) with 1 and 2 | the first two patterns again | `PATTERNS_ROUND` |
+| The push below 15 % during a round's 28868 | after the 28870 behind it | as 28868's lock ended | `BUSY_SPOTS_THEN_LINE` |
+| His health after the cutscene | 13534 with 63 `[0]` as it ends | 1 until 28881's cast, 9 s later | `set_health` in `onSceneFinished` |
+| Status 2056 on him | gone as his health reaches 1 the second time (131.7 s) | never taken off | `lose_effect` in `lastStand` |
+| Status 2656 (28875) | about 3 s (2.8 s by Witness's quarter-second looks) | 3.5 s | 3.0 s |
+| Status 3134 (28879) | no timer, there until the player leaves | 600 s | no timer |
+
+Also seen and agreeing with what was there: the second part's clock (both runs), the shield's counter (a helper's
+28867 on the Paladin, parried, 48.2 s in), the loss (scene 5 and out), his shield's arc (blocked up to 23° off his
+facing and landed from 44° in Witness's count: 45° still fits, and still isn't settled). What the Paladin took:
+his auto-attacks for 112 to 124 and 28870 for 1631 and 1593, more than the White Mages' 82 and 1205 (the timeline's
+`recorded_amounts` are still theirs).
 
 Every lock, cast time, omen delay and aim in the timeline and `cast_aims.json` is the packets' own (the first pass).
 One thing retail's packets have that Kawari's don't: each target's effects end with effect 27 and the action's ID

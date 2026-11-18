@@ -99,17 +99,28 @@ Up to 2.3 the duty packets had no actor (every packet read actor 0 and size 0: t
 before the packet, which isn't its segment header) and no spawns (NPC spawns don't pass through the dispatcher hook),
 so which NPC did what had to be worked out from HP totals and hit counts (the 2026-10-16 To Guard a Guardian recording).
 
-## Kawari Witness (on retail, `witness/`, 0.1.0, 2026-11-18)
+## Kawari Witness (on retail, `witness/`, 0.1.1, 2026-11-18)
 
 Bob, 2026-11-18: "take all your guesses from the entirety of our documentation, and draft a dalamud plugin that would
 make all of them fact instantly if seen again". A Dalamud plugin (`/kwit`) that carries the list of what these pages
 say is guessed, unknown or never seen on retail, watches the live game for each, and writes it to `facts.json` in its
-config folder (numbers only; nobody's name or ID) with a line in chat the first time. **A draft: it builds (GitHub
-Actions, no warnings) and has not been run in game.**
+config folder (numbers only; nobody's name or ID) with a line in chat the first time. It ran the day it was written (0.1.0, Bob's two
+Cape Westwind runs as a Paladin: 86 facts, every hook working), and what it brought back is in
+[Quest battles](quest-battles.md) ("The Paladin's two runs") and [Combat](combat.md). **0.1.1** (kawari-diagnostics
+`54062e2`, built by GitHub Actions, not run in game) is what that run showed it needed: a fall's `aftermath` begins
+with the scenes and controls of the two seconds before the fall was noticed (the death is seen at the next
+quarter-second look, by when retail's scene 5 had come and gone unlisted); an action a director has an NPC use is
+known to its base (the action scripts named as its timeline is, and every `*Helper_*` script for base 9020), so
+28879 and 28880 aren't "new"; and the guesses the run settled are out of the list (the first part past 114.9 s,
+the statuses' timers, 28870's damage, ActorControl 1540, which was 40 of the 86 facts: a heal tick). ActorControl 20
+(a status gained, `[status, param]`) isn't watched with Toto-Rak's 30 and 31 any more; 63 is watched in every
+territory. What 63 does still isn't known: `[0]` came with his health going from 1 to 13534, `[7]`, `[27]`, `[5]`
+and `[6]` with nothing Witness can see (the status flags' 0x80 that came with `[7]` came with every cast he
+began).
 
 **The list** is `witness/KawariWitness/guesses.json`, built into the plugin and remade from a checkout of this
 repository with `python3 witness/tools/make_guesses.py ../archonengine` (in kawari-diagnostics). On 2026-11-18, from
-`ee453fe`:
+`ee453fe` (0.1.0's; 0.1.1's has 42 by hand, 9 timelines, 42 scripts, 339 quests, 668 bases):
 
 | Source | How many | What settles one |
 |---|---|---|

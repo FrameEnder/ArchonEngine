@@ -256,14 +256,23 @@ None of it played yet; the page not used against the running server.
   old reach will miss.
 * Retail's NPC actions carry effect 27 with the action's ID on each target (most of them, not auto-attacks); Kawari's
   don't. Not known to show.
-* Cape Westwind's second pass (`quest-battles.md`): the step after 28875, the rows' order and the health at 28881 are
-  retail's now, unplayed. Which of the rows' two orders comes is taken at random (2,3,1 wasn't seen).
+* Cape Westwind's second pass (`quest-battles.md`): the step after 28875 is retail's now, unplayed.
+* Cape Westwind's third pass (the Paladin's two runs, 2026-11-18), all unplayed: the first part's round past
+  114.9 s is one run's (once whole, once to its 59th second); the rows by nearness fit sixteen uses of sixteen but
+  the rule is read from where the player stood, not from the client's script; a round's 28868 keeping its 28870
+  before the push was seen once; retail's talk 33404 came 2.8 s after his health reached 1 in that run and at once
+  in the other five, which isn't explained (the script goes at once, and that fixture's tolerance is 3 s for it).
+  The timeline's damage is still the White Mages': the Paladin took more (28870 for 1631 and 1593, not 1205).
+* The 4th Cohort's four kinds in Western Thanalan only auto-attack here; retail's cast too (`combat.md`: 403, 866,
+  308, 10, 404, 526, each seen once or twice in passing). Not built: no sighting long enough to say how often.
 
 ## Kawari Witness (2026-11-18)
 
-* A draft, built by GitHub Actions and never run in game: whether its hooks start, whether its facts read right, and
-  how noisy the lists made from every timeline are (an action with no recorded hit is often one that does no damage)
-  aren't known.
+* It ran (0.1.0, Bob's two Cape Westwind runs of 2026-11-18: 86 facts, all four hooks working). Noise found and
+  taken out in 0.1.1: actions a director has an NPC use were "new" to its timeline (28879, 28880); every heal tick
+  was a fact (ActorControl 1540, 40 of the 86); category 20 (a status gained) was listed with Toto-Rak's 30 and 31.
+  Its `aftermath` began looking at the death it noticed a quarter-second late, so the scene that came with the
+  fall wasn't in it: 0.1.1 keeps the last two seconds.
 * It settles what retail can show. Lines here that say "untested in game" are about Kawari and stay as they are.
 * Nothing reads `facts.json` back into the documentation: a fact is folded in by hand.
 * The hand-written 46 are the guesses with a number to watch for; a guess stated only in words (which quest's NPC,
@@ -579,8 +588,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   territories taken to be copies of Coerthas and Mor Dhona from where their spots stand; 64's two talking event NPCs
   aren't put in the battle. 1651's 129, 1655's 527, 1874's 91 and 1988's 1286 give statuses whose length wasn't seen.
   **Cape Westwind** (5060, 4521) was reworked on 2026-11-18 from four retail runs after Bob's first test (five
-  marks, all answered: [Quest battles](quest-battles.md)); the rework isn't played in game. Guessed: what the boss
-  does in his first part past 114.9 s while above 15 % (no retail run was), how wide his raised shield is (45° to
+  marks, all answered: [Quest battles](quest-battles.md)); the rework isn't played in game. Guessed: how wide his raised shield is (45° to
   each side) and whether every blocked hit is answered, 28874's unblocked damage. What the surface under the arena's
   ground is (the boss walked on it, under the ground Bob saw) isn't known: he's kept on the upper floor now, but the
   territory's layout wasn't looked at. Its drop-in names its territory because 1049's level isn't known here. **5061** (The Ultimate

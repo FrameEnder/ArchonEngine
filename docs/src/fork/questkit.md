@@ -557,6 +557,16 @@ and Men's rosary (quest battle 60), without which its battle never ends.
 `--make` writes a health of a few HP as 0.1 %, not 0 (since 2026-11-06): In the Eyes of Gods and Men's boss stood at 1
 of 9150 HP for 3 s in one run, which rounded to 0.0 and put its death 3 s early.
 
+**Where the helpers cast from** (`placed`, since 2026-11-18): a run's battle NPCs with no layout ID (a director's
+helpers) give `placed`, `[[t, action, x, z], ...]` from their ActorCasts, and the fixture then keeps `positions`
+too (the player's and each NPC's, a point wherever one had moved half a yalm). The script is held to it
+(`placed_problems`): for each of retail's, an `actor_use_action` of that action within the tolerance by an NPC the
+script had put (`warp_bnpc`) within a yalm of there, and no use of those actions besides. Cape Westwind's rows are
+the ones nearest the player, which nothing compared until Bob's Paladin stood somewhere else: all six of its
+fixtures have it now (188 casts). Tests `test_placed`, `test_placed_from_a_run`. A health above 1 HP is written as
+0.2 % at the least, since 0.1 % is the floor's 1 HP to the simulator (Cape Westwind's boss at 32 HP was taken to be
+at his floor 2 s early, and the last two helpers of a row never cast).
+
 It doesn't simulate enmity or who hits whom (the health curves are retail's whatever the script's
 targeting does), or the NPCs' casts beyond `casts` and their yells (not compared). Losing is: when the player's health (`player`) reaches 0
 the script hears `onPlayerDeath`, as from the server (since 2026-10-27: Like Mother, Like Daughter's lost run went on

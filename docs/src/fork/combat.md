@@ -482,6 +482,12 @@ Western Thanalan's 381 spawn points (42 kinds, levels 1–24, plus the level 35 
 level 48–49 4th Cohort near its edge, as retail had them; 74 aggressive) were made the same way, leaving out 12 FATE
 monsters and 5 that belonged to someone. Its quest battle copy (273) loads the same drop-in, but quest battle
 instances drop the open-world NPCs. Timelines for the 31 kinds that had none (and Central Thanalan's Stone Torch)
+(The 4th Cohort's four kinds do more than auto-attack, each seen once or twice as Bob rode past them on
+2026-11-18, his Chronofoil capture 178b0de0 visit 0.3 and Kawari Witness: base 62 casts 403 on itself (2.2 s,
+status 61 with param 50, gone 14.8 s later) 0.3 and 2.1 s after it took the fight up, and 866 on its target 5.1 s
+in; base 64 casts 308 (3.7 s) on its target 0.1 s in; base 55 uses 10 on itself as it pulls (status 71, param 246)
+and casts 404 on itself 8.1 s in (2.2 s; status 8, param 226); base 201 casts 526 (2.2 s) on its target 7.9 s in.
+Their timelines have none of these: one sighting each doesn't say how often they come.)
 come from the Recorder export: hitboxes, the auto-attack used most (the Sun Midge Swarm's 872, the 4th Cohort
 Eques' 871, the rest 870) and the damage to players recorded for the Yarzon Scavenger, Sun Midge Swarm, Desert
 Peiste, Rusty/Copper Coblyns (base 187) and the Eques. Their skills (Foul Bite, Sanguine Bite, Body Slam, Cold
@@ -705,7 +711,10 @@ Status 17, as retail played it out in Bob's Chronofoil captures (85 windows of i
     Sprint's 30).
 * **The paralysed player's own packets**, in retail's order: when the proc cut a cast short, Condition (Casting off)
   and CancelCast; the proc (ActorControl 23), both from the player; StatusEffectList and UpdateClassInfo; 0.98 s
-  later Condition. Retail also sent ActorControl 1540 (`0, 3, an NPC`) with some procs, unknown, not sent.
+  later Condition. Retail also sent ActorControl 1540 (`0, 3, an NPC`) with some procs: a **heal tick** that happened
+  to come then, nothing of paralysis's (Kawari Witness, Bob's Cape Westwind runs of 2026-11-18: forty 1540s on the
+  player, each `[0, amount, source]` with their HP up by that amount within 0.7 s, the source 0xE0000000 for the
+  3 or 4 HP of standing regeneration and the player for their own). Not sent with a proc.
 
 Before 2026-11-01 paralysis did nothing (quest battle 17's gaze and the floating eye's gave it).
 

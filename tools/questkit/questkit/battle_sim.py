@@ -39,6 +39,12 @@ Casts: a fixture can hold the NPCs' casts (`casts`: `[[t, layout, action], ...]`
 their health), which the script hears as `onActorCast(director, layout, action, 0)`, as the server calls it when an
 NPC begins an action (the magitek vanguard's Drill Cannons move battles 46-48 on). Instant actions aren't in it.
 
+Placed: a fixture can hold where retail's NPCs without a layout ID (a director's helpers) cast from (`placed`:
+`[[t, action, x, z], ...]`, from their ActorCasts), which the script is held to: an `actor_use_action` of that action
+within the tolerance, by an NPC it put within `PLACED_WITHIN` yalms of there (`warp_bnpc`) beforehand. A fixture made
+with them has the player's and the NPCs' positions too, so a script choosing by where the player stands (Cape
+Westwind's rows, nearest first) chooses as retail's did.
+
 Landed: a fixture can hold the NPCs' actions that landed on the player (`landed`: `[[t, layout, action, players], ...]`,
 from retail's ActionEffects with the player among the targets and not missed; auto-attacks left out), which the script
 hears as `onActionLanded(director, layout, action, players)` half a second later, as the server's does when the result
@@ -92,6 +98,8 @@ DONE_SEQUENCES = (LOST_SEQUENCE, 0xFF)  # set by the server once a battle is ove
 DEFAULT_TOLERANCE = 2.0
 AFTER_LAST_EVENT = 30.0  # how long to keep simulating after retail's last event
 AUTO_ATTACKS = {870, 871, 872, 873}  # not told to a director as landing
+PLACED_WITHIN = 1.0  # yalms: how near retail's spot a helper's cast must be put (`placed`)
+POSITION_STEP = 0.5  # yalms: a fixture's positions keep a point where someone had moved this far
 LANDS_AFTER = 0.5  # the server's EFFECT_RESULT_AFTER: when it tells the director an action landed
 SETUP_CLOCK = -1000.0  # onSetup's time: before the opening, never compared
 
@@ -167,7 +175,9 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
     def percent(hp, max_hp):
         # A few HP left isn't 0 (In the Eyes of Gods and Men's boss stood at 1 of 9150 for 3 s, Bob's Chronofoil capture
         # 3c56e09f: rounded, it fell then.)
-        return max(round(100 * hp / max_hp, 1), 0.1) if hp > 0 else 0.0
+        # More than 1 HP isn't 0.1 % either, which is the floor the simulator takes for 1 HP: Cape Westwind's boss at
+        # 32 of 24609 was still casting 2 s before he was at 1 (Bob's Chronofoil capture 667a68c5.)
+        return max(round(100 * hp / max_hp, 1), 0.1 if hp == 1 else 0.2) if hp > 0 else 0.0
 
     for sample in run.get("Samples", []):
         key = str(sample.get("Id"))
@@ -298,6 +308,36 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
         if hit and action.get("Action") not in AUTO_ATTACKS:
             landed.append([rel(action["S"]), actor["LayoutId"], action["Action"], hit])
 
+    # Where the NPCs without a layout ID (a director's helpers) cast from, and with them where the player and the
+    # NPCs stood (a script that places its helpers by where the player is: Cape Westwind's rows.)
+    placed = []
+    for event in run.get("Events", []):
+        actor = run.get("Actors", {}).get(str(event.get("Id")))
+        text = event.get("Text", "")
+        if event.get("Kind") != "cast" or actor is None or actor.get("Kind") != "battle npc" or actor.get("LayoutId") \
+                or " at " not in text or rel(event["S"]) < 0:
+            continue
+        action = _number_after(text, "action")
+        try:
+            x, _, z = (float(v) for v in text.split(" at ", 1)[1].split(" facing", 1)[0].split(","))
+        except ValueError:
+            continue
+        if action is not None:
+            placed.append([rel(event["S"]), action, round(x, 2), round(z, 2)])
+    positions: dict[str, list] = {}
+    if placed:
+        whose = {k: str(a["LayoutId"]) for k, a in actors.items()}
+        for key in you:
+            whose[key] = "player"
+        for sample in sorted((s for s in run.get("Samples", []) if "P" in s), key=lambda s: s["S"]):
+            name = whose.get(str(sample.get("Id")))
+            if name is None:
+                continue
+            path = positions.setdefault(name, [])
+            x, y, z = (round(v, 2) for v in sample["P"])
+            if not path or abs(path[-1][1] - x) + abs(path[-1][3] - z) >= POSITION_STEP:
+                path.append([rel(sample["S"]), x, y, z])
+
     durations = {}
     for t, n in scenes:
         if n in (SCENE_COMMENCE, SCENE_COMPLETE) or t < commence:
@@ -317,6 +357,9 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
         fixture["casts"] = casts
     if landed:
         fixture["landed"] = landed
+    if placed:
+        fixture["placed"] = placed
+        fixture["positions"] = positions
     # When each NPC took the fight up (ActorControl 4, SetBattle `[1]`): a script that waits for its boss to have
     # someone to go for (`info[layout].target`) sees it then, which can be before anything has hit it (The Ultimate
     # Weapon's last battle's boss, 5.4 s before the first hit in one run.)
@@ -336,7 +379,8 @@ def save(fixture: dict, path: Path | None = None) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     npcs = ",\n".join(f'    "{k}": {json.dumps(v)}' for k, v in fixture["npcs"].items())
     events = ",\n".join(f"    {json.dumps(e)}" for e in fixture["events"])
-    head = {k: v for k, v in fixture.items() if k not in ("npcs", "events", "positions", "casts", "landed")}
+    head = {k: v for k, v in fixture.items()
+            if k not in ("npcs", "events", "positions", "casts", "landed", "placed")}
     text = json.dumps(head, indent=2)[:-2] + f',\n  "npcs": {{\n{npcs}\n  }},\n  "events": [\n{events}\n  ]'
     if fixture.get("positions"):
         positions = ",\n".join(f'    "{k}": {json.dumps(v)}' for k, v in fixture["positions"].items())
@@ -347,6 +391,9 @@ def save(fixture: dict, path: Path | None = None) -> Path:
     if fixture.get("landed"):
         landed = ",\n".join(f"    {json.dumps(c)}" for c in fixture["landed"])
         text += f',\n  "landed": [\n{landed}\n  ]'
+    if fixture.get("placed"):
+        placed = ",\n".join(f"    {json.dumps(c)}" for c in fixture["placed"])
+        text += f',\n  "placed": [\n{placed}\n  ]'
     text += "\n}\n"
     json.loads(text)
     path.write_text(text)
@@ -619,6 +666,7 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     result.problems += spawn_problems(fixture, calls)
     result.problems += line_up_problems(fixture, calls)
     result.problems += compare(fixture, calls, result)
+    result.problems += placed_problems(fixture, calls)
     result.ok = not result.problems
     return result
 
@@ -754,6 +802,49 @@ def spawn_problems(fixture: dict, calls: list[tuple]) -> list[str]:
     for layout, count in sorted(script_count.items()):
         if layout in retail_count and count > retail_count[layout]:
             problems.append(f"brings {layout} out {count} times, retail {retail_count[layout]}")
+    return problems
+
+
+def script_placed(calls: list[tuple]) -> list[list]:
+    """The actions the script had an NPC use from where it had just put it: `[t, action, x, z]`."""
+    at: dict = {}
+    placed = []
+    for t, name, args in calls:
+        if name == "warp_bnpc" and len(args) >= 4:
+            at[args[0]] = (float(args[1]), float(args[3]))
+        elif name == "actor_use_action" and len(args) >= 2 and args[0] in at:
+            placed.append([t, int(args[1]), *at[args[0]]])
+    return placed
+
+
+def placed_problems(fixture: dict, calls: list[tuple]) -> list[str]:
+    """Holds the script to where retail's helpers cast from (`placed`): each of retail's, in order, to one of the
+    script's of that action within the tolerance and `PLACED_WITHIN` yalms; and nothing of those actions besides."""
+    if not fixture.get("placed"):
+        return []
+    tolerance = fixture.get("tolerance", DEFAULT_TOLERANCE)
+    actions = {entry[1] for entry in fixture["placed"]}
+    mine = [entry for entry in script_placed(calls) if entry[1] in actions]
+    used = [False] * len(mine)
+    problems = []
+    for t, action, x, z in fixture["placed"]:
+        near = [i for i, other in enumerate(mine)
+                if not used[i] and other[1] == action and abs(other[0] - t) <= tolerance]
+        found = next((i for i in near if abs(mine[i][2] - x) <= PLACED_WITHIN and abs(mine[i][3] - z) <= PLACED_WITHIN),
+                     None)
+        if found is not None:
+            used[found] = True
+        elif near:
+            other = mine[near[0]]
+            used[near[0]] = True
+            problems.append(f"action {action} at {t:.1f} s: retail's from ({x:.1f}, {z:.1f}), the script's from "
+                            f"({other[2]:.1f}, {other[3]:.1f})")
+        else:
+            problems.append(f"action {action} from ({x:.1f}, {z:.1f}) at {t:.1f} s on retail: the script never did it")
+    for i, other in enumerate(mine):
+        if not used[i]:
+            problems.append(f"action {other[1]} from ({other[2]:.1f}, {other[3]:.1f}) at {other[0]:.1f} s: retail "
+                            "didn't")
     return problems
 
 

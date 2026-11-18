@@ -4,18 +4,22 @@
 -- (DutyCommence, no scene 60000), won into the quest's sequence 4 and out to Western Thanalan, and lost out to where
 -- the player came in from, as a quest battle is: nobody is raised inside.
 --
--- Four retail runs: Bob's Chronofoil captures 667a68c5 of 2026-11-16 (`questkit chronofoil --battle 0.16`: won, 527 s,
--- a level 50 White Mage synced to 49) and 9ba7d981 of 2026-11-17 (a Summoner; visits 0.6, lost 315 s in, and 0.8, won
--- in 361 s), and Connor's e834e436 (visit 0.240: a White Mage, won.) Layout IDs, levels, HP, positions and flags are
+-- Six retail runs: Bob's Chronofoil captures 667a68c5 of 2026-11-16 (`questkit chronofoil --battle 0.16`: won, 527 s,
+-- a level 50 White Mage synced to 49), 9ba7d981 of 2026-11-17 (a Summoner; visits 0.6, lost 315 s in, and 0.8, won
+-- in 361 s) and 178b0de0 of 2026-11-18 (a level 50 Paladin; visits 0.4, lost in the second part, and 0.6, won, its
+-- first part 311 s long), and Connor's e834e436 (visit 0.240: a White Mage, won.) With the last two came Kawari
+-- Witness's facts (statuses' timers, his health after the cutscene.) Layout IDs, levels, HP, positions and flags are
 -- their SpawnNpcs' (drop-in `territory_1049.json`.) Times below are seconds from the talk that begins each part.
 --
 -- The boss (9082104, base 14581, BNpcName 2160, 24609 HP) auto-attacks (6499) every 3 s when he isn't casting, and
 -- stands through each cast's animation lock. Twelve helpers (base 9020, layout 0, 44 HP) stand on his spot and cast
 -- where the director puts them.
 --
---   The pull: talk 33400. His first part (the timeline's points before any anchor), the same clock in all four runs:
+--   The pull: talk 33400. His first part (the timeline's points before any anchor), the same clock in all six runs:
 --         28871 at 6.1 and 28870 at 11.3 where he stands, facing the player; 28864 at 21.5 (talk 33403) and 6.0 s
---         after it began a row of four of the helpers' 28865 a second apart; 28866 at 37.7 (talk 33402, ActorControl
+--         after it began a row of four of the helpers' 28865 a second apart, the row of the three nearest the player
+--         as the cast began (`nearestRows`: the second in the four older runs, the first in the Paladin's two, and
+--         in all three of its uses in the long one); 28866 at 37.7 (talk 33402, ActorControl
 --         63 [7]): his shield up, statuses 680 and 2195 on him from its end for 7.76 s, then 63 [0]. He doesn't move,
 --         turn or attack from the cast's start until they're gone (12.8 s), and a hit from in front of him then is
 --         blocked for nothing and answered a second later by a helper's 28867 from his spot on whoever struck (769
@@ -23,14 +27,24 @@
 --         degrees off landed. 28872 at 52.9, a leap to the middle (SnapNextMove 1.1 s after it); 28868 there (talk
 --         33424 the first time) and 4.1 s after it began the arena's map effect and two helpers' 28869 (7.7 s casts,
 --         their markers 5.5 s in), the effect off as they land; again at 68.1 with the other two spots; 28871 at
---         82.4, 28870 at 93.5 and 103.7, 28871 at 114.9.
+--         82.4, 28870 at 93.5 and 103.7, 28871 at 114.9. Still above 15 % then (the long run alone, which went
+--         round twice), a round of 117.5 s from 126.1: 28864; 28870 at 7.2 and 13.4; 28872 at 19.6 and 28871 at
+--         21.6; 28872 at 31.8, 28868 at 33.9 and 28870 at 39.2; the same three at 45.3, 47.4 and 52.6; 28872 at
+--         58.7 and 28871 at 60.8; 28870 at 72.0; 28866 at 84.1; 28870 at 105.3. The talks (33403, 33402, 33424)
+--         came with each action's first use only. 28868's map effects and spots there: the first two uses as
+--         above, then (64, 128) with spots 3 and 5 and (1, 2) with 1 and 2, turn about.
 --   Below 15 % of his health he leaves that clock as soon as he's free (his cast landed and its animation lock
 --         over): 28872; talk 33425 2.2 s after it and 28873 every 6.15 s from 2.4 s (the timeline's points after
---         33425.) The four runs: 14.9 % during a 28871, the leap 2.1 s after it landed (its lock); 14.9 % 1.5 s after
---         a 28870 landed, the leap 3.2 s after it had (its lock, 3.1); 13.8 % as the clock's own leap went off, the
---         next 2.1 s later in place of 28868; 15.7 and 15.1 % between two hits with him free, the leap half a second
---         after the second (16.2 and 15.7 % didn't do it.)
+--         33425.) The six runs, by his health in the samples: 14.9 % during a 28871, the leap 2.1 s after it landed
+--         (its lock); 14.5 % in a 28870's lock, the leap as it ended; 13.8 % in the clock's own leap's lock, the
+--         next as it ended in place of 28868; 15.27 % with him free and the leap 0.7 s later (14.6 % just after it);
+--         14.4 % with him free, the leap 1.1 s later; and in the long run 15.26 % as a round's 28868 began (no
+--         push), 14.96 % half a second into it, and he was free 5.1 s after it began but cast the round's 28870
+--         5.2 s after it as ever, then leapt as that one's lock ended: 28868 and the 28870 behind it go together
+--         (`BUSY_SPOTS_THEN_LINE`; seen once.)
 --   His health at 1 (it goes no lower): his cast stopped (ActorControl 15 [537, 1, action]), untargetable, talk 33404,
+--         (at once in five runs, two of them in a 28873's lock; in the long one 2.8 s after his health was at 1,
+--         as the 28873 that had just landed's lock ended: not explained, and not done here)
 --         ActionTimeline 10500, ActorControl 63 [27] 1.5 s on; at 2.5 s three of base 14582 and one of 14583 where
 --         the player came in, standing; at 7.0 s talk 33405 and they run in to four spots by the entrance; at 11.0 s
 --         they can be targeted and fight, with the director's 0x10000001 and 0x10000002 [33421]; talks 33406, 33407,
@@ -43,17 +57,21 @@
 --   His second part (anchor 33410): 28875 on the player (status 2656 for 3.5 s), and 0.6 s after it lands he steps
 --         up to 2 yalms from them (SnapNextMove and a move); 28877 and 28876 (5.7 s casts; NpcYells 13650 and 13649
 --         the first two times each), 28878 (talk 33426) and 5.07 s after it began three rows of the helpers' 28865,
---         four seconds apart, in the order 1, 2, 3 (three uses) or 3, 1, 2 (two); 28876; 28872 and 28868 (talk 33427) with all four spots,
---         then with four again; 28877, 28876, 28877, and round again from 28878 every 113.3 s (seen once.)
+--         four seconds apart, the nearest to the player as the cast began first and the furthest last (seven uses
+--         of seven: 1, 2, 3 three times, 3, 1, 2 twice, 1, 3, 2 twice); 28876; 28872 and 28868 (talk 33427 with the
+--         first) with four spots, then with four again; 28877, 28876, 28877, and round again from 28878 every
+--         113.3 s (seen once.) Status 2056 is gone as his health reaches 1.
 --   His health at 1 again: ActorControl 537 [himself], the helpers' casts stopped (15 [537, 1, 28865]),
 --         untargetable, NpcYell 13811, ActionTimeline 10506, 63 [5] at 2.0 s; at 6.0 s SetBGM 1 and the director's
---         scene 3 (cutscene 2874, then 0, 173, 0, 0), 47 s. As it ends: 63 [0], him in the middle facing north; the
+--         scene 3 (cutscene 2874, then 0, 173, 0, 0), 47 s. As it ends: 63 [0] and his health 55 % (13534: from 1
+--         to that within 0.7 s of the control, Kawari Witness), him in the middle facing north; the
 --         player put at (-680.02, 63.86, -810.64) 1.5 s on; at 6.0 s ActorControl 35 [0, 10, player, 15], his 28879
 --         on the player (status 3134) and 63 [6]; a helper's 28880 from where the player stands at 6.9 s (Knockback
 --         17, towards him); at 7.8 s targetable, talk 33414.
---   The last part (anchor 33414): 28881 at once, his health 55 % (13534) as its cast begins; a helper's 28882 beside him at
---         4.1 s; status 3008 on him, one stack more before each 28883 (4.7 s casts, 13.15 s apart, talks
---         33415-33419 with the first five); status 2194 on the player from 7.8 s to his death.
+--   The last part (anchor 33414): 28881 at once; a helper's 28882 beside him at 4.1 s; status 3008 on him, one
+--         stack more before each 28883 (4.7 s casts, 13.15 s apart, talks 33415-33419 with the first five); status
+--         2194 on the player from 7.8 s to his death. Neither has a timer, nor has 3134 (28879's, on the player
+--         until they leave.)
 --   He falls: the director's scene 4 (flags 0x08502403; cutscene 263, then 1) in a GameComplete event; as it ends the
 --         quest to sequence 4 and out to Western Thanalan at (-462.43, 22.94, -477.23), where the quest's entering
 --         scene takes it to 255.
@@ -61,10 +79,10 @@
 --         GameProgress event with argument 2; 3.1 s later the event ends and the player is in Western Thanalan again.
 --         No wipe, no recommence, nobody raised inside (Kawari's did both until 2026-11-18.)
 --
--- Not seen on retail, so guessed: what he does in the first part once 28871 at 114.9 is done and his health is still
--- above 15 % (here the clock goes round again from 28864 every 103.6 s, as the second part's does every 113.3 s); how
--- far to either side of his facing the raised shield reaches (45 degrees here: everyone who knew stood 46 to 49
--- degrees off); the director's 0x10000002 [33420] comes with DutyCommence here, retail's before the opening scene.
+-- Not seen on retail, so guessed: how far to either side of his facing the raised shield reaches (45 degrees here:
+-- blocked up to 23 degrees off, landed from 44, in the six runs and Kawari Witness's count); whether talk 33427
+-- comes again with the second part's third 28868 (not here: the first part's 33424 didn't); the director's
+-- 0x10000002 [33420] comes with DutyCommence here, retail's before the opening scene.
 -- Unknown: what ActorControl 63 and statuses 2056, 2656, 3008 and 2194 do (sent and given as retail did, nothing
 -- more; 35 [0, 10, player, 15] is followed at once by the player's own client moving them 5 yalms to him.)
 --
@@ -135,10 +153,10 @@ PATTERNS = {
         { timeline = 2048, state = 1024, spots = { 1, 5, 4, 3 } },
     },
 }
+-- The first part's from its third use on, turn about (the long run's four: at 160.0, 173.5, 277.7 and 291.4 s.)
+PATTERNS_ROUND = { { timeline = 128, state = 64, spots = { 3, 5 } }, { timeline = 2, state = 1, spots = { 1, 2 } } }
 MAP_EFFECT_OFF = { timeline = 8, state = 4 }
 HELPER_FACING = 1.118
--- The orders 28878's three rows come in.
-ROW_ORDERS = { { 1, 2, 3 }, { 3, 1, 2 } }
 -- After his 28875 lands he steps up to the one it hit: SnapNextMove and a move 0.6 s on, to 2 yalms from them (he
 -- began his next cast 2.0 yalms off in all four runs.)
 STEP_AFTER = 0.5
@@ -189,6 +207,9 @@ BUSY_SECONDS = {
     [28873] = 6.1,
 }
 BUSY_SECONDS_DEFAULT = 5.1
+-- A round's 28868 (the first part's third use on) has a 28870 5.2 s behind it that the push doesn't take the place
+-- of: he's held until that one has begun.
+BUSY_SPOTS_THEN_LINE = 5.6
 STATUS_AFTER_ADDS = 2056
 STATUS_AFTER_ADDS_PARAM = 95
 STATUS_LAST = 3008
@@ -328,6 +349,28 @@ function helperAt(director, spot, facing)
     return helper
 end
 
+-- The three rows, the nearest to the player first (to the line through each row's spots, between its ends): which
+-- row 28864 uses and the order of 28878's, as each cast begins. Nine uses of 28864 and seven of 28878 in the six runs.
+function nearestRows()
+    local at = player_at or START_POSITION
+    local order = {}
+    for i, row in ipairs(ROWS) do
+        local ax, az = row[1][1], row[1][3]
+        local bx, bz = row[#row][1], row[#row][3]
+        local along = ((at.x - ax) * (bx - ax) + (at.z - az) * (bz - az)) / ((bx - ax) ^ 2 + (bz - az) ^ 2)
+        along = math.max(0, math.min(1, along))
+        local dx, dz = at.x - (ax + (bx - ax) * along), at.z - (az + (bz - az) * along)
+        order[i] = { row = i, distance = math.sqrt(dx * dx + dz * dz) }
+    end
+    table.sort(order, function(a, b)
+        if a.distance == b.distance then
+            return a.row < b.row
+        end
+        return a.distance < b.distance
+    end)
+    return { order[1].row, order[2].row, order[3].row }
+end
+
 -- A row of the helpers' 28865, one a second, `first` seconds from now.
 function castRow(director, row, first)
     for i, spot in ipairs(ROWS[row]) do
@@ -341,7 +384,11 @@ end
 
 function castSpots(director)
     local patterns = PATTERNS[part_number]
-    local pattern = patterns[(count("pattern") - 1) % #patterns + 1]
+    local use = count("pattern")
+    local pattern = patterns[(use - 1) % #patterns + 1]
+    if part_number == 1 and use > #patterns then
+        pattern = PATTERNS_ROUND[(use - #patterns - 1) % #PATTERNS_ROUND + 1]
+    end
     director:map_effect(0, pattern.timeline, pattern.state)
     for _, spot in ipairs(pattern.spots) do
         director:actor_use_action(helperAt(director, SPOTS[spot], HELPER_FACING), ACTION_SPOTS_HELPER)
@@ -358,10 +405,14 @@ function onActorCast(director, layout_id, action_id, actor_id)
     local uses = count(action_id)
     free_at = ticks + math.floor((BUSY_SECONDS[action_id] or BUSY_SECONDS_DEFAULT) * 2 + 0.5)
     if action_id == ACTION_ROW then
-        talk(director, 33403, 5000)
-        castRow(director, 2, 6.0)
+        if uses == 1 then
+            talk(director, 33403, 5000)
+        end
+        castRow(director, nearestRows()[1], 6.0)
     elseif action_id == ACTION_STANCE then
-        talk(director, 33402)
+        if uses == 1 then
+            talk(director, 33402)
+        end
         director:bnpc_control(BOSS, CONTROL_63, { 7 })
         -- He stands as he is until the shield is down: no step, no turn, no auto-attack (none in 13.7 s, four runs.)
         director:busy_bnpc(BOSS, STANCE_HELD)
@@ -387,8 +438,11 @@ function onActorCast(director, layout_id, action_id, actor_id)
         director:jump_bnpc(BOSS, MIDDLE.x, MIDDLE.y, MIDDLE.z)
         director:delay(0)
     elseif action_id == ACTION_SPOTS then
-        if uses % 2 == 1 then
+        if uses == 1 then
             talk(director, part_number == 1 and 33424 or 33427, 5000)
+        end
+        if part_number == 1 and uses > #PATTERNS[1] then
+            free_at = ticks + math.floor(BUSY_SPOTS_THEN_LINE * 2 + 0.5)
         end
         after(4.0, castSpots)
     elseif action_id == ACTION_THRICE then
@@ -405,15 +459,10 @@ function onActorCast(director, layout_id, action_id, actor_id)
         end
     elseif action_id == ACTION_ROWS then
         talk(director, 33426)
-        -- The three rows four seconds apart, in one of the two orders seen (1, 2, 3 in three uses; 3, 1, 2 in two.)
-        local order = ROW_ORDERS[math.random(#ROW_ORDERS)]
-        for i, row in ipairs(order) do
+        -- The three rows four seconds apart, the nearest to the player first.
+        for i, row in ipairs(nearestRows()) do
             castRow(director, row, 5.0 + (i - 1) * 4.0)
         end
-    elseif action_id == ACTION_RISE then
-        -- His health is 55 % as the cast begins: 13534, less the hits that landed since, in each run's first sight
-        -- of it (13425 after a 109, 13461 after a 73), 1.3 to 1.7 s after the talk.
-        director:set_health(BOSS, HEALTH_LAST)
     elseif action_id == ACTION_LAST then
         last_stacks = last_stacks + 1
         if boss ~= nil then
@@ -468,15 +517,15 @@ end
 -- 33425 (28872 at once, then 28873 until his health is at its floor.)
 function push(director)
     pushing = true
+    if part ~= 1 then
+        return
+    end
     if free_at <= ticks then
         director:restart_timeline(BOSS, PART_PUSH)
         return
     end
-    after((free_at - ticks) / 2, function(d)
-        if part == 1 then
-            d:restart_timeline(BOSS, PART_PUSH)
-        end
-    end)
+    -- (Looked at again then: a cast begun meanwhile holds him longer, as a round's 28870 behind its 28868 does.)
+    after((free_at - ticks) / 2, push)
 end
 
 -- His health at 1 the first time: the four come.
@@ -578,6 +627,8 @@ function lastStand(director)
     director:set_invulnerable(BOSS, true)
     if boss ~= nil then
         director:bnpc_control(BOSS, CONTROL_537, { boss })
+        -- (Gone 131.7 s after it came in Bob's run of 2026-11-18, which is here: Kawari Witness.)
+        director:lose_effect(boss, STATUS_AFTER_ADDS)
     end
     director:set_targetable(BOSS, false)
     director:yell(BOSS, 13811)
@@ -622,6 +673,9 @@ function onSceneFinished(director, scene)
     end
     part = "rising"
     director:bnpc_control(BOSS, CONTROL_63, { 0 })
+    -- His health with it: 1 to 13534 (55 %) within 0.7 s of the control (Kawari Witness, Bob's run of 2026-11-18;
+    -- the captures first show it 9 s on, less what had landed since: 13425 after a 109, 13461 after a 73.)
+    director:set_health(BOSS, HEALTH_LAST)
     director:warp_bnpc(BOSS, LAST_STAND.x, LAST_STAND.y, LAST_STAND.z, 0)
     after(1.5, function(d)
         d:warp_players(PLAYER_AFTER_CUTSCENE.x, PLAYER_AFTER_CUTSCENE.y, PLAYER_AFTER_CUTSCENE.z,

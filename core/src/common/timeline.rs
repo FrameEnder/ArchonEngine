@@ -648,6 +648,73 @@ mod tests {
         assert_eq!(due(0.0), Vec::<u32>::new());
     }
 
+    /// Cape Westwind's boss, still above 15 % after the first pass: what Bob's Paladin saw him do from the pull
+    /// (seconds after talk 33400, his Chronofoil capture 178b0de0 of 2026-11-18, visit 0.6.) The timeline went round
+    /// the first pass again every 103.6 s until then, a guess.
+    #[test]
+    fn cape_westwinds_first_part_goes_round_as_retails_did() {
+        let json =
+            std::fs::read_to_string("../resources/timelines/CapeWestwindBoss_14581.json").unwrap();
+        let timeline: Timeline = serde_json::from_str(&json).unwrap();
+        let retail: [(f32, u32); 35] = [
+            (6.1, 28871),
+            (11.3, 28870),
+            (21.6, 28864),
+            (37.7, 28866),
+            (52.9, 28872),
+            (55.0, 28868),
+            (68.2, 28872),
+            (70.3, 28868),
+            (82.4, 28871),
+            (93.6, 28870),
+            (103.8, 28870),
+            (114.9, 28871),
+            (126.1, 28864),
+            (133.3, 28870),
+            (139.5, 28870),
+            (145.7, 28872),
+            (147.7, 28871),
+            (157.9, 28872),
+            (160.0, 28868),
+            (165.3, 28870),
+            (171.4, 28872),
+            (173.5, 28868),
+            (178.7, 28870),
+            (184.8, 28872),
+            (186.9, 28871),
+            (198.1, 28870),
+            (210.2, 28866),
+            (231.4, 28870),
+            (243.6, 28864),
+            (250.8, 28870),
+            (257.1, 28870),
+            (263.3, 28872),
+            (265.4, 28871),
+            (275.6, 28872),
+            (277.7, 28868),
+        ];
+        let mut mine: Vec<(f32, u32)> = Vec::new();
+        let mut at = 0.0;
+        while at < 280.0 {
+            for point in timeline.points_between(at, at + 0.1) {
+                if let TimepointData::Action { action_id, .. } = point.data {
+                    mine.push((at, action_id));
+                }
+            }
+            at += 0.1;
+        }
+        assert_eq!(
+            mine.iter().map(|(_, action)| *action).collect::<Vec<_>>(),
+            retail.iter().map(|(_, action)| *action).collect::<Vec<_>>()
+        );
+        for ((at, action), (retail_at, _)) in mine.iter().zip(retail.iter()) {
+            assert!(
+                (at - retail_at).abs() <= 0.6,
+                "{action} at {at:.1} s, retail's at {retail_at:.1} s"
+            );
+        }
+    }
+
     #[test]
     fn recorded_amounts_by_target() {
         let timeline: Timeline = serde_json::from_str(

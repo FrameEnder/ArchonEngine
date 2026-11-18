@@ -651,6 +651,64 @@ class BattleSimPlayerTest(unittest.TestCase):
         self.assertEqual(battle_sim._position_then(path, 3.0), (11.0, 2.0, 31.0))
         self.assertEqual(battle_sim._position_then(None, 5.0), (0.0, 0.0, 0.0))
 
+    def test_placed(self):
+        """A fixture's `placed` holds the script to where retail's helpers cast from: Cape Westwind's row was the one
+        nearest the player (the first for Bob's Paladin, capture 178b0de0 of 2026-11-18), and the script's was always
+        the second."""
+        fixture = {"tolerance": 2.0, "placed": [[10.0, 28865, -698.45, -819.61], [11.0, 28865, -692.16, -816.56]]}
+        right = [(10.5, "warp_bnpc", [0, -698.45, 66.18, -819.61, 3.14]), (10.5, "actor_use_action", [0, 28865]),
+                 (11.5, "warp_bnpc", [0, -692.16, 65.42, -816.56, 3.14]), (11.5, "actor_use_action", [0, 28865])]
+        self.assertEqual(battle_sim.placed_problems(fixture, right), [])
+        wrong = [(10.5, "warp_bnpc", [0, -702.39, 66.33, -811.52, 3.14]), (10.5, "actor_use_action", [0, 28865]),
+                 (11.5, "warp_bnpc", [0, -692.16, 65.42, -816.56, 3.14]), (11.5, "actor_use_action", [0, 28865]),
+                 (30.0, "actor_use_action", [0, 28865]),
+                 # Another action than retail's helpers used isn't the fixture's to judge.
+                 (30.0, "actor_use_action", [0, 28867, 5])]
+        self.assertEqual(battle_sim.placed_problems(fixture, wrong), [
+            "action 28865 at 10.0 s: retail's from (-698.5, -819.6), the script's from (-702.4, -811.5)",
+            "action 28865 from (-692.2, -816.6) at 30.0 s: retail didn't"])
+        self.assertEqual(battle_sim.placed_problems(fixture, []), [
+            "action 28865 from (-698.5, -819.6) at 10.0 s on retail: the script never did it",
+            "action 28865 from (-692.2, -816.6) at 11.0 s on retail: the script never did it"])
+        self.assertEqual(battle_sim.placed_problems({"tolerance": 2.0}, wrong), [])
+
+    def test_cape_westwinds_push_waits_for_the_line_behind_the_spots(self):
+        """Below 15 % as a round's 28868 began, retail's boss still cast the 28870 that comes 5.2 s behind it and
+        leapt as that one's lock ended (306.95 s into Bob's Chronofoil capture 178b0de0, visit 0.6); the script's
+        clock gave way as soon as 28868's own lock was over, six seconds early. And each of the first part's talks
+        comes once."""
+        fixture = json.loads((battle_sim.BATTLES / "5060-178b0de0-6.json").read_text())
+        result = battle_sim.simulate(fixture)
+        self.assertIsNone(result.error)
+        pushes = [t for t, name, args in result.calls if name == "restart_timeline" and args[1] == 33425]
+        self.assertEqual(len(pushes), 1)
+        self.assertAlmostEqual(pushes[0], 306.95, delta=0.6)
+        talks = [args[2] for _, name, args in result.calls if name == "battle_talk"]
+        for text in (33403, 33402, 33424, 33427):
+            self.assertEqual(talks.count(text), 1, text)
+
+    def test_placed_from_a_run(self):
+        """A run's helpers (battle NPCs with no layout ID) give `placed` and everyone's positions; a few HP isn't the
+        floor's 0.1 %."""
+        run = {"Actors": {"1": {"Kind": "battle npc", "LayoutId": 77, "MaxHp": 24609, "Seen": 0.0},
+                          "2": {"Kind": "battle npc", "LayoutId": 0, "MaxHp": 44, "Seen": 0.0},
+                          "9": {"Kind": "you", "MaxHp": 100, "Seen": 0.0}},
+               "Controls": [{"S": 5.0, "Id": 0, "Category": battle_sim.CONTROL_DIRECTOR,
+                             "Params": [1, battle_sim.DUTY_COMMENCE, 0]}],
+               "Samples": [{"S": 6.0, "Id": 9, "Hp": 100, "P": [1.0, 2.0, 3.0]},
+                           {"S": 6.2, "Id": 9, "Hp": 100, "P": [1.1, 2.0, 3.0]},
+                           {"S": 7.0, "Id": 9, "Hp": 100, "P": [4.0, 2.0, 3.0]},
+                           {"S": 6.0, "Id": 1, "Hp": 32, "P": [5.0, 6.0, 7.0]},
+                           {"S": 8.0, "Id": 1, "Hp": 1, "P": [5.0, 6.0, 7.0]}],
+               "Events": [{"S": 9.0, "Kind": "cast", "Id": 2,
+                           "Text": "action 28865 spell 28865 type 1 on 3758096384 3.70s at -698.45, 66.18, -819.61 "
+                                   "facing -3.142 omen delay 0 interruptible False"}]}
+        fixture = battle_sim.fixture_from_run(run, 5060)
+        self.assertEqual(fixture["placed"], [[4.0, 28865, -698.45, -819.61]])
+        self.assertEqual(fixture["positions"]["player"], [[1.0, 1.0, 2.0, 3.0], [2.0, 4.0, 2.0, 3.0]])
+        self.assertEqual(fixture["positions"]["77"], [[1.0, 5.0, 6.0, 7.0]])
+        self.assertEqual(fixture["npcs"]["77"]["hp"], [[1.0, 0.2], [3.0, 0.1]])
+
 
 class CaptureTools(unittest.TestCase):
     def setUp(self):
