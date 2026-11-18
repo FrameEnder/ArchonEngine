@@ -197,7 +197,8 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
                 && cast.action_id != 0
                 && cast.length >= TOO_QUICK_TO_DODGE =>
             {
-                let shape = game_data.get_action_info(cast.action_id)?.area_shape()?;
+                let info = game_data.get_action_info(cast.action_id)?;
+                let shape = info.area_shape()?;
                 Some(Danger {
                     action_id: cast.action_id,
                     shape,
@@ -205,7 +206,7 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
                     caster: spawn.common.position.0,
                     rotation: cast.rotation,
                     aimed_at: cast.target_position,
-                    caster_radius: timeline.hitbox_radius,
+                    caster_radius: info.area_hitbox(timeline.hitbox_radius),
                     until: cast.until,
                 })
             }

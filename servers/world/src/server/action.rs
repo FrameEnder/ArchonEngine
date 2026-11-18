@@ -1238,7 +1238,7 @@ pub fn execute_action(
                     rotation,
                     aimed_at,
                     position,
-                    timeline.hitbox_radius,
+                    action_info.map_or(0.0, |info| info.area_hitbox(timeline.hitbox_radius)),
                 )
             };
 
@@ -1354,7 +1354,7 @@ pub fn execute_action(
                         rotation,
                         aimed_at,
                         other.position().0,
-                        timeline.hitbox_radius,
+                        action_info.map_or(0.0, |info| info.area_hitbox(timeline.hitbox_radius)),
                     )
                 {
                     area_bystanders.push((*id, effects_builder.effects.clone()));
@@ -4255,9 +4255,19 @@ fn area_side(actor: &NetworkedActor, players_enemies: &[bool]) -> Option<bool> {
     }
 }
 
+/// How far past an area attack's edge someone still counts as caught: nothing. Retail's edge is the marker's own: of
+/// 234 circles round their caster that missed Bob or Connor standing still (every such cast in the 31 Chronofoil
+/// captures at hand on 2026-11-18, shapes by Boss Mod's reading of the sheet), the nearest were 0.10, 0.10, 0.11 and
+/// 0.13 yalms outside, and of 184 lines 0.05, 0.05 and 0.07 from the side; the furthest hit was inside. It was half a
+/// yalm (`PLAYER_HITBOX_RADIUS`, taken to be the player's hitbox counting), and with the caster's hitbox added to
+/// every circle too, Cape Westwind's boss hit Bob with a 7-yalm circle at 7.2 and 7.4 yalms and with a line 5 wide
+/// 2.7, 2.8 and 3.0 from its middle, where retail's players stand 7.1 and 2.7 off and are missed (Bob, 2026-11-18:
+/// "the combat mechanics is just wrong".)
+pub const AREA_EDGE_REACH: f32 = 0.0;
+
 /// Whether `point` is inside an area attack of this `shape`, used by an NPC at `caster` (with a hitbox of
-/// `caster_radius`) facing `rotation` and aimed at `aimed_at`. Distances are on the ground, and the player's own hitbox
-/// (`PLAYER_HITBOX_RADIUS`) counts, so grazing the edge is a hit.
+/// `caster_radius`, none for a shape measured from its middle: `ActionInfo::area_hitbox`) facing `rotation` and aimed
+/// at `aimed_at`. Distances are on the ground, to the marker's edge and no further (`AREA_EDGE_REACH`).
 pub fn in_area(
     shape: AreaShape,
     caster: Vec3A,
@@ -4273,7 +4283,7 @@ pub fn in_area(
         aimed_at,
         point,
         caster_radius,
-        PLAYER_HITBOX_RADIUS,
+        AREA_EDGE_REACH,
     )
 }
 
@@ -4327,7 +4337,7 @@ pub fn in_area_with_reach(
             // hit the player 115-167 degrees off at 2.5-5.6 yalms, and Chudo-Yudo's Swinge (903) killed them 75
             // degrees off at 2.7 (Bob's bundle 20261110-134659); on retail nobody that far off was hit, 3.3-5.7 yalms
             // from either (902 and 518: eleven times in Bob's Chronofoil captures 1cefedf4 and 341808b0.)
-            if distance <= reach {
+            if distance <= reach.max(PLAYER_HITBOX_RADIUS) {
                 return true;
             }
             let between = (forward.dot(offset) / distance).clamp(-1.0, 1.0).acos();
@@ -4620,10 +4630,72 @@ mod area_tests {
             )
         };
         assert!(at(4.5));
-        assert!(at(6.4));
+        assert!(at(6.0));
+        // Since 2026-11-18 the edge is the marker's own (`AREA_EDGE_REACH`): retail missed at 0.1 past it.
+        assert!(!at(6.1));
         assert!(!at(6.6));
         assert!(!at(6.7));
         assert!(!at(7.8));
+    }
+
+    /// Cape Westwind's boss (hitbox 1.5), Bob's and Connor's Chronofoil captures against Bob's test of 2026-11-18: his
+    /// 28871 (CastType 2, 7 yalms) missed retail's players at 7.1 and hit at 5.9, where Kawari's hit at 7.2 and 7.4;
+    /// his 28877 (14 yalms) missed at 14.1 and hit at 10.3; his 28870 (CastType 12, 30 by 5) missed 2.7 from its
+    /// middle and hit at 2.0, where Kawari's hit at 2.7, 2.8 and 3.0; his 28876 (30 by 30) hit in front and missed
+    /// beside and behind him. A circle round its user by CastType 5 and a line by 4 still start at its edge.
+    #[test]
+    fn an_area_is_its_markers_size() {
+        let info = |cast_type: u8| ActionInfo {
+            cast_type,
+            ..Default::default()
+        };
+        let hitbox = 1.5;
+        assert_eq!(info(2).area_hitbox(hitbox), 0.0);
+        assert_eq!(info(12).area_hitbox(hitbox), 0.0);
+        assert_eq!(info(13).area_hitbox(hitbox), 0.0);
+        assert_eq!(info(10).area_hitbox(hitbox), 0.0);
+        assert_eq!(info(5).area_hitbox(hitbox), hitbox);
+        assert_eq!(info(4).area_hitbox(hitbox), hitbox);
+        assert_eq!(info(3).area_hitbox(hitbox), hitbox);
+
+        let at = |shape: AreaShape, forward: f32, side: f32| {
+            in_area(
+                shape,
+                Vec3A::ZERO,
+                0.0,
+                Vec3A::ZERO,
+                Vec3A::new(side, 0.0, forward),
+                0.0,
+            )
+        };
+        let small = AreaShape::Circle {
+            radius: 7.0,
+            on_target: false,
+        };
+        assert!(at(small, 0.5, -5.8));
+        assert!(!at(small, 1.5, -7.0));
+        assert!(!at(small, 7.1, 0.6));
+        let big = AreaShape::Circle {
+            radius: 14.0,
+            on_target: false,
+        };
+        assert!(at(big, -1.4, -10.2));
+        assert!(!at(big, -4.3, -13.5));
+        let line = AreaShape::Line {
+            length: 30.0,
+            width: 5.0,
+        };
+        assert!(at(line, 4.4, 2.0));
+        assert!(!at(line, 3.2, 2.7));
+        assert!(!at(line, 7.3, -2.7));
+        let wide = AreaShape::Line {
+            length: 30.0,
+            width: 30.0,
+        };
+        assert!(at(wide, 6.4, 0.0));
+        assert!(at(wide, 9.2, -2.8));
+        assert!(!at(wide, -1.1, 4.0));
+        assert!(!at(wide, 12.8, -15.2));
     }
 
     #[test]

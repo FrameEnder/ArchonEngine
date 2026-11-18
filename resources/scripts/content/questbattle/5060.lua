@@ -40,9 +40,10 @@
 --         ActionTimeline 10503 at 18.2 s, 63 [0] at 21.15 s, status 2056 (param 95) at 21.6 s, SetBGM 107 and
 --         NpcYell 13810 at 22.2 s; at 26.2 s targetable again at full health, 0x10000001 and 0x10000002 [33422],
 --         talk 33410.
---   His second part (anchor 33410): 28875 on the player (status 2656 for 3.5 s), 28877 and 28876 (5.7 s casts;
---         NpcYells 13650 and 13649 the first two times each), 28878 (talk 33426) and 5.07 s after it began three
---         rows of the helpers' 28865, four seconds apart; 28876; 28872 and 28868 (talk 33427) with all four spots,
+--   His second part (anchor 33410): 28875 on the player (status 2656 for 3.5 s), and 0.6 s after it lands he steps
+--         up to 2 yalms from them (SnapNextMove and a move); 28877 and 28876 (5.7 s casts; NpcYells 13650 and 13649
+--         the first two times each), 28878 (talk 33426) and 5.07 s after it began three rows of the helpers' 28865,
+--         four seconds apart, in the order 1, 2, 3 (three uses) or 3, 1, 2 (two); 28876; 28872 and 28868 (talk 33427) with all four spots,
 --         then with four again; 28877, 28876, 28877, and round again from 28878 every 113.3 s (seen once.)
 --   His health at 1 again: ActorControl 537 [himself], the helpers' casts stopped (15 [537, 1, 28865]),
 --         untargetable, NpcYell 13811, ActionTimeline 10506, 63 [5] at 2.0 s; at 6.0 s SetBGM 1 and the director's
@@ -50,7 +51,7 @@
 --         player put at (-680.02, 63.86, -810.64) 1.5 s on; at 6.0 s ActorControl 35 [0, 10, player, 15], his 28879
 --         on the player (status 3134) and 63 [6]; a helper's 28880 from where the player stands at 6.9 s (Knockback
 --         17, towards him); at 7.8 s targetable, talk 33414.
---   The last part (anchor 33414): 28881 at once, and his health 13373 as it lands; a helper's 28882 beside him at
+--   The last part (anchor 33414): 28881 at once, his health 55 % (13534) as its cast begins; a helper's 28882 beside him at
 --         4.1 s; status 3008 on him, one stack more before each 28883 (4.7 s casts, 13.15 s apart, talks
 --         33415-33419 with the first five); status 2194 on the player from 7.8 s to his death.
 --   He falls: the director's scene 4 (flags 0x08502403; cutscene 263, then 1) in a GameComplete event; as it ends the
@@ -64,8 +65,15 @@
 -- above 15 % (here the clock goes round again from 28864 every 103.6 s, as the second part's does every 113.3 s); how
 -- far to either side of his facing the raised shield reaches (45 degrees here: everyone who knew stood 46 to 49
 -- degrees off); the director's 0x10000002 [33420] comes with DutyCommence here, retail's before the opening scene.
--- Unknown: what ActorControls 63 and 35 and statuses 2056, 2656, 3134, 3008 and 2194 do (sent and given as retail
--- did, nothing more.) Where each action reaches is the Action sheet's.
+-- Unknown: what ActorControl 63 and statuses 2056, 2656, 3008 and 2194 do (sent and given as retail did, nothing
+-- more; 35 [0, 10, player, 15] is followed at once by the player's own client moving them 5 yalms to him.)
+--
+-- Where each action reaches is the Action sheet's, and the four runs agree with it (the player's place as each cast
+-- ended, hit or missed): 28871 a circle of 7 round him (missed at 7.1, hit at 5.9); 28877 one of 14 (missed at 14.1,
+-- hit at 10.3); 28870 and 28874 a line 5 wide before him (missed 2.7 to its side, hit at 2.0 and 0.7); 28876
+-- everything before him, 30 wide (hit in front, missed beside and behind); 28873 and 28883 everyone (hit at 4.7 to
+-- 11.1); the helpers' 28865 a circle of 7 where each is put and 28869 one of 11. None of them reaches further for
+-- his hitbox (1.5), and none past its marker's edge (`action::AREA_EDGE_REACH`, `ActionInfo::area_hitbox`.)
 
 START_POSITION = { x = -678.72, y = 63.67, z = -808.74 }
 START_ROTATION = -2.115
@@ -129,6 +137,12 @@ PATTERNS = {
 }
 MAP_EFFECT_OFF = { timeline = 8, state = 4 }
 HELPER_FACING = 1.118
+-- The orders 28878's three rows come in.
+ROW_ORDERS = { { 1, 2, 3 }, { 3, 1, 2 } }
+-- After his 28875 lands he steps up to the one it hit: SnapNextMove and a move 0.6 s on, to 2 yalms from them (he
+-- began his next cast 2.0 yalms off in all four runs.)
+STEP_AFTER = 0.5
+STEP_TO = 2.0
 
 ACTION_ROW = 28864
 ACTION_ROW_HELPER = 28865
@@ -179,7 +193,7 @@ STATUS_AFTER_ADDS = 2056
 STATUS_AFTER_ADDS_PARAM = 95
 STATUS_LAST = 3008
 STATUS_PLAYER_LAST = 2194
-HEALTH_LAST = 13373
+HEALTH_LAST = 13534
 
 CONTROL_63 = 63
 CONTROL_35 = 35
@@ -391,13 +405,15 @@ function onActorCast(director, layout_id, action_id, actor_id)
         end
     elseif action_id == ACTION_ROWS then
         talk(director, 33426)
-        castRow(director, 1, 5.0)
-        castRow(director, 2, 9.0)
-        castRow(director, 3, 13.0)
+        -- The three rows four seconds apart, in one of the two orders seen (1, 2, 3 in three uses; 3, 1, 2 in two.)
+        local order = ROW_ORDERS[math.random(#ROW_ORDERS)]
+        for i, row in ipairs(order) do
+            castRow(director, row, 5.0 + (i - 1) * 4.0)
+        end
     elseif action_id == ACTION_RISE then
-        after(3.0, function(d)
-            d:set_health(BOSS, HEALTH_LAST)
-        end)
+        -- His health is 55 % as the cast begins: 13534, less the hits that landed since, in each run's first sight
+        -- of it (13425 after a 109, 13461 after a 73), 1.3 to 1.7 s after the talk.
+        director:set_health(BOSS, HEALTH_LAST)
     elseif action_id == ACTION_LAST then
         last_stacks = last_stacks + 1
         if boss ~= nil then
@@ -414,6 +430,23 @@ function lowerGuard(director)
         guarding = false
         director:guard_front(BOSS, nil)
     end
+end
+
+-- His 28875 landed on the player: he steps up to them.
+function onActionLanded(director, layout_id, action_id, players)
+    if layout_id ~= BOSS or action_id ~= ACTION_ON_PLAYER then
+        return
+    end
+    after(STEP_AFTER, function(d)
+        if part ~= 2 or boss_at == nil or player_at == nil then
+            return
+        end
+        local dx, dz = boss_at.x - player_at.x, boss_at.z - player_at.z
+        local distance = math.sqrt(dx * dx + dz * dz)
+        if distance > STEP_TO + 0.2 then
+            d:jump_bnpc(BOSS, player_at.x + dx / distance * STEP_TO, player_at.y, player_at.z + dz / distance * STEP_TO)
+        end
+    end)
 end
 
 -- His raised shield took a hit from in front (`director:guard_front`): a second later a helper on his spot answers

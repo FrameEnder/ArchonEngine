@@ -2115,6 +2115,31 @@ matched). NPCs: `resources/dropins/territory_1049.json`, layer `CAPE_WESTWIND` (
 whose `appends` is **`territory/1049`**: the territory's own level wasn't known where it was written, so a drop-in
 can name its territory instead of an LGB (`zone.rs`). Action scripts `actions/288/CapeWestwind*` (28864-28886).
 
+**Every attack against the four runs** (2026-11-18, the second pass; Bob: "double triple quadruple check every
+attack the boss makes with how it was performed in retail"). Where the player stood as each cast ended, and whether it
+hit, against Bob's own positions and hits in the server's capture of his test:
+
+| Action | Retail (four runs) | The server in Bob's test | Since |
+|---|---|---|---|
+| 28871 (2.7 s, on himself) | a circle of 7 round his middle: missed at 7.1 to 7.6 (seven), hit at 5.9 and 2.1 | hit at 7.2 and 7.4 (his hitbox and half a yalm added: 9) | the circle is 7 |
+| 28877 (5.7 s) | a circle of 14: missed at 14.1 to 15.1 (five), hit at 10.3, 3.8, 3.1 | not reached | the same fix |
+| 28870 (2.7 s) | a line 5 wide before him: missed 2.7 to 2.9 to its side (eight), hit at 2.0 | hit at 2.7 and 3.0 | the line is 5 wide |
+| 28874 (2.7 s, from the middle) | the same line: missed 2.7 aside, hit at 0.5 and 1.2 | hit at 2.7 and 2.8, three of three | the same |
+| 28876 (5.7 s) | everything before him, 30 wide: hit in front (6.4 and 9.2 ahead), missed behind and beside (nine) | not reached | the sheet's shape, unchanged |
+| 28873, 28883 | everyone (hit at 4.7 to 11.1) | hit | unchanged |
+| 28875 (2.7 s, on the player) | 526 to 691 and status 2656 for 3.5 s; 0.6 s after it lands SnapNextMove and he is 2 yalms from them (his next cast began 2.0 off in all four) | he stayed where he was | `onActionLanded`: `jump_bnpc` to 2 yalms from the player |
+| 28878's rows | three rows of four 28865, four seconds apart, in the order 1, 2, 3 (three uses) or 3, 1, 2 (two) | always 1, 2, 3 | one of the two at random |
+| 28865 (helpers) | a circle of 7 on each spot, cast at no one; landing's animation target no one | the helper named | (the first pass) |
+| 28869 (helpers) | a circle of 11 on each spot, marker 5.5 s into the 7.7 s cast | marker from the start; 7 damage | (the first pass) |
+| 28881 | his health is 13534 (55 %) as the cast begins: first seen as 13425 after a 109 and 13461 after a 73 | 13373 as it landed, 3 s later | `HEALTH_LAST` 13534 at the cast |
+| 35 `[0, 10, player, 15]` | the player's own client moves them 5 yalms to him at once (their position updates) | sent | unchanged |
+
+Every lock, cast time, omen delay and aim in the timeline and `cast_aims.json` is the packets' own (the first pass).
+One thing retail's packets have that Kawari's don't: each target's effects end with effect 27 and the action's ID
+(`1B 00 00 00 00 80` and the ID) for most NPC actions that aren't auto-attacks (549 of the 872 NPC actions in the
+captures always, 89 never, 119 sometimes: 870 in 542 of 14,190); what the client does with it for an NPC isn't known,
+and it isn't sent.
+
 **New director pieces** (2026-11-18, all reusable):
 
 | Piece | What it does |

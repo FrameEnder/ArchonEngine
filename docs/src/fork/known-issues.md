@@ -248,6 +248,17 @@ None of it played yet; the page not used against the running server.
   player back in, are from the client's script alone and unplayed (`quests.md`).
 * Ten upstream gathering drop-ins name no territory and still come out in every territory of their level.
 
+## Area attacks to the marker's edge (2026-11-18)
+
+* Every NPC area attack is smaller than it was: nothing past its marker's edge (it was half a yalm), and no caster's
+  hitbox on a circle of CastType 2, a donut, a cross, or a line or cone of CastType 12 or 13. Measured on retail and
+  tested, not played: every duty's area attacks should now be dodged where retail's are, and any that depended on the
+  old reach will miss.
+* Retail's NPC actions carry effect 27 with the action's ID on each target (most of them, not auto-attacks); Kawari's
+  don't. Not known to show.
+* Cape Westwind's second pass (`quest-battles.md`): the step after 28875, the rows' order and the health at 28881 are
+  retail's now, unplayed. Which of the rows' two orders comes is taken at random (2,3,1 wasn't seen).
+
 ## Kawari Witness (2026-11-18)
 
 * A draft, built by GitHub Actions and never run in game: whether its hooks start, whether its facts read right, and

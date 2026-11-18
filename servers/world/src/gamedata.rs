@@ -562,7 +562,7 @@ pub const ACTION_COST_TYPE_GP: u8 = 7;
 pub const ACTION_CAST_TYPE_CIRCLE: u8 = 2;
 
 /// Targeting and cost information for an action.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct ActionInfo {
     /// The shape of the action (1 = single target, 2 = circle, etc.)
     pub cast_type: u8,
@@ -599,6 +599,25 @@ impl ActionInfo {
     /// Returns true if this action hits multiple targets.
     pub fn is_area_of_effect(&self) -> bool {
         self.cast_type == ACTION_CAST_TYPE_CIRCLE && self.effect_range > 0
+    }
+
+    /// Whether this action's area is measured from the edge of its user's hitbox, or from its middle. By the Action
+    /// sheet's CastType: a cone (3), a line (4), a circle round its user (5) and a charge (8) start at the edge; a
+    /// circle (2), a donut (10), a cross (11), the other line (12) and the other cone (13) at the middle (as Boss Mod
+    /// reads the sheet, `range N+R` against `range N`). Until 2026-11-18 Kawari added the hitbox to everything round
+    /// its user, so Cape Westwind's boss's 7-yalm circle (28871, CastType 2, hitbox 1.5) reached 8.5: retail's missed
+    /// stationary players at 7.1, and its 14-yalm one (28877) at 14.1 (Bob's and Connor's Chronofoil captures.)
+    pub fn reaches_from_hitbox(&self) -> bool {
+        matches!(self.cast_type, 3 | 4 | 5 | 8)
+    }
+
+    /// `hitbox` if this action's area starts at its user's edge, else none (`reaches_from_hitbox`.)
+    pub fn area_hitbox(&self, hitbox: f32) -> f32 {
+        if self.reaches_from_hitbox() {
+            hitbox
+        } else {
+            0.0
+        }
     }
 
     /// The shape this action covers on the ground, if it isn't single-target.
