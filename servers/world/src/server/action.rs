@@ -2158,6 +2158,17 @@ pub fn execute_action(
                     request.action_id,
                     action_info.as_ref().map(|info| info.cast_type),
                 );
+                // An NPC's action at no one that isn't an area either (a leap: Cape Westwind's boss's 28872, retail's
+                // AoeEffect8 with 0xE0000000 for its animation's target and no targets at all) shows no one: the
+                // server's named the boss himself in an ActionEffect1, and Bob saw no leap, only the move that
+                // follows it ("still teleporting to ring end and ring center", 2026-11-18.)
+                let at_no_one = lands_on_no_one(
+                    npc_cast_rotation.is_some(),
+                    aimed_at_someone,
+                    area_action,
+                    request.target.object_id == from_actor_id,
+                    effects_builder.effects.is_empty(),
+                );
                 let shown: Vec<(ObjectTypeId, Vec<TargetEffect>)> = match &aoe_result {
                     Some(aoe) => aoe
                         .shown
@@ -2168,7 +2179,7 @@ pub fn execute_action(
                         let mut shown = Vec::new();
                         // An area attack that missed its target (or one cast on oneself, whose caster takes nothing)
                         // shows only those it caught.
-                        if !area_action
+                        if (!area_action && !at_no_one)
                             || (request.target.object_id != from_actor_id
                                 && !effects_builder.effects.is_empty())
                         {
@@ -2185,7 +2196,7 @@ pub fn execute_action(
                 // AoeEffect8 for an area action unless it was aimed at someone and landed on exactly one (retail, Bob's
                 // Copperbell Mines captures of 2026-10-25: area attacks that caught no one, several, or were aimed at
                 // the ground went as AoeEffect8, 172 of them; one aimed at someone that caught one, as ActionEffect1.)
-                let use_aoe_packet = area_action
+                let use_aoe_packet = (area_action || at_no_one)
                     && !(shown.len() == 1 && aimed_at_someone)
                     && shown.len() <= MAX_AOE_PACKET_TARGETS;
                 let effects_of = |effects: &[TargetEffect]| {
@@ -2216,9 +2227,13 @@ pub fn execute_action(
                 let animation_lock = npc_animation_lock.unwrap_or_else(|| {
                     animation_lock(request.action_type, request.action_id, has_cast_time)
                 });
-                // An NPC stands where it is through the lock of an action it cast on itself (`stand_through_lock`.)
+                // An NPC stands where it is through the lock of an action it cast on itself (`stand_through_lock`), and
+                // of one at no one (its leap: retail's boss began nothing and went nowhere for 28872's 2.1 s but
+                // where the director put him.)
                 if let Some(lock) = npc_animation_lock.filter(|_| {
-                    !npc_auto_attack && has_cast_time && request.target.object_id == from_actor_id
+                    !npc_auto_attack
+                        && ((has_cast_time && request.target.object_id == from_actor_id)
+                            || at_no_one)
                 }) && let Some(instance) = data.lock().find_actor_instance_mut(from_actor_id)
                 {
                     stand_through_lock(instance, from_actor_id, lock, Instant::now());
@@ -2240,12 +2255,21 @@ pub fn execute_action(
                         let aimed = data
                             .lock()
                             .find_actor_instance(from_actor_id)
-                            .and_then(|instance| match instance.find_actor(from_actor_id) {
-                                Some(NetworkedActor::Npc { cast, .. }) => {
-                                    own_cast(cast, request.action_id)
-                                        .map(|cast| Position(cast.target_position))
+                            .and_then(|instance| {
+                                // Where its director aimed it (`director:aim_action`), else where it was cast.
+                                if let Some(aim) = instance
+                                    .action_aims
+                                    .get(&(from_actor_id, request.action_id))
+                                {
+                                    return Some(Position(*aim));
                                 }
-                                _ => None,
+                                match instance.find_actor(from_actor_id) {
+                                    Some(NetworkedActor::Npc { cast, .. }) => {
+                                        own_cast(cast, request.action_id)
+                                            .map(|cast| Position(cast.target_position))
+                                    }
+                                    _ => None,
+                                }
                             })
                             .unwrap_or(common_spawn.position);
                         (as_object(ObjectId(0xE000_0000)), aimed)
@@ -3799,6 +3823,19 @@ pub(crate) fn aimed_at_someone(
                 == crate::server::npc_behavior::CastAim::Ground)
 }
 
+/// Whether an NPC's action shows no one at all when it lands (an AoeEffect8 with no targets, its animation at no one):
+/// one that isn't an area, that retail aimed at no one (`aimed_at_someone`), given the NPC itself for a target by its
+/// timeline (`"target": "nobody"`) and doing nothing to it. A leap: Cape Westwind's boss's 28872.
+pub(crate) fn lands_on_no_one(
+    from_npc: bool,
+    aimed_at_someone: bool,
+    area_action: bool,
+    on_itself: bool,
+    does_nothing: bool,
+) -> bool {
+    from_npc && !aimed_at_someone && !area_action && on_itself && does_nothing
+}
+
 fn animation_lock(action_type: ActionType, action_id: u32, has_cast_time: bool) -> f32 {
     // Mounting locks for 0.1 s on retail (Bob's Chronofoil captures.)
     if action_type == ActionType::Mount {
@@ -4842,15 +4879,23 @@ pub fn toss_target(
     );
 }
 
-fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_percent: u8) {
+pub(crate) fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_percent: u8) {
     let roll = fastrand::u8(..100);
-    let missed = roll < miss_percent;
-    let parried = !missed && roll < miss_percent + NPC_PARRY_PERCENT;
+    // (Only a hit can miss: an action that does no damage, a draw-in or a status alone, always lands. Cape Westwind's
+    // helper's 28880 is the chain's pull and nothing else.)
+    let hits = effects
+        .iter()
+        .any(|effect| matches!(effect.0, TargetEffectKind::Damage { .. }));
+    let missed = hits && roll < miss_percent;
+    let parried = hits && !missed && roll < miss_percent + NPC_PARRY_PERCENT;
     if missed {
         // Nothing lands: no damage, no drain and no knockback either (Rive's misses had only the Miss.)
         effects.retain(|effect| {
             !matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE != 0)
-                && !matches!(effect.0, TargetEffectKind::Knockback { .. })
+                && !matches!(
+                    effect.0,
+                    TargetEffectKind::Knockback { .. } | TargetEffectKind::Attract { .. }
+                )
                 && tossed_by(std::slice::from_ref(effect)).is_none()
         });
         for effect in effects.iter_mut() {

@@ -41,7 +41,8 @@ NPC begins an action (the magitek vanguard's Drill Cannons move battles 46-48 on
 
 Placed: a fixture can hold where retail's NPCs without a layout ID (a director's helpers) cast from (`placed`:
 `[[t, action, x, z], ...]`, from their ActorCasts), which the script is held to: an `actor_use_action` of that action
-within the tolerance, by an NPC it put within `PLACED_WITHIN` yalms of there (`warp_bnpc`) beforehand. A fixture made
+within the tolerance, by an NPC it put within `PLACED_WITHIN` yalms of there (`warp_bnpc`) beforehand (casts on
+someone else are left out: their position is the target's). A fixture made
 with them has the player's and the NPCs' positions too, so a script choosing by where the player stands (Cape
 Westwind's rows, nearest first) chooses as retail's did.
 
@@ -98,6 +99,7 @@ DONE_SEQUENCES = (LOST_SEQUENCE, 0xFF)  # set by the server once a battle is ove
 DEFAULT_TOLERANCE = 2.0
 AFTER_LAST_EVENT = 30.0  # how long to keep simulating after retail's last event
 AUTO_ATTACKS = {870, 871, 872, 873}  # not told to a director as landing
+NO_TARGET = 0xE0000000  # an ActorCast's target when it's aimed at no one
 PLACED_WITHIN = 1.0  # yalms: how near retail's spot a helper's cast must be put (`placed`)
 POSITION_STEP = 0.5  # yalms: a fixture's positions keep a point where someone had moved this far
 LANDS_AFTER = 0.5  # the server's EFFECT_RESULT_AFTER: when it tells the director an action landed
@@ -318,6 +320,11 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
                 or " at " not in text or rel(event["S"]) < 0:
             continue
         action = _number_after(text, "action")
+        # One cast on someone else says where they stand, not the helper (Cape Westwind's 28880, on the player from
+        # 10 yalms off, was taken for a helper put on the player's spot.)
+        on = _number_after(text, "on")
+        if on not in (None, NO_TARGET, event.get("Id")):
+            continue
         try:
             x, _, z = (float(v) for v in text.split(" at ", 1)[1].split(" facing", 1)[0].split(","))
         except ValueError:

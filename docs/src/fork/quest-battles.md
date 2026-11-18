@@ -85,7 +85,8 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `spawn_bnpc(layout_id, x, y, z, rotation)` | (upstream) Spawns a drop-in NPC, and returns its actor ID (fork): several spawned from one layout ID (retail's invisible helpers share one) can then be told apart by the methods below that take an actor ID. With a position (fork, 2026-10-30) it spawns there instead of its layout's spot, and faces `rotation` if given: the Thousand Maws of Toto-Rak's adds and eggs, one layout ID each, wherever retail put them. |
 | `delay(seconds)` | The tasks queued after it wait that long (to the tick, 500 ms), until the next `delay` (`delay(0)` is at once again): a boss's choreography timed to the tenth of a second from one moment (`LuaDirectorTask::Later`, `Instance::later_director_tasks`). |
 | `warp_bnpc(npc, x, y, z, rotation)` | Puts an NPC (actor ID or layout ID) somewhere at once: an ActorSetPos from it, as retail moves its helpers before they cast. |
-| `jump_bnpc(npc, x, y, z, rotation)` | An NPC (actor ID or layout ID) leaps somewhere: ActorControl `SnapNextMove` (239) then an ActorMove there (speed byte 90), as retail's Kottos landed each leap; it carries on from where it lands. Without `rotation` it faces the way it leapt (retail's Kottos did). |
+| `aim_action(npc, action, x, y, z)` | (2026-11-18) Where the NPC's action at no one is aimed from now on: the position its landing carries (`Instance::action_aims`), which is where the client plays it to. Cape Westwind's boss's leap, 28872, names the arena's middle ([Combat](combat.md), "An action at no one that isn't an area"). |
+| `jump_bnpc(npc, x, y, z, rotation, speed, keep_facing)` | (`speed`, the ActorMove's speed byte, 90 unless given, and `keep_facing`, true to land facing as it stood, since 2026-11-18: Cape Westwind's boss's were 60 and kept.) An NPC (actor ID or layout ID) leaps somewhere: ActorControl `SnapNextMove` (239) then an ActorMove there (speed byte 90), as retail's Kottos landed each leap; it carries on from where it lands. Without `rotation` it faces the way it leapt (retail's Kottos did). |
 | `busy_bnpc(npc, seconds)` | Keeps an NPC (actor ID or layout ID) from moving, turning or acting on its own for that long, its timeline still counting (`Instance::busy_npcs`): Kottos from its 28543 to its 28546, through its leaps. |
 | `guard_front(npc, degrees)` | (2026-11-18) The NPC holds a guard up in front of it, `degrees` to each side of its facing (nil or 0 lowers it): a damaging hit from inside it is blocked for nothing (effect 6) with none of its statuses, and the script hears `onActorGuarded`. Cape Westwind's boss with his shield up after 28866. `action::guards_against`; test `a_guard_takes_a_hit_from_in_front`. |
 | `root_bnpc(npc, seconds)` | Keeps an NPC (actor ID or layout ID) where it stands for that long: it doesn't move, but acts as ever, its timeline and attacks included (`Instance::rooted_npcs`; `busy_bnpc` would hold its timeline's actions back until it's over): Lady Amandine standing 4.9 s beside her eye where she leapt, using 28643 there. |
@@ -2126,8 +2127,10 @@ given 28873 forty-three times in a row from 123.5 s.
   cutscene 2874, then 0, 173, 0, 0), 47 s. As it ends: 63 `[0]` and **his health 13534** (55 %: from 1 within 0.7 s
   of the control, Kawari Witness), him in the middle 0.73 higher, facing north; the
   player put at (-680.02, 63.86, -810.64) 1.5 s on; at 6.0 s ActorControl 35 `[0, 10, player, 15]`, his 28879 on the
-  player (status 3134) and 63 `[6]`; at 6.9 s a helper's 28880 from where the player stands (Knockback 17: 6.7
-  yalms towards him); at 7.8 s targetable, talk 33414.
+  player (status 3134) and 63 `[6]`; at 6.9 s a helper's 28880 on the player from 2.5 yalms in front of him
+  (-686.75, 64.86, -813.90): **the Attract sheet's row 17**, which draws them to the helper; at 7.8 s targetable,
+  talk 33414. This is the chain: 35 is the tether between them, 3134 holds the player where they stand, free to
+  act, until they leave (the server's condition 43), and 28880 pulls them in ("The second test's marks", below).
 * **The last part** (from 454.2): 28881 at once; a helper's 28882 beside him at
   4.1 s; **28883 every 13.15 s** from 9.5 s (4.7 s casts, 507-626), status 3008 on him one stack higher before each,
   talks 33415-33419 with the first five; status 2194 on the player from 7.8 s to his death (523.2). 3008, 2194 and
@@ -2139,7 +2142,7 @@ ends in scene 5 and `fail_quest_battle`, `5060-9ba7d981-8.json`, Connor's `5060-
 `5060-178b0de0-4.json`, lost, and `-6.json`); each run's talks, yells, spawns and the warp (38 in the first), to 2 s
 (3 s in the long run, for its late talk 33404) (the fight begins at DutyCommence there, not scene 60000; a
 cutscene's end is heard after retail's 47.4 s). **The helpers are matched too** since the Paladin's runs: every
-fixture has `placed`, where each helper's cast came from on retail (188 casts in the six), and the players'
+fixture has `placed`, where each helper's cast came from on retail (184 casts in the six), and the players'
 positions, so the script's rows and spots are held to retail's ([Questkit](questkit.md)). The first fixture's
 health before the second floor was put right with it (32 HP had been written as the floor's 0.1 %). NPCs: `resources/dropins/territory_1049.json`, layer `CAPE_WESTWIND` (the boss, the four, one helper),
 whose `appends` is **`territory/1049`**: the territory's own level wasn't known where it was written, so a drop-in
@@ -2163,6 +2166,21 @@ hit, against Bob's own positions and hits in the server's capture of his test:
 | 28869 (helpers) | a circle of 11 on each spot, marker 5.5 s into the 7.7 s cast | marker from the start; 7 damage | (the first pass) |
 | 28881 | his health is 13534 (55 %) as the cast begins: first seen as 13425 after a 109 and 13461 after a 73 | 13373 as it landed, 3 s later | `HEALTH_LAST` 13534 at the cast; as the cutscene ends since the Paladin's runs (below) |
 | 35 `[0, 10, player, 15]` | the player's own client moves them 5 yalms to him at once (their position updates) | sent | unchanged |
+
+**The second test's marks** (Bob, 2026-11-18, on `3b964c5`: "It's closer, relatively speaking ... stage 3 after the
+cutscene with the chain effect being the most obvious failure"; nine marks in the server's capture, read through
+the harness beside retail's packets in his capture 178b0de0):
+
+| Mark | What the server did | Retail | Now |
+|---|---|---|---|
+| "shield vfx now showing after update" | (right) | | |
+| "still teleporting to ring end and ring center", and three more of "circle end to circle middle teleport" | Two things. Let go after a cast and its lock, he covered his whole path in one ActorMove (13.9 yalms onto the player's own spot, 85.8 s in). And his leap (28872) was an ActionEffect1 naming himself, with the move to the middle a second later the only thing to see. | He walks back in steps a third of a second apart. The leap is an AoeEffect8 at no one whose position is the middle; SnapNextMove and the move 1.1 s later; nothing else for its 2.1 s lock. | `stands_still` in both passes; the leap goes out as retail's (`aim_action`, `jump_bnpc` with speed 60 and his facing kept), and he stands through its lock ([Combat](combat.md)). |
+| "he is showing his boss aoe in the right spot then shooting it in the wrong spot" | Kept in the middle while the four were out, he never turned: 28874's marker lay towards the player, his body faced 0.0. | An ActorMove with the cast's facing with every ActorCast. | `face_for_cast`. |
+| "he used his ground effect during the stage transition" | 28874 went on every 14.25 s after the four fell: twice more, the second landing 2 s into the second part. | None after the last of the four fell, in six runs. | `afterAdds` stops his clock and his cast. |
+| "third stage chain doesn't work in anyway like it should it should pull you to him, and freeze you in place only to attack" | The helper stood on the player and its 28880 was sent as a Knockback (the Knockback sheet's row 17): Bob was pushed 5 yalms away, walked where he liked, and stood 14 yalms off, out of 28883's reach. | The helper stands 2.5 yalms in front of the boss; 28880 is effect 32, the **Attract** sheet's row 17; the player's client brings them to it; condition 43 with status 3134 from 28879's landing until they leave. | `PULLED_TO`, `effects:attract(17)`, `modifiers::is_held_in_place`. |
+
+Not played since. What the client does with condition 43 and with the leap's new packet is retail's by its bytes,
+not by anything seen here.
 
 **The Paladin's two runs** (2026-11-18, the third pass: Bob's capture 178b0de0, "fighting Cape Westwind on my tank
 twice I died and then re-ran it to get some more data", with Kawari Witness's `facts.json`). What they showed wrong,

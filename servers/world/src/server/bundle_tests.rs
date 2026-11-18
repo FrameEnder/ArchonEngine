@@ -1628,3 +1628,119 @@ fn a_boss_fate_follows_its_boss_s_health() {
     tick(&mut world, start + BOSS_PROGRESS_EVERY * 5);
     assert!(progress(&mut world).is_empty());
 }
+
+/// Bob's second test of Cape Westwind, 2026-11-18 ("still teleporting to ring end and ring center"): 5.5 s after
+/// beginning 28868 in the arena's middle the boss was on the player's own spot, 13.9 yalms off, in one ActorMove (the
+/// server's capture, 85.8 s in.) An NPC that doesn't move this tick (held by its director or an action's lock, or
+/// casting) isn't taken further along its path either: only the pass that moves it asked, so its whole path was
+/// behind it when it was let go.
+#[test]
+fn an_npc_that_stands_still_gets_no_further_along_its_path() {
+    use crate::server::npc_behavior::stands_still;
+    let now = std::time::Instant::now();
+    let second = Duration::from_secs(1);
+    // Held (`busy_bnpc`, `root_bnpc`, an action's lock, a status.)
+    assert!(stands_still(true, None, now));
+    assert!(!stands_still(false, None, now));
+    // In a cast (28868; its auto-attack is 6499), and for a moment after its bar.
+    assert!(stands_still(false, Some((28868, now + second, 6499)), now));
+    assert!(stands_still(
+        false,
+        Some((28868, now - Duration::from_millis(300), 6499)),
+        now
+    ));
+    assert!(!stands_still(false, Some((28868, now - second, 6499)), now));
+    // An auto-attack's swing holds no one once it's swung.
+    assert!(!stands_still(false, Some((6499, now, 6499)), now));
+}
+
+/// Bob's second test of Cape Westwind ("he is showing his boss aoe in the right spot then shooting it in the wrong
+/// spot"): kept in the middle while the four were out, the boss never turned, so 28874's marker (the cast's own
+/// rotation, 1.62 to 2.78) lay towards the player and he swung the way he'd been left facing (0.0). Retail sends an
+/// ActorMove with the cast's facing with each ActorCast; here, whenever it's another than the one he has.
+#[test]
+fn an_npc_turns_to_its_cast() {
+    use crate::server::npc_behavior::turns_for_cast;
+    assert!(turns_for_cast(0.0, 1.62));
+    assert!(turns_for_cast(2.53, 2.22));
+    assert!(!turns_for_cast(1.62, 1.62));
+    assert!(!turns_for_cast(1.62, 1.625));
+    // The same facing, written either side of the half turn.
+    assert!(!turns_for_cast(std::f32::consts::PI, -std::f32::consts::PI));
+}
+
+/// Bob's second test of Cape Westwind ("another circle end to circle middle teleport"): the boss's leap (28872)
+/// landed as an ActionEffect1 naming himself, and all Bob saw of it was the move to the middle a second later.
+/// Retail's is an AoeEffect8 with no targets, its animation at no one and its position the middle
+/// (`director:aim_action`.) What makes an action one of those:
+#[test]
+fn a_leap_lands_on_no_one() {
+    use crate::server::action::{aimed_at_someone, lands_on_no_one};
+    const BOSS: ObjectId = ObjectId(ENEMY);
+    // 28872 is in `cast_aims.json`'s "none" since this: an NPC's use of it on itself isn't aimed at anyone.
+    let aimed = aimed_at_someone(BOSS, true, 28872, None);
+    assert!(!aimed);
+    assert!(lands_on_no_one(true, aimed, false, true, true));
+    // Not a player's action, an area (its own packet already), one on someone, or one that does something.
+    assert!(!lands_on_no_one(false, aimed, false, true, true));
+    assert!(!lands_on_no_one(true, aimed, true, true, true));
+    assert!(!lands_on_no_one(true, aimed, false, false, true));
+    assert!(!lands_on_no_one(true, aimed, false, true, false));
+    // Nor his 28875, which he casts on the player.
+    assert!(!lands_on_no_one(
+        true,
+        aimed_at_someone(ObjectId(PLAYER), true, 28875, None),
+        false,
+        false,
+        false
+    ));
+}
+
+/// Bob's second test of Cape Westwind ("third stage chain doesn't work in anyway like it should it should pull you to
+/// him, and freeze you in place only to attack"). The chain's status (3134) is one that holds a player where they
+/// stand (retail's condition 43 with it, Bob's Chronofoil capture 178b0de0); others aren't.
+#[test]
+fn the_chains_status_holds_a_player_in_place() {
+    use crate::server::modifiers::is_held_in_place;
+    let mut statuses = crate::StatusEffects::default();
+    assert!(!is_held_in_place(&statuses));
+    statuses.add(2194, 0, 0.0, ObjectId(ENEMY));
+    assert!(!is_held_in_place(&statuses));
+    statuses.add(3134, 0, 0.0, ObjectId(ENEMY));
+    assert!(is_held_in_place(&statuses));
+    statuses.remove(3134);
+    assert!(!is_held_in_place(&statuses));
+}
+
+/// The chain's pull is the Attract sheet's row and nothing else (Cape Westwind's helper's 28880): an action that does
+/// no damage can't miss, whatever the levels (the helper is level 1), so the pull always comes. A hit that misses
+/// still takes its pull or push with it.
+#[test]
+fn only_a_hit_can_miss() {
+    use crate::server::action::roll_npc_hit;
+    let pull = TargetEffect(TargetEffectKind::Attract {
+        unk: [0; 5],
+        attract_id: 17,
+    });
+    for _ in 0..50 {
+        let mut effects = vec![pull];
+        roll_npc_hit(&mut effects, 1.0, 100);
+        assert_eq!(effects.len(), 1);
+        assert_eq!(effects[0].0, pull.0);
+    }
+    let mut effects = vec![
+        TargetEffect(TargetEffectKind::Damage {
+            damage_kind: Default::default(),
+            damage_type: Default::default(),
+            damage_element: Default::default(),
+            bonus_percent: 0,
+            unk3: 0,
+            unk4: 0,
+            amount: 100,
+        }),
+        pull,
+    ];
+    roll_npc_hit(&mut effects, 1.0, 100);
+    assert_eq!(effects.len(), 1);
+    assert_eq!(effects[0].0, TargetEffectKind::Miss);
+}

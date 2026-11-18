@@ -563,7 +563,9 @@ too (the player's and each NPC's, a point wherever one had moved half a yalm). T
 (`placed_problems`): for each of retail's, an `actor_use_action` of that action within the tolerance by an NPC the
 script had put (`warp_bnpc`) within a yalm of there, and no use of those actions besides. Cape Westwind's rows are
 the ones nearest the player, which nothing compared until Bob's Paladin stood somewhere else: all six of its
-fixtures have it now (188 casts). Tests `test_placed`, `test_placed_from_a_run`. A health above 1 HP is written as
+fixtures have it now (184 casts; a cast on someone else is left out, since its position is its target's: the
+helper's 28880 on the player was first taken for a helper standing on the player's spot, and agreed with a script
+that had put it there). Tests `test_placed`, `test_placed_from_a_run`. A health above 1 HP is written as
 0.2 % at the least, since 0.1 % is the floor's 1 HP to the simulator (Cape Westwind's boss at 32 HP was taken to be
 at his floor 2 s early, and the last two helpers of a row never cast).
 

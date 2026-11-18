@@ -126,6 +126,13 @@ pub enum TargetEffectKind {
     /// then took the player about 8 yalms on the way the line went; none on a miss. Bob's Chronofoil capture 44df02fc.)
     #[brw(magic = 31u8)]
     Knockback { unk: [u8; 5], knockback_id: u16 },
+    /// Draws the target to the action's source: the client moves them itself, by its Attract sheet's row (not the
+    /// Knockback sheet's). Cape Westwind's helper's 28880 on the player, `20 00 00 00 00 00 11 00`: row 17, and the
+    /// client's own position updates then took them from 10.0 yalms off the helper to 0.1 in 0.9 s (Bob's Chronofoil
+    /// capture 178b0de0 of 2026-11-18 and three older runs, each to the same spot.) Sent as a Knockback with the same
+    /// row until then, which pushed Bob 5 yalms the other way.
+    #[brw(magic = 32u8)]
+    Attract { unk: [u8; 5], attract_id: u16 },
     /// Seen during mounting.
     #[brw(magic = 39u8)]
     Mount { unk1: u8, unk2: u32, id: u16 },
@@ -500,6 +507,21 @@ mod tests {
             }
         );
 
+        let mut written = Cursor::new(Vec::new());
+        effect.write_le(&mut written).unwrap();
+        assert_eq!(written.into_inner(), bytes);
+
+        // Cape Westwind's helper's 28880 on the player: the Attract sheet's row 17 (Bob's Chronofoil capture 178b0de0
+        // of 2026-11-18.) It was sent as a Knockback of the same row.
+        let bytes = [0x20, 0, 0, 0, 0, 0, 0x11, 0];
+        let effect = TargetEffect::read_le(&mut Cursor::new(&bytes)).unwrap();
+        assert_eq!(
+            effect.0,
+            TargetEffectKind::Attract {
+                unk: [0; 5],
+                attract_id: 17
+            }
+        );
         let mut written = Cursor::new(Vec::new());
         effect.write_le(&mut written).unwrap();
         assert_eq!(written.into_inner(), bytes);

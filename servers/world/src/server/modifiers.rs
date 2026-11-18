@@ -278,6 +278,17 @@ pub fn is_incapacitated(statuses: &StatusEffects) -> bool {
     statuses.ids().any(|id| INCAPACITATED.contains(&id))
 }
 
+/// Statuses that keep a player where they stand, free to act: Cape Westwind's boss's 28879's (3134, the chain of his
+/// last part.) Retail set the player's condition 43 (`Condition::SufferingStatusAffliction72`) in the Condition
+/// packet that came with the action's landing, and took it off as they left, 107 s later, the status still on them
+/// (Bob's Chronofoil capture 178b0de0 of 2026-11-18; Bob: "it should pull you to him, and freeze you in place only to
+/// attack".) Only that one status was seen to do it.
+const HELD_IN_PLACE: &[u16] = &[3134];
+
+pub fn is_held_in_place(statuses: &StatusEffects) -> bool {
+    statuses.ids().any(|id| HELD_IN_PLACE.contains(&id))
+}
+
 /// Just raised (status 418, Transcendent: `action::STATUS_RAISED`): no damage reaches them until it ends, after 5 s or
 /// at their first action, not by moving. A raised party bot or party NPC keeps it so: it walks, follows and dodges as
 /// ever but uses no action, auto-attacks included, until it ends (Bob, 2026-11-10: "allowing the bot to move is fine,

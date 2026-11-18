@@ -498,6 +498,10 @@ pub enum LuaDirectorTask {
         position: Position,
         /// Facing as it lands; `None` faces the way it leapt (retail's Kottos did, on all three of each round.)
         rotation: Option<f32>,
+        /// The ActorMove's speed byte (`JUMP_MOVE_SPEED` unless given: Cape Westwind's boss's was 60.)
+        speed: Option<u8>,
+        /// It keeps the facing it has (with no `rotation`: Cape Westwind's boss landed facing as he had stood.)
+        keep_facing: bool,
     },
     /// A BNpc (by actor ID, or layout ID) runs somewhere: one ActorMove there, which the client walks it along, as
     /// retail's last Copperbell boss went to the arena's middle for 28760. `speed` is the ActorMove's speed byte
@@ -547,6 +551,14 @@ pub enum LuaDirectorTask {
     GuardFront {
         who: u32,
         degrees: Option<f32>,
+    },
+    /// Where a BNpc's action at no one is aimed from now on (`Instance::action_aims`): the position its landing
+    /// carries. Retail's AoeEffect8 for Cape Westwind's boss's leap (28872) named the arena's middle, where he came
+    /// down 1.1 s later, wherever he leapt from.
+    AimAction {
+        who: u32,
+        action: u32,
+        position: Position,
     },
     /// Starts a `from_pull` timeline's clock again from now for its points `after` this (an action's ID, as a point
     /// with `restarts` does, or any number the timeline's points use for a phase): a phase the director begins
@@ -1456,11 +1468,23 @@ impl UserData for LuaDirector {
         );
         methods.add_method_mut(
             "jump_bnpc",
-            |_, this, (who, x, y, z, rotation): (u32, f32, f32, f32, Option<f32>)| {
+            |_,
+             this,
+             (who, x, y, z, rotation, speed, keep_facing): (
+                u32,
+                f32,
+                f32,
+                f32,
+                Option<f32>,
+                Option<u8>,
+                Option<bool>,
+            )| {
                 this.tasks.push(LuaDirectorTask::JumpBattleNpc {
                     who,
                     position: Position(glam::Vec3A::new(x, y, z)),
                     rotation,
+                    speed,
+                    keep_facing: keep_facing.unwrap_or(false),
                 });
                 Ok(())
             },
@@ -1475,6 +1499,17 @@ impl UserData for LuaDirector {
             |_, this, (who, degrees): (u32, Option<f32>)| {
                 this.tasks
                     .push(LuaDirectorTask::GuardFront { who, degrees });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "aim_action",
+            |_, this, (who, action, x, y, z): (u32, u32, f32, f32, f32)| {
+                this.tasks.push(LuaDirectorTask::AimAction {
+                    who,
+                    action,
+                    position: Position(glam::Vec3A::new(x, y, z)),
+                });
                 Ok(())
             },
         );
@@ -3788,14 +3823,18 @@ pub fn director_tick(
                 let rotation = &match task {
                     LuaDirectorTask::WarpBattleNpc { rotation, .. }
                     | LuaDirectorTask::MoveBattleNpc { rotation, .. } => *rotation,
-                    LuaDirectorTask::JumpBattleNpc { rotation, .. } => {
+                    LuaDirectorTask::JumpBattleNpc {
+                        rotation,
+                        keep_facing,
+                        ..
+                    } => {
                         rotation.unwrap_or_else(|| {
                             // The way it leapt.
                             let from = instance
                                 .find_actor(actor_id)
                                 .map(|actor| actor.position().0)
                                 .unwrap_or(position.0);
-                            if (position.0 - from).length() < 0.05 {
+                            if *keep_facing || (position.0 - from).length() < 0.05 {
                                 instance
                                     .find_actor(actor_id)
                                     .map(|actor| actor.rotation())
@@ -3855,6 +3894,9 @@ pub fn director_tick(
                             kawari::common::JumpState::NoneOrFalling,
                             Some(match task {
                                 LuaDirectorTask::MoveBattleNpc {
+                                    speed: Some(speed), ..
+                                }
+                                | LuaDirectorTask::JumpBattleNpc {
                                     speed: Some(speed), ..
                                 } => *speed,
                                 _ => JUMP_MOVE_SPEED,
@@ -4252,6 +4294,17 @@ pub fn director_tick(
                         instance.front_guards.remove(&actor_id);
                     }
                 }
+            }
+            LuaDirectorTask::AimAction {
+                who,
+                action,
+                position,
+            } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to aim its action {action}!");
+                    continue;
+                };
+                instance.action_aims.insert((actor_id, *action), position.0);
             }
             LuaDirectorTask::BusyBattleNpc { who, seconds } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {

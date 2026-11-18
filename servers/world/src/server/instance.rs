@@ -292,6 +292,9 @@ pub struct Instance {
     /// BNpcs that hold a guard up in front of them (`director:guard_front`), with how far to each side of their
     /// facing it reaches (radians): a hit from inside it is blocked for nothing (`action::guards_against`.)
     pub front_guards: HashMap<ObjectId, f32>,
+    /// Where an NPC's action at no one is aimed, by NPC and action (`director:aim_action`): the spot its landing
+    /// names, where the client plays it to (a leap's landing: Cape Westwind's boss's 28872.)
+    pub action_aims: HashMap<(ObjectId, u32), glam::Vec3A>,
     pub later_director_tasks: Vec<(std::time::Instant, crate::server::director::LuaDirectorTask)>,
     /// The fight here is over (a quest battle won, `npc_behavior::end_fight`): NPCs don't take anyone on again, whatever
     /// hits or heals them.

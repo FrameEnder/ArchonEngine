@@ -404,6 +404,70 @@ pub fn out_of_action_range(
     !in_sight || distance > range + own_hitbox + target_hitbox + ACTION_RANGE_SLACK
 }
 
+/// How far an NPC's facing is from its cast's before it's told to turn (`face_for_cast`.)
+const CAST_TURN: f32 = 0.01;
+
+/// An NPC beginning a cast turns to it: an ActorMove where it stands with the cast's facing, as retail sends with
+/// each of a boss's ActorCasts (Cape Westwind's, Bob's Chronofoil capture 178b0de0 of 2026-11-18: one with every
+/// cast, same position, new rotation.) The cast's own rotation only aims the marker; the body turned only if the
+/// walk happened to turn it, and one kept where it stands (`root_bnpc`: Cape Westwind's boss while the four are out)
+/// never did, so his 28874's marker lay towards the player while he swung where he'd been left facing (Bob's mark,
+/// 2026-11-18: "he is showing his boss aoe in the right spot then shooting it in the wrong spot".)
+pub(crate) fn face_for_cast(
+    network: &mut NetworkState,
+    instance: &mut Instance,
+    id: ObjectId,
+    rotation: f32,
+) {
+    let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(id) else {
+        return;
+    };
+    if !turns_for_cast(spawn.common.rotation, rotation) {
+        return;
+    }
+    spawn.common.rotation = rotation;
+    let position = spawn.common.position;
+    network.send_in_range_instance(
+        id,
+        instance,
+        FromServer::ActorMove(
+            id,
+            position,
+            rotation,
+            MoveAnimationType::empty(),
+            MoveAnimationState::None,
+            JumpState::NoneOrFalling,
+            Some((NPC_RUN_SPEED * 10.0) as u8),
+        ),
+        DestinationNetwork::ZoneClients,
+    );
+}
+
+/// Whether a cast's facing is another than the one the NPC has (the shorter way round.)
+pub(crate) fn turns_for_cast(facing: f32, cast: f32) -> bool {
+    let turn = (cast - facing + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU)
+        - std::f32::consts::PI;
+    turn.abs() > CAST_TURN
+}
+
+/// Whether an NPC stays where it is this tick: held by its director or an action's lock (`busy_bnpc`, `root_bnpc`,
+/// `action::stand_through_lock`) or a status, or in a cast (`cast`: its action, when its bar ends, and the NPC's
+/// auto-attack, whose swing holds no one) and `KEEP_CAST_FACING` after it. Both passes ask: the one that moves it,
+/// and the one that takes it further along its path for the next tick. Only the first did until 2026-11-18, so an
+/// NPC held for a few seconds had its whole path behind it when it was let go and covered it in one ActorMove: Cape
+/// Westwind's boss, 5.5 s after beginning 28868 in the middle, was on the player's own spot 13.9 yalms away (Bob's
+/// mark: "still teleporting to ring end and ring center".)
+pub(crate) fn stands_still(held: bool, cast: Option<(u32, Instant, u32)>, now: Instant) -> bool {
+    held || cast.is_some_and(|(action, until, autoattack)| {
+        let keep = if action == autoattack {
+            0.0
+        } else {
+            KEEP_CAST_FACING
+        };
+        until + Duration::from_secs_f32(keep) > now
+    })
+}
+
 /// Updates NPCs in this instance.
 pub fn npc_behavior(
     network: Arc<Mutex<NetworkState>>,
@@ -606,15 +670,12 @@ pub fn npc_behavior(
             ..
         } = actor
             && let Some(current_target) = current_target
-            && !cast.is_some_and(|cast| {
-                // (An auto-attack's swing doesn't hold it.)
-                let keep = if cast.action_id == timeline.autoattack_action_id {
-                    0.0
-                } else {
-                    KEEP_CAST_FACING
-                };
-                cast.until + Duration::from_secs_f32(keep) > Instant::now()
-            })
+            && !stands_still(
+                false,
+                cast.as_ref()
+                    .map(|cast| (cast.action_id, cast.until, timeline.autoattack_action_id)),
+                Instant::now(),
+            )
             // Stunned, asleep or bound: it doesn't move.
             && !modifiers::is_rooted(status_effects)
             && *state != NpcState::Dead
@@ -1193,7 +1254,16 @@ pub fn npc_behavior(
                         tracing::warn!("Failed to find path {layout_id}?");
                     }
                 }
-            } else if !current_path.is_empty() {
+            } else if !current_path.is_empty()
+                && !stands_still(
+                    instance.busy_npcs.contains_key(id)
+                        || instance.rooted_npcs.contains_key(id)
+                        || modifiers::is_rooted(status_effects),
+                    cast.as_ref()
+                        .map(|cast| (cast.action_id, cast.until, timeline.autoattack_action_id)),
+                    Instant::now(),
+                )
+            {
                 let next_position = current_path[0];
                 let current_position = last_position.unwrap_or(spawn.common.position.0);
                 let distance = Vec3A::distance(current_position, next_position);
@@ -1987,6 +2057,7 @@ pub fn npc_behavior(
                 FromServer::PacketSegment(ipc, id),
                 DestinationNetwork::ZoneClients,
             );
+            face_for_cast(&mut network, instance, id, request.rotation1);
 
             instance.insert_task(
                 ClientId::default(),

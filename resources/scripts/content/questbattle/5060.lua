@@ -24,7 +24,9 @@
 --         turn or attack from the cast's start until they're gone (12.8 s), and a hit from in front of him then is
 --         blocked for nothing and answered a second later by a helper's 28867 from his spot on whoever struck (769
 --         and Knockback 7): the one hit from 0 degrees off his facing in the four runs; the nineteen from 46 to 68
---         degrees off landed. 28872 at 52.9, a leap to the middle (SnapNextMove 1.1 s after it); 28868 there (talk
+--         degrees off landed. 28872 at 52.9, a leap to the middle (an AoeEffect8 at no one whose position is the
+--         middle, `aim_action`; SnapNextMove and the move there 1.1 s after it; he does nothing else for its 2.1 s
+--         lock, and stays in the middle through what he casts next); 28868 there (talk
 --         33424 the first time) and 4.1 s after it began the arena's map effect and two helpers' 28869 (7.7 s casts,
 --         their markers 5.5 s in), the effect off as they land; again at 68.1 with the other two spots; 28871 at
 --         82.4, 28870 at 93.5 and 103.7, 28871 at 114.9. Still above 15 % then (the long run alone, which went
@@ -66,8 +68,13 @@
 --         scene 3 (cutscene 2874, then 0, 173, 0, 0), 47 s. As it ends: 63 [0] and his health 55 % (13534: from 1
 --         to that within 0.7 s of the control, Kawari Witness), him in the middle facing north; the
 --         player put at (-680.02, 63.86, -810.64) 1.5 s on; at 6.0 s ActorControl 35 [0, 10, player, 15], his 28879
---         on the player (status 3134) and 63 [6]; a helper's 28880 from where the player stands at 6.9 s (Knockback
---         17, towards him); at 7.8 s targetable, talk 33414.
+--         on the player (status 3134: the chain, which holds them where they stand, free to act, until they leave;
+--         the server's condition 43, `modifiers::is_held_in_place`) and 63 [6]; at 6.9 s a helper's 28880 on the
+--         player from 2.5 yalms in front of him (`PULLED_TO`): the Attract sheet's row 17 (effect 32, not a
+--         Knockback), which draws them to the helper; at 7.8 s targetable, talk 33414. 35 is the tether drawn
+--         between them. (Until 2026-11-18 the helper stood on the player and knocked them back with the Knockback
+--         sheet's row 17, 5 yalms the other way, and nothing held them: Bob's mark, "third stage chain doesn't work
+--         in anyway like it should it should pull you to him, and freeze you in place only to attack".)
 --   The last part (anchor 33414): 28881 at once; a helper's 28882 beside him at 4.1 s; status 3008 on him, one
 --         stack more before each 28883 (4.7 s casts, 13.15 s apart, talks 33415-33419 with the first five); status
 --         2194 on the player from 7.8 s to his death. Neither has a timer, nor has 3134 (28879's, on the player
@@ -84,7 +91,7 @@
 -- comes again with the second part's third 28868 (not here: the first part's 33424 didn't); the director's
 -- 0x10000002 [33420] comes with DutyCommence here, retail's before the opening scene.
 -- Unknown: what ActorControl 63 and statuses 2056, 2656, 3008 and 2194 do (sent and given as retail did, nothing
--- more; 35 [0, 10, player, 15] is followed at once by the player's own client moving them 5 yalms to him.)
+-- more.)
 --
 -- Where each action reaches is the Action sheet's, and the four runs agree with it (the player's place as each cast
 -- ended, hit or missed): 28871 a circle of 7 round him (missed at 7.1, hit at 5.9); 28877 one of 14 (missed at 14.1,
@@ -124,6 +131,10 @@ MIDDLE = { x = -689.02, y = 64.35, z = -815.03 }
 LAST_STAND = { x = -689.02, y = 65.08, z = -815.03 }
 PLAYER_AFTER_CUTSCENE = { x = -680.02, y = 63.86, z = -810.64, rotation = -2.024 }
 HELPER_BESIDE_HIM = { x = -687.89, y = 64.96, z = -814.48 }
+-- Where the helper that draws the player in stands (its ActorSetPos, 0.1 s before its 28880): 2.5 yalms from him on
+-- the way to where the player was put. The player's own client had them 0.1 yalms from it 0.9 s later, in four runs.
+PULLED_TO = { x = -686.75, y = 64.86, z = -813.90 }
+LEAP_MOVE_SPEED = 60
 
 -- The helpers' 28865: three rows of four spots. The first part uses the second row alone.
 ROWS = {
@@ -335,6 +346,9 @@ function onSetup(director)
     director:hold_wipe(true)
     reset()
     bring(director)
+    -- His leap's landing names where he comes down (retail's AoeEffect8 for 28872: the middle, at the higher of its
+    -- two heights, wherever he leapt from.)
+    director:aim_action(BOSS, ACTION_LEAP, MIDDLE.x, LAST_STAND.y, MIDDLE.z)
 end
 
 function onCommence(director)
@@ -434,8 +448,9 @@ function onActorCast(director, layout_id, action_id, actor_id)
             d:bnpc_control(BOSS, CONTROL_63, { 0 })
         end)
     elseif action_id == ACTION_LEAP then
+        -- (SnapNextMove and an ActorMove with a run's speed byte, 60, facing as he had: Bob's capture 178b0de0.)
         director:delay(1.1)
-        director:jump_bnpc(BOSS, MIDDLE.x, MIDDLE.y, MIDDLE.z)
+        director:jump_bnpc(BOSS, MIDDLE.x, MIDDLE.y, MIDDLE.z, nil, LEAP_MOVE_SPEED, true)
         director:delay(0)
     elseif action_id == ACTION_SPOTS then
         if uses == 1 then
@@ -444,7 +459,12 @@ function onActorCast(director, layout_id, action_id, actor_id)
         if part_number == 1 and uses > #PATTERNS[1] then
             free_at = ticks + math.floor(BUSY_SPOTS_THEN_LINE * 2 + 0.5)
         end
-        after(4.0, castSpots)
+        local this_part = part
+        after(4.0, function(d)
+            if part == this_part then
+                castSpots(d)
+            end
+        end)
     elseif action_id == ACTION_THRICE then
         if uses == 1 then
             talk(director, 33425)
@@ -578,6 +598,11 @@ end
 -- The four down: he gets up, at full health.
 function afterAdds(director)
     part = "between"
+    -- His 28874 is for while they're up: none came after the last of them fell in the six runs (the next would have
+    -- been due before talk 33410 in five.) Here he went on casting it through the talks and into the second part
+    -- (Bob's mark of 2026-11-18: "he used his ground effect during the stage transition".)
+    director:restart_timeline(BOSS, PART_NONE)
+    director:stop_cast(BOSS)
     director:set_bgm(BGM_NONE)
     after(5.0, function(d)
         d:yell(BOSS, 13809)
@@ -692,8 +717,7 @@ function onSceneFinished(director, scene)
         d:bnpc_control(BOSS, CONTROL_63, { 6 })
     end)
     after(7.0, function(d)
-        local at = player_at or PLAYER_AFTER_CUTSCENE
-        local helper = helperAt(d, { at.x, at.y, at.z }, PLAYER_AFTER_CUTSCENE.rotation)
+        local helper = helperAt(d, { PULLED_TO.x, PULLED_TO.y, PULLED_TO.z }, PLAYER_AFTER_CUTSCENE.rotation)
         d:actor_use_action(helper, ACTION_DRAW_IN, player_id)
     end)
     after(8.0, function(d)

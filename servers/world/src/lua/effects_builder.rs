@@ -655,6 +655,15 @@ impl UserData for EffectsBuilder {
             }));
             Ok(())
         });
+        // Draws the target to the action's source by the Attract sheet's row (the client moves them; see
+        // `TargetEffectKind::Attract`.) Nothing on a miss.
+        methods.add_method_mut("attract", |_, this, attract_id: u16| {
+            this.effects.push(TargetEffect(TargetEffectKind::Attract {
+                unk: [0; 5],
+                attract_id,
+            }));
+            Ok(())
+        });
         methods.add_method_mut("play_vfx", |_, this, effect_id: u16| {
             this.effects.push(TargetEffect(TargetEffectKind::PlayVFX {
                 unk: [0; 5],

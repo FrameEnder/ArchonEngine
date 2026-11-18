@@ -263,6 +263,15 @@ None of it played yet; the page not used against the running server.
   before the push was seen once; retail's talk 33404 came 2.8 s after his health reached 1 in that run and at once
   in the other five, which isn't explained (the script goes at once, and that fixture's tolerance is 3 s for it).
   The timeline's damage is still the White Mages': the Paladin took more (28870 for 1631 and 1593, not 1205).
+* Cape Westwind after Bob's second test (2026-11-18, `quest-battles.md`), unplayed: that condition 43 stops the
+  client walking and leaves it its actions, and that the leap now shows as one, follow from retail's bytes and
+  weren't seen. Where the helper that pulls the player in stands is the one spot seen (the players all stood where
+  the cutscene puts them): whether it's fixed or 2.5 yalms from him towards wherever the player is isn't known. He
+  auto-attacked a second after his leap here; whether retail's can inside that lock wasn't looked at.
+* Every NPC held or casting used to cover the ground it would have run meanwhile in one step when let go
+  (`combat.md`, "A held NPC keeps its path ahead of it"): fixed for all of them at once, checked by its own test
+  and no fight replayed. Pulls, pushes and statuses with no damage can't miss any more (they could, by the NPC's
+  level against the player's).
 * The 4th Cohort's four kinds in Western Thanalan only auto-attack here; retail's cast too (`combat.md`: 403, 866,
   308, 10, 404, 526, each seen once or twice in passing). Not built: no sighting long enough to say how often.
 

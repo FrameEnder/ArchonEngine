@@ -1125,6 +1125,19 @@ fn server_logic_tick(
                     incapacitation_changes.push((*id, incapacitated));
                 }
 
+                // A status that keeps them where they stand (`modifiers::is_held_in_place`): retail's condition 43
+                // while it's on them, which stops the client walking and leaves it its actions.
+                let held_in_place = actor
+                    .status_effects()
+                    .is_some_and(modifiers::is_held_in_place);
+                if held_in_place != conditions.has_condition(Condition::SufferingStatusAffliction72)
+                {
+                    let _ = handle.send(FromServer::ToggleCondition(
+                        Condition::SufferingStatusAffliction72,
+                        held_in_place,
+                    ));
+                }
+
                 let is_in_duel_area = overlapping_ranges.iter().filter(|x| x.duel).count() > 0;
                 let has_duel_condition = conditions.has_condition(Condition::InDuelingArea);
 

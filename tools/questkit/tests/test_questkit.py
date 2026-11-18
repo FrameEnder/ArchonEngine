@@ -687,6 +687,29 @@ class BattleSimPlayerTest(unittest.TestCase):
         for text in (33403, 33402, 33424, 33427):
             self.assertEqual(talks.count(text), 1, text)
 
+    def test_cape_westwinds_marks_of_the_second_test(self):
+        """Bob's marks of 2026-11-18 on the script: "he used his ground effect during the stage transition" (28874
+        went on after the four fell: the boss's clock stops and his cast with it as the last falls), and "third stage
+        chain doesn't work" (the helper that draws the player in stands 2.5 yalms in front of him, not on the
+        player.) His leap carries where it lands (the leap itself has no cast, so the simulator never hears of it.)"""
+        fixture = json.loads((battle_sim.BATTLES / "5060-178b0de0-6.json").read_text())
+        result = battle_sim.simulate(fixture)
+        self.assertIsNone(result.error)
+        calls = result.calls
+        last_fell = max(npc["death"] for layout, npc in fixture["npcs"].items() if layout != "9082104")
+        second_part = next(t for t, name, args in calls if name == "battle_talk" and args[2] == 33410)
+        stopped = [t for t, name, args in calls if name == "restart_timeline" and args[1] == 13811
+                   and last_fell - 3.0 <= t < second_part]
+        self.assertEqual(len(stopped), 1)
+        self.assertLess(abs(stopped[0] - last_fell), 3.0)
+        self.assertTrue(any(name == "stop_cast" and t == stopped[0] for t, name, args in calls))
+        pull = next(i for i, (t, name, args) in enumerate(calls)
+                    if name == "actor_use_action" and args[1] == 28880)
+        warp = calls[pull - 1]
+        self.assertEqual((warp[1], warp[2][1:4]), ("warp_bnpc", [-686.75, 64.86, -813.9]))
+        self.assertIn(("aim_action", [9082104, 28872, -689.02, 65.08, -815.03]),
+                      [(name, args) for t, name, args in calls])
+
     def test_placed_from_a_run(self):
         """A run's helpers (battle NPCs with no layout ID) give `placed` and everyone's positions; a few HP isn't the
         floor's 0.1 %."""
@@ -702,7 +725,11 @@ class BattleSimPlayerTest(unittest.TestCase):
                            {"S": 8.0, "Id": 1, "Hp": 1, "P": [5.0, 6.0, 7.0]}],
                "Events": [{"S": 9.0, "Kind": "cast", "Id": 2,
                            "Text": "action 28865 spell 28865 type 1 on 3758096384 3.70s at -698.45, 66.18, -819.61 "
-                                   "facing -3.142 omen delay 0 interruptible False"}]}
+                                   "facing -3.142 omen delay 0 interruptible False"},
+                          # One cast on the player says where the player stands, not the helper: left out.
+                          {"S": 9.5, "Kind": "cast", "Id": 2,
+                           "Text": "action 28880 spell 28880 type 1 on 9 0.20s at -680.02, 63.87, -810.64 "
+                                   "facing -2.024 omen delay 0 interruptible False"}]}
         fixture = battle_sim.fixture_from_run(run, 5060)
         self.assertEqual(fixture["placed"], [[4.0, 28865, -698.45, -819.61]])
         self.assertEqual(fixture["positions"]["player"], [[1.0, 1.0, 2.0, 3.0], [2.0, 4.0, 2.0, 3.0]])
