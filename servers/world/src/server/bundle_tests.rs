@@ -334,6 +334,41 @@ fn an_npc_cast_is_aimed_as_retails_was() {
     assert_eq!(retail_cast_aim(999_999, Some(7)), CastAim::Ground);
     assert_eq!(retail_cast_aim(999_999, Some(2)), CastAim::Target);
     assert_eq!(retail_cast_aim(999_999, None), CastAim::Target);
+    // Since 2026-11-18 the table has the captures of 2026-11-16 and 2026-11-17 as well: Cape Westwind's helpers' rows
+    // (28865) name no one, as retail's (Kawari's named the helper), its circles (28869) the helper itself.
+    assert_eq!(retail_cast_aim(28865, Some(2)), CastAim::Ground);
+    assert_eq!(retail_cast_aim(28869, Some(2)), CastAim::Caster);
+    // And retail's omen delays: 28869's marker comes 5.5 s into its 7.7 s cast; nearly every action's at once.
+    assert_eq!(crate::server::npc_behavior::retail_omen_delay(28869), 55);
+    assert_eq!(crate::server::npc_behavior::retail_omen_delay(28787), 20);
+    assert_eq!(crate::server::npc_behavior::retail_omen_delay(28865), 0);
+    // And the landing names no one either (retail's AoeEffect8 for 28865: 0xE0000000), where the director had the
+    // helper use it on itself; a player's own, or an NPC's aimed at someone, still names its target.
+    let helper = ObjectId(0x4000_EAB3);
+    assert!(!crate::server::action::aimed_at_someone(
+        helper,
+        true,
+        28865,
+        Some(2)
+    ));
+    assert!(crate::server::action::aimed_at_someone(
+        helper,
+        true,
+        28869,
+        Some(2)
+    ));
+    assert!(crate::server::action::aimed_at_someone(
+        helper,
+        false,
+        28865,
+        Some(2)
+    ));
+    assert!(!crate::server::action::aimed_at_someone(
+        ObjectId(0xE000_0000),
+        false,
+        133,
+        Some(2)
+    ));
 }
 
 /// Bundle 20261111-072219, "not all of the sirens effects are being replicated": a heal landed on someone already
@@ -887,6 +922,180 @@ fn an_untargetable_npc_is_never_noticed() {
     let unseen = unnoticed(&world.instance);
     assert!(unseen.contains(&monolith) && unseen.contains(&hidden));
     assert!(!unseen.contains(&other));
+}
+
+/// Bob's test of Cape Westwind, 2026-11-18: his Holy killed five of the boss's twelve helpers (44 HP, held by the
+/// director where they cast his rows), which retail's area actions never touch. A held NPC spawned without the HOSTILE
+/// flag is a director's helper, and one made untargetable is out of reach; a held enemy (the four before they're let
+/// go) and any other are hit as ever.
+#[test]
+fn a_players_area_action_leaves_a_directors_helper_alone() {
+    use crate::server::action::beyond_area_actions;
+    use kawari::ipc::zone::CharacterDataFlag;
+    let mut world = TestWorld::new();
+    world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let helper = world.enemy(ENEMY, [2.0, 0.0, 2.0], 44);
+    let held = world.enemy(ENEMY + 1, [3.0, 0.0, 3.0], 2501);
+    let hidden = world.enemy(ENEMY + 2, [4.0, 0.0, 4.0], 24609);
+    let passive = world.enemy(ENEMY + 3, [5.0, 0.0, 5.0], 300);
+    for (id, flags) in [(helper, 1), (held, 3), (hidden, 3), (passive, 1)] {
+        if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(id) {
+            spawn.character_data_flags = CharacterDataFlag::from_bits_retain(flags);
+        }
+    }
+    world.instance.held_npcs.insert(helper);
+    world.instance.held_npcs.insert(held);
+    world.instance.untargetable_npcs.insert(hidden);
+    let beyond =
+        |id| beyond_area_actions(&world.instance, id, world.instance.find_actor(id).unwrap());
+    assert!(beyond(helper));
+    assert!(beyond(hidden));
+    assert!(!beyond(held));
+    assert!(!beyond(passive));
+}
+
+/// Cape Westwind's boss with his shield up (statuses 680 and 2195 after his 28866; `director:guard_front`): retail's
+/// blocked the hit from straight in front for nothing and let the ones from 46° off and more through (Bob's and
+/// Connor's Chronofoil captures, four runs). Kawari's took every hit, and the counter that answers one never came.
+#[test]
+fn a_guard_takes_a_hit_from_in_front() {
+    use crate::server::action::{BLOCKED_FOR_NOTHING, guards_against, shown_to_a_guard};
+    use kawari::ipc::zone::{TargetEffect, TargetEffectKind};
+    let mut world = TestWorld::new();
+    // He faces +Z (rotation 0); one player stands in front of him, one 50 degrees off, one behind.
+    let front = world.player(PLAYER, [0.5, 0.0, 5.0]);
+    let side = world.player(
+        PLAYER + 1,
+        [
+            50f32.to_radians().sin() * 5.0,
+            0.0,
+            50f32.to_radians().cos() * 5.0,
+        ],
+    );
+    let behind = world.player(PLAYER + 2, [0.0, 0.0, -5.0]);
+    let boss = world.enemy(ENEMY, [0.0, 0.0, 0.0], 24609);
+    if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(boss) {
+        spawn.common.rotation = 0.0;
+    }
+    // No guard: nothing is blocked.
+    assert!(!guards_against(&world.instance, boss, front));
+    world.instance.front_guards.insert(boss, 45f32.to_radians());
+    assert!(guards_against(&world.instance, boss, front));
+    assert!(!guards_against(&world.instance, boss, side));
+    assert!(!guards_against(&world.instance, boss, behind));
+    // What the blocked hit shows: retail's eight bytes in the damage's place, the combo kept, no status.
+    let combo = TargetEffect(TargetEffectKind::ExecuteCombo {
+        sequence: 0,
+        unk2: 0,
+        unk3: 0,
+        unk4: 0,
+        unk5: 128,
+        action_id: 25811,
+    });
+    let stun = TargetEffect(TargetEffectKind::GainEffect {
+        unk1: 0,
+        unk2: 0,
+        param: 0,
+        unk3: 0,
+        effect_id: 2,
+        duration: 4.0,
+    });
+    let hit = TargetEffect(TargetEffectKind::Damage {
+        damage_kind: Default::default(),
+        damage_type: kawari::ipc::zone::DamageType::Magic,
+        damage_element: kawari::ipc::zone::DamageElement::Unaspected,
+        bonus_percent: 0,
+        unk3: 0,
+        unk4: 0,
+        amount: 442,
+    });
+    let shown = shown_to_a_guard(&[hit, stun, combo]);
+    assert_eq!(shown.len(), 2);
+    assert!(matches!(
+        shown[0].0,
+        TargetEffectKind::Block { amount: 0, .. }
+    ));
+    let mut bytes = std::io::Cursor::new(Vec::new());
+    binrw::BinWrite::write_le(&TargetEffect(BLOCKED_FOR_NOTHING), &mut bytes).unwrap();
+    assert_eq!(bytes.into_inner(), [0x06, 0, 0, 0x9C, 0, 0, 0, 0]);
+}
+
+/// Bob's test of Cape Westwind, 2026-11-18 ("the timing of the AOE damage isn't exactly right"): retail's boss stood
+/// through the animation lock of each action he cast on himself (never moving sooner in four runs), Kawari's walked
+/// off as it landed. The lock keeps it where it stands; a short one doesn't, and a director's longer hold stays.
+/// (Only a cast on itself asks: `action.rs` where the effect goes out.)
+#[test]
+fn an_npc_stands_through_its_actions_lock() {
+    use crate::server::action::stand_through_lock;
+    let mut world = TestWorld::new();
+    world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let boss = world.enemy(ENEMY, [2.0, 0.0, 2.0], 24609);
+    let now = std::time::Instant::now();
+    stand_through_lock(&mut world.instance, boss, 0.1, now);
+    assert!(!world.instance.rooted_npcs.contains_key(&boss));
+    stand_through_lock(&mut world.instance, boss, 3.1, now);
+    assert_eq!(
+        world.instance.rooted_npcs[&boss],
+        now + std::time::Duration::from_secs_f32(3.1)
+    );
+    // A shorter one after it doesn't let him go sooner, nor does any lock end a director's hold.
+    stand_through_lock(&mut world.instance, boss, 2.1, now);
+    assert_eq!(
+        world.instance.rooted_npcs[&boss],
+        now + std::time::Duration::from_secs_f32(3.1)
+    );
+    let held = now + std::time::Duration::from_secs(3600);
+    world.instance.rooted_npcs.insert(boss, held);
+    stand_through_lock(&mut world.instance, boss, 5.1, now);
+    assert_eq!(world.instance.rooted_npcs[&boss], held);
+}
+
+/// Bob's test of Cape Westwind, 2026-11-18 ("Imperial adds ... didn't attack for awhile"): his Holy gave the four its
+/// Stun in full every 2.5 s, 273 s to 307 s into the server's capture, where retail's four showed "no effect" every
+/// time. What the action's packet shows is what the enemy took: the status, the status for less, or effect 55 with
+/// the status's ID; a party member's is never touched.
+#[test]
+fn an_enemy_takes_a_stun_as_retails_did() {
+    use crate::server::action::status_as_taken;
+    use kawari::ipc::zone::{TargetEffect, TargetEffectKind};
+    let mut world = TestWorld::new();
+    world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let add = world.enemy(ENEMY, [2.0, 0.0, 2.0], 2501);
+    let other = world.enemy(ENEMY + 1, [3.0, 0.0, 3.0], 2501);
+    for (id, base) in [(add, 14582), (other, 1)] {
+        if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(id) {
+            spawn.common.base_id = base;
+        }
+    }
+    let stun = TargetEffect(TargetEffectKind::GainEffect {
+        unk1: 0,
+        unk2: 0,
+        param: 0,
+        unk3: 0,
+        effect_id: 2,
+        duration: 4.0,
+    });
+    assert!(matches!(
+        status_as_taken(&mut world.instance, add, stun).0,
+        TargetEffectKind::StatusNoEffect { effect_id: 2, .. }
+    ));
+    assert!(matches!(
+        status_as_taken(&mut world.instance, other, stun).0,
+        TargetEffectKind::GainEffect { effect_id: 2, duration, .. } if duration == 4.0
+    ));
+    // The player's own (an enemy's Stun on them) is as it was.
+    assert!(matches!(
+        status_as_taken(&mut world.instance, ObjectId(PLAYER), stun).0,
+        TargetEffectKind::GainEffect { duration, .. } if duration == 4.0
+    ));
+    // And the "no effect" goes out as retail's eight bytes did.
+    let refused = TargetEffect(TargetEffectKind::StatusNoEffect {
+        unk: [0; 5],
+        effect_id: 2,
+    });
+    let mut bytes = std::io::Cursor::new(Vec::new());
+    binrw::BinWrite::write_le(&refused, &mut bytes).unwrap();
+    assert_eq!(bytes.into_inner(), [0x37, 0, 0, 0, 0, 0, 0x02, 0]);
 }
 
 /// Bob's bundle 20261112-195353 (Notorious Biggs): retail's boss left the fighter it fought, walked 3.4-4.1 s to

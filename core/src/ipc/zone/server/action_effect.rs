@@ -59,6 +59,12 @@ pub enum TargetEffectKind {
     /// Heals for a specified amount.
     #[brw(magic = 4u8)]
     Heal { unk1: [u8; 5], amount: u16 },
+    /// The hit was blocked: `amount` is what got through (fork: retail's players blocking an enemy's hit, `06 00 71 F1
+    /// 00 00 23 00` for 35; and a hit on Cape Westwind's boss from in front while he holds his shield up, nothing at
+    /// all, `06 00 00 9C 00 00 00 00`, Bob's Chronofoil capture 9ba7d981. `unk[1]` is the damage's kind where there
+    /// was any; what `unk[2]` is isn't known.)
+    #[brw(magic = 6u8)]
+    Block { unk: [u8; 5], amount: u16 },
     /// Seen while attacking giant clams.
     #[brw(magic = 7u8)]
     Invincible,
@@ -123,6 +129,11 @@ pub enum TargetEffectKind {
     /// Seen during mounting.
     #[brw(magic = 39u8)]
     Mount { unk1: u8, unk2: u32, id: u16 },
+    /// The status had no effect on the target (fork: retail's answer where a Stun would have been given to an enemy
+    /// that refuses it: `37 00 00 00 00 00 02 00` in place of `0E .. 02 00`, 1,336 times in Bob's and Connor's
+    /// Chronofoil captures, every one of them Stun. `servers/world/src/server/resistance.rs`.)
+    #[brw(magic = 55u8)]
+    StatusNoEffect { unk: [u8; 5], effect_id: u16 },
     /// Play this VFX.
     #[brw(magic = 59u8)]
     PlayVFX { unk: [u8; 5], effect_id: u16 },

@@ -283,7 +283,7 @@ client's handler sets a flag in its MoveController so the next move is a snap) a
 y −9.78), 9.1, 11.2 and 13.3 s in; 28549 (instant, hitting nobody) 1 s after the first two landings, and 28546 (3.7 s,
 on itself) 1 s after the third. The helpers go when it dies. Kawari: `onActorCast` in `w1d1_re.lua` with the new
 director methods (`spawn_bnpc`'s actor IDs, `warp_bnpc`, `actor_use_action`, `jump_bnpc`, `delay`); 28549's and
-28544's damage is a stand-in (28546's, 44.5) since nobody was caught by either (`CopperbellHelper_9020.json`).
+28544's damage is a stand-in (28546's, 44.5) since nobody was caught by either (`Helper_9020.json`).
 
 **Kottos' schedule** counts from its pull, the same to a tenth of a second in all three runs however long it had
 stood before (5.2–10.0 s after it appeared): auto-attack 870 at 3.0 s and every 3.0 s when it isn't busy; 28545 (4.7 s,

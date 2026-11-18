@@ -65,6 +65,12 @@ const SETTLE_DEPTH: f32 = 200.0;
 /// How far above its feet it looks when it's under the floor (it was walked straight through a slope, or spawned a
 /// little under it.)
 const SETTLE_RISE: f32 = 3.0;
+/// How much room a walker needs over the floor it stands on (yalms): with a second floor less than this above the
+/// first, nobody stands between the two, and whoever is put there is on the upper one. Cape Westwind's arena has its
+/// ground about 1.2 yalms over an older surface, and retail's boss leaps to a height between them (64.35, where the
+/// ground the client shows is 65.08): the nearer floor was the one beneath, and he "teleported then moved under the
+/// ground" (Bob, 2026-11-18; the server's capture has him at 62.3 where the ground is 64.4.)
+const HEADROOM: f32 = 2.0;
 
 /// The collision, ready to ask where the floor is and what's in the way. Cloning it is cheap (the triangles are
 /// shared): each instance keeps its own copy of which gimmicks are gone.
@@ -698,8 +704,10 @@ impl Collision {
         let (x, y, z) = (position.x, position.y, position.z);
         let below = self.body_floor(x, z, y + self.climb, y - SETTLE_DEPTH);
         let above = self.floor(x, z, y + SETTLE_RISE, y + self.climb);
-        // The nearer of the two: a little under a floor is on it, well under one is over the floor below.
+        // The nearer of the two: a little under a floor is on it, well under one is over the floor below. Between two
+        // with no room to stand on the lower, it's on the upper (`HEADROOM`.)
         let floor = match (below, above) {
+            (Some(below), Some(above)) if above - below < HEADROOM => Some(above),
             (Some(below), Some(above)) => Some(if y - below <= above - y { below } else { above }),
             (below, above) => below.or(above),
         };
@@ -1016,6 +1024,25 @@ mod tests {
         assert_eq!(c.settle(Vec3A::new(0.0, 10.2, 0.0)).y, 10.0);
         // Off the collision it stays.
         assert_eq!(c.settle(Vec3A::new(50.0, 3.0, 0.0)).y, 3.0);
+    }
+
+    /// Cape Westwind's middle (Bob's test of 2026-11-18): the ground at 65.08 over an older surface at 63.9, and the
+    /// boss put between them at 64.35, nearer the lower. He's on the ground, and walks off across it.
+    #[test]
+    fn settles_on_the_upper_of_two_floors_with_no_room_between() {
+        let c = world(|v, t| {
+            floor_quad(v, t, -10.0, -10.0, 10.0, 10.0, 63.9);
+            floor_quad(v, t, -10.0, -10.0, 10.0, 10.0, 65.08);
+        });
+        assert_eq!(c.settle(Vec3A::new(0.0, 64.35, 0.0)).y, 65.08);
+        let walk = c.walk(
+            Vec3A::new(0.0, 64.35, 0.0),
+            Vec3A::new(5.0, 64.35, 0.0),
+            f32::INFINITY,
+        );
+        assert!(!walk.blocked && walk.at.y == 65.08, "{walk:?}");
+        // One already on the lower (walked there before 2026-11-18) comes up at its next step too.
+        assert_eq!(c.settle(Vec3A::new(0.0, 63.9, 0.0)).y, 65.08);
     }
 
     #[test]

@@ -248,6 +248,22 @@ None of it played yet; the page not used against the running server.
   player back in, are from the client's script alone and unplayed (`quests.md`).
 * Ten upstream gathering drop-ins name no territory and still come out in every territory of their level.
 
+## Statuses enemies refuse (2026-11-18)
+
+* Only Stun is in `status_resistance.json` (the only status retail's enemies were seen to refuse: Holy's). Sleep,
+  Bind, Heavy and the rest are given in full every time, as before.
+* How long an enemy goes on refusing Stun wasn't seen to end (48.6 s at the longest): forgotten 60 s after the last
+  that took hold, a guess. A use counts once it's 2.5 s old, which fits 96 % of retail's (the rest were refused a
+  little sooner).
+* The fourteen kinds that refuse it outright are those the captures show; every boss not in them takes Stun as an
+  ordinary enemy does until a capture says otherwise.
+* The helpers' timeline was two files until 2026-11-18 (`combat.md`), so in every duty with helpers but one their
+  recorded damage wasn't used; which duties were short (the Copperbell Mines' or all the others') depended on the
+  order the server's folder listed the files in, and none has been played since the merge.
+* An NPC stands through its animation lock only after a cast on itself, by Cape Westwind's boss and his four alone;
+  bosses whose timelines carry `animation_locks` (most) now stand 2.1 s or so after such casts where they walked off
+  before. Not checked against another duty's recording.
+
 ## A territory's own navmesh (2026-11-14)
 
 * The territories of Mor Dhona's level do differ (309's own collision is 15,815 triangles smaller than 156's, Bob's
@@ -541,10 +557,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   runs), 63 (1004, two) and 64 (1005, one: no lost run, and its worn-down ally never acted) are scripted, their
   territories taken to be copies of Coerthas and Mor Dhona from where their spots stand; 64's two talking event NPCs
   aren't put in the battle. 1651's 129, 1655's 527, 1874's 91 and 1988's 1286 give statuses whose length wasn't seen.
-  **Cape Westwind** (5060, 4521) is built since 2026-11-17 from one retail run and not played in game: [Quest
-  battles](quest-battles.md) lists what's guessed (his parts past what the run showed, losing) and unknown (what seven
-  statuses and three ActorControls do, 28870's damage), and its drop-in names its territory because 1049's level isn't
-  known here (if nothing spawns, that or the helpers' layout ID 0 is where to look). **5061** (The Ultimate
+  **Cape Westwind** (5060, 4521) was reworked on 2026-11-18 from four retail runs after Bob's first test (five
+  marks, all answered: [Quest battles](quest-battles.md)); the rework isn't played in game. Guessed: what the boss
+  does in his first part past 114.9 s while above 15 % (no retail run was), how wide his raised shield is (45° to
+  each side) and whether every blocked hit is answered, 28874's unblocked damage. What the surface under the arena's
+  ground is (the boss walked on it, under the ground Bob saw) isn't known: he's kept on the upper floor now, but the
+  territory's layout wasn't looked at. Its drop-in names its territory because 1049's level isn't known here. **5061** (The Ultimate
   Weapon's last battle) is built since 2026-11-17 from two retail runs and not played in game (`quest-battles.md`;
   65 is since 2026-11-12). **Not scripted**: the duties Castrum
   Meridianum (InstanceContent 15, 3873), the Praetorium (86) and the Porta Decumana (20082, 4522), Thornmarch (Hard)

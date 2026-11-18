@@ -1,55 +1,71 @@
 -- Cape Westwind (Operation Archon, quest 4521: its QUESTBATTLE0 is InstanceContent 5060, not a QuestBattle; director
--- 0x800313C4, territory 1049, duty 865.) A solo duty: entered from the quest (`join_quest_battle`, which makes an
--- InstanceContent's director for it), begun as a duty is (DutyCommence, no scene 60000), won into the quest's
--- sequence 4 and out to Western Thanalan.
+-- 0x800313C4, territory 1049, duty 865.) A quest's solo battle (it was a trial once, and its sheet rows still are):
+-- entered from the quest (`join_quest_battle`, which makes an InstanceContent's director for it), begun as a duty is
+-- (DutyCommence, no scene 60000), won into the quest's sequence 4 and out to Western Thanalan, and lost out to where
+-- the player came in from, as a quest battle is: nobody is raised inside.
 --
--- Everything here is one retail run: Bob's Chronofoil capture 667a68c5 of 2026-11-16 (`questkit chronofoil --battle
--- 0.16`: won, 527 s, a level 50 White Mage synced to 49), checked against two more in capture 9ba7d981 of 2026-11-17
--- (visits 0.6, lost 315 s in, and 0.8, won in 361 s.) Layout IDs, levels, HP, positions and flags are its
--- SpawnNpcs' (drop-in `territory_1049.json`.) Times below are seconds from arriving.
+-- Four retail runs: Bob's Chronofoil captures 667a68c5 of 2026-11-16 (`questkit chronofoil --battle 0.16`: won, 527 s,
+-- a level 50 White Mage synced to 49) and 9ba7d981 of 2026-11-17 (a Summoner; visits 0.6, lost 315 s in, and 0.8, won
+-- in 361 s), and Connor's e834e436 (visit 0.240: a White Mage, won.) Layout IDs, levels, HP, positions and flags are
+-- their SpawnNpcs' (drop-in `territory_1049.json`.) Times below are seconds from the talk that begins each part.
 --
--- The boss (9082104, base 14581, BNpcName 2160, 24609 HP) never auto-attacks; he walks after the player and casts.
--- Twelve helpers (base 9020, layout 0, 44 HP) stand on his spot and cast where the director puts them.
+-- The boss (9082104, base 14581, BNpcName 2160, 24609 HP) auto-attacks (6499) every 3 s when he isn't casting, and
+-- stands through each cast's animation lock. Twelve helpers (base 9020, layout 0, 44 HP) stand on his spot and cast
+-- where the director puts them.
 --
---   8.2   the pull: talk 33400. His first part (the timeline's points before any anchor): 28871 and 28870 where he
---         stands, facing the player; 28864 (talk 33403) and 6.0 s after it began a row of four of the helpers' 28865
---         a second apart; 28866 (talk 33402, ActorControl 63 [7]; statuses 680 and 2195 on him from its end for
---         7.76 s, then 63 [0]); 28872, a leap to the middle (SnapNextMove 1.1 s after it); 28868 there (talk 33424
---         the first time) and 4.1 s after it began the arena's map effect and two helpers' 28869 (7.7 s casts), the
---         effect off as they land; again with the other two spots; 28871, 28870, 28870, 28871, 28872, then 28873
---         three times 6.15 s apart (talk 33425.)
---   146.9 his health at 1 (it goes no lower): untargetable, talk 33404, ActionTimeline 10500, ActorControl 63 [27]
---         1.5 s on; at 2.45 s three of base 14582 and one of 14583 where the player came in, talk 33405 at 7.0 s,
---         targetable at 11.0 s with the director's 0x10000001 and 0x10000002 [33421]; talks 33406, 33407, 33429 at
---         14.1, 21.1 and 28.1 s. He casts 28874 from the middle 43.4 s in and every 14.25 s. Each of the four yells
---         as it falls; his NpcYell 13651 35.2 s in (three runs alike, whenever the four fell.)
---   214.1 the four down: the music off (SetBGM 1); NpcYell 13809 and ActionTimeline 10502 at 5.0 s, talk 33409 at
---         15.1 s, ActionTimeline 10503 at 18.2 s, 63 [0] at 21.15 s, status 2056 (param 95) at 21.6 s, SetBGM 107 and
+--   The pull: talk 33400. His first part (the timeline's points before any anchor), the same clock in all four runs:
+--         28871 at 6.1 and 28870 at 11.3 where he stands, facing the player; 28864 at 21.5 (talk 33403) and 6.0 s
+--         after it began a row of four of the helpers' 28865 a second apart; 28866 at 37.7 (talk 33402, ActorControl
+--         63 [7]): his shield up, statuses 680 and 2195 on him from its end for 7.76 s, then 63 [0]. He doesn't move,
+--         turn or attack from the cast's start until they're gone (12.8 s), and a hit from in front of him then is
+--         blocked for nothing and answered a second later by a helper's 28867 from his spot on whoever struck (769
+--         and Knockback 7): the one hit from 0 degrees off his facing in the four runs; the nineteen from 46 to 68
+--         degrees off landed. 28872 at 52.9, a leap to the middle (SnapNextMove 1.1 s after it); 28868 there (talk
+--         33424 the first time) and 4.1 s after it began the arena's map effect and two helpers' 28869 (7.7 s casts,
+--         their markers 5.5 s in), the effect off as they land; again at 68.1 with the other two spots; 28871 at
+--         82.4, 28870 at 93.5 and 103.7, 28871 at 114.9.
+--   Below 15 % of his health he leaves that clock as soon as he's free (his cast landed and its animation lock
+--         over): 28872; talk 33425 2.2 s after it and 28873 every 6.15 s from 2.4 s (the timeline's points after
+--         33425.) The four runs: 14.9 % during a 28871, the leap 2.1 s after it landed (its lock); 14.9 % 1.5 s after
+--         a 28870 landed, the leap 3.2 s after it had (its lock, 3.1); 13.8 % as the clock's own leap went off, the
+--         next 2.1 s later in place of 28868; 15.7 and 15.1 % between two hits with him free, the leap half a second
+--         after the second (16.2 and 15.7 % didn't do it.)
+--   His health at 1 (it goes no lower): his cast stopped (ActorControl 15 [537, 1, action]), untargetable, talk 33404,
+--         ActionTimeline 10500, ActorControl 63 [27] 1.5 s on; at 2.5 s three of base 14582 and one of 14583 where
+--         the player came in, standing; at 7.0 s talk 33405 and they run in to four spots by the entrance; at 11.0 s
+--         they can be targeted and fight, with the director's 0x10000001 and 0x10000002 [33421]; talks 33406, 33407,
+--         33429 at 14.1, 21.1 and 28.1 s. He casts 28874 from the middle 43.4 s in and every 14.25 s. Each of the
+--         four yells as it falls; his NpcYell 13651 35.2 s in (whenever the four fell.) The four refuse Stun.
+--   The four down: the music off (SetBGM 1); NpcYell 13809 and ActionTimeline 10502 at 5.0 s, talk 33409 at 15.1 s,
+--         ActionTimeline 10503 at 18.2 s, 63 [0] at 21.15 s, status 2056 (param 95) at 21.6 s, SetBGM 107 and
 --         NpcYell 13810 at 22.2 s; at 26.2 s targetable again at full health, 0x10000001 and 0x10000002 [33422],
 --         talk 33410.
---   240.3 his second part (anchor 33410): 28875 on the player (status 2656 for 3.5 s), 28877 and 28876 (5.7 s casts;
+--   His second part (anchor 33410): 28875 on the player (status 2656 for 3.5 s), 28877 and 28876 (5.7 s casts;
 --         NpcYells 13650 and 13649 the first two times each), 28878 (talk 33426) and 5.07 s after it began three
 --         rows of the helpers' 28865, four seconds apart; 28876; 28872 and 28868 (talk 33427) with all four spots,
---         then with four again; 28877, 28876, 28877, 28878.
---   393.0 his health at 1 again: his cast cancelled (ActorControl 537), untargetable, NpcYell 13811, ActionTimeline
---         10506, 63 [5] at 2.0 s; at 6.0 s SetBGM 1 and the director's scene 3 (cutscene 2874, then 0, 173, 0, 0),
---         47 s. As it ends: 63 [0], him in the middle facing north; the player put at (-680.02, 63.86, -810.64) 1.5 s
---         on; at 6.0 s ActorControl 35 [0, 10, player, 15], his 28879 on the player (status 3134) and 63 [6]; a
---         helper's 28880 from where the player stands at 6.9 s (Knockback 17, towards him); at 7.8 s targetable,
---         talk 33414.
---   454.2 the last part (anchor 33414): 28881 at once, and his health 13373 as it lands; a helper's 28882 beside him
---         at 4.1 s; status 3008 on him, one stack more before each 28883 (4.7 s casts, 13.15 s apart, talks
+--         then with four again; 28877, 28876, 28877, and round again from 28878 every 113.3 s (seen once.)
+--   His health at 1 again: ActorControl 537 [himself], the helpers' casts stopped (15 [537, 1, 28865]),
+--         untargetable, NpcYell 13811, ActionTimeline 10506, 63 [5] at 2.0 s; at 6.0 s SetBGM 1 and the director's
+--         scene 3 (cutscene 2874, then 0, 173, 0, 0), 47 s. As it ends: 63 [0], him in the middle facing north; the
+--         player put at (-680.02, 63.86, -810.64) 1.5 s on; at 6.0 s ActorControl 35 [0, 10, player, 15], his 28879
+--         on the player (status 3134) and 63 [6]; a helper's 28880 from where the player stands at 6.9 s (Knockback
+--         17, towards him); at 7.8 s targetable, talk 33414.
+--   The last part (anchor 33414): 28881 at once, and his health 13373 as it lands; a helper's 28882 beside him at
+--         4.1 s; status 3008 on him, one stack more before each 28883 (4.7 s casts, 13.15 s apart, talks
 --         33415-33419 with the first five); status 2194 on the player from 7.8 s to his death.
---   523.2 he falls: the director's scene 4 (flags 0x08502403; cutscene 263, then 1) in a GameComplete event; as it
---         ends the quest to sequence 4 and out to Western Thanalan at (-462.43, 22.94, -477.23), where the quest's
---         entering scene takes it to 255.
+--   He falls: the director's scene 4 (flags 0x08502403; cutscene 263, then 1) in a GameComplete event; as it ends the
+--         quest to sequence 4 and out to Western Thanalan at (-462.43, 22.94, -477.23), where the quest's entering
+--         scene takes it to 255.
+--   The player falls (9ba7d981, visit 0.6): at once the director's scene 5 (flags 0x0C002001, params 1, 2) in a
+--         GameProgress event with argument 2; 3.1 s later the event ends and the player is in Western Thanalan again.
+--         No wipe, no recommence, nobody raised inside (Kawari's did both until 2026-11-18.)
 --
--- Not seen on retail, so guessed: what he does once a part's points run out before his health does (the first part's
--- 28873 goes on every 6.15 s, the second's points from 28878 come round again); losing (a duty's wipe: back to the
--- start and again, `onPartyWipe`); the director's 0x10000002 [33420] comes with DutyCommence here, retail's before
--- the opening scene. Unknown: what ActorControls 63, 35 and 537 and statuses 680, 2195, 2056, 2656, 3134, 3008 and
--- 2194 do (sent and given as retail did, nothing more); 28870's damage (never landed.) Where each action reaches is
--- the Action sheet's.
+-- Not seen on retail, so guessed: what he does in the first part once 28871 at 114.9 is done and his health is still
+-- above 15 % (here the clock goes round again from 28864 every 103.6 s, as the second part's does every 113.3 s); how
+-- far to either side of his facing the raised shield reaches (45 degrees here: everyone who knew stood 46 to 49
+-- degrees off); the director's 0x10000002 [33420] comes with DutyCommence here, retail's before the opening scene.
+-- Unknown: what ActorControls 63 and 35 and statuses 2056, 2656, 3134, 3008 and 2194 do (sent and given as retail
+-- did, nothing more.) Where each action reaches is the Action sheet's.
 
 START_POSITION = { x = -678.72, y = 63.67, z = -808.74 }
 START_ROTATION = -2.115
@@ -62,6 +78,15 @@ HELPER_COUNT = 12
 ADDS = { 9283147, 9283146, 9082105, 9082106 }
 -- What each of the four yells as it falls.
 ADD_YELL = { [9082106] = 13647, [9283147] = 13822, [9082105] = 13648, [9283146] = 13821 }
+-- Where each runs to from where it came in, 7.0 s after talk 33404 (there by 10 s, at about 5.7 yalms a second; the
+-- same spots in the three runs that got there.)
+ADD_STANDS = {
+    [9283147] = { -683.2, 64.0, -806.7 },
+    [9283146] = { -678.8, 63.7, -807.9 },
+    [9082105] = { -676.9, 63.5, -811.7 },
+    [9082106] = { -678.7, 63.5, -815.6 },
+}
+ADD_RUN_SPEED = 5.7
 
 NAME_BOSS = 2160
 ICON_BOSS = 73175
@@ -123,6 +148,7 @@ ACTION_BESIDE = 28882
 ACTION_LAST = 28883
 
 -- The timeline's anchors (`restart_timeline`): the talk each part began with.
+PART_PUSH = 33425
 PART_ADDS = 33404
 PART_SECOND = 33410
 PART_NONE = 13811
@@ -131,6 +157,24 @@ PART_LAST = 33414
 STATUS_STANCE_1 = 680
 STATUS_STANCE_2 = 2195
 STANCE_SECONDS = 7.76
+-- From the cast's start: how long he stands as he is, and when the shield is up (the statuses are given 5.05 s in; a
+-- hit 5.4 s in landed, one 5.9 s in was blocked.)
+STANCE_HELD = 12.8
+STANCE_GUARD_FROM = 5.5
+-- How far to each side of his facing it reaches (a guess: see the header.)
+STANCE_GUARD_DEGREES = 45
+ACTION_COUNTER = 28867
+COUNTER_AFTER = 1.0
+-- His health (%) below which the first part's clock gives way to 28872 and 28873.
+PUSH_BELOW = 15
+-- How long from an action's start until he's free again: its cast (the bar and 0.3 s) and its animation lock (his
+-- ActionEffects': 2.1 s for 28868, 28871 and 28872, 3.1 for 28870 and 28873, 4.1 for 28864); 28866 holds him until
+-- his shield is down.
+BUSY_SECONDS = {
+    [28864] = 7.1, [28866] = STANCE_HELD, [28868] = 5.1, [28870] = 6.1, [28871] = 5.1, [28872] = 2.1,
+    [28873] = 6.1,
+}
+BUSY_SECONDS_DEFAULT = 5.1
 STATUS_AFTER_ADDS = 2056
 STATUS_AFTER_ADDS_PARAM = 95
 STATUS_LAST = 3008
@@ -139,7 +183,7 @@ HEALTH_LAST = 13373
 
 CONTROL_63 = 63
 CONTROL_35 = 35
-CONTROL_CANCEL_CAST = 537
+CONTROL_537 = 537
 COMMAND_TEXT_1 = 0x10000001
 COMMAND_TEXT_2 = 0x10000002
 TEXT_START = 33420
@@ -155,11 +199,18 @@ QUEST_SEQUENCE_AFTER_WIN = 4
 FINISH_SCENE = 4
 FINISH_SCENE_FLAGS = 0x08502403
 FINISH_PARAMS = { 263, 1 }
+-- The player down: the director's scene 5, and out 3.1 s after it began.
+LOSS_SCENE = 5
+LOSS_SCENE_FLAGS = 0x0C002001
+LOSS_SCENE_PARAMS = { 1, 2 }
+LOSS_EVENT_ARG = 2
+LOSS_OUT_AFTER = 3.0
 
 boss = nil
 helpers = {}
 next_helper = 0
--- 0 before the pull, 1 and 2 his two parts, "adds", "between", "cutscene", "last", "over".
+-- 0 before the pull, 1 and 2 his two parts, "adds", "between", "cutscene", "rising", "last", "over"; "lost" and "out"
+-- once the player is down.
 part = 0
 part_number = 1
 adds_left = 0
@@ -168,6 +219,13 @@ used = {}
 last_stacks = 0
 player_id = nil
 player_at = nil
+boss_at = nil
+-- The first part's push (below `PUSH_BELOW`) has begun; the update his cast lands in; his shield is up; a counter is
+-- on its way.
+pushing = false
+free_at = 0
+guarding = false
+countering = false
 ticks = 0
 updating = false
 later = {}
@@ -225,7 +283,11 @@ function reset()
     part = 0
     part_number = 1
     adds_left = 0
-        recovered = false
+    recovered = false
+    pushing = false
+    free_at = 0
+    guarding = false
+    countering = false
     used = {}
     last_stacks = 0
     later = {}
@@ -234,6 +296,8 @@ end
 
 function onSetup(director)
     director:set_sequence(1)
+    -- The player down isn't a duty's wipe here (`onPlayerDeath`.)
+    director:hold_wipe(true)
     reset()
     bring(director)
 end
@@ -278,19 +342,30 @@ function onActorCast(director, layout_id, action_id, actor_id)
         return
     end
     local uses = count(action_id)
+    free_at = ticks + math.floor((BUSY_SECONDS[action_id] or BUSY_SECONDS_DEFAULT) * 2 + 0.5)
     if action_id == ACTION_ROW then
         talk(director, 33403, 5000)
         castRow(director, 2, 6.0)
     elseif action_id == ACTION_STANCE then
         talk(director, 33402)
         director:bnpc_control(BOSS, CONTROL_63, { 7 })
+        -- He stands as he is until the shield is down: no step, no turn, no auto-attack (none in 13.7 s, four runs.)
+        director:busy_bnpc(BOSS, STANCE_HELD)
+        local this_part = part
         after(5.0, function(d)
-            if boss ~= nil then
+            if boss ~= nil and part == this_part then
                 d:gain_effect(boss, STATUS_STANCE_1, 0, STANCE_SECONDS)
                 d:gain_effect(boss, STATUS_STANCE_2, 0, STANCE_SECONDS)
             end
         end)
-        after(5.0 + STANCE_SECONDS, function(d)
+        after(STANCE_GUARD_FROM, function(d)
+            if part == this_part then
+                guarding = true
+                d:guard_front(BOSS, STANCE_GUARD_DEGREES)
+            end
+        end)
+        after(STANCE_HELD, function(d)
+            lowerGuard(d)
             d:bnpc_control(BOSS, CONTROL_63, { 0 })
         end)
     elseif action_id == ACTION_LEAP then
@@ -334,9 +409,48 @@ function onActorCast(director, layout_id, action_id, actor_id)
     end
 end
 
+function lowerGuard(director)
+    if guarding then
+        guarding = false
+        director:guard_front(BOSS, nil)
+    end
+end
+
+-- His raised shield took a hit from in front (`director:guard_front`): a second later a helper on his spot answers
+-- whoever struck.
+function onActorGuarded(director, layout_id, attacker)
+    if layout_id ~= BOSS or not guarding or countering then
+        return
+    end
+    countering = true
+    after(COUNTER_AFTER, function(d)
+        countering = false
+        if (part == 1 or part == 2) and boss_at ~= nil then
+            d:actor_use_action(helperAt(d, { boss_at.x, boss_at.y, boss_at.z }), ACTION_COUNTER, attacker)
+        end
+    end)
+end
+
+-- The first part, his health below `PUSH_BELOW`: once he's free, the clock gives way to the timeline's points after
+-- 33425 (28872 at once, then 28873 until his health is at its floor.)
+function push(director)
+    pushing = true
+    if free_at <= ticks then
+        director:restart_timeline(BOSS, PART_PUSH)
+        return
+    end
+    after((free_at - ticks) / 2, function(d)
+        if part == 1 then
+            d:restart_timeline(BOSS, PART_PUSH)
+        end
+    end)
+end
+
 -- His health at 1 the first time: the four come.
 function bringAdds(director)
     part = "adds"
+    lowerGuard(director)
+    director:stop_cast(BOSS)
     director:restart_timeline(BOSS, PART_ADDS)
     director:root_bnpc(BOSS, 3600)
     director:set_targetable(BOSS, false)
@@ -355,7 +469,13 @@ function bringAdds(director)
             d:set_targetable(add, false)
         end
     end)
-    after(7.0, function(d) talk(d, 33405, 5000, true) end)
+    after(7.0, function(d)
+        talk(d, 33405, 5000, true)
+        for _, add in ipairs(ADDS) do
+            local stand = ADD_STANDS[add]
+            d:sweep_bnpc(add, stand[1], stand[2], stand[3], ADD_RUN_SPEED, 0)
+        end
+    end)
     after(11.0, function(d)
         d:command(COMMAND_TEXT_1, { TEXT_ADDS })
         d:command(COMMAND_TEXT_2, { TEXT_ADDS })
@@ -413,12 +533,18 @@ end
 function lastStand(director)
     part = "cutscene"
     later = {}
+    lowerGuard(director)
+    countering = false
     director:restart_timeline(BOSS, PART_NONE)
+    director:stop_cast(BOSS)
+    for _, helper in ipairs(helpers) do
+        director:stop_cast(helper)
+    end
     director:busy_bnpc(BOSS, 3600)
     director:root_bnpc(BOSS, 3600)
     director:set_invulnerable(BOSS, true)
     if boss ~= nil then
-        director:bnpc_control(BOSS, CONTROL_CANCEL_CAST, { boss })
+        director:bnpc_control(BOSS, CONTROL_537, { boss })
     end
     director:set_targetable(BOSS, false)
     director:yell(BOSS, 13811)
@@ -431,7 +557,33 @@ function lastStand(director)
     end)
 end
 
+-- Out to where the player came in from, the quest as it was.
+function leave(director)
+    if part == "lost" then
+        part = "out"
+        director:fail_quest_battle()
+    end
+end
+
+-- The player down: retail's scene 5 at once, and out as it ends (3.1 s after it began on retail, whether or not the
+-- client has said it's done.) Not a duty's wipe: nobody comes back inside.
+function onPlayerDeath(director)
+    if part == "over" or part == "lost" or part == "out" then
+        return
+    end
+    part = "lost"
+    later = {}
+    lowerGuard(director)
+    director:restart_timeline(BOSS, PART_NONE)
+    director:play_scene(LOSS_SCENE, LOSS_SCENE_FLAGS, LOSS_SCENE_PARAMS, LOSS_EVENT_ARG)
+    after(LOSS_OUT_AFTER, leave)
+end
+
 function onSceneFinished(director, scene)
+    if scene == LOSS_SCENE then
+        leave(director)
+        return
+    end
     if scene ~= CUTSCENE_SCENE or part ~= "cutscene" then
         return
     end
@@ -498,6 +650,9 @@ function watch(director, health, info)
     if him == nil then
         return
     end
+    if him.x ~= nil then
+        boss_at = { x = him.x, y = him.y, z = him.z }
+    end
     -- The pull: he has someone to go for, or has been hit.
     local left = health[BOSS]
     if part == 0 and (him.target ~= nil or (left ~= nil and left < 100)) then
@@ -506,8 +661,15 @@ function watch(director, health, info)
     end
     -- His health at its floor (1 HP; the simulator's health is a percentage, 0.1 at the least for one still up.)
     local at_floor = (him.hp ~= nil and him.hp <= 1) or (left ~= nil and left <= 0.1)
+    -- (His health to the tenth of a percent where the update gives his HP; the whole percent otherwise.)
+    local percent = left
+    if him.hp ~= nil and him.max_hp ~= nil and him.max_hp > 0 then
+        percent = him.hp * 100 / him.max_hp
+    end
     if part == 1 and at_floor then
         bringAdds(director)
+    elseif part == 1 and not pushing and percent ~= nil and percent < PUSH_BELOW then
+        push(director)
     elseif part == 2 and not at_floor then
         -- (His health is back before it can fall again.)
         recovered = true
@@ -537,18 +699,4 @@ function onActorDeath(director, layout_id, position)
         director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE, FINISH_SCENE_FLAGS, nil, false,
             nil, FINISH_PARAMS)
     end
-end
-
--- The player down: a duty's wipe sends them back to the start; everyone goes and comes back as at the beginning.
-function onPartyWipe(director)
-    director:despawn_bnpc(BOSS)
-    for _, add in ipairs(ADDS) do
-        director:despawn_bnpc(add)
-    end
-    for _, helper in ipairs(helpers) do
-        director:despawn_bnpc(helper)
-    end
-    director:map_effect(0, MAP_EFFECT_OFF.timeline, MAP_EFFECT_OFF.state)
-    reset()
-    bring(director)
 end

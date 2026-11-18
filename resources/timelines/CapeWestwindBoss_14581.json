@@ -1,27 +1,30 @@
 {
-    "autoattack_action_id": 0,
+    "autoattack_action_id": 6499,
     "from_pull": true,
     "recorded_amounts": {
-        "28871": {
-            "players": 897
+        "6499": {
+            "players": 82
         },
         "28870": {
-            "players": 900
+            "players": 1205
+        },
+        "28871": {
+            "players": 1362
         },
         "28873": {
-            "players": 352
+            "players": 362
         },
         "28874": {
-            "players": 900
+            "players": 1350
         },
         "28875": {
             "players": 535
         },
         "28876": {
-            "players": 1212
+            "players": 1367
         },
         "28877": {
-            "players": 1382
+            "players": 1386
         },
         "28883": {
             "players": 614
@@ -48,112 +51,124 @@
         },
         {
             "time": 21.5,
+            "every": 103.6,
             "data": {
                 "type": "action",
                 "action_id": 28864,
                 "target": "itself"
             },
-            "comment": "first part, 21.5 s after the pull (8.2 s after arriving)"
+            "comment": "first part, 21.5 s after the pull (8.2 s after arriving); round again every 103.6 s (a guess: see the comment)"
         },
         {
             "time": 37.7,
+            "every": 103.6,
             "data": {
                 "type": "action",
                 "action_id": 28866,
                 "target": "itself"
             },
-            "comment": "first part, 37.7 s after the pull (8.2 s after arriving)"
+            "comment": "first part, 37.7 s after the pull (8.2 s after arriving); round again every 103.6 s (a guess: see the comment)"
         },
         {
             "time": 52.9,
+            "every": 103.6,
             "data": {
                 "type": "action",
                 "action_id": 28872,
                 "target": "nobody"
             },
-            "comment": "first part, 52.9 s after the pull (8.2 s after arriving)"
+            "comment": "first part, 52.9 s after the pull (8.2 s after arriving); round again every 103.6 s (a guess: see the comment)"
         },
         {
             "time": 55.0,
+            "every": 103.6,
             "data": {
                 "type": "action",
                 "action_id": 28868,
                 "target": "itself"
             },
-            "comment": "first part, 55.0 s after the pull (8.2 s after arriving)"
+            "comment": "first part, 55.0 s after the pull (8.2 s after arriving); round again every 103.6 s (a guess: see the comment)"
         },
         {
             "time": 68.1,
+            "every": 103.6,
             "data": {
                 "type": "action",
                 "action_id": 28872,
                 "target": "nobody"
             },
-            "comment": "first part, 68.1 s after the pull (8.2 s after arriving)"
+            "comment": "first part, 68.1 s after the pull (8.2 s after arriving); round again every 103.6 s (a guess: see the comment)"
         },
         {
             "time": 70.2,
+            "every": 103.6,
             "data": {
                 "type": "action",
                 "action_id": 28868,
                 "target": "itself"
             },
-            "comment": "first part, 70.2 s after the pull (8.2 s after arriving)"
+            "comment": "first part, 70.2 s after the pull (8.2 s after arriving); round again every 103.6 s (a guess: see the comment)"
         },
         {
             "time": 82.4,
+            "every": 103.6,
             "data": {
                 "type": "action",
                 "action_id": 28871,
                 "target": "itself"
             },
-            "comment": "first part, 82.4 s after the pull (8.2 s after arriving)"
+            "comment": "first part, 82.4 s after the pull (8.2 s after arriving); round again every 103.6 s (a guess: see the comment)"
         },
         {
             "time": 93.6,
+            "every": 103.6,
             "data": {
                 "type": "action",
                 "action_id": 28870,
                 "target": "itself"
             },
-            "comment": "first part, 93.6 s after the pull (8.2 s after arriving)"
+            "comment": "first part, 93.6 s after the pull (8.2 s after arriving); round again every 103.6 s (a guess: see the comment)"
         },
         {
             "time": 103.7,
+            "every": 103.6,
             "data": {
                 "type": "action",
                 "action_id": 28870,
                 "target": "itself"
             },
-            "comment": "first part, 103.7 s after the pull (8.2 s after arriving)"
+            "comment": "first part, 103.7 s after the pull (8.2 s after arriving); round again every 103.6 s (a guess: see the comment)"
         },
         {
             "time": 114.9,
+            "every": 103.6,
             "data": {
                 "type": "action",
                 "action_id": 28871,
                 "target": "itself"
             },
-            "comment": "first part, 114.9 s after the pull (8.2 s after arriving)"
+            "comment": "first part, 114.9 s after the pull (8.2 s after arriving); round again every 103.6 s (a guess: see the comment)"
         },
         {
-            "time": 120.9,
+            "time": 0.5,
+            "after": 33425,
             "data": {
                 "type": "action",
                 "action_id": 28872,
                 "target": "nobody"
             },
-            "comment": "first part, 120.9 s after the pull (8.2 s after arriving)"
+            "comment": "his health below 15 % in the first part and he's free (the director restarts the clock): the leap"
         },
         {
-            "time": 123.3,
+            "time": 2.9,
             "every": 6.15,
+            "after": 33425,
             "data": {
                 "type": "action",
                 "action_id": 28873,
                 "target": "itself"
             },
-            "comment": "first part: three times 6.15 s apart on retail before his health reached 1 (138.7 s after the pull); it goes on at that pace here (a guess)"
+            "comment": "then 28873 2.4 s after the leap and every 6.15 s until his health is at its floor"
         },
         {
             "time": 43.4,
@@ -318,5 +333,22 @@
         }
     ],
     "timeline_always_plays": false,
-    "comment": "Cape Westwind's boss (BNpcBase 14581, BNpcName 2160, layout 9082104): level 49, 24609 HP. No auto-attack in 527 s: he walks after the player and casts. His parts are the director's (`restart_timeline`: anchors 33404 while the four are out, 33410 the second part, 13811 nothing, 33414 the last.) 28871 landed once (897, blocked), 28874 twice (887 blocked, 910 parried); 28870 never landed, its 900 is a guess; 28864, 28866, 28868, 28872, 28878 and 28881 hit no one. Hitbox not recorded. Cape Westwind (InstanceContent 5060, Operation Archon's solo duty; content/questbattle/5060.lua). From Bob's Chronofoil capture 667a68c5 of 2026-11-16 (`questkit chronofoil --battle 0.16`: one run, won, a level 50 White Mage synced to 49): `players` is the damage to the player, times from its pull or the part's start."
+    "comment": "Cape Westwind's boss (BNpcBase 14581, BNpcName 2160, layout 9082104): level 49, 24609 HP. Cape Westwind (InstanceContent 5060, Operation Archon's solo duty; content/questbattle/5060.lua). Four retail runs: Bob's Chronofoil captures 667a68c5 of 2026-11-16 (a White Mage; `questkit chronofoil --battle 0.16`) and 9ba7d981 of 2026-11-17 (a Summoner; visits 0.6, lost, and 0.8) and Connor's e834e436 (a White Mage; visit 0.240). He auto-attacks (6499) every 3.0 s when he isn't casting: 149 times in the four runs, 75 to 103 to the player (the timeline said he never did until 2026-11-18). The first part's clock from the pull was the same in all four as far as each got: 28871 at 6.1, 28870 at 11.3, 28864 at 21.5, 28866 at 37.7, 28872 and 28868 at 52.9 and 68.1, 28871 at 82.4, 28870 at 93.5 and 103.7, 28871 at 114.9. No run was still above 15 % after that, so what comes next was never seen: here it goes round again from 28864 every 103.6 s (28870 to 28864 was 10.2 s the first time), as the second part's does every 113.3 s. Below 15 % he leaves the clock as soon as he's free (his cast landed and its animation lock over): 28872, then 28873 from 2.4 s after it every 6.15 s until his health is at its floor (points after 33425, the talk that comes with the first 28873; the director restarts the clock: 5060.lua says how each run got there). Until 2026-11-18 these were points at 120.9 and 123.3 s of the clock, where the slowest run happened to get there, so a slower player than retail's took 28873 for two minutes. `players` is the damage to the player where it landed unblocked: 28870 once (1205), 28871 (1362; 897 blocked), 28873 (345 to 459, 8), 28875 (526 to 691, 4), 28876 (1212, 1523), 28877 (1378 to 1677, 3), 28883 (589 to 635 to a White Mage, 317 to 334 to a Summoner). 28874 landed twice, blocked and parried (887, 910): 1350 is those by 28871's blocked share, not seen. `animation_locks` are his ActionEffects' (the same every use). Times after an anchor count from the talk that began the part.",
+    "animation_locks": {
+        "28864": 4.1,
+        "28866": 2.1,
+        "28868": 2.1,
+        "28870": 3.1,
+        "28871": 2.1,
+        "28872": 2.1,
+        "28873": 3.1,
+        "28874": 3.1,
+        "28875": 2.1,
+        "28876": 3.1,
+        "28877": 2.1,
+        "28878": 5.1,
+        "28879": 2.1,
+        "28881": 3.1,
+        "28883": 3.1
+    }
 }

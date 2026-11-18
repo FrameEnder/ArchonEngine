@@ -1970,7 +1970,7 @@ pub fn npc_behavior(
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
                 spell_id: request.action_id as u16,
                 action_type: request.action_type,
-                omen_delay: 0,
+                omen_delay: retail_omen_delay(request.action_id),
                 action_id: request.action_id,
                 cast_time: npc_cast_bar_time(cast_time),
                 target: cast_target,
@@ -2666,6 +2666,28 @@ pub fn retail_cast_aim(action: u32, cast_type: Option<u8>) -> CastAim {
     })
 }
 
+/// ActorCast's omen delay for `action` (`resources/data/cast_aims.json`, `omen_delay`): how many tenths of a second
+/// into the cast the client draws its marker. Retail's was the same every time for an action and 0 for nearly all;
+/// Cape Westwind's helpers' 28869 has 55 with its 7.7 s cast, so its circles show for the last 2.2 s only, where
+/// Kawari's (always 0) showed them all 7.7 (Bob's mark of 2026-11-18: "the timing of the AOE damage isn't exactly
+/// right".)
+pub fn retail_omen_delay(action: u32) -> u8 {
+    static DELAYS: std::sync::OnceLock<HashMap<u32, u8>> = std::sync::OnceLock::new();
+    let delays = DELAYS.get_or_init(|| {
+        let value: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../resources/data/cast_aims.json"))
+                .unwrap_or_default();
+        value
+            .get("omen_delay")
+            .and_then(|delays| delays.as_object())
+            .into_iter()
+            .flatten()
+            .filter_map(|(id, delay)| Some((id.parse().ok()?, delay.as_u64()? as u8)))
+            .collect()
+    });
+    delays.get(&action).copied().unwrap_or(0)
+}
+
 pub fn npc_use_action(
     network: &Arc<Mutex<NetworkState>>,
     game_data: &Arc<Mutex<GameData>>,
@@ -2734,7 +2756,7 @@ pub fn npc_use_action(
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
             spell_id: request.action_id as u16,
             action_type: request.action_type,
-            omen_delay: 0,
+            omen_delay: retail_omen_delay(request.action_id),
             action_id: request.action_id,
             cast_time: npc_cast_bar_time(cast_time),
             target: cast_target,

@@ -510,6 +510,41 @@ mod tests {
         )));
     }
 
+    /// The server gives an NPC the first file it finds whose name ends `_<its BNpcBase>.json` (`Instance::insert_npc`),
+    /// so two files for one base leave one of them unused. The helpers' base, 9020, had two from 2026-11-16 to
+    /// 2026-11-18 (CopperbellHelper_9020.json and Helper_9020.json), and Cape Westwind's helpers' 28869 took 7 from Bob
+    /// where retail's takes about 1060.
+    #[test]
+    fn one_timeline_file_for_each_base() {
+        let mut seen: std::collections::BTreeMap<String, String> =
+            std::collections::BTreeMap::new();
+        for entry in std::fs::read_dir("../resources/timelines")
+            .unwrap()
+            .flatten()
+        {
+            let name = entry.file_name().to_string_lossy().to_string();
+            let Some(base) = name
+                .strip_suffix(".json")
+                .and_then(|stem| stem.rsplit_once('_'))
+                .map(|(_, base)| base.to_string())
+                .filter(|base| base.chars().all(|c| c.is_ascii_digit()))
+            else {
+                continue;
+            };
+            if let Some(other) = seen.insert(base.clone(), name.clone()) {
+                panic!(
+                    "{other} and {name} are both for BNpcBase {base}: only one of them is ever read"
+                );
+            }
+        }
+        // And the one for the helpers has both duties' amounts.
+        let json = std::fs::read_to_string("../resources/timelines/Helper_9020.json").unwrap();
+        let timeline: Timeline = serde_json::from_str(&json).unwrap();
+        for action in [28544, 28761, 28865, 28867, 28869] {
+            assert!(timeline.recorded_amounts.contains_key(&action), "{action}");
+        }
+    }
+
     /// Kottos' timeline gives retail's schedule: the ticks its casts begin in, from its pull (Bob's three Copperbell
     /// Mines runs: 5.2, 15.3, 29.6, 39.1, 52.3, 66.6, 76.0, 86.2, 99.4.)
     #[test]

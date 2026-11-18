@@ -30,6 +30,7 @@ use crate::{
         network::{DestinationNetwork, NetworkState},
         party::get_party_id_from_actor_id,
         periodic::add_periodic_effect,
+        resistance::Taken,
     },
     zone_connection::{BaseParameters, TeleportQuery},
 };
@@ -1767,6 +1768,28 @@ pub fn execute_action(
                     keep_for_the_dead(&mut effects_builder.effects);
                 }
 
+                // A hit from in front of one with its guard up does nothing, and its director hears of it
+                // (`guards_against`.)
+                let guarded = effects_builder
+                    .effects
+                    .iter()
+                    .any(|effect| matches!(effect.0, TargetEffectKind::Damage { .. }))
+                    && guards_against(instance, request.target.object_id, from_actor_id);
+                if guarded {
+                    effects_builder.effects = shown_to_a_guard(&effects_builder.effects);
+                    effects_builder.periodic.retain(|spec| spec.on_self);
+                    let layout_id = instance
+                        .find_actor(request.target.object_id)
+                        .map(|actor| actor.get_common_spawn().layout_id)
+                        .unwrap_or_default();
+                    if let Some(director) = instance.directors.first_mut() {
+                        director.on_actor_guarded(layout_id, from_actor_id);
+                    }
+                }
+                let Some(actor) = instance.find_actor_mut(request.target.object_id) else {
+                    return;
+                };
+
                 if cannot_be_hurt(actor) {
                     // An attack leaves nothing on it, its statuses neither (`shown_to_the_invulnerable`): one from
                     // the other side, or anything that would have hurt it.
@@ -1885,6 +1908,10 @@ pub fn execute_action(
                     &caster_enemies,
                 ));
             } else {
+                // An enemy takes a status for less each time, or not at all (`status_as_taken`.)
+                for effect in &mut effects_builder.effects {
+                    *effect = status_as_taken(instance, request.target.object_id, *effect);
+                }
                 let heal_to_full = effects_builder.heal_to_full;
                 for effect in &mut effects_builder.effects {
                     match &mut effect.0 {
@@ -2120,8 +2147,17 @@ pub fn execute_action(
                 // flying text on the rest.
                 let area_action = action_info
                     .is_some_and(|info| info.area_shape().is_some() || info.is_area_of_effect());
-                let aimed_at_someone = request.target.object_id.is_valid()
-                    && request.target.object_id != ObjectId(0xE000_0000);
+                // An NPC's action retail cast at no one (`cast_aims.json`'s "none": Cape Westwind's helpers' rows,
+                // 28865) lands on no one too, though a director's `actor_use_action` gave the helper itself as its
+                // target: retail's AoeEffect8 has 0xE0000000 as its animation's target, and the server's named the
+                // helper, an actor the client doesn't draw (Bob's test of 2026-11-18, "some of his AOE don't have
+                // effects"; Connor's Chronofoil capture e834e436.)
+                let aimed_at_someone = aimed_at_someone(
+                    request.target.object_id,
+                    npc_cast_rotation.is_some(),
+                    request.action_id,
+                    action_info.as_ref().map(|info| info.cast_type),
+                );
                 let shown: Vec<(ObjectTypeId, Vec<TargetEffect>)> = match &aoe_result {
                     Some(aoe) => aoe
                         .shown
@@ -2180,6 +2216,13 @@ pub fn execute_action(
                 let animation_lock = npc_animation_lock.unwrap_or_else(|| {
                     animation_lock(request.action_type, request.action_id, has_cast_time)
                 });
+                // An NPC stands where it is through the lock of an action it cast on itself (`stand_through_lock`.)
+                if let Some(lock) = npc_animation_lock.filter(|_| {
+                    !npc_auto_attack && has_cast_time && request.target.object_id == from_actor_id
+                }) && let Some(instance) = data.lock().find_actor_instance_mut(from_actor_id)
+                {
+                    stand_through_lock(instance, from_actor_id, lock, Instant::now());
+                }
                 // Auto-attacks swing one of three ways, picked at random (retail, Bob's Chronofoil captures: 0, 1 and 2
                 // about a third each over 663; Kawari always sent 0.)
                 let animation_variation = if request.action_type == ActionType::Action
@@ -2706,6 +2749,62 @@ fn is_living_enemy_spawn(common: &CommonSpawn, caster_enemies: &[bool]) -> bool 
         && spawn_at_war(caster_enemies, common)
 }
 
+/// An NPC no player's area action lands on, though it's of an enemy battalion and alive: one a director made
+/// untargetable (the boss while the four fight for him), or a director's helper, held (`director:hold_bnpc`) and
+/// spawned without the HOSTILE flag (retail's base 9020 and its like: battalion 4 as their boss, 44 HP, character flags
+/// 1 where his are 3). Bob's Holy at Cape Westwind killed five of the twelve helpers that cast the boss's rows
+/// (2026-11-18: the server's capture has their Kill and Defeated 273 s in.)
+pub(crate) fn beyond_area_actions(
+    instance: &Instance,
+    id: ObjectId,
+    actor: &NetworkedActor,
+) -> bool {
+    instance.untargetable_npcs.contains(&id)
+        || (instance.held_npcs.contains(&id)
+            && matches!(actor, NetworkedActor::Npc { spawn, .. }
+                if !spawn.character_data_flags.contains(CharacterDataFlag::HOSTILE)))
+}
+
+/// A status as the enemy `target` takes it from a player's action: for its time, for less (a second and third Stun),
+/// or not at all, when the packet says so in the status's place (`resistance::Resistance`). Anyone else's, and
+/// anything but a status, is as it was.
+pub(crate) fn status_as_taken(
+    instance: &mut Instance,
+    target: ObjectId,
+    effect: TargetEffect,
+) -> TargetEffect {
+    let TargetEffectKind::GainEffect {
+        effect_id,
+        duration,
+        ..
+    } = effect.0
+    else {
+        return effect;
+    };
+    let base_id = match instance.find_actor(target) {
+        Some(NetworkedActor::Npc { spawn, .. }) if !instance.party_bots.contains_key(&target) => {
+            spawn.common.base_id
+        }
+        _ => return effect,
+    };
+    match instance
+        .status_resistance
+        .take(base_id, target, effect_id, duration, Instant::now())
+    {
+        Taken::For(seconds) => {
+            let mut effect = effect;
+            if let TargetEffectKind::GainEffect { duration, .. } = &mut effect.0 {
+                *duration = seconds;
+            }
+            effect
+        }
+        Taken::Refused => TargetEffect(TargetEffectKind::StatusNoEffect {
+            unk: [0; 5],
+            effect_id,
+        }),
+    }
+}
+
 /// Applies an area-of-effect action to everyone it hits.
 ///
 /// Damage (and any status effects, if the action deals damage) goes to enemies, while healing (and status effects otherwise) go to the caster and their party.
@@ -2758,6 +2857,7 @@ fn apply_area_of_effect(
         .actors
         .iter()
         .filter(|(_, actor)| is_living_enemy(actor, caster_enemies) && distance_to(actor) <= radius)
+        .filter(|(id, actor)| !beyond_area_actions(instance, **id, actor))
         .map(|(id, actor)| (*id, distance_to(actor)))
         .collect();
     hostiles.sort_by(|a, b| a.1.total_cmp(&b.1));
@@ -2806,17 +2906,23 @@ fn apply_area_of_effect(
     let mut touched: Vec<ObjectId> = Vec::new();
     // What each target took, for the packet.
     let mut damage_taken: Vec<(ObjectId, bool)> = Vec::new();
+    let mut guarded_targets: Vec<ObjectId> = Vec::new();
 
     // Damage enemies
     if has_damage {
         let falloff = effects_builder.aoe_falloff_percent as u32;
         for (index, target_id) in hostiles.iter().enumerate() {
             first_attack::tag(&mut network.lock(), instance, *target_id, from_actor_id);
+
+            // One with its guard up towards the caster takes nothing either (`guards_against`), shown as blocked.
+            let guarded = guards_against(instance, *target_id, from_actor_id);
+            if guarded {
+                guarded_targets.push(*target_id);
+            }
             let Some(actor) = instance.find_actor_mut(*target_id) else {
                 continue;
             };
-
-            let invulnerable = cannot_be_hurt(actor);
+            let invulnerable = cannot_be_hurt(actor) || guarded;
 
             // The first target takes full damage, everyone else may take less.
             let total: u32 = effects_builder
@@ -2911,15 +3017,39 @@ fn apply_area_of_effect(
         }
     }
 
+    for target_id in &guarded_targets {
+        let layout_id = instance
+            .find_actor(*target_id)
+            .map(|actor| actor.get_common_spawn().layout_id)
+            .unwrap_or_default();
+        if let Some(director) = instance.directors.first_mut() {
+            director.on_actor_guarded(layout_id, from_actor_id);
+        }
+    }
+
     // Status effects go to whoever the action is aimed at.
     let status_receivers = if has_damage { &hostiles } else { &friendlies };
     let mut status_targets = Vec::new();
+    let mut statuses_taken: std::collections::HashMap<ObjectId, Vec<TargetEffect>> =
+        std::collections::HashMap::new();
     for target_id in status_receivers {
         // One that can't be hurt takes none of an attack's statuses either (`shown_to_the_invulnerable`.)
-        if has_damage && instance.find_actor(*target_id).is_some_and(cannot_be_hurt) {
+        if has_damage
+            && (instance.find_actor(*target_id).is_some_and(cannot_be_hurt)
+                || guarded_targets.contains(target_id))
+        {
             continue;
         }
         for effect in &effects_builder.effects {
+            // An enemy takes it for less each time, or not at all (`status_as_taken`): what it took is what the
+            // packet shows for it.
+            let effect = if has_damage && matches!(effect.0, TargetEffectKind::GainEffect { .. }) {
+                let taken = status_as_taken(instance, *target_id, *effect);
+                statuses_taken.entry(*target_id).or_default().push(taken);
+                taken
+            } else {
+                *effect
+            };
             if let TargetEffectKind::GainEffect {
                 effect_id,
                 duration,
@@ -2961,13 +3091,25 @@ fn apply_area_of_effect(
     if has_damage {
         let falloff = effects_builder.aoe_falloff_percent as u32;
         for (index, (target_id, invulnerable)) in damage_taken.iter().enumerate() {
+            let mut taken = statuses_taken
+                .remove(target_id)
+                .unwrap_or_default()
+                .into_iter();
             let effects = effects_builder
                 .effects
                 .iter()
                 .filter(|effect| !matches!(effect.0, TargetEffectKind::Heal { .. }))
                 .map(|effect| {
                     let mut effect = *effect;
+                    if matches!(effect.0, TargetEffectKind::GainEffect { .. })
+                        && let Some(taken) = taken.next()
+                    {
+                        effect = taken;
+                    }
                     match &mut effect.0 {
+                        TargetEffectKind::Damage { .. } if guarded_targets.contains(target_id) => {
+                            effect = TargetEffect(BLOCKED_FOR_NOTHING);
+                        }
                         TargetEffectKind::Damage { .. } if *invulnerable => {
                             effect = TargetEffect(TargetEffectKind::Invincible {});
                         }
@@ -3578,6 +3720,85 @@ const ANIMATION_LOCK_AFTER_CAST: f32 = 0.1;
 const ANIMATION_LOCK_TELEPORT: f32 = 2.1;
 
 /// The animation lock (ActionEffect's) for an action: 0.6 for instant ones, as retail sends.
+/// A hit a guard took whole (`guards_against`): retail's `06 00 00 9C 00 00 00 00` where the damage would be (a
+/// Summoner's 25811 on Cape Westwind's boss from straight in front, 0.9 s into his statuses 680 and 2195; Bob's
+/// Chronofoil capture 9ba7d981, visit 0.6.)
+pub(crate) const BLOCKED_FOR_NOTHING: TargetEffectKind = TargetEffectKind::Block {
+    unk: [0, 0, 0x9C, 0, 0],
+    amount: 0,
+};
+
+/// Whether `target` has its guard up (`director:guard_front`) towards `from`: `from` stands within the guard's reach
+/// to either side of the way `target` faces. Retail's boss at Cape Westwind, his shield up for 7.76 s after his 28866:
+/// the one hit from in front (0° off his facing) was blocked for nothing and answered; the nineteen from 46° to 68°
+/// off landed as ever (four runs, Bob's and Connor's Chronofoil captures of 2026-11-16 and 2026-11-17.)
+pub(crate) fn guards_against(instance: &Instance, target: ObjectId, from: ObjectId) -> bool {
+    let Some(reach) = instance.front_guards.get(&target) else {
+        return false;
+    };
+    let (Some(target), Some(from)) = (instance.find_actor(target), instance.find_actor(from))
+    else {
+        return false;
+    };
+    let (at, facing) = (target.position().0, target.get_common_spawn().rotation);
+    let other = from.position().0;
+    let bearing = (other.x - at.x).atan2(other.z - at.z);
+    let off = (bearing - facing + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU)
+        - std::f32::consts::PI;
+    off.abs() <= *reach
+}
+
+/// What an action shows on a target whose guard took it (`guards_against`): its damage blocked for nothing, none of
+/// its statuses (retail's showed the block and the combo's 27, nothing else.)
+pub(crate) fn shown_to_a_guard(effects: &[TargetEffect]) -> Vec<TargetEffect> {
+    effects
+        .iter()
+        .filter_map(|effect| match effect.0 {
+            TargetEffectKind::Damage { .. } => Some(TargetEffect(BLOCKED_FOR_NOTHING)),
+            TargetEffectKind::GainEffect { .. } => None,
+            _ => Some(*effect),
+        })
+        .collect()
+}
+
+/// The least lock an NPC stands through (`stand_through_lock`): a player's 0.6 and an auto-attack's 0.1 hold no one.
+const STANDS_THROUGH_LOCK: f32 = 1.0;
+
+/// An NPC whose own cast on itself just landed (an area round it or before it) stays where it stands for the action's
+/// animation lock (the timeline's `animation_locks`, retail's own), as retail's does: Cape Westwind's boss never
+/// moved sooner after one than its lock (four runs, Bob's and Connor's Chronofoil captures of 2026-11-16 and
+/// 2026-11-17: 2.2 s at the least after 28868, 28871 and 28877, whose lock is 2.1; 3.2 s after 28870 and 28876, 3.1;
+/// 5.2 s after 28878, 5.1), though it auto-attacked inside the longer ones. Kawari's walked off as the action landed,
+/// the animation the lock is for cut short (Bob, 2026-11-18: "the timing of the AOE damage isn't exactly right".)
+/// Not after an action without a cast or one cast on someone else: the four who come for him moved within half a
+/// second of their 28884 to 28886 (lock 2.6, no cast), and he himself 0.6 s after his 28875 on the player (2.1).
+/// A director's longer hold is kept.
+pub(crate) fn stand_through_lock(instance: &mut Instance, id: ObjectId, lock: f32, now: Instant) {
+    if lock < STANDS_THROUGH_LOCK {
+        return;
+    }
+    let until = now + Duration::from_secs_f32(lock);
+    let held = instance.rooted_npcs.entry(id).or_insert(until);
+    if *held < until {
+        *held = until;
+    }
+}
+
+/// Whether an action's landing names its target as where its animation plays: not one aimed at no one, nor an NPC's
+/// that retail cast at no one (`npc_behavior::retail_cast_aim`.)
+pub(crate) fn aimed_at_someone(
+    target: ObjectId,
+    from_npc: bool,
+    action_id: u32,
+    cast_type: Option<u8>,
+) -> bool {
+    target.is_valid()
+        && target != ObjectId(0xE000_0000)
+        && !(from_npc
+            && crate::server::npc_behavior::retail_cast_aim(action_id, cast_type)
+                == crate::server::npc_behavior::CastAim::Ground)
+}
+
 fn animation_lock(action_type: ActionType, action_id: u32, has_cast_time: bool) -> f32 {
     // Mounting locks for 0.1 s on retail (Bob's Chronofoil captures.)
     if action_type == ActionType::Mount {

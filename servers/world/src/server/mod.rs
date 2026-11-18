@@ -140,6 +140,7 @@ mod wipe;
 // Stage 2 of the world bots, being wired into `world_bots` (docs/src/fork/world-bots.md.)
 #[allow(dead_code)]
 mod questing;
+mod resistance;
 mod world_bot_life;
 pub(crate) use world_bot_life::{
     listed as world_bots_listed, listed_by_content_id as world_bot_listed,

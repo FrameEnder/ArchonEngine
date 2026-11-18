@@ -73,6 +73,7 @@ Callbacks:
 | `onPlayerDeath(director)` | The player fell. |
 | `onPartyWipe(director)` | A duty's party wipe (every player down, `server/wipe.rs`), as everyone is sent back to the start: reset the fight (the Bowl of Embers takes Ifrit away and brings him back). Whatever the script had `delay`ed is dropped first. Optional. |
 | `onDutyRecommence(director)` | The duty begins again after a wipe (DutyRecommence). Optional. |
+| `onActorGuarded(director, layout_id, attacker)` | (2026-11-18) An NPC with its guard up (`guard_front`) blocked a hit from `attacker` (an actor ID): Cape Westwind's boss answers through a helper a second later. Optional. |
 | `onSceneFinished(director, scene)` | A player finished one of the director's own scenes (`play_scene`), e.g. a cutscene halfway through. Optional. |
 | `onObjectTalk(director, actor_id, object_id, base_id)` | A player talked to an event object of a quest battle's (one it brought out with `spawn_eobj`: a quest battle's object with no event of its own gets the director as its handler, as retail's rosary in In the Eyes of Gods and Men did). The script answers with no scene, as retail: `event_action(bar, actor_id, object_id)`, then `onEventActionCast` as the bar ends, which finishes the event (`finish_gimmick`). Since 2026-11-07 the server ends a director's bar as retail does, ActorControlTarget EventAction `[0, id]` on its target (a quest's bar always had it; the dungeons' keys and doors didn't). Without it, or for anything else in the battle (an event NPC), the server plays EVENT_QIB_NOT_TALK (scene 10001) as before (`ToServer::QuestBattleTalk`, `FromServer::QuestBattleNotTalk`; since 2026-11-06). |
 | `onContentNpc(director, actor_id, id, npc, results)` | A player's talk with a duty's ContentNpc (row `id`, event NPC actor `npc`) returned: the server played its scene (4, flags 0x2000, retail's for ContentNpc 1) and the script finishes the event (`finish_gimmick(actor_id)`); without it the event just finishes. Brayflox's Longstop's key (2026-11-03). |
@@ -86,6 +87,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `warp_bnpc(npc, x, y, z, rotation)` | Puts an NPC (actor ID or layout ID) somewhere at once: an ActorSetPos from it, as retail moves its helpers before they cast. |
 | `jump_bnpc(npc, x, y, z, rotation)` | An NPC (actor ID or layout ID) leaps somewhere: ActorControl `SnapNextMove` (239) then an ActorMove there (speed byte 90), as retail's Kottos landed each leap; it carries on from where it lands. Without `rotation` it faces the way it leapt (retail's Kottos did). |
 | `busy_bnpc(npc, seconds)` | Keeps an NPC (actor ID or layout ID) from moving, turning or acting on its own for that long, its timeline still counting (`Instance::busy_npcs`): Kottos from its 28543 to its 28546, through its leaps. |
+| `guard_front(npc, degrees)` | (2026-11-18) The NPC holds a guard up in front of it, `degrees` to each side of its facing (nil or 0 lowers it): a damaging hit from inside it is blocked for nothing (effect 6) with none of its statuses, and the script hears `onActorGuarded`. Cape Westwind's boss with his shield up after 28866. `action::guards_against`; test `a_guard_takes_a_hit_from_in_front`. |
 | `root_bnpc(npc, seconds)` | Keeps an NPC (actor ID or layout ID) where it stands for that long: it doesn't move, but acts as ever, its timeline and attacks included (`Instance::rooted_npcs`; `busy_bnpc` would hold its timeline's actions back until it's over): Lady Amandine standing 4.9 s beside her eye where she leapt, using 28643 there. |
 | `restart_timeline(npc, anchor)` | Starts a `from_pull` timeline's clock again from now for its points `after` `anchor` (an action's ID, as a point with `restarts` does, or any number the timeline uses for a phase), so the director begins a boss's phase: Ifrit's at 80 % and 50 % (his lines' text IDs, 2601 and 2602) and after Hellfire (458). |
 | `move_bnpc(npc, x, y, z, rotation, speed)` | One ActorMove there (no snap), which the client walks the NPC along: the last Copperbell boss going to the middle for 28760. `speed` is the ActorMove's speed byte (90 unless given; retail's walk is 20, its run 60): Haukke Manor's eye drifting through the last room's door at a walk. |
@@ -107,7 +109,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `use_action(npc, action, target)` | Makes an NPC use an action (with its cast bar and area aimed where the target stands). |
 | `end_fight()` | The fight is over: every NPC still standing forgets whom it hated, sheathes, leaves battle and drops its target, the players leave battle (retail's packets the moment Victory in Peril's boss fell: ActorControl ToggleWeapon 0 and SetBattle 0, ActorControlTarget SetTarget 0), and none takes anyone on again (`Instance::fight_over`: not hits, heals or damage over time, nor anyone coming close). `complete_quest_battle` does it too, so no one fights on through "Duty Complete" and the closing scene. |
 | `battle_talk(npc, name_id, text_id, icon, duration_ms, kind, style)` | (`style`, since 2026-11-17: the packet's byte after `kind`, 0 unless given; retail's was 6 and 7 for the Porta Decumana's lines under BNpcNames 2183 and 2664 and 0 for every other battle talk in the captures; what it changes on screen isn't known.)  The **battle talk window** (DirectorPopupMessage, opcode 162 on 7.57), as retail shows it: the packet goes out with the player's own actor as its source, as retail's (all 89 in Bob's Chronofoil captures of 2026-11-16 and 17; from the speaker until 2026-11-17), and the portrait is the packet's `icon`, which retail left 0 for most speakers (58 of the 89: every one of quest battles 25, 29, 69, 76 and 82) and set for a few (73175 and 73176 in Cape Westwind, 73187 for quest battle 35's ally); `text_id` is the content's text by ID (retail's IDs from a recording; one outside the content's range crashes the client), `name_id` the speaker's BNpcName, `icon` the portrait, 4000 ms unless given. It comes from `npc` if it's there. `kind` is the speaker's object kind, 2 (BattleNpc) unless given; 3 (EventNpc) makes `name_id` an ENpcResident, for a speaker who isn't in the fight (Victory in Peril's watcher). A name that isn't in the sheet `kind` points to crashes the client. A `talk` step passes its speaker's `kind`. |
-| `play_scene(scene, flags)` | Plays one of the director's scenes for every player (event type GameProgress), e.g. To Guard a Guardian's cutscene, scene 6 with flags `0xF8402EFB`. The script hears `onSceneFinished` when it's over. |
+| `play_scene(scene, flags, params, arg)` | (`params`, the scene's parameters, and `arg`, the event's argument, since 2026-11-18: Cape Westwind's scene 5 as the player falls, `{ 1, 2 }` and 2; without them as before.) Plays one of the director's scenes for every player (event type GameProgress), e.g. To Guard a Guardian's cutscene, scene 6 with flags `0xF8402EFB`. The script hears `onSceneFinished` when it's over. |
 | `despawn_bnpc(layout_id)` | Removes an NPC (layout ID, or an actor ID from `spawn_bnpc`) without it dying (no `onActorDeath`). |
 | `spawn_tethered_bnpc(layout_id, to, channeling)` | Spawns a drop-in NPC tethered to NPC `to` (layout ID): its spawn's tether target and Channeling row, the line the client draws between them until the NPC dies. The Tam-Tara Deepcroft's shields to Galvanth (Channeling 1). |
 | `stop_cast(npc, message)` | (2026-11-17) Cuts short what an NPC (actor ID or layout ID) is casting, as the fight itself does: the cast's task is dropped, so it never lands, and everyone near gets CancelCast (ActorControl 15) `[message, 1, action, 0]`; `message` is 537 unless given (retail's for a cast the fight stops; 538 is an interrupt's, 540 came with a caster's death). The Porta Decumana's 29435, 28510 and 28990, stopped 19.0, 17.9 and 21.9 s into their casts. `action::cut_cast_short`; test `a_cast_the_fight_stops_never_lands`. |
@@ -1980,8 +1982,12 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
 ### Cape Westwind (InstanceContent 5060) (`content/questbattle/5060.lua`)
 
 Operation Archon's (4521) battle isn't a QuestBattle: the quest's QUESTBATTLE0 is **InstanceContent 5060** (director
-0x800313C4, territory 1049, duty 865), a solo duty. Built on 2026-11-17 from one retail run: Bob's Chronofoil capture
-667a68c5 of 2026-11-16 (`--battle 0.16`, won, 527 s; a level 50 White Mage). Not played in game yet.
+0x800313C4, territory 1049, duty 865), a quest's solo battle (a trial once, and its sheet rows still are; Bob,
+2026-11-18: "it use to be a trial but is no longer ... it's now a quest battle and it should be treated as much").
+Built on 2026-11-17 from one retail run and **reworked on 2026-11-18 from four** after Bob's first test of it (five
+marks; below): Bob's Chronofoil captures 667a68c5 of 2026-11-16 (`--battle 0.16`, won, 527 s; a level 50 White Mage)
+and 9ba7d981 of 2026-11-17 (a Summoner; visits 0.6, lost, and 0.8, won) and Connor's e834e436 (visit 0.240, a White
+Mage, won). The rework isn't played in game yet.
 
 **A quest's solo duty** (the reusable part; 5061, Devastation, is another):
 
@@ -2001,9 +2007,15 @@ Operation Archon's (4521) battle isn't a QuestBattle: the quest's QUESTBATTLE0 i
   ends the quest goes to sequence 4 (here as the scene begins, as every quest battle's) and the player out to
   `EXIT_AFTER_WIN` at once: Western Thanalan (140) at (-462.43, 22.94, -477.23), where the quest's entering scene
   takes it to 255. No "Duty Complete". The duty's clock stops with the win.
-* **Lost** as a duty is: the wipe (`server/wipe.rs`) sends the player back to the script's start spot
-  (`return_to_start`, which went to a duty's entrance only) and `onPartyWipe` puts the fight back. Retail's wasn't
-  seen.
+* **Lost** as a quest battle is (since 2026-11-18; Bob's mark "I resummon in the duty instead of outside like in
+  retail for this fight"). Retail's (9ba7d981, visit 0.6): as the player falls the director's **scene 5** (flags
+  0x0C002001, parameters `[1, 2]`) in a GameProgress event whose argument is 2; the client ends it 3.04 s later,
+  and 3.1 s after it began the event is finished and the player is in Western Thanalan again (PrepareZoning and
+  ZoneInit for 140), the quest as it was. No wipe, no recommence, nobody raised inside. The script holds the duty's
+  wipe off (`hold_wipe(true)` in `onSetup`), plays the scene from `onPlayerDeath` (`play_scene(5, 0x0C002001,
+  { 1, 2 }, 2)`: the method's new third and fourth arguments, the scene's parameters and its event's argument) and
+  calls `fail_quest_battle()` as the scene ends (`onSceneFinished`) or 3 s on, whichever is first. Until then a
+  duty's wipe put the player back at the start with the boss respawned (`onPartyWipe`, gone.)
 * A duty's script hears of its own scenes' ends now (`onSceneFinished` for any content director's GameProgress
   scene, as a quest battle's and Keybound Brawler's did): the cutscene before the last part is the director's scene
   3 (`play_cutscene`).
@@ -2016,23 +2028,61 @@ Operation Archon's (4521) battle isn't a QuestBattle: the quest's QUESTBATTLE0 i
 | `set_health(npc, hp)` | The NPC's health set outright, full with no `hp`: back to 24609 after the four fell, 13373 as 28881 landed. |
 | `command(id, args)` | One of the director's commands by number, ActorControlSelf 109 `[director, id, args…]` (up to seven): `0x10000001 [text]` and `0x10000002 [text]`, InstanceContentTextData rows 33420-33422, which came as each part of the fight was set (what each shows wasn't checked.) |
 
-**The fight** (times from arriving; the pull at 8.2 with talk 33400). The boss (layout 9082104, base 14581, BNpcName
-2160, level 49, 24609 HP) **never auto-attacks**: he walks after the player and casts (timeline
-`CapeWestwindBoss_14581`, its parts by anchor). Twelve helpers (base 9020, layout 0, 44 HP, timeline `Helper_9020`)
-stand on his spot and cast where the director puts them.
+**The fight** (times from the talk that begins each part; the pull is talk 33400). The boss (layout 9082104, base
+14581, BNpcName 2160, level 49, 24609 HP) **auto-attacks** (6499) every 3.0 s when he isn't casting (149 times in the
+four runs, 75 to 103; the first write-up said he never did) and stands through each cast's animation lock (timeline
+`CapeWestwindBoss_14581`, its parts by anchor, its `animation_locks` and `recorded_amounts`). Twelve helpers (base
+9020, layout 0, 44 HP, timeline `Helper_9020`) stand on his spot and cast where the director puts them.
+
+**Bob's five marks of 2026-11-18** and what each was (the server's own capture, read through the harness):
+
+| Mark | What the server did | Retail | Since 2026-11-18 |
+|---|---|---|---|
+| "he teleported then moved under the ground" | After the leap (28872) he stood at retail's height for the middle, 64.35, which is under the ground the client shows there (65.08: retail's own height for him after the cutscene); the nearest floor the walk found was an older surface beneath (63.9, then 62.3 where the ground is 64.4). Territory 1049's own navmesh was loaded 22 s after entering, before the pull: it wasn't that. | The client stands him on its ground. | Someone put between two floors with no room to stand on the lower is on the upper (`collision::settle`, `HEADROOM`; [Combat](combat.md)). |
+| "some of his AOE don't have effects" | The helpers' rows (28865) landed with the helper itself as the animation's target: an actor the client doesn't draw. | 0xE0000000 (no one), as its cast named. | The landing of an NPC's action retail cast at no one names no one (`action::aimed_at_someone`). |
+| "the timing of the AOE damage isn't exactly right" | 28869's marker showed for all of its 7.7 s cast; he walked off as each of his casts landed; the helpers' hits took 7 where retail's take about 1,000, the four's 104 to 112 where retail's take 31 to 43. | The marker comes 5.5 s in (ActorCast's omen delay, 55); he stands 2.1 to 5.1 s after a cast lands (its animation lock). | `omen_delay` in `cast_aims.json`; `stand_through_lock`; one timeline file for base 9020 and the four's amounts read right (below). |
+| "Imperial adds summon in incorrectly, and didn't attack for awhile" | They appeared and walked in when let go at 11 s; Bob's Holy then stunned all four from 273 s to 307 s, and killed five of the twelve helpers. | They stand where they come in, run to four spots by the entrance at 7.0 s, fight from 11.0 s, and refuse Stun every time (59 of 59). | `sweep_bnpc` to their spots at 7.0 s; `resistance.rs`; a player's area action leaves a director's helper alone (`beyond_area_actions`). |
+| "I resummon in the duty instead of outside like in retail for this fight" | A duty's wipe. | Out to Western Thanalan (above). | `onPlayerDeath`. |
+
+And "the entire timeline is wrong aside from the main triggers": the first part's last points (28872 at 120.9 s and
+28873 every 6.15 s from 123.3) weren't the clock at all. All four runs have them, each at a different time (55.0,
+99.7, 120.0 and 120.9 s): they come when his health is **below 15 %**, as soon as he's free. The slowest retail run
+got there at 120.9 s, so the timeline had them there, and Bob, whose character took 252 s over the first part, was
+given 28873 forty-three times in a row from 123.5 s.
 
 * **First part**: 28871 at 6.1 s after the pull and 28870 at 11.3 (2.7 s casts where he stands, facing the player);
   28864 at 21.5 (talk 33403), and 6.0 s after it began four helpers' 28865 a second apart along a row (3.7 s casts);
   28866 at 37.7 (talk 33402, ActorControl 63 `[7]`; statuses 680 and 2195 on him as it ends, for 7.76 s, then 63
-  `[0]`); 28872 at 52.9, a leap to the middle (-689.02, 64.35, -815.03; SnapNextMove 1.1 s after it); 28868 there
+  `[0]`): **his shield is up**. He doesn't move, turn or auto-attack from the cast's start until the statuses are
+  gone (no auto-attack between 37.4 and 51.4 s in any run; `busy_bnpc` for 12.8 s), and while they're on him a hit
+  from in front is **blocked for nothing** (effect 6, `06 00 00 9C 00 00 00 00`, in the damage's place) and
+  answered 0.97 s later by a helper put on his spot, facing as he does, with **28867** on whoever struck: 769 and
+  Knockback 7. Once in the four runs (9ba7d981 visit 0.6: a Summoner's 25811 from 0° off his facing, 0.9 s after
+  the statuses); the nineteen hits from 46° to 68° off landed as ever, and one from 2° off 0.3 s after the cast
+  landed did too (the statuses weren't on him yet). `director:guard_front(BOSS, 45)` from 5.5 s to 12.8 s after the
+  cast began and `onActorGuarded` (both new, below); the 45° is a guess from where everyone stood. 28872 at 52.9, a leap to the middle (-689.02, 64.35, -815.03; SnapNextMove 1.1 s after it); 28868 there
   at 55.0 (talk 33424), and 4.1 s after it began the arena's map effect (index 0: timeline 2, state 1) with two
   helpers' 28869 on two of the arena's spots (7.7 s casts), the effect off (timeline 8, state 4) as they land; 28872
-  and 28868 again with the other two spots (timeline 32, state 16); 28871, 28870, 28870, 28871, 28872, then 28873
-  three times 6.15 s apart (talk 33425).
-* **At 1 HP** (146.95): untargetable, talk 33404, ActionTimeline 10500, 63 `[27]` at 1.5 s; at 2.45 s three of base
-  14582 (2501 HP) and one of 14583 (5977 HP) where the player came in, talk 33405 at 7.0 s; at 11.0 s they're
-  targetable, with `0x10000001` and `0x10000002 [33421]`; talks 33406, 33407, 33429 at 14.1, 21.1, 28.1 s. Each of
-  them only casts 28884, 28885 (and 28886), 113 to the player every time. He casts 28874 from the middle 43.4 s in
+  and 28868 again with the other two spots (timeline 32, state 16); 28871 at 82.4, 28870 at 93.5 and 103.7, 28871
+  at 114.9. No run was above 15 % after that, so what comes next wasn't seen: the timeline goes round again from
+  28864 every 103.6 s (a guess; 28870 to 28864 was 10.2 s the first time), as the second part's does.
+* **Below 15 %** in the first part he leaves the clock as soon as he's free (his cast landed and its animation lock
+  over): 28872, talk 33425 2.2 s after it, and 28873 every 6.15 s from 2.4 s until his health is at its floor. The
+  four runs: 14.9 % during a 28871, the leap 2.1 s after it landed (its lock); 14.9 % 1.5 s after a 28870 landed,
+  the leap 3.2 s after it had (its lock, 3.1); 13.8 % as the clock's own leap went off, the next one 2.1 s later in
+  28868's place; 15.7 then 15.1 % between two hits with him free, the leap half a second after the second (16.2 %
+  and 15.7 % didn't do it, so the line is taken as 15). The script watches his health (`PUSH_BELOW`), waits out what
+  he's doing (`BUSY_SECONDS`: each action's cast and lock) and restarts the timeline at 33425.
+* **At 1 HP**: his cast stopped (ActorControl 15 `[537, 1, 28873, 0]`; `stop_cast`, where Kawari's 28873 went on and
+  landed), untargetable, talk 33404, ActionTimeline 10500, 63 `[27]` at 1.5 s; at 2.45 s three of base 14582 (2501
+  HP) and one of 14583 (5977 HP) where the player came in, standing; at 7.0 s talk 33405 and they **run in** (their
+  first ActorMove at 7.2 s in every run) to four spots by the entrance, there by 10 s: 9283147 to (-683.2, 64.0,
+  -806.7), 9283146 to (-678.8, 63.7, -807.9), 9082105 to (-676.9, 63.5, -811.7), 9082106 to (-678.7, 63.5, -815.6)
+  (`sweep_bnpc` at 5.7 yalms a second); at 11.0 s they're targetable (ActorControl 54 `[1]`) and fight, with
+  `0x10000001` and `0x10000002 [33421]`; talks 33406, 33407, 33429 at 14.1, 21.1, 28.1 s. Each of them only uses
+  28884, 28885 (and 28886): **31 to 43** to the player over 181 hits (the first write-up's "113 every time" was the
+  damage's kind byte, 0x71, read as its amount, and Kawari's four hit three times too hard for it). They **refuse
+  Stun** every time (59 of 59 Holys: [Combat](combat.md)). He casts 28874 from the middle 43.4 s in
   and every 14.25 s. Each yells as it falls (13647, 13822, 13648, 13821); his NpcYell 13651 35.2 s after talk 33404, on the same
   clock as the talks (35.14, 35.22 and 35.17 s in three runs, with the first of the four falling at 32.0, 44.9 and
   19.2 s; the script had it 3 s after the first fell until 2026-11-17). Two more runs check the script since then
@@ -2046,7 +2096,8 @@ stand on his spot and cast where the director puts them.
   after it began three rows of the helpers' 28865, four seconds apart; 28876 at 43.8; 28872 and 28868 (talk 33427)
   at 60.0 and 62.1 with all four spots (timeline 512, state 256), again at 74.2 and 76.3 with four (2048, 1024);
   28877, 28876, 28877, 28878 at 88.5, 106.6, 125.8, 144.0.
-* **At 1 HP again** (393.0): his cast cancelled (ActorControl 537 with himself), untargetable, NpcYell 13811,
+* **At 1 HP again**: ActorControl 537 with himself, the casts the helpers are in stopped (ActorControl 15 `[537, 1,
+  28865, 0]` from each of four in 667a68c5; `stop_cast` for his and every helper's), untargetable, NpcYell 13811,
   ActionTimeline 10506, 63 `[5]` at 2.0 s; at 6.0 s SetBGM 1 and the director's **scene 3** (flags 0x08502403,
   cutscene 2874, then 0, 173, 0, 0), 47 s. As it ends: 63 `[0]`, him in the middle 0.73 higher, facing north; the
   player put at (-680.02, 63.86, -810.64) 1.5 s on; at 6.0 s ActorControl 35 `[0, 10, player, 15]`, his 28879 on the
@@ -2056,19 +2107,30 @@ stand on his spot and cast where the director puts them.
   4.1 s; **28883 every 13.15 s** from 9.5 s (4.7 s casts, 507-626), status 3008 on him one stack higher before each,
   talks 33415-33419 with the first five; status 2194 on the player from 7.8 s to his death (523.2).
 
-`questkit battle-sim 5060`: the run's 38 talks, yells, spawns and the warp, to 2 s (the fight begins at DutyCommence
+`questkit battle-sim 5060`: four fixtures since 2026-11-18 (`5060.json`, `5060-9ba7d981-6.json`, the lost run, which
+now ends in scene 5 and `fail_quest_battle`, `5060-9ba7d981-8.json` and Connor's `5060-e834e436.json`); each run's
+talks, yells, spawns and the warp (38 in the first), to 2 s (the fight begins at DutyCommence
 there, not scene 60000; a cutscene's end is heard after retail's 47.4 s; the helpers, with no layout ID, aren't
 matched). NPCs: `resources/dropins/territory_1049.json`, layer `CAPE_WESTWIND` (the boss, the four, one helper),
 whose `appends` is **`territory/1049`**: the territory's own level wasn't known where it was written, so a drop-in
 can name its territory instead of an LGB (`zone.rs`). Action scripts `actions/288/CapeWestwind*` (28864-28886).
 
-**Guessed, unknown or not played**: what he does when a part's points run out before his health does (the first
-part's 28873 goes on every 6.15 s, the second's from 28878 come round every 113.3 s); losing; `0x10000002 [33420]`
-comes with DutyCommence here, retail's before the opening scene; what ActorControls 63, 35 and 537 and statuses
-680, 2195, 2056, 2656, 3134, 3008 and 2194 do (sent and given as retail did, nothing more: if 3134 holds the player
-in place or 2194 strengthens them, that isn't played); 28870's damage (it never landed; 900 is a guess); the
-helpers' 28869 were cast on other helpers on retail (here on themselves) and 28875's small leap after it lands
-isn't played; retail's `[0x40000007, 0]` and `[0x40000007, 1]` at his death aren't sent; hitboxes; the map
+**New director pieces** (2026-11-18, all reusable):
+
+| Piece | What it does |
+|---|---|
+| `guard_front(npc, degrees)` | The NPC (actor ID or layout ID) holds a guard up in front of it, `degrees` to each side of the way it faces; nil or 0 lowers it (`Instance::front_guards`). A hit with damage from someone inside it does nothing: its damage shows as blocked for nothing (effect 6, retail's bytes), its statuses and damage over time don't land, and the script hears of it. A single-target hit and a player's area action alike (`action::guards_against`, `shown_to_a_guard`). Test `a_guard_takes_a_hit_from_in_front`. |
+| `onActorGuarded(director, layout_id, attacker)` | A guarded NPC blocked `attacker`'s hit (an actor ID). Optional. |
+| `play_scene(scene, flags, params, arg)` | `params` (the scene's parameters) and `arg` (the event's argument, 1 unless given) are new: retail's scene 5 as the player falls. |
+
+**Guessed, unknown or not played**: what he does in the first part past 28871 at 114.9 s while above 15 % (round
+again every 103.6 s here); how far to either side the raised shield reaches (45°) and whether he answers every
+blocked hit (here each, no more than one a second); `0x10000002 [33420]` comes with DutyCommence here, retail's
+before the opening scene; what ActorControls 63 and 35 and statuses 2056, 2656, 3134, 3008 and 2194 do (sent and
+given as retail did, nothing more: if 3134 holds the player in place or 2194 strengthens them, that isn't played);
+28874's damage (it landed twice, blocked and parried: 1350 is those by 28871's blocked share) and 28870's (once,
+1205); 28883 hit a White Mage for 589 to 635 and a Summoner for 317 to 334 (614 here for anyone); 28875's small
+move 0.6 s after it lands isn't played; retail's `[0x40000007, 0]` and `[0x40000007, 1]` at his death aren't sent; hitboxes; the map
 effects need the duty's layout to have index 0 as retail's (nothing checks it here). Where each action reaches is the
 Action sheet's.
 

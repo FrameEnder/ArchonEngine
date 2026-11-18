@@ -272,6 +272,9 @@ pub struct Instance {
     /// leave them be, as retail's Duty Support members let Titan go as he leapt and while his Heart stood (Bob's
     /// Chronofoil capture 650dbfd8.)
     pub untargetable_npcs: HashSet<ObjectId>,
+    /// How each enemy has taken players' statuses so far: Stun for less each time, then not at all
+    /// (`resistance::Resistance`.)
+    pub status_resistance: crate::server::resistance::Resistance,
     /// The HP, MP and max MP last sent for each actor (`update_actor_hp_mp` sends only changes.)
     pub last_hp_mp: HashMap<ObjectId, (u32, u16, u16)>,
     /// Director tasks queued for later (`director:delay`), and when they're due.
@@ -286,6 +289,9 @@ pub struct Instance {
     /// NPCs a director keeps where they stand until when (`director:root_bnpc`): they don't move, but act as ever (their
     /// timeline, their attacks.)
     pub rooted_npcs: HashMap<ObjectId, std::time::Instant>,
+    /// BNpcs that hold a guard up in front of them (`director:guard_front`), with how far to each side of their
+    /// facing it reaches (radians): a hit from inside it is blocked for nothing (`action::guards_against`.)
+    pub front_guards: HashMap<ObjectId, f32>,
     pub later_director_tasks: Vec<(std::time::Instant, crate::server::director::LuaDirectorTask)>,
     /// The fight here is over (a quest battle won, `npc_behavior::end_fight`): NPCs don't take anyone on again, whatever
     /// hits or heals them.

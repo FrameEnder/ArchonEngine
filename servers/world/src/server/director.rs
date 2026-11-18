@@ -252,6 +252,10 @@ pub enum LuaDirectorTask {
     PlayScene {
         scene: u16,
         flags: u32,
+        /// The scene's parameters and its event's argument, when the script gives them (Cape Westwind's scene 5 as
+        /// the player falls: `[1, 2]` in a GameProgress event with 2, Bob's Chronofoil capture 9ba7d981.)
+        params: Vec<u32>,
+        arg: Option<u32>,
     },
     /// The fight is over: every NPC stops fighting (`npc_behavior::end_fight`.)
     EndFight,
@@ -536,6 +540,13 @@ pub enum LuaDirectorTask {
     RootBattleNpc {
         who: u32,
         seconds: f32,
+    },
+    /// A BNpc (actor ID or layout ID) holds a guard up in front of it, `degrees` to each side of the way it faces (nil
+    /// or 0: lowers it): a hit from inside it does nothing (effect 6, nothing through) and the script hears
+    /// `onActorGuarded` (`Instance::front_guards`). Cape Westwind's boss after his 28866.
+    GuardFront {
+        who: u32,
+        degrees: Option<f32>,
     },
     /// Starts a `from_pull` timeline's clock again from now for its points `after` this (an action's ID, as a point
     /// with `restarts` does, or any number the timeline's points use for a phase): a phase the director begins
@@ -1200,10 +1211,18 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
-        methods.add_method_mut("play_scene", |_, this, (scene, flags): (u16, u32)| {
-            this.tasks.push(LuaDirectorTask::PlayScene { scene, flags });
-            Ok(())
-        });
+        methods.add_method_mut(
+            "play_scene",
+            |_, this, (scene, flags, params, arg): (u16, u32, Option<Vec<u32>>, Option<u32>)| {
+                this.tasks.push(LuaDirectorTask::PlayScene {
+                    scene,
+                    flags,
+                    params: params.unwrap_or_default(),
+                    arg,
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut(
             "warp_players",
             |_, this, (x, y, z, rotation): (f32, f32, f32, f32)| {
@@ -1451,6 +1470,14 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::RootBattleNpc { who, seconds });
             Ok(())
         });
+        methods.add_method_mut(
+            "guard_front",
+            |_, this, (who, degrees): (u32, Option<f32>)| {
+                this.tasks
+                    .push(LuaDirectorTask::GuardFront { who, degrees });
+                Ok(())
+            },
+        );
         methods.add_method_mut("busy_bnpc", |_, this, (who, seconds): (u32, f32)| {
             this.tasks
                 .push(LuaDirectorTask::BusyBattleNpc { who, seconds });
@@ -2124,6 +2151,24 @@ impl DirectorData {
         };
         if let Err(err) = run_script() {
             tracing::warn!("Syntax error during onActionLanded: {err:?}");
+        }
+    }
+
+    /// A BNpc (`layout_id`) with its guard up (`director:guard_front`) blocked `attacker`'s hit (`onActorGuarded`):
+    /// Cape Westwind's boss answers through a helper a second later.
+    pub fn on_actor_guarded(&mut self, layout_id: u32, attacker: ObjectId) {
+        let Ok(func) = self.lua.0.globals().get::<Function>("onActorGuarded") else {
+            return;
+        };
+        let mut lua_director = self.create_lua_director();
+        let err = self.lua.0.scope(|scope| {
+            let data = scope.create_userdata_ref_mut(&mut lua_director)?;
+            func.call::<()>((data, layout_id, attacker.0))?;
+            Ok(())
+        });
+        self.apply_lua_director(lua_director);
+        if let Err(err) = err {
+            tracing::warn!("Syntax error during onActorGuarded: {err:?}");
         }
     }
 
@@ -3138,12 +3183,29 @@ pub fn director_tick(
                 let mut network = network.lock();
                 crate::server::npc_behavior::end_fight(instance, &mut network);
             }
-            LuaDirectorTask::PlayScene { scene, flags } => {
+            LuaDirectorTask::PlayScene {
+                scene,
+                flags,
+                params,
+                arg,
+            } => {
                 let mut network = network.lock();
+                let message = if params.is_empty() && arg.is_none() {
+                    FromServer::PlayDirectorScene(director_id, *scene, *flags)
+                } else {
+                    FromServer::PlayDirectorSceneWith {
+                        handler: director_id,
+                        scene: *scene,
+                        flags: *flags,
+                        flags_high: 0,
+                        params: params.clone(),
+                        arg: arg.unwrap_or(1),
+                    }
+                };
                 network.send_to_instance(
                     ObjectId::default(),
                     instance,
-                    FromServer::PlayDirectorScene(director_id, *scene, *flags),
+                    message,
                     DestinationNetwork::ZoneClients,
                 );
             }
@@ -4176,6 +4238,20 @@ pub fn director_tick(
                     actor_id,
                     Instant::now() + Duration::from_secs_f32(seconds.max(0.0)),
                 );
+            }
+            LuaDirectorTask::GuardFront { who, degrees } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to guard its front!");
+                    continue;
+                };
+                match degrees.filter(|degrees| *degrees > 0.0) {
+                    Some(degrees) => {
+                        instance.front_guards.insert(actor_id, degrees.to_radians());
+                    }
+                    None => {
+                        instance.front_guards.remove(&actor_id);
+                    }
+                }
             }
             LuaDirectorTask::BusyBattleNpc { who, seconds } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {

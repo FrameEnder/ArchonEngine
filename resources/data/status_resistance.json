@@ -1,0 +1,34 @@
+{
+    "_source": "Retail's answer to a player's status on an enemy, from every player's ActionEffect on an NPC in 26 of Bob's and Connor's Chronofoil captures (2026-11-18; /tmp scan of effect kinds 14, the status given, and 55, the status named with no effect): only Stun (2) was ever refused, 1,336 times, by White Mage's Holy (139) 1,323 of them.",
+    "_immune": "BNpcBase IDs that refused the status every time, the first included (no use ever took hold): Cape Westwind's four (14582, 14583: 59 of 59), Castrum Meridianum's bosses and others.",
+    "_diminishing": "Every other enemy took it for the full time, then half, then a quarter, then not at all (4, 2, 1 s, refused: 183 runs of Holy on 43 kinds of enemy). A use counts towards the next once it's `counted_after` seconds old: two Holys 2.5 s apart often both got the same time (1,090 of 1,138 uses fit 2.5 s; the 48 that don't were refused 2.4-2.5 s after a quarter). How long the refusing lasts wasn't seen to end: 48.6 s after the last that took hold at the longest, so `forget_after` is a guess.",
+    "immune": {
+        "2": [
+            2179,
+            2663,
+            2693,
+            2694,
+            14448,
+            14460,
+            14537,
+            14538,
+            14539,
+            14540,
+            14582,
+            14583,
+            14622,
+            14668
+        ]
+    },
+    "diminishing": {
+        "2": {
+            "steps": [
+                1.0,
+                0.5,
+                0.25
+            ],
+            "counted_after": 2.5,
+            "forget_after": 60.0
+        }
+    }
+}
