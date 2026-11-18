@@ -1,0 +1,8 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 968,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "BNpcBase 780 (Bob's Chronofoil capture dba9b575 of 2026-11-18, Search and Seizure's (quest 230) four in Western Thanalan, level 7 with 126 HP, each fought once for a few seconds): class 7. Its one action seen was 968 (a 0.7 s cast on its target, for 11), in place of an auto-attack as the Floating Eye's (182) is.",
+    "attack_range": 10.0
+}

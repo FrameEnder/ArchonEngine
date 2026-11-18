@@ -1,0 +1,45 @@
+{
+  "quest": 1424,
+  "script": "SubCts809_01424",
+  "source": "Bob's Chronofoil capture dba9b575 of 2026-11-18",
+  "params": {
+    "ACTOR0": 1008758,
+    "EVENT_ACTION_SEARCH": 1,
+    "ITEM0": 2001240,
+    "ITEM1": 2001241,
+    "ACTOR1": 1008760,
+    "ITEM2": 2001242
+  },
+  "steps": [
+    {
+      "talk": 1008758,
+      "layout": 4622636,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001100000000", "notices": []}
+    },
+    {
+      "talk": 1008760,
+      "layout": 4622638,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": [[0, [25919]]]}
+    },
+    {
+      "talk": 1008758,
+      "layout": 4622636,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 6, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

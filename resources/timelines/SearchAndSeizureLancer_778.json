@@ -1,0 +1,7 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "BNpcBase 778 (Bob's Chronofoil capture dba9b575 of 2026-11-18, Search and Seizure's (quest 230) four in Western Thanalan, level 7 with 126 HP, each fought once for a few seconds): two of the four, class 1. One used action 10 on itself as it took the fight up; no auto-attack of theirs landed in the capture, so 870 here is the default, not seen."
+}

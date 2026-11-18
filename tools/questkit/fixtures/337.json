@@ -1,0 +1,71 @@
+{
+  "quest": 337,
+  "script": "SubWil089_00337",
+  "source": "Bob's Chronofoil capture dba9b575 of 2026-11-18",
+  "params": {
+    "ACTOR0": 1002058,
+    "ITEM0": 2000373,
+    "EOBJECT0": 2001374,
+    "EOBJECT1": 2001375,
+    "EOBJECT2": 2001376,
+    "EOBJECT3": 2001377,
+    "ACTOR1": 1002064,
+    "EVENT_ACTION_GATHER_SHORT": 6
+  },
+  "steps": [
+    {
+      "talk": 1002058,
+      "layout": 3629823,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "004000000000", "notices": []}
+    },
+    {
+      "event_item": [2000373, 2001374],
+      "layout": 3951678,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "013000000080", "notices": [[0, [1, 4]]]}
+    },
+    {
+      "event_item": [2000373, 2001377],
+      "layout": 3951883,
+      "what": "EOBJECT3",
+      "scenes": [
+        {"scene": 11, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "022000000090", "notices": [[0, [2, 4]]]}
+    },
+    {
+      "event_item": [2000373, 2001375],
+      "layout": 3951683,
+      "what": "EOBJECT1",
+      "scenes": [
+        {"scene": 5, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "0310000000d0", "notices": [[0, [3, 4]]]}
+    },
+    {
+      "event_item": [2000373, 2001376],
+      "layout": 3951862,
+      "what": "EOBJECT2",
+      "scenes": [
+        {"scene": 8, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, [4, 4]]]}
+    },
+    {
+      "talk": 1002064,
+      "layout": 3629840,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 13, "flags": "0x2000", "results": [1, 5824, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

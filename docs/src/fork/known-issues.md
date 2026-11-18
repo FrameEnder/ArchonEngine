@@ -514,6 +514,23 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Marauder), untested in game. On retail the enemies stayed on the tank (the Lancer and Thaumaturge took 330 damage
   each in 30 minutes); whether Kawari's enemies stray onto them more isn't checked.
 
+## The side quests of 2026-11-18
+
+* Fourteen quests transcribed from one capture (dba9b575), none played: 38, 222-230, 337, 339, 1210, 1424. Who a
+  talk was with is inferred for seventeen steps (the capture names client-side NPCs and objects by layout ID only):
+  the three crates of 222, the three bags of 225 and the four workers of 226 are matched to their `EOBJECT`s and
+  `ACTOR`s by the order of their scenes, which is how every other script of the kind goes but wasn't checked
+  against the zone's layout. If one is wrong, that object answers with another's scene or not at all.
+* 223, 224, 227 and 229: every kill gave its item in retail's run (4, 5, 4 and 2 kills). Whether retail's can fail
+  to isn't known; here every kill counts.
+* 230's four enemies have one action each from a few seconds' fight; base 778's auto-attack wasn't seen (870 here).
+* 1210: six of its side talks (ENpcs 1005515 and 1005516 while the quest is open) aren't answered; the client's
+  scenes and the sheet's listeners don't line up and they weren't read by hand.
+* **1437, The Greatest Story Never Told, isn't scripted.** It's a hunt in three rounds: each round the server
+  picks one of several answers (three explorers, nine objects, nine more to emote at, three merchants) and the
+  capture has the one Bob was given. The fixture made from it is kept out of the repository until the objects he
+  used are known for sure (their bases aren't in the capture) and the way the answer is picked is worked out.
+
 ## Fall damage
 
 * Mounted falls hurt since 2026-11-18 (one retail fall says so), unplayed. What a flying mount's take-off and

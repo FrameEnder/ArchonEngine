@@ -1,0 +1,85 @@
+{
+  "quest": 1210,
+  "script": "SubCts801_01210",
+  "source": "Bob's Chronofoil capture dba9b575 of 2026-11-18",
+  "params": {
+    "ACTOR0": 1003601,
+    "ACTOR1": 1005516,
+    "ACTOR2": 1005515,
+    "ACTOR3": 1001000,
+    "ITEM0": 2001110,
+    "ACTOR4": 1000153,
+    "ITEM1": 2001111,
+    "ACTOR5": 1002299,
+    "ITEM2": 2001112,
+    "HOW_TO_HAIRCUT": 157,
+    "CUT_SCENE_01": 449,
+    "UNLOCK_IMAGE_HAIRCUT": 138,
+    "LOG_BEAUTYSALON_UNLOCK": 3705
+  },
+  "steps": [
+    {
+      "talk": 1005516,
+      "layout": 4504878,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1005515,
+      "layout": 4504877,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []}
+    },
+    {
+      "emote": [12, 1005515],
+      "layout": 4504877,
+      "scenes": [
+        {"scene": 5, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1001000,
+      "layout": 1673111,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 8, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "100110000080", "notices": [[2, [25919]]]}
+    },
+    {
+      "talk": 1000153,
+      "layout": 1141132,
+      "what": "ACTOR4",
+      "scenes": [
+        {"scene": 9, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "2101110000c0", "notices": [[3, [25919]]]}
+    },
+    {
+      "talk": 1002299,
+      "layout": 3987402,
+      "what": "ACTOR5",
+      "scenes": [
+        {"scene": 10, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001110000000", "notices": [[4, [25919]]]}
+    },
+    {
+      "talk": 1005515,
+      "layout": 4504877,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 13, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 14, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "quest": 227,
+  "script": "SubWil035_00227",
+  "source": "Bob's Chronofoil capture dba9b575 of 2026-11-18",
+  "params": {"ACTOR0": 1002027, "ENEMY0": 187, "ITEM0": 2000164, "ACTOR1": 1002049},
+  "steps": [
+    {
+      "talk": 1002027,
+      "layout": 2826866,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [187, 3927213],
+      "expect": {"sequence": 1, "vars": "011000000000", "notices": [[0, [1, 4, 20663]]]}
+    },
+    {
+      "kill": [187, 3927211],
+      "expect": {"sequence": 1, "vars": "022000000000", "notices": [[0, [2, 4, 20663]]]}
+    },
+    {
+      "kill": [187, 3927203],
+      "expect": {"sequence": 1, "vars": "033000000000", "notices": [[0, [3, 4, 20663]]]}
+    },
+    {
+      "kill": [187, 3927201],
+      "expect": {"sequence": 255, "vars": "004000000000", "notices": [[0, [4, 4, 20663]]]}
+    },
+    {
+      "talk": 1002049,
+      "layout": 3925091,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 3, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
