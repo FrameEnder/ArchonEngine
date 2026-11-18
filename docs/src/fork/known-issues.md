@@ -268,6 +268,10 @@ None of it played yet; the page not used against the running server.
   weren't seen. Where the helper that pulls the player in stands is the one spot seen (the players all stood where
   the cutscene puts them): whether it's fixed or 2.5 yalms from him towards wherever the player is isn't known. He
   auto-attacked a second after his leap here; whether retail's can inside that lock wasn't looked at.
+* Cape Westwind's burning ground (2026-11-18), unplayed: its reach (5 yalms) is a guess; that event object 2012827
+  with flags 5 is what draws it is read from retail's one SpawnObject; what bit 2 of that flags byte means isn't
+  known. "leap not perfect" (Bob's third test) is answered only as far as the turn to the cast after it: the
+  leap's own packets matched retail's.
 * Cape Westwind's shield (status 2195 with param 394, since 2026-11-18): that the param is what draws it is read
   from retail's bytes; Bob hasn't seen it yet. The server gives it as the action's status on its user (effect 15)
   where retail's is effect 14 on its target, himself.

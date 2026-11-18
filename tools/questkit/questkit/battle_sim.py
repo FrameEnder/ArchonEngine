@@ -661,7 +661,9 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                     g.onPlayerDeath(director)
                 follow_calls()
             x, y, z = _position_then(positions.get("player"), t)
-            info_table["player"] = lua.table_from({"hp": player_pct, "max_hp": 100, "x": x, "y": y, "z": z})
+            # (With an ID, as the server's has: a script that gives the player a status needs one.)
+            info_table["player"] = lua.table_from({"id": PLAYER_ID, "hp": player_pct, "max_hp": 100, "x": x, "y": y,
+                                                   "z": z})
             g.onUpdate(director, lua.table_from(health), player_pct, lua.table_from(info_table))
             not_yet.clear()
             follow_calls(outside_update=False)

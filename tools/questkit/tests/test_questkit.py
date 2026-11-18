@@ -727,6 +727,46 @@ class BattleSimPlayerTest(unittest.TestCase):
         director = (repo.SCRIPTS / "content" / "questbattle" / "5060.lua").read_text()
         self.assertNotIn("gain_effect(boss, STATUS_STANCE", director)
 
+    def test_cape_westwinds_burning_ground(self):
+        """Bob, 2026-11-18: "the AOE damage circle effect ... casts the burns enfeeblement on the person standing
+        inside". Retail (his Chronofoil capture 178b0de0, from talk 33414): 3008's first stack on the boss and 2194 on
+        the player at 7.7 s, the ground's object at 8.0 s, 1541 for about 150 every 3 s; the script gave 2194 to
+        anyone, with no tick and no object, and 3008's first stack at 9.5 s. Off the ground, no status."""
+        fixture = json.loads((battle_sim.BATTLES / "5060-178b0de0-6.json").read_text())
+        began = next(event[0] for event in fixture["events"] if event[1:] == ["talk", 33414])
+
+        def last_part(fixture):
+            result = battle_sim.simulate(fixture)
+            self.assertIsNone(result.error)
+            return [(round(t - began, 1), name, args) for t, name, args in result.calls if t >= began - 1.0]
+
+        calls = last_part(fixture)
+        stacks = [(t, args[2]) for t, name, args in calls if name == "gain_effect" and args[1] == 3008]
+        self.assertEqual([stack for _, stack in stacks], [1, 2, 3, 4, 5])
+        for (t, _), retail in zip(stacks, (7.7, 22.5, 35.7, 48.9, 62.0)):
+            self.assertAlmostEqual(t, retail, delta=1.0)
+        burns = [(t, args[2:]) for t, name, args in calls if name == "gain_effect" and args[1] == 2194]
+        self.assertEqual([args for _, args in burns], [[0, 0, 150]])
+        self.assertAlmostEqual(burns[0][0], 7.7, delta=1.0)
+        ground = [(t, args) for t, name, args in calls if name == "spawn_eobj"]
+        self.assertEqual(len(ground), 1)
+        self.assertAlmostEqual(ground[0][0], 8.0, delta=1.0)
+        self.assertEqual(ground[0][1][0], 2012827)
+        self.assertEqual(ground[0][1][2:], [0x00500003, 0, 5])
+        self.assertTrue(any(name == "eobj_control" and args == [2012827, 106, {1: 7}] for _, name, args in calls))
+        # "boss is using melee when he shouldn't": his auto-attacks are stopped while the four are out and from the
+        # cutscene on, and let go for the second part between.
+        result = battle_sim.simulate(fixture)
+        holds = [(name, args[1] if name == "hold_attacks" else args[2]) for t, name, args in result.calls
+                 if name == "hold_attacks" or (name == "battle_talk" and args[2] in (33404, 33410, 33414))]
+        self.assertEqual(holds, [("hold_attacks", True), ("battle_talk", 33404), ("battle_talk", 33410),
+                                 ("hold_attacks", False), ("hold_attacks", True), ("battle_talk", 33414)])
+        # Someone who isn't standing on it (20 yalms off for the whole part) isn't burned.
+        away = json.loads(json.dumps(fixture))
+        away["positions"]["player"] = [point if point[0] < began else [point[0], -670.0, 63.5, -800.0]
+                                       for point in away["positions"]["player"]]
+        self.assertFalse([1 for _, name, args in last_part(away) if name == "gain_effect" and args[1] == 2194])
+
     def test_placed_from_a_run(self):
         """A run's helpers (battle NPCs with no layout ID) give `placed` and everyone's positions; a few HP isn't the
         floor's 0.1 %."""

@@ -569,6 +569,9 @@ that had put it there). Tests `test_placed`, `test_placed_from_a_run`. A health 
 0.2 % at the least, since 0.1 % is the floor's 1 HP to the simulator (Cape Westwind's boss at 32 HP was taken to be
 at his floor 2 s early, and the last two helpers of a row never cast).
 
+The script's `info.player` has an `id` since 2026-11-18 (`PLAYER_ID`), as the server's has: one that gives the
+player a status (Cape Westwind's burning ground) did nothing in a simulated run without it.
+
 It doesn't simulate enmity or who hits whom (the health curves are retail's whatever the script's
 targeting does), or the NPCs' casts beyond `casts` and their yells (not compared). Losing is: when the player's health (`player`) reaches 0
 the script hears `onPlayerDeath`, as from the server (since 2026-10-27: Like Mother, Like Daughter's lost run went on

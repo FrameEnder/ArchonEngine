@@ -76,9 +76,11 @@
 --         between them. (Until 2026-11-18 the helper stood on the player and knocked them back with the Knockback
 --         sheet's row 17, 5 yalms the other way, and nothing held them: Bob's mark, "third stage chain doesn't work
 --         in anyway like it should it should pull you to him, and freeze you in place only to attack".)
---   The last part (anchor 33414): 28881 at once; a helper's 28882 beside him at 4.1 s; status 3008 on him, one
---         stack more before each 28883 (4.7 s casts, 13.15 s apart, talks 33415-33419 with the first five); status
---         2194 on the player from 7.8 s to his death. Neither has a timer, nor has 3134 (28879's, on the player
+--   The last part (anchor 33414): 28881 at once; a helper's 28882 beside him at 4.1 s, which leaves the ground there
+--         burning (`EOBJ_BURNING`; Bob, 2026-11-18: "the AOE damage circle effect ... casts the burns enfeeblement
+--         on the person standing inside"): status 2194 on whoever stands on it from 7.7 s to his death, about 150
+--         every 3 s; status 3008 on him from 7.7 s too, and one stack more with each 28883 from the second (4.7 s
+--         casts from 9.5 s, 13.15 s apart, talks 33415-33419 with the first five). Neither has a timer, nor has 3134 (28879's, on the player
 --         until they leave.)
 --   He falls: the director's scene 4 (flags 0x08502403; cutscene 263, then 1) in a GameComplete event; as it ends the
 --         quest to sequence 4 and out to Western Thanalan at (-462.43, 22.94, -477.23), where the quest's entering
@@ -223,6 +225,18 @@ STATUS_AFTER_ADDS = 2056
 STATUS_AFTER_ADDS_PARAM = 95
 STATUS_LAST = 3008
 STATUS_PLAYER_LAST = 2194
+-- The burning ground the helper's 28882 leaves beside him: retail's SpawnObject 0.9 s after it landed (event object
+-- 2012827, flags byte 5, arguments 0 and 0x00500003, the director its handler, where the helper stood), status 2194
+-- on the player 0.6 s after it landed, and ActorControl 1541 [0, 142 to 157, no one] on them every 3.0 s from then
+-- until he fell, whatever their job (four runs: Bob's Chronofoil captures 667a68c5, 9ba7d981 and 178b0de0, and
+-- Connor's e834e436.) Every one of those players stood 1.4 yalms from its middle, held there by the chain, so how
+-- far it reaches was never seen: 5 yalms is a guess.
+EOBJ_BURNING = 2012827
+EOBJ_BURNING_ARGS = 0x00500003
+EOBJ_BURNING_FLAGS = 5
+BURNING_RADIUS = 5.0
+BURN_TICK = 150
+CONTROL_EOBJ_106 = 106
 HEALTH_LAST = 13534
 
 CONTROL_63 = 63
@@ -261,6 +275,9 @@ adds_left = 0
 recovered = false
 used = {}
 last_stacks = 0
+-- The ground beside him is burning; the player has its status.
+burning = false
+burned = false
 player_id = nil
 player_at = nil
 boss_at = nil
@@ -334,6 +351,8 @@ function reset()
     countering = false
     used = {}
     last_stacks = 0
+    burning = false
+    burned = false
     later = {}
     next_helper = 0
 end
@@ -477,12 +496,15 @@ function onActorCast(director, layout_id, action_id, actor_id)
             castRow(director, row, 5.0 + (i - 1) * 4.0)
         end
     elseif action_id == ACTION_LAST then
-        last_stacks = last_stacks + 1
-        if boss ~= nil then
-            director:gain_effect(boss, STATUS_LAST, last_stacks, 0)
+        -- A stack more of 3008 with each use from the second (the first stack came with the burning ground.)
+        if uses >= 2 then
+            last_stacks = uses
+            if boss ~= nil then
+                director:gain_effect(boss, STATUS_LAST, last_stacks, 0)
+            end
         end
-        if last_stacks <= 5 then
-            talk(director, 33414 + last_stacks)
+        if uses <= 5 then
+            talk(director, 33414 + uses)
         end
     end
 end
@@ -548,6 +570,9 @@ function bringAdds(director)
     director:stop_cast(BOSS)
     director:restart_timeline(BOSS, PART_ADDS)
     director:root_bnpc(BOSS, 3600)
+    -- No auto-attack from him while they're out, nor until he's up again (none in six runs, players beside him in
+    -- some; here he swung at Bob every 3 s as he knelt: "boss is using melee when he shouldn't".)
+    director:hold_attacks(BOSS, true)
     director:set_targetable(BOSS, false)
     director:set_invulnerable(BOSS, true)
     talk(director, 33404)
@@ -624,6 +649,7 @@ function afterAdds(director)
         d:command(COMMAND_TEXT_1, { TEXT_SECOND })
         d:command(COMMAND_TEXT_2, { TEXT_SECOND })
         talk(d, 33410)
+        d:hold_attacks(BOSS, false)
         d:root_bnpc(BOSS, 0)
         d:restart_timeline(BOSS, PART_SECOND)
     end)
@@ -642,6 +668,8 @@ function lastStand(director)
     end
     director:busy_bnpc(BOSS, 3600)
     director:root_bnpc(BOSS, 3600)
+    -- (Nor any in his last part, the player chained 2.3 yalms from him: none in four runs.)
+    director:hold_attacks(BOSS, true)
     director:set_invulnerable(BOSS, true)
     if boss ~= nil then
         director:bnpc_control(BOSS, CONTROL_537, { boss })
@@ -726,12 +754,39 @@ function onSceneFinished(director, scene)
                 d2:actor_use_action(helperAt(d2, { spot.x, spot.y, spot.z }), ACTION_BESIDE)
             end
         end)
+        -- 28882 has landed (7.1 s): 3008's first stack on him and the ground burning from 7.7 s, its object there
+        -- at 8.0 s.
+        after(7.5, function(d2)
+            if part == "last" then
+                last_stacks = 1
+                if boss ~= nil then
+                    d2:gain_effect(boss, STATUS_LAST, last_stacks, 0)
+                end
+                burning = true
+            end
+        end)
         after(8.0, function(d2)
-            if part == "last" and player_id ~= nil then
-                d2:gain_effect(player_id, STATUS_PLAYER_LAST, 0, 0)
+            if part == "last" then
+                d2:spawn_eobj(EOBJ_BURNING, HELPER_BESIDE_HIM, EOBJ_BURNING_ARGS, 0, EOBJ_BURNING_FLAGS)
             end
         end)
     end)
+end
+
+-- The burning ground: whoever stands on it has status 2194 and loses about 150 HP every 3 s (`gain_effect`'s tick,
+-- from no one), and not once they're off it.
+function burn(director)
+    if not burning or player_id == nil or player_at == nil then
+        return
+    end
+    local dx, dz = player_at.x - HELPER_BESIDE_HIM.x, player_at.z - HELPER_BESIDE_HIM.z
+    local inside = math.sqrt(dx * dx + dz * dz) <= BURNING_RADIUS
+    if inside and not burned then
+        director:gain_effect(player_id, STATUS_PLAYER_LAST, 0, 0, BURN_TICK)
+    elseif burned and not inside then
+        director:lose_effect(player_id, STATUS_PLAYER_LAST)
+    end
+    burned = inside
 end
 
 function onUpdate(director, health, player_health, info)
@@ -750,6 +805,7 @@ function watch(director, health, info)
         player_id = info.player.id
         player_at = { x = info.player.x, y = info.player.y, z = info.player.z }
     end
+    burn(director)
     local him = info[BOSS]
     if him == nil then
         return
@@ -794,6 +850,14 @@ function onActorDeath(director, layout_id, position)
         later = {}
         if player_id ~= nil then
             director:lose_effect(player_id, STATUS_PLAYER_LAST)
+        end
+        -- The burning ground goes out with him: its ActorControl 106 [7] as his health reached 0, and the object gone
+        -- 3.1 s later.
+        if burning then
+            burning = false
+            burned = false
+            director:eobj_control(EOBJ_BURNING, CONTROL_EOBJ_106, { 7 })
+            after(3.0, function(d) d:delete_eobj(EOBJ_BURNING) end)
         end
         for _, helper in ipairs(helpers) do
             director:despawn_bnpc(helper)

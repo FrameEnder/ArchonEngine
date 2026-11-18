@@ -404,12 +404,19 @@ pub fn out_of_action_range(
     !in_sight || distance > range + own_hitbox + target_hitbox + ACTION_RANGE_SLACK
 }
 
-/// How far an NPC's facing is from its cast's before it's told to turn (`face_for_cast`.)
-const CAST_TURN: f32 = 0.01;
+/// Whether an NPC that would auto-attack now does: not one whose director has stopped them
+/// (`director:hold_attacks`.) Cape Westwind's boss swung at whoever stood by him while he knelt with the four out
+/// (eight times in 21 s, Bob's mark of 2026-11-18: "boss is using melee when he shouldn't"); retail's never did
+/// there or in his last part.
+pub(crate) fn auto_attacks(held: bool) -> bool {
+    !held
+}
 
 /// An NPC beginning a cast turns to it: an ActorMove where it stands with the cast's facing, as retail sends with
 /// each of a boss's ActorCasts (Cape Westwind's, Bob's Chronofoil capture 178b0de0 of 2026-11-18: one with every
-/// cast, same position, new rotation.) The cast's own rotation only aims the marker; the body turned only if the
+/// cast, same position, new rotation.) With every one: the first version sent it only when the NPC's facing
+/// differed, and by then the cast had already been given to the NPC as its facing, so none ever went out (Bob's
+/// next test: "attack still doesn't perfectly align with aoe"; no ActorMove with any of 28874's four casts.) The cast's own rotation only aims the marker; the body turned only if the
 /// walk happened to turn it, and one kept where it stands (`root_bnpc`: Cape Westwind's boss while the four are out)
 /// never did, so his 28874's marker lay towards the player while he swung where he'd been left facing (Bob's mark,
 /// 2026-11-18: "he is showing his boss aoe in the right spot then shooting it in the wrong spot".)
@@ -422,9 +429,6 @@ pub(crate) fn face_for_cast(
     let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(id) else {
         return;
     };
-    if !turns_for_cast(spawn.common.rotation, rotation) {
-        return;
-    }
     spawn.common.rotation = rotation;
     let position = spawn.common.position;
     network.send_in_range_instance(
@@ -441,13 +445,6 @@ pub(crate) fn face_for_cast(
         ),
         DestinationNetwork::ZoneClients,
     );
-}
-
-/// Whether a cast's facing is another than the one the NPC has (the shorter way round.)
-pub(crate) fn turns_for_cast(facing: f32, cast: f32) -> bool {
-    let turn = (cast - facing + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU)
-        - std::f32::consts::PI;
-    turn.abs() > CAST_TURN
 }
 
 /// Whether an NPC stays where it is this tick: held by its director or an action's lock (`busy_bnpc`, `root_bnpc`,
@@ -1846,6 +1843,7 @@ pub fn npc_behavior(
                 && spawn.common.target_id.object_id.is_valid()
                 && timeline.autoattack_action_id != 0
                 && *autoattack_timing >= NPC_AUTO_ATTACK_TICKS
+                && auto_attacks(instance.attacks_held.contains(id))
             {
                 *autoattack_timing = 0;
                 // Casters' "auto-attacks" are spells with a cast bar.

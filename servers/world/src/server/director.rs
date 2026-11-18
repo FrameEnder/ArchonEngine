@@ -60,6 +60,9 @@ pub enum LuaDirectorTask {
         position: Option<Position>,
         args2: Option<u32>,
         state: Option<u8>,
+        /// Retail's flags byte for it (`SpawnObject::flag_4`: bit 0 not targetable, bit 2 unknown), when the
+        /// script gives one.
+        flags: Option<u8>,
     },
     SendVariables,
     AbandonDuty {
@@ -571,6 +574,13 @@ pub enum LuaDirectorTask {
         who: u32,
         held: bool,
     },
+    /// A BNpc's auto-attacks stopped (`held`) or let go again (`Instance::attacks_held`): its timeline and its moves
+    /// go on. Cape Westwind's boss never auto-attacked while the four were out or in his last part (six retail
+    /// runs), with players in his reach in both.
+    HoldAttacks {
+        who: u32,
+        held: bool,
+    },
     /// `director:engage_bnpc`: into a fight, after `target` (its weapon drawn, its nameplate red), or out of it.
     EngageBattleNpc {
         who: u32,
@@ -911,13 +921,20 @@ impl UserData for LuaDirector {
             "spawn_eobj",
             |lua,
              this,
-             (base_id, position, args2, state): (u32, Value, Option<u32>, Option<u8>)| {
+             (base_id, position, args2, state, flags): (
+                u32,
+                Value,
+                Option<u32>,
+                Option<u8>,
+                Option<u8>,
+            )| {
                 let position: Option<Position> = lua.from_value(position).ok();
                 this.tasks.push(LuaDirectorTask::SpawnEObj {
                     base_id,
                     position,
                     args2,
                     state,
+                    flags,
                 });
                 Ok(())
             },
@@ -1630,6 +1647,16 @@ impl UserData for LuaDirector {
             |_, this, (who, target): (u32, Option<u32>)| {
                 this.tasks
                     .push(LuaDirectorTask::EngageBattleNpc { who, target });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "hold_attacks",
+            |_, this, (who, held): (u32, Option<bool>)| {
+                this.tasks.push(LuaDirectorTask::HoldAttacks {
+                    who,
+                    held: held.unwrap_or(true),
+                });
                 Ok(())
             },
         );
@@ -2760,6 +2787,7 @@ pub fn director_tick(
                 position,
                 args2,
                 state,
+                flags,
             } => {
                 let object = instance.zone.get_event_object(*base_id).or_else(|| {
                     let targetable = game_data.lock().eobj_targetable(*base_id)?;
@@ -2790,6 +2818,10 @@ pub fn director_tick(
                     }
                     if let Some(state) = state {
                         object.event_state = EventState::from_bits_retain(*state);
+                    }
+                    if let Some(flags) = flags {
+                        object.not_targetable = flags & 1 != 0;
+                        object.flag_4 = flags & 4 != 0;
                     }
                     instance.insert_object(object.entity_id, object, String::default()); // TODO: insert layer name
                 } else {
@@ -4340,6 +4372,17 @@ pub fn director_tick(
                 };
                 let target_id = target.and_then(|target| resolve_bnpc(instance, target));
                 engage_npc(&mut network.lock(), instance, actor_id, target_id);
+            }
+            LuaDirectorTask::HoldAttacks { who, held } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to hold its attacks!");
+                    continue;
+                };
+                if *held {
+                    instance.attacks_held.insert(actor_id);
+                } else {
+                    instance.attacks_held.remove(&actor_id);
+                }
             }
             LuaDirectorTask::HoldBattleNpc { who, held } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {

@@ -1654,19 +1654,45 @@ fn an_npc_that_stands_still_gets_no_further_along_its_path() {
     assert!(!stands_still(false, Some((6499, now, 6499)), now));
 }
 
-/// Bob's second test of Cape Westwind ("he is showing his boss aoe in the right spot then shooting it in the wrong
-/// spot"): kept in the middle while the four were out, the boss never turned, so 28874's marker (the cast's own
-/// rotation, 1.62 to 2.78) lay towards the player and he swung the way he'd been left facing (0.0). Retail sends an
-/// ActorMove with the cast's facing with each ActorCast; here, whenever it's another than the one he has.
+/// Bob's second and third tests of Cape Westwind ("he is showing his boss aoe in the right spot then shooting it in
+/// the wrong spot", "attack still doesn't perfectly align with aoe"): kept in the middle while the four were out, the
+/// boss never turned, so 28874's marker (the cast's own rotation) lay towards the player and he swung the way he'd
+/// been left facing. Retail sends an ActorMove with the cast's facing with every ActorCast; so does `face_for_cast`,
+/// whatever facing the NPC is taken to have (it had already been given the cast's, which is why a first version
+/// that compared the two sent nothing.)
 #[test]
 fn an_npc_turns_to_its_cast() {
-    use crate::server::npc_behavior::turns_for_cast;
-    assert!(turns_for_cast(0.0, 1.62));
-    assert!(turns_for_cast(2.53, 2.22));
-    assert!(!turns_for_cast(1.62, 1.62));
-    assert!(!turns_for_cast(1.62, 1.625));
-    // The same facing, written either side of the half turn.
-    assert!(!turns_for_cast(std::f32::consts::PI, -std::f32::consts::PI));
+    use crate::server::npc_behavior::face_for_cast;
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let boss = world.enemy(ENEMY, [2.0, 0.0, 2.0], 24609);
+    if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(boss) {
+        spawn.common.rotation = -2.8;
+    }
+    world.sent(player);
+    face_for_cast(&mut world.network.lock(), &mut world.instance, boss, -2.8);
+    let moves: Vec<f32> = world
+        .sent(player)
+        .into_iter()
+        .filter_map(|message| match message {
+            FromServer::ActorMove(id, _, rotation, ..) if id == boss => Some(rotation),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(moves, vec![-2.8]);
+}
+
+/// Bob's third test of Cape Westwind ("boss is using melee when he shouldn't"): kneeling in the middle with the four
+/// out, the boss auto-attacked whoever stood by him. Retail's didn't once there, nor in his last part, in six runs.
+/// A director stops an NPC's auto-attacks (`director:hold_attacks`); the rest of what it does goes on.
+#[test]
+fn a_director_stops_an_npcs_auto_attacks() {
+    use crate::server::npc_behavior::auto_attacks;
+    let mut world = TestWorld::new();
+    let boss = world.enemy(ENEMY, [2.0, 0.0, 2.0], 24609);
+    assert!(auto_attacks(world.instance.attacks_held.contains(&boss)));
+    world.instance.attacks_held.insert(boss);
+    assert!(!auto_attacks(world.instance.attacks_held.contains(&boss)));
 }
 
 /// Bob's second test of Cape Westwind ("another circle end to circle middle teleport"): the boss's leap (28872)

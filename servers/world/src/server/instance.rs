@@ -265,6 +265,8 @@ pub struct Instance {
     /// NPCs a director holds (`director:hold_bnpc`): `npc_behavior` leaves them alone, so they do only what the
     /// director has them do (warps, jumps, actions), as retail's invisible boss helpers.
     pub held_npcs: std::collections::HashSet<ObjectId>,
+    /// NPCs whose director has stopped their auto-attacks (`director:hold_attacks`): they cast and move as ever.
+    pub attacks_held: std::collections::HashSet<ObjectId>,
     /// BNpcs a director keeps in front of another wherever it goes (`director:attach_bnpc`): each one's parent and how
     /// far before it (`director::keep_attached`.)
     pub attached_npcs: HashMap<ObjectId, (ObjectId, f32)>,

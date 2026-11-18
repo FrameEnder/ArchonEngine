@@ -96,6 +96,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `party_spots(action, x, z, spots, react_low, react_high, inside)` | Where the party goes as an enemy casts `action` from near (x, z) (within 3 yalms; anywhere if nil): `spots = { tank = { x, z }, healer = { x, z }, dps = { x, z } }` (also `melee`, `ranged`, `dps2`), each member to its role's spot, caught or not, setting off `react_low`-`react_high` s after the cast begins (0.0-0.3 if nil), unless the spot is in an attack being cast (then by the shapes). With `inside` true the spots stand inside `action`'s own area by design (one that covers the arena and hurts less farther out: Titan's Geocrush) and only the other attacks being cast send a member to the shapes (2026-11-09). Set in `onSetup`: retail's Duty Support members' spots for a duty's big casts ([Party Bots](party-bots.md#how-it-fights)). The same action and place set again takes the new spots. |
 | `party_positions(spots, seconds)` | Sends the party to `spots` (as `party_spots`') for `seconds`, whatever is being cast; nil calls it off (a wipe does too). The Stone Vigil's flight before the Sheets of Ice, and the whirlwinds' lanes. |
 | `engage_bnpc(npc, target)` | An NPC (actor ID or layout ID) joins the fight as retail's did, without fighting on its own: ActorControl ToggleWeapon (weapon out), SetEventState 0, SetBattle and SetTarget `target` (an NPC; `director::engage_npc`). Without `target` it leaves the fight: weapon away, SetBattle off, its target cleared. Quest battle 86's talker (since 2026-11-11). |
+| `hold_attacks(npc, held)` | (2026-11-18) Stops the NPC's auto-attacks (`held` defaults to true) or lets them go again; its timeline and moves go on. Cape Westwind's boss while the four are out and in his last part. |
 | `hold_bnpc(npc, held)` | Holds an NPC (actor ID or layout ID; `held` defaults to true): `npc_behavior` leaves it alone (no noticing, chasing, timeline or enmity on players), so it does only what the director has it do, as retail's boss helpers (`Instance::held_npcs`). |
 | `fade_out_bnpc(npc)` | Fades an NPC (actor ID or layout ID) out, as retail does before taking away one that leaves without dying: ActorControl `FadeOut` (607) `[itself, 1, 0, 100]` from it; despawn it a moment later (retail's DeleteActor came 0.6-1.4 s after). Brotherly Love's beast and Claxio as "Duty Complete" played. |
 | `retreat_bnpc(npc, x, y, z)` | The NPC gives up the fight and runs back to where it appeared, paying no attention to anyone (an open-world leash's return: enmity cleared every tick, its target dropped, no health back in content). Whoever was after it can chase it. Brotherly Love's beast as its friends fell. With `x, y, z` (since 2026-11-03) it runs there instead, along the navmesh (its home from then on): Haukke Manor's eye to the last room's door. A cast it was in the middle of is cancelled (CancelCast 537 `[537, 1, action, 0]`, retail's for the eye's 514). |
@@ -122,6 +123,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `leave_boss_room(boss)` | A boss that leaves its room without dying (despawned, not killed): it no longer holds the room, which opens (wall and line hidden, log 2014) if none of the room's other bosses is left. Brayflox's Longstop's dragon (429), which holds the third room with its boss (`boss_room` for both with one wall) and flies off (2026-11-03). |
 | `map_effect(index, timeline, state)` | DirectorMapEffect: a map effect to `timeline` and `state` (1 unless given; Brayflox's Longstop's puddles go to 4 with timeline 8 as they burst). |
 | `map_effect_at(layout_id, timeline, state, otherwise)` | The same for the map effect on a layout object (a SharedGroup of the duty's LGB): its index is where the ID stands in the InstanceContent's ContentDirectorManagedSG (`GameData::get_map_effects`, the list the director's DirectorSetupMapEffects follows), or `otherwise` if it isn't there (Brayflox's Longstop's puddles.) |
+| `spawn_eobj(eobj, position, args2, state, flags)` | (`flags`, since 2026-11-18: retail's flags byte for the object, bit 0 not targetable and bit 2 unknown; Cape Westwind's burning ground has 5.) |
 | `spawn_eobj(eobj, position, args2, state)` | `state` (since 2026-11-14) is SpawnObject's event state when it isn't the layout's: a quest battle's own objects came with 1 and their layout ID as `args2` (65's two, 60's rosary). Spawns an event object of the zone's layout (at `position`, a table with x, y, z, if given), or, when the layout has none, one made from its EObj row alone (layout ID 0, the director's handler, radius 1: Haukke Manor's pair's key, as retail spawned it). `args2` is SpawnObject's, as retail sent it (EObj-specific: 1282 and 66818 for Haukke Manor's two dropped keys). |
 | `warp_to_pop_range(actor_id, pop_range)` | Sends that player to a pop range of the duty, as a shortcut does (PrepareZoning to the same territory, then ActorSetPos): a gimmick of the script's own that warps. |
 | `set_attack_range(npc, yalms)` | How close the NPC gets to its target before attacking: melee (3) or a caster's distance. |
@@ -2133,8 +2135,9 @@ given 28873 forty-three times in a row from 123.5 s.
   talk 33414. This is the chain: 35 is the tether between them, 3134 holds the player where they stand, free to
   act, until they leave (the server's condition 43), and 28880 pulls them in ("The second test's marks", below).
 * **The last part** (from 454.2): 28881 at once; a helper's 28882 beside him at
-  4.1 s; **28883 every 13.15 s** from 9.5 s (4.7 s casts, 507-626), status 3008 on him one stack higher before each,
-  talks 33415-33419 with the first five; status 2194 on the player from 7.8 s to his death (523.2). 3008, 2194 and
+  4.1 s, which leaves **the ground there burning** ("The third test's marks", below); **28883 every 13.15 s** from
+  9.5 s (4.7 s casts, 507-626), status 3008 on him from 7.7 s and one stack higher with each 28883 from the second,
+  talks 33415-33419 with the first five; no auto-attack from him in it; status 2194 on the player from 7.8 s to his death (523.2). 3008, 2194 and
   28879's 3134 have no timer (Kawari Witness): 3134 stays on the player until they leave (it was given for ten
   minutes here).
 
@@ -2182,6 +2185,22 @@ the harness beside retail's packets in his capture 178b0de0):
 
 Not played since. What the client does with condition 43 and with the leap's new packet is retail's by its bytes,
 not by anything seen here.
+
+**The third test's marks** (Bob, 2026-11-18, on `54add42`: "ok only a few things to fix I think the biggest is the
+AOE damage circle effect that shows up around 50% to 48% ... it casts the burns enfeeblement on the person standing
+inside"; four marks. The chain and the shield weren't marked: his last mark was made standing on the spot the
+pull brings the player to.)
+
+| Mark | What the server did | Retail | Now |
+|---|---|---|---|
+| "missing ground aoe damage zone" | Status 2194 on the player 8 s into the last part, with nothing to see and no damage. | 0.9 s after the helper's 28882 lands beside him, a **SpawnObject**: event object 2012827 where the helper stood (flags byte 5, arguments 0 and 0x00500003, the director its handler). Status 2194 on the player 0.6 s after the landing (ActorControl 20), and **ActorControl 1541 `[0, 142 to 157, 0xE0000000]` on them every 3.0 s** until he falls, the same for a Paladin, two White Mages and a Summoner. As he falls the object gets ActorControl 106 `[7]`, and is gone 3.1 s later. 3008's first stack on him comes with it (7.7 s), not with his first 28883. | `spawn_eobj` with retail's flags and arguments; 2194 with a tick of 150 from no one while the player stands within 5 yalms of it, off when they don't; the object's control and removal as he falls; 3008 from 7.7 s. |
+| "attack still doesn't perfectly align with aoe" | No ActorMove with any cast: the turn added after the second test never went out ([Combat](combat.md), "An NPC turns to its cast"). | One with every cast. | Sent with every cast. |
+| "boss is using melee when he shouldn't" | He auto-attacked every 3 s while kneeling with the four out. | No auto-attack between talk 33404 and talk 33410, nor in the last part (six runs). | `hold_attacks`. |
+| "leap not perfect" | The leap's packet was retail's this time (AoeEffect8 at no one, the middle for its position, lock 2.1), SnapNextMove and the move 1.0 s later, the cast 2.5 s after the leap; he didn't turn to that cast (the row above). | The move 1.1 s later, the next cast 2.1 s after the leap, with its turn. | The turn. What else was off isn't in the packets I compared: Bob to say what he saw. |
+
+How far the burning ground reaches was never seen (every retail player stood 1.4 yalms from its middle, chained
+there): 5 yalms is a guess. That event object 2012827 draws the burning circle is read from its being the only
+thing retail sent then.
 
 **The Paladin's two runs** (2026-11-18, the third pass: Bob's capture 178b0de0, "fighting Cape Westwind on my tank
 twice I died and then re-ran it to get some more data", with Kawari Witness's `facts.json`). What they showed wrong,
