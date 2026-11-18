@@ -268,6 +268,9 @@ None of it played yet; the page not used against the running server.
   weren't seen. Where the helper that pulls the player in stands is the one spot seen (the players all stood where
   the cutscene puts them): whether it's fixed or 2.5 yalms from him towards wherever the player is isn't known. He
   auto-attacked a second after his leap here; whether retail's can inside that lock wasn't looked at.
+* Cape Westwind's shield (status 2195 with param 394, since 2026-11-18): that the param is what draws it is read
+  from retail's bytes; Bob hasn't seen it yet. The server gives it as the action's status on its user (effect 15)
+  where retail's is effect 14 on its target, himself.
 * Every NPC held or casting used to cover the ground it would have run meanwhile in one step when let go
   (`combat.md`, "A held NPC keeps its path ahead of it"): fixed for all of them at once, checked by its own test
   and no fight replayed. Pulls, pushes and statuses with no damage can't miss any more (they could, by the NPC's

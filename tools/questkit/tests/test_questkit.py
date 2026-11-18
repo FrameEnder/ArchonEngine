@@ -710,6 +710,23 @@ class BattleSimPlayerTest(unittest.TestCase):
         self.assertIn(("aim_action", [9082104, 28872, -689.02, 65.08, -815.03]),
                       [(name, args) for t, name, args in calls])
 
+    def test_cape_westwinds_shield_shows(self):
+        """Bob, 2026-11-18: "check the shield vfx, cause it was not working". Retail's 28866 gives the boss 680 with
+        param 1 and 2195 with param 394 for 7 s in its own ActionEffect (his Chronofoil capture 178b0de0); the
+        director gave both with param 0, and the second's param is the shield."""
+        from lupa.lua54 import LuaRuntime
+        lua = LuaRuntime(unpack_returned_tuples=True)
+        given = []
+        lua.globals().GIVEN = lambda *args: given.append(tuple(args))
+        lua.execute("""function EffectsBuilder()
+            return { gain_effect_self = function(_, status, param, duration) GIVEN(status, param, duration) end }
+        end""")
+        lua.execute((repo.SCRIPTS / "actions" / "288" / "CapeWestwindBoss_28866.lua").read_text())
+        lua.globals().doAction(None, False)
+        self.assertEqual(given, [(680, 1, 7.0), (2195, 394, 7.0)])
+        director = (repo.SCRIPTS / "content" / "questbattle" / "5060.lua").read_text()
+        self.assertNotIn("gain_effect(boss, STATUS_STANCE", director)
+
     def test_placed_from_a_run(self):
         """A run's helpers (battle NPCs with no layout ID) give `placed` and everyone's positions; a few HP isn't the
         floor's 0.1 %."""

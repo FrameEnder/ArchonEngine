@@ -2056,8 +2056,9 @@ given 28873 forty-three times in a row from 123.5 s.
 
 * **First part**: 28871 at 6.1 s after the pull and 28870 at 11.3 (2.7 s casts where he stands, facing the player);
   28864 at 21.5 (talk 33403), and 6.0 s after it began four helpers' 28865 a second apart along a row (3.7 s casts);
-  28866 at 37.7 (talk 33402, ActorControl 63 `[7]`; statuses 680 and 2195 on him as it ends, for 7.76 s, then 63
-  `[0]`): **his shield is up**. He doesn't move, turn or auto-attack from the cast's start until the statuses are
+  28866 at 37.7 (talk 33402, ActorControl 63 `[7]`; statuses 680, param 1, and 2195, param 394, on him 0.8 s
+  after it ends for 7.0 s, the action's own effects, then 63 `[0]`): **his shield is up** (2195's param is what
+  shows it). He doesn't move, turn or auto-attack from the cast's start until the statuses are
   gone (no auto-attack between 37.4 and 51.4 s in any run; `busy_bnpc` for 12.8 s), and while they're on him a hit
   from in front is **blocked for nothing** (effect 6, `06 00 00 9C 00 00 00 00`, in the damage's place) and
   answered 0.97 s later by a helper put on his spot, facing as he does, with **28867** on whoever struck: 769 and
@@ -2173,7 +2174,7 @@ the harness beside retail's packets in his capture 178b0de0):
 
 | Mark | What the server did | Retail | Now |
 |---|---|---|---|
-| "shield vfx now showing after update" | (right) | | |
+| "shield vfx now showing after update" (Bob afterwards: "I meant not working check the shield vfx, cause it was not working") | The director gave him statuses 680 and 2195 with param 0, by ActorControl 20, 5.0 s after the cast began for 7.76 s. | They are 28866's own effects (`0E 02 00 01 00 00 A8 02`, `0E 00 00 8A 00 00 93 08`): **680 with param 1 and 2195 with param 394**, on him 0.8 s after it lands for 7.0 s, himself their source, and taken off with those params. 2195's param is the shield that shows. | The action's script gives both with retail's params (`actions/288/CapeWestwindBoss_28866.lua`); the director's two are gone. |
 | "still teleporting to ring end and ring center", and three more of "circle end to circle middle teleport" | Two things. Let go after a cast and its lock, he covered his whole path in one ActorMove (13.9 yalms onto the player's own spot, 85.8 s in). And his leap (28872) was an ActionEffect1 naming himself, with the move to the middle a second later the only thing to see. | He walks back in steps a third of a second apart. The leap is an AoeEffect8 at no one whose position is the middle; SnapNextMove and the move 1.1 s later; nothing else for its 2.1 s lock. | `stands_still` in both passes; the leap goes out as retail's (`aim_action`, `jump_bnpc` with speed 60 and his facing kept), and he stands through its lock ([Combat](combat.md)). |
 | "he is showing his boss aoe in the right spot then shooting it in the wrong spot" | Kept in the middle while the four were out, he never turned: 28874's marker lay towards the player, his body faced 0.0. | An ActorMove with the cast's facing with every ActorCast. | `face_for_cast`. |
 | "he used his ground effect during the stage transition" | 28874 went on every 14.25 s after the four fell: twice more, the second landing 2 s into the second part. | None after the last of the four fell, in six runs. | `afterAdds` stops his clock and his cast. |

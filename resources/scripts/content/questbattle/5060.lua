@@ -20,7 +20,8 @@
 --         after it began a row of four of the helpers' 28865 a second apart, the row of the three nearest the player
 --         as the cast began (`nearestRows`: the second in the four older runs, the first in the Paladin's two, and
 --         in all three of its uses in the long one); 28866 at 37.7 (talk 33402, ActorControl
---         63 [7]): his shield up, statuses 680 and 2195 on him from its end for 7.76 s, then 63 [0]. He doesn't move,
+--         63 [7]): his shield up, statuses 680 (param 1) and 2195 (param 394: the shield that shows) on him from
+--         0.8 s after its end for 7.0 s, the action's own effects, then 63 [0]. He doesn't move,
 --         turn or attack from the cast's start until they're gone (12.8 s), and a hit from in front of him then is
 --         blocked for nothing and answered a second later by a helper's 28867 from his spot on whoever struck (769
 --         and Knockback 7): the one hit from 0 degrees off his facing in the four runs; the nineteen from 46 to 68
@@ -197,9 +198,6 @@ PART_SECOND = 33410
 PART_NONE = 13811
 PART_LAST = 33414
 
-STATUS_STANCE_1 = 680
-STATUS_STANCE_2 = 2195
-STANCE_SECONDS = 7.76
 -- From the cast's start: how long he stands as he is, and when the shield is up (the statuses are given 5.05 s in; a
 -- hit 5.4 s in landed, one 5.9 s in was blocked.)
 STANCE_HELD = 12.8
@@ -430,13 +428,8 @@ function onActorCast(director, layout_id, action_id, actor_id)
         director:bnpc_control(BOSS, CONTROL_63, { 7 })
         -- He stands as he is until the shield is down: no step, no turn, no auto-attack (none in 13.7 s, four runs.)
         director:busy_bnpc(BOSS, STANCE_HELD)
+        -- (The two statuses are the action's own: `actions/288/CapeWestwindBoss_28866.lua`.)
         local this_part = part
-        after(5.0, function(d)
-            if boss ~= nil and part == this_part then
-                d:gain_effect(boss, STATUS_STANCE_1, 0, STANCE_SECONDS)
-                d:gain_effect(boss, STATUS_STANCE_2, 0, STANCE_SECONDS)
-            end
-        end)
         after(STANCE_GUARD_FROM, function(d)
             if part == this_part then
                 guarding = true
