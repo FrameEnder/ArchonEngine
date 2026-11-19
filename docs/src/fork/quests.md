@@ -936,6 +936,12 @@ three runs, every step from the city's last quests to We Come in Peace):
   to take the first path for the one being followed, so on retail a Twin Adder or Immortal Flames player may see the
   same; not checked.
 * ScenarioTree is read in whatever language it has.
+* **Clicking it** sends the server nothing: the client opens the map itself, at the quest's issuer for one not yet
+  taken (for one underway, at its objective). After Operation Archon (4521) the guide names A Hero in Need (1037)
+  with issuer location 4265821, the Allied communications officer in Western Thanalan (on retail 1037 was taken
+  there 8 s after 4521 was done; Connor's capture e834e436). Bob's client didn't open the map for it from the Waking
+  Sands (his mark of 2026-11-19), though the server's packet was retail's byte for byte and M opens the map; why is
+  for Kawari Probe 0.7.2's record of the click (`known-issues.md`).
 
 * **Under the guide**: the client lists quests that unlock content (Quest's `Introduction`, e.g. My Little Chocobo,
   EventIconType 8) from its own state; nothing from the server names them. Retail ends a quest as UpdateQuest

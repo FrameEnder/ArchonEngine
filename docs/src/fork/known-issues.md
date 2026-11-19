@@ -833,6 +833,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   quests, not recorded as retail must; a quest done out of the story's order (with `!quest` or ArchonEngine
   ControlPanel) could put the guide on an earlier step. Steps before the city's last quests and after We Come in Peace
   weren't in a capture. We Come in Peace (3856) isn't scripted.
+* **The Scenario Guide's click opens no map** for A Hero in Need (1037, not yet taken) from the Waking Sands (Bob's
+  mark of 2026-11-19; M opens the map). Everything the server sends for it is retail's and the click sends nothing,
+  so the client is refusing for a reason of its own, not found yet: Kawari Probe 0.7.2's Stuck window records the
+  click and whether the map was asked to open ([Quests](quests.md#scenario-guide)).
 
 * **The Waking Sands' layer filter** is known from The Scions of the Seventh Dawn (90338) to The Black Wolf's
   Ultimatum (92221, at its sequence 255; what a visit with it at sequence 1 shows wasn't captured); later visits
