@@ -474,7 +474,22 @@ def _chronofoil(args) -> int:
         for problem in problems:
             print("MISSING " + problem)
         print(f"{len(seen)} keys named, {len(problems)} the table (resources/data/layer_filters.json) doesn't give")
-        return 1 if problems else 0
+        # And the duties' entrances: the circle the server has to know and the facing (chronofoil_entrances.py.)
+        from . import chronofoil_entrances
+
+        entries = []
+        for capture in captures:
+            entries += chronofoil_entrances.observe(capture, tables)
+        print(chronofoil_entrances.report(entries) or "No duty entries in these captures")
+        if args.save:
+            kept = chronofoil_entrances.merge(chronofoil_entrances.load(), entries)
+            chronofoil_entrances.save(kept)
+            print(f"{len(kept)} duty entries in {chronofoil_entrances.OBSERVATIONS}")
+        missing = chronofoil_entrances.check(entries)
+        for problem in missing:
+            print("MISSING " + problem)
+        print(f"{len(entries)} duty entries, {len(missing)} the server doesn't come in as retail did")
+        return 1 if problems or missing else 0
     fact = next((name for name in ("coverage", "uses", "statuses", "gauges", "actions", "controls", "registry", "areas")
                  if getattr(args, name)), None)
     if fact or args.ledger:
@@ -867,9 +882,12 @@ def main(argv=None) -> int:
                    help="keep only one spawn point of this BNpcBase, e.g. a hunt mark (repeatable)")
     p.add_argument("--layers", action="store_true",
                    help="every layer filter key the server named (ZoneInit, ActorSetPos) with the quests then, "
-                        "checked against resources/data/layer_filters.json; fails when the table gives another")
+                        "checked against resources/data/layer_filters.json, and every duty entry (where, which way, "
+                        "the entrance circle), checked against ENTRANCE_CIRCLE_IDS and entrance_facing.json; fails "
+                        "where the server would do otherwise")
     p.add_argument("--save", action="store_true",
-                   help="with --layers: keep the observations (numbers only) for the test suite's check")
+                   help="with --layers: keep the observations (numbers only, layer_keys.json and entrances.json) for the "
+                        "test suite's check")
     p.add_argument("--coverage", action="store_true",
                    help="how much of the captures the opcode tables name, by game version")
     p.add_argument("--uses", action="store_true",

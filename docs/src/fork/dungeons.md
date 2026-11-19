@@ -69,6 +69,37 @@ music?"). Since 2026-11-11 it's the duty's InstanceContent BGM (`GameData::find_
 is a reading of the column's name; there's no game install here to check that the Howling Eye's row says 155, so a
 duty whose music is wrong in game is the first sign it isn't.
 
+## Where players come in
+
+Players come in at the duty's entrance circle: an EObj bound to the spot they stand on (a SharedGroup), which retail's
+server hides with ActorControl 106 [7] at DutyCommence and shows again after a wipe. Kawari finds it by its EObj ID
+(`ENTRANCE_CIRCLE_IDS`, core `common/game.rs`); a duty whose circle isn't there comes in at a random pop range of the
+whole duty, its circle never hides, and the server log says so ("Territory …'s entrance circle isn't in
+ENTRANCE_CIRCLE_IDS"). That happened in the Stone Vigil (2026-11-07) and again in Castrum Meridianum (Bob's mark of
+2026-11-19 at Rock the Castrum: "the starting spawn point isn't even slightly set-up"; he came in at (-23.9, 70.1,
+21.9) where retail put players at (247.663, 87.15, -94.968) in all six entries), which had five retail runs in hand:
+nothing compared the captures with the list. The Praetorium's was missing too.
+
+So `questkit chronofoil <captures> --layers` (run on every capture as it comes in) now also reads every duty entry
+(`chronofoil_entrances.py`): where retail put the player, the client's first facing, and the circle (the first object
+with a bound layout retail hid with ActorControl 106 [7], within 15 yalms of the entry point). It fails where
+`ENTRANCE_CIRCLE_IDS` hasn't the circle or `entrance_facing.json` the facing; `--save` keeps the entries in
+`questkit/data/entrances.json` (119 entries from the 14 captures in hand that entered a duty, 2026-11-19), which the tests check on every push
+(`DutyEntrances`). The circles retail showed:
+
+| Territory | Duty | Circle (EObj) | Layout | Where retail put players |
+|---|---|---|---|---|
+| 281, 1067 | guildhests | 2000182 | 4600249, 4377979 | (0.598, 0, 14.6), (0.971, 0, 14.278) |
+| 1042 | The Stone Vigil | 2001869 | 4239683 | (0, 4.998, 306) |
+| 1043 | Castrum Meridianum | 2000562 | 9088360 | (247.663, 87.15, -94.968) |
+| 1044 | The Praetorium | 2000790 | 9058469 | (149.517, 187.039, 0.441) |
+| 1047 | The Howling Eye | 2000274 | 4247837 | (-0.113, -2.029, 17.533) |
+| 1048 | The Porta Decumana | 2007457 | 9088353 | (-758, -400, -600) |
+
+The other duty entries in the captures (quest battles, trials, the Hall of the Novice) showed no circle. Kawari
+puts players at the circle's bound object, which it reads from the layout; that the spot is retail's isn't checked
+for Castrum Meridianum and the Praetorium (no layout of theirs here).
+
 ## Facing at the entrance
 
 Retail turns players the same way every time they come into a given duty. Kawari had them face the way the
@@ -84,7 +115,9 @@ and before the player could turn. Every duty entered more than once had the same
 the Copperbell Mines 6, Toto-Rak 3). Six whose first update came more than 3 s in were left out (378, 522, 523, 580,
 581, 838); Haukke Manor (1040) is -1.5705, the ActorSetPos of one of its four runs (Bob's capture e7580e0d of
 2026-11-02; the other three's first updates came 8.7-22 s in); Brayflox's Longstop (1041) is -1.937, the first position update of Bob's capture 44df02fc (2026-11-03, 1.3 s in); the Stone Vigil (1042) -3.1416, the first position update of all three of Bob's runs of 2026-11-07 (its entrance rect faces 0). What decides the facing, in order (`change_zone_warp_to_entrance`, coming in and
-after a wipe): a duty script's `ENTRANCE_ROTATION`, the recorded facing, the entrance rect's, the entrance object's.
+after a wipe): a duty script's `ENTRANCE_ROTATION`, the recorded facing (16 more territories since 2026-11-19, from
+the duty entries `--layers` reads: 262, 281, 304, 305, 308, 309, 313, 320, 326, 330, 1047, 1049, 1052, 1127-1129; and
+1043, 1044, 1048), the entrance rect's, the entrance object's.
 The server log says which: "Players come in facing … (retail's, recorded for …)" or "The entrance rect … faces …".
 
 ## Clear rewards

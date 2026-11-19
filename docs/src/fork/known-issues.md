@@ -833,6 +833,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   quests, not recorded as retail must; a quest done out of the story's order (with `!quest` or ArchonEngine
   ControlPanel) could put the guide on an earlier step. Steps before the city's last quests and after We Come in Peace
   weren't in a capture. We Come in Peace (3856) isn't scripted.
+* **Layer filter keys after A Realm Reborn** (2026-11-19): Connor's capture af05916c, read whole with `--layers`, names
+  keys the table hasn't: the Waking Sands' 96535 and 96536 (after 1191, 1192 and 3878) and the Rising Stones' (351:
+  96654 to 100185, after 3878 to 1448). Not in `layer_keys.json` yet (the test would fail); 2.x's story isn't played.
 * **The Scenario Guide's click opens no map** for A Hero in Need (1037, not yet taken) from the Waking Sands (Bob's
   mark of 2026-11-19; M opens the map). Everything the server sends for it is retail's and the click sends nothing,
   so the client is refusing for a reason of its own, not found yet: Kawari Probe 0.7.2's Stuck window records the

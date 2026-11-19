@@ -34,7 +34,12 @@ pub const INVENTORY_ACTION_ACK_SHOP: u8 = 6;
 pub const INVENTORY_ACTION_ACK_GENERAL: u8 = 7;
 
 /// EObj IDs for entrance circle event objects.
-pub const ENTRANCE_CIRCLE_IDS: [u32; 5] = [
+///
+/// Fork: every duty entered in Bob's Chronofoil captures has its circle here (the bound object retail hid with
+/// ActorControl 106 [7] at DutyCommence): `questkit chronofoil <captures> --layers` fails on a captured duty whose
+/// circle is missing (`tools/questkit/questkit/data/entrances.json`). A duty whose circle isn't here comes in at a
+/// random pop range (Castrum Meridianum and the Praetorium did until 2026-11-19, the Stone Vigil until 2026-11-07.)
+pub const ENTRANCE_CIRCLE_IDS: [u32; 7] = [
     // Seen in ARR instanced content.
     2000182, // Seen in guildhests.
     2001710, // Seen in at least Endwalker.
@@ -45,6 +50,12 @@ pub const ENTRANCE_CIRCLE_IDS: [u32; 5] = [
     // The Howling Eye's (fork: layout 4247837; hidden at DutyCommence, ActorControl 106 with 7, in Bob's Chronofoil
     // capture 09ecf8e7, 2026-11-08.)
     2000274,
+    // Castrum Meridianum's (fork: layout 9088360, bound to 9088359; retail put players at (247.663, 87.15, -94.968)
+    // and hid it 19.9 s in, in all six entries of Connor's af05916c and Bob's 9ba7d981, 50e72631, 6320ae56, deea324c.)
+    2000562,
+    // The Praetorium's (fork: layout 9058469, bound to 9058464; players at (149.517, 187.039, 0.441), hidden 72.2 s
+    // in; the same captures, five entries.)
+    2000790,
 ];
 
 /// EObj ID for the "shortcut" in instanced content.

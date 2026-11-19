@@ -38,6 +38,11 @@ mod tests {
         assert_eq!(entrance_facing(1036), Some(-1.6239)); // Sastasha
         assert_eq!(entrance_facing(1037), Some(0.0)); // the Tam-Tara Deepcroft
         assert_eq!(entrance_facing(1045), Some(1.5708)); // the Bowl of Embers
+        // From the duty entries `questkit chronofoil --layers` reads (2026-11-19): Castrum Meridianum, the Praetorium,
+        // the Porta Decumana.
+        assert_eq!(entrance_facing(1043), Some(-1.5871));
+        assert_eq!(entrance_facing(1044), Some(1.5851));
+        assert_eq!(entrance_facing(1048), Some(-1.5709));
         assert_eq!(entrance_facing(132), None);
     }
 }

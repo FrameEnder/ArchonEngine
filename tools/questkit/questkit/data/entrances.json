@@ -1,0 +1,1598 @@
+{
+ "comment": "Every duty entry in the Chronofoil captures read so far: where retail put the player, the facing in the client's first position update (null when it came more than 3 s in), and the entrance circle retail hid with ActorControl 106 [7] (numbers only; `questkit chronofoil <captures> --layers --save` adds a capture's). The test suite checks ENTRANCE_CIRCLE_IDS (core/src/common/game.rs) has each circle and resources/data/entrance_facing.json each facing.",
+ "observations": [
+  {
+   "capture": "0cafbf61",
+   "territory": 249,
+   "content_finder_condition": 313,
+   "position": [
+    165.014,
+    14.096,
+    676.283
+   ],
+   "facing": -2.7266,
+   "circle": null
+  },
+  {
+   "capture": "0cafbf61",
+   "territory": 252,
+   "content_finder_condition": 332,
+   "position": [
+    -58.213,
+    25.262,
+    -135.324
+   ],
+   "facing": 0.1224,
+   "circle": null
+  },
+  {
+   "capture": "0cafbf61",
+   "territory": 262,
+   "content_finder_condition": 328,
+   "position": [
+    158.822,
+    33.731,
+    89.793
+   ],
+   "facing": -0.0886,
+   "circle": null
+  },
+  {
+   "capture": "0cafbf61",
+   "territory": 272,
+   "content_finder_condition": 333,
+   "position": [
+    -25.521,
+    10.869,
+    -439.72
+   ],
+   "facing": 2.4895,
+   "circle": null
+  },
+  {
+   "capture": "af05916c",
+   "territory": 281,
+   "content_finder_condition": 72,
+   "position": [
+    0.598,
+    -0.0,
+    14.6
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2000182,
+    "layout": 4600249,
+    "bound": 4600244,
+    "hidden_after": 108.0
+   }
+  },
+  {
+   "capture": "e834e436",
+   "territory": 304,
+   "content_finder_condition": 351,
+   "position": [
+    -498.888,
+    286.894,
+    167.439
+   ],
+   "facing": -2.5125,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 305,
+   "content_finder_condition": 352,
+   "position": [
+    -408.144,
+    -1.405,
+    -276.019
+   ],
+   "facing": 1.1013,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 305,
+   "content_finder_condition": 352,
+   "position": [
+    -408.144,
+    -1.405,
+    -276.019
+   ],
+   "facing": 1.1013,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 308,
+   "content_finder_condition": 357,
+   "position": [
+    -127.575,
+    -2.656,
+    -630.685
+   ],
+   "facing": -0.7186,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 308,
+   "content_finder_condition": 357,
+   "position": [
+    -127.575,
+    -2.656,
+    -630.685
+   ],
+   "facing": -0.7186,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 309,
+   "content_finder_condition": 358,
+   "position": [
+    -78.434,
+    1.887,
+    -627.731
+   ],
+   "facing": -1.1589,
+   "circle": null
+  },
+  {
+   "capture": "36c7d119",
+   "territory": 313,
+   "content_finder_condition": 362,
+   "position": [
+    -766.277,
+    225.273,
+    26.295
+   ],
+   "facing": -1.3056,
+   "circle": null
+  },
+  {
+   "capture": "b98a60bc",
+   "territory": 313,
+   "content_finder_condition": 362,
+   "position": [
+    -766.277,
+    225.273,
+    26.295
+   ],
+   "facing": -1.3056,
+   "circle": null
+  },
+  {
+   "capture": "667a68c5",
+   "territory": 320,
+   "content_finder_condition": 369,
+   "position": [
+    -318.231,
+    21.2,
+    173.089
+   ],
+   "facing": 0.0174,
+   "circle": null
+  },
+  {
+   "capture": "667a68c5",
+   "territory": 320,
+   "content_finder_condition": 369,
+   "position": [
+    -318.231,
+    21.2,
+    173.089
+   ],
+   "facing": 0.0174,
+   "circle": null
+  },
+  {
+   "capture": "667a68c5",
+   "territory": 320,
+   "content_finder_condition": 369,
+   "position": [
+    -318.231,
+    21.2,
+    173.089
+   ],
+   "facing": 0.0174,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 320,
+   "content_finder_condition": 369,
+   "position": [
+    -318.231,
+    21.2,
+    173.089
+   ],
+   "facing": 0.0174,
+   "circle": null
+  },
+  {
+   "capture": "a75e1390",
+   "territory": 326,
+   "content_finder_condition": 375,
+   "position": [
+    479.621,
+    -0.873,
+    -794.01
+   ],
+   "facing": 3.1002,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 330,
+   "content_finder_condition": 379,
+   "position": [
+    -305.495,
+    -41.818,
+    697.344
+   ],
+   "facing": -0.0,
+   "circle": null
+  },
+  {
+   "capture": "216f28eb",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 6.6
+   }
+  },
+  {
+   "capture": "216f28eb",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 6.6
+   }
+  },
+  {
+   "capture": "216f28eb",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 6.3
+   }
+  },
+  {
+   "capture": "216f28eb",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 6.3
+   }
+  },
+  {
+   "capture": "216f28eb",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 6.4
+   }
+  },
+  {
+   "capture": "216f28eb",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 6.4
+   }
+  },
+  {
+   "capture": "216f28eb",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 6.3
+   }
+  },
+  {
+   "capture": "216f28eb",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 6.4
+   }
+  },
+  {
+   "capture": "d1f99707",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 30.9
+   }
+  },
+  {
+   "capture": "d1f99707",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 31.5
+   }
+  },
+  {
+   "capture": "d1f99707",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 31.7
+   }
+  },
+  {
+   "capture": "d1f99707",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 31.5
+   }
+  },
+  {
+   "capture": "d1f99707",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 31.1
+   }
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    0.0,
+    4.998,
+    306.0
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 9.3
+   }
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1042,
+   "content_finder_condition": 11,
+   "position": [
+    -1.084,
+    3.95,
+    304.552
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2001869,
+    "layout": 4239683,
+    "bound": 4239670,
+    "hidden_after": 8.5
+   }
+  },
+  {
+   "capture": "50e72631",
+   "territory": 1043,
+   "content_finder_condition": 15,
+   "position": [
+    247.663,
+    87.15,
+    -94.968
+   ],
+   "facing": -1.5871,
+   "circle": {
+    "base": 2000562,
+    "layout": 9088360,
+    "bound": 9088359,
+    "hidden_after": 19.1
+   }
+  },
+  {
+   "capture": "50e72631",
+   "territory": 1043,
+   "content_finder_condition": 15,
+   "position": [
+    247.663,
+    87.15,
+    -94.968
+   ],
+   "facing": -1.5871,
+   "circle": {
+    "base": 2000562,
+    "layout": 9088360,
+    "bound": 9088359,
+    "hidden_after": 18.8
+   }
+  },
+  {
+   "capture": "6320ae56",
+   "territory": 1043,
+   "content_finder_condition": 15,
+   "position": [
+    247.663,
+    87.15,
+    -94.968
+   ],
+   "facing": -1.5871,
+   "circle": {
+    "base": 2000562,
+    "layout": 9088360,
+    "bound": 9088359,
+    "hidden_after": 19.3
+   }
+  },
+  {
+   "capture": "9ba7d981",
+   "territory": 1043,
+   "content_finder_condition": 15,
+   "position": [
+    247.663,
+    87.15,
+    -94.968
+   ],
+   "facing": -1.5871,
+   "circle": {
+    "base": 2000562,
+    "layout": 9088360,
+    "bound": 9088359,
+    "hidden_after": 19.2
+   }
+  },
+  {
+   "capture": "af05916c",
+   "territory": 1043,
+   "content_finder_condition": 15,
+   "position": [
+    247.663,
+    87.15,
+    -94.968
+   ],
+   "facing": -1.5871,
+   "circle": {
+    "base": 2000562,
+    "layout": 9088360,
+    "bound": 9088359,
+    "hidden_after": 19.9
+   }
+  },
+  {
+   "capture": "deea324c",
+   "territory": 1043,
+   "content_finder_condition": 15,
+   "position": [
+    247.663,
+    87.15,
+    -94.968
+   ],
+   "facing": -1.5871,
+   "circle": {
+    "base": 2000562,
+    "layout": 9088360,
+    "bound": 9088359,
+    "hidden_after": 19.1
+   }
+  },
+  {
+   "capture": "50e72631",
+   "territory": 1044,
+   "content_finder_condition": 16,
+   "position": [
+    149.517,
+    187.039,
+    0.441
+   ],
+   "facing": 1.5851,
+   "circle": {
+    "base": 2000790,
+    "layout": 9058469,
+    "bound": 9058464,
+    "hidden_after": 72.4
+   }
+  },
+  {
+   "capture": "6320ae56",
+   "territory": 1044,
+   "content_finder_condition": 16,
+   "position": [
+    149.517,
+    187.039,
+    0.441
+   ],
+   "facing": 1.5851,
+   "circle": {
+    "base": 2000790,
+    "layout": 9058469,
+    "bound": 9058464,
+    "hidden_after": 72.3
+   }
+  },
+  {
+   "capture": "9ba7d981",
+   "territory": 1044,
+   "content_finder_condition": 16,
+   "position": [
+    149.517,
+    187.039,
+    0.441
+   ],
+   "facing": 1.5851,
+   "circle": {
+    "base": 2000790,
+    "layout": 9058469,
+    "bound": 9058464,
+    "hidden_after": 72.7
+   }
+  },
+  {
+   "capture": "9ba7d981",
+   "territory": 1044,
+   "content_finder_condition": 16,
+   "position": [
+    149.517,
+    187.039,
+    0.441
+   ],
+   "facing": 1.5851,
+   "circle": {
+    "base": 2000790,
+    "layout": 9058469,
+    "bound": 9058464,
+    "hidden_after": 71.9
+   }
+  },
+  {
+   "capture": "af05916c",
+   "territory": 1044,
+   "content_finder_condition": 16,
+   "position": [
+    149.517,
+    187.039,
+    0.441
+   ],
+   "facing": 1.5851,
+   "circle": {
+    "base": 2000790,
+    "layout": 9058469,
+    "bound": 9058464,
+    "hidden_after": 72.2
+   }
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1047,
+   "content_finder_condition": 58,
+   "position": [
+    -0.113,
+    -2.029,
+    17.533
+   ],
+   "facing": -3.1391,
+   "circle": {
+    "base": 2000274,
+    "layout": 4247837,
+    "bound": 4246117,
+    "hidden_after": 7.7
+   }
+  },
+  {
+   "capture": "50e72631",
+   "territory": 1048,
+   "content_finder_condition": 830,
+   "position": [
+    -758.0,
+    -400.0,
+    -600.0
+   ],
+   "facing": -1.5709,
+   "circle": {
+    "base": 2007457,
+    "layout": 9088353,
+    "bound": 9088350,
+    "hidden_after": 8.0
+   }
+  },
+  {
+   "capture": "6320ae56",
+   "territory": 1048,
+   "content_finder_condition": 830,
+   "position": [
+    -758.0,
+    -400.0,
+    -600.0
+   ],
+   "facing": -1.5709,
+   "circle": {
+    "base": 2007457,
+    "layout": 9088353,
+    "bound": 9088350,
+    "hidden_after": 7.6
+   }
+  },
+  {
+   "capture": "9ba7d981",
+   "territory": 1048,
+   "content_finder_condition": 830,
+   "position": [
+    -758.0,
+    -400.0,
+    -600.0
+   ],
+   "facing": -1.5709,
+   "circle": {
+    "base": 2007457,
+    "layout": 9088353,
+    "bound": 9088350,
+    "hidden_after": 8.2
+   }
+  },
+  {
+   "capture": "af05916c",
+   "territory": 1048,
+   "content_finder_condition": 830,
+   "position": [
+    -758.0,
+    -400.0,
+    -600.0
+   ],
+   "facing": -1.5709,
+   "circle": {
+    "base": 2007457,
+    "layout": 9088353,
+    "bound": 9088350,
+    "hidden_after": 7.9
+   }
+  },
+  {
+   "capture": "178b0de0",
+   "territory": 1049,
+   "content_finder_condition": 865,
+   "position": [
+    -678.716,
+    63.668,
+    -808.737
+   ],
+   "facing": -2.115,
+   "circle": null
+  },
+  {
+   "capture": "178b0de0",
+   "territory": 1049,
+   "content_finder_condition": 865,
+   "position": [
+    -678.716,
+    63.668,
+    -808.737
+   ],
+   "facing": -2.115,
+   "circle": null
+  },
+  {
+   "capture": "667a68c5",
+   "territory": 1049,
+   "content_finder_condition": 865,
+   "position": [
+    -678.716,
+    63.668,
+    -808.737
+   ],
+   "facing": -2.115,
+   "circle": null
+  },
+  {
+   "capture": "9ba7d981",
+   "territory": 1049,
+   "content_finder_condition": 865,
+   "position": [
+    -678.716,
+    63.668,
+    -808.737
+   ],
+   "facing": -2.115,
+   "circle": null
+  },
+  {
+   "capture": "9ba7d981",
+   "territory": 1049,
+   "content_finder_condition": 865,
+   "position": [
+    -678.716,
+    63.668,
+    -808.737
+   ],
+   "facing": -2.115,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1049,
+   "content_finder_condition": 865,
+   "position": [
+    -678.716,
+    63.668,
+    -808.737
+   ],
+   "facing": -2.115,
+   "circle": null
+  },
+  {
+   "capture": "50e72631",
+   "territory": 1052,
+   "content_finder_condition": 867,
+   "position": [
+    -690.0,
+    -185.732,
+    480.0
+   ],
+   "facing": -1.5709,
+   "circle": null
+  },
+  {
+   "capture": "6320ae56",
+   "territory": 1052,
+   "content_finder_condition": 867,
+   "position": [
+    -690.0,
+    -185.732,
+    480.0
+   ],
+   "facing": -1.5709,
+   "circle": null
+  },
+  {
+   "capture": "9ba7d981",
+   "territory": 1052,
+   "content_finder_condition": 867,
+   "position": [
+    -690.0,
+    -185.732,
+    480.0
+   ],
+   "facing": -1.5709,
+   "circle": null
+  },
+  {
+   "capture": "9ba7d981",
+   "territory": 1052,
+   "content_finder_condition": 867,
+   "position": [
+    -690.0,
+    -185.732,
+    480.0
+   ],
+   "facing": -1.5709,
+   "circle": null
+  },
+  {
+   "capture": "af05916c",
+   "territory": 1052,
+   "content_finder_condition": 867,
+   "position": [
+    -690.0,
+    -185.732,
+    480.0
+   ],
+   "facing": -1.5709,
+   "circle": null
+  },
+  {
+   "capture": "af05916c",
+   "territory": 1067,
+   "content_finder_condition": 66,
+   "position": [
+    0.971,
+    0.0,
+    14.278
+   ],
+   "facing": null,
+   "circle": {
+    "base": 2000182,
+    "layout": 4377979,
+    "bound": 4377976,
+    "hidden_after": 47.7
+   }
+  },
+  {
+   "capture": "af05916c",
+   "territory": 1127,
+   "content_finder_condition": 1012,
+   "position": [
+    -13.0,
+    1.0,
+    0.0
+   ],
+   "facing": 1.5708,
+   "circle": null
+  },
+  {
+   "capture": "af05916c",
+   "territory": 1128,
+   "content_finder_condition": 1013,
+   "position": [
+    -13.0,
+    1.0,
+    0.0
+   ],
+   "facing": 1.5708,
+   "circle": null
+  },
+  {
+   "capture": "af05916c",
+   "territory": 1129,
+   "content_finder_condition": 1014,
+   "position": [
+    -13.0,
+    1.0,
+    0.0
+   ],
+   "facing": 1.5708,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.254,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.254,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    1.195,
+    -0.0,
+    29.674
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.254,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    1.195,
+    -0.0,
+    29.674
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.254,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.254,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    0.289,
+    -0.0,
+    29.8
+   ],
+   "facing": null,
+   "circle": null
+  },
+  {
+   "capture": "e834e436",
+   "territory": 1359,
+   "content_finder_condition": 1095,
+   "position": [
+    -0.304,
+    -0.0,
+    29.772
+   ],
+   "facing": null,
+   "circle": null
+  }
+ ]
+}

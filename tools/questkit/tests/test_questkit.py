@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, duty_sim, duty_sources, fixtures, ledger, ledger_facts, lint, public_sources, recording, replay, rotation_sim, scaffold, transcribe, triage  # noqa: E402
 from questkit import autoduty, fishing_data, questionable, repo  # noqa: E402
 from questkit import chronofoil_layers  # noqa: E402
+from questkit import chronofoil_entrances  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -1586,6 +1587,44 @@ class DropinTest(unittest.TestCase):
         self.assertAlmostEqual(spawn["rotation"], 3.14159, places=4)
         self.assertEqual(spawn["position"], [-213.5, -28.5, 128.0])
         self.assertEqual((spawn["flags"], spawn["max_links"], spawn["link_range"]), (2, 4, 20))
+
+
+class DutyEntrances(unittest.TestCase):
+    """Bob, 2026-11-19 ("the starting spawn point isn't even slightly set-up"): Castrum Meridianum's entrance circle
+    (EObj 2000562) wasn't in ENTRANCE_CIRCLE_IDS, so he came in at a random pop range, with five runs of it in the
+    captures. The Stone Vigil's had been the same (2026-11-07); nothing compared the captures with the list."""
+
+    def test_the_server_knows_every_entrance_retail_showed(self):
+        observations = chronofoil_entrances.load()
+        self.assertTrue(observations, "tools/questkit/questkit/data/entrances.json is empty")
+        self.assertEqual(chronofoil_entrances.check(observations), [])
+        # The ones that were missed, and where retail put the players.
+        castrum = [seen for seen in observations if seen["territory"] == 1043]
+        self.assertEqual(len(castrum), 6)
+        self.assertTrue(all(seen["circle"]["base"] == 2000562 and seen["position"] == [247.663, 87.15, -94.968]
+                            for seen in castrum))
+        self.assertTrue(any(seen["territory"] == 1044 and seen["circle"]["base"] == 2000790
+                            for seen in observations))
+
+    def test_a_missing_circle_or_facing_is_reported(self):
+        seen = {"capture": "made-up", "territory": 1043, "content_finder_condition": 15,
+                "position": [247.663, 87.15, -94.968], "facing": -1.5871,
+                "circle": {"base": 1999999, "layout": 1, "bound": 2, "hidden_after": 19.9}}
+        problems = chronofoil_entrances.check([seen])
+        self.assertEqual(len(problems), 1)
+        self.assertIn("1999999", problems[0])
+        self.assertIn("random pop range", problems[0])
+        # A facing the table has otherwise, and a territory it hasn't.
+        self.assertIn("says -1.5871", chronofoil_entrances.check([dict(seen, circle=None, facing=1.0)])[0])
+        self.assertIn("no entry", chronofoil_entrances.check([dict(seen, circle=None, territory=9999)])[0])
+        # No circle and no facing seen: nothing to say.
+        self.assertEqual(chronofoil_entrances.check([dict(seen, circle=None, facing=None)]), [])
+
+    def test_the_list_as_the_server_has_it(self):
+        circles = chronofoil_entrances.known_circles()
+        self.assertIn(2001869, circles)  # the Stone Vigil's, after a comment line
+        self.assertIn(2000562, circles)
+        self.assertNotIn(4239683, circles)  # a layout ID in a comment isn't one
 
 
 class LayerKeys(unittest.TestCase):

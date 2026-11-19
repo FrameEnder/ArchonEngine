@@ -433,6 +433,9 @@ reads, chat left out), so `compare` and the rest can use it.
   the quests the character had then (`chronofoil_layers.py`; exit 1 and a `MISSING` line otherwise). `--save` keeps
   them in `questkit/data/layer_keys.json`, which the tests check on every push
   (`LayerKeys.test_the_table_gives_every_key_retail_named`). Run it on every new capture ([Travel](travel.md)).
+  It also reads every duty entry (`chronofoil_entrances.py`: where retail put the player, the client's first facing,
+  the entrance circle retail hid) and fails where `ENTRANCE_CIRCLE_IDS` or `entrance_facing.json` hasn't it;
+  `--save` keeps those in `questkit/data/entrances.json` (`DutyEntrances`; [Dungeons](dungeons.md#where-players-come-in)).
 * **`--quest Q[,Q]`** prints what those quests did (`chronofoil_quest.py`): talks, scenes with their flags and the
   client's answers (yield or return, results, error code), notices, quest updates, and the zone changes, attunements
   and unlocks while their events were open. `questkit fixture --chronofoil` makes fixtures from the same reading.

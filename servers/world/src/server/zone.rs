@@ -1325,8 +1325,11 @@ pub fn change_zone_warp_to_entrance(
         exit_position = Some(pick_point_in_pop_range(destination_object));
         exit_rotation = Some(euler_to_direction(rotation.to_euler(EulerRot::XYZ)));
     } else {
-        tracing::warn!(
-            "Failed to find instanced content entrance?! This is a bug in Kawari, please report it!"
+        // Fork: a duty whose entrance circle isn't in ENTRANCE_CIRCLE_IDS. `questkit chronofoil <captures> --layers`
+        // names the circle from a retail capture of the duty.
+        tracing::error!(
+            "Territory {}'s entrance circle isn't in ENTRANCE_CIRCLE_IDS: players come in at a random pop range",
+            target_instance.zone.id
         );
         // I strongly suspect things like the Battlehall actuall end up doing this anyway (but not as a fallback)
         if let Some(destination_object) = target_instance.zone.find_random_pop_range() {
