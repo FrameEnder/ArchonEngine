@@ -533,8 +533,9 @@ pub fn npc_behavior(
         .lock()
         .get_battalion_enemies(crate::server::action::PLAYER_BATTALION);
     let mut allies_by_base: HashMap<(bool, u32), (u32, ObjectId)> = HashMap::new();
-    // And each living battle NPC's side and health in %, for entries with `ally_hp_below`.
-    let mut side_health: Vec<(bool, ObjectId, f32)> = Vec::new();
+    // And each living battle NPC's side, layout ID and health in %, lowest layout ID first, for entries with
+    // `ally_hp_below`.
+    let mut side_health: Vec<(bool, u32, ObjectId, f32)> = Vec::new();
     for (id, actor) in &instance.actors {
         if let NetworkedActor::Npc { spawn, .. } = actor
             && matches!(spawn.common.object_kind, ObjectKind::BattleNpc(_))
@@ -543,6 +544,7 @@ pub fn npc_behavior(
             let hostile = crate::server::action::at_war(&players_enemies, actor);
             side_health.push((
                 hostile,
+                spawn.common.layout_id,
                 *id,
                 spawn.common.health_points as f32 * 100.0
                     / spawn.common.max_health_points.max(1) as f32,
@@ -557,6 +559,7 @@ pub fn npc_behavior(
             }
         }
     }
+    side_health.sort_by_key(|(_, layout, _, _)| *layout);
     // Every battle NPC's hitbox bigger than a player's: one going for it stops that much further off
     // (`reach_for_size`.)
     let big_hitboxes: HashMap<ObjectId, f32> = instance
@@ -1764,26 +1767,27 @@ pub fn npc_behavior(
                 } else {
                     HashMap::new()
                 };
-                // The most hurt of its side, for an entry with `ally_hp_below` (a heal).
-                let hurt_ally = rotation
+                // The others of its side, for an entry with `ally_hp_below` (a heal).
+                let side = if rotation
                     .actions
                     .iter()
                     .any(|entry| entry.ally_hp_below.is_some())
-                    .then(|| {
-                        side_health
-                            .iter()
-                            .filter(|(side, ally, _)| *side == hostile && ally != id)
-                            .map(|(_, ally, health)| (*ally, *health))
-                            .min_by(|a, b| a.1.total_cmp(&b.1))
-                    })
-                    .flatten();
+                {
+                    side_health
+                        .iter()
+                        .filter(|(side, _, ally, _)| *side == hostile && ally != id)
+                        .map(|(_, _, ally, health)| (*ally, *health))
+                        .collect()
+                } else {
+                    Vec::new()
+                };
                 let situation = Situation {
                     now: Instant::now(),
                     target,
                     target_hp: health_percent.get(&target).copied().unwrap_or(100.0),
                     self_hp: health_percent.get(id).copied().unwrap_or(100.0),
                     allies,
-                    hurt_ally,
+                    side,
                 };
                 let mut game_data = game_data.lock();
                 let mut mechanics = |action| game_data.get_action_mechanics(action);

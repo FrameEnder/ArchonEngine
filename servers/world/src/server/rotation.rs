@@ -16,6 +16,9 @@ pub const GCD_GROUP: u8 = 58;
 pub const COMBO_WINDOW: Duration = Duration::from_secs(30);
 /// An ability isn't used straight after a GCD action, but this long after (weaving, as players do.)
 pub const WEAVE_DELAY: Duration = Duration::from_millis(1000);
+/// An NPC that has used nothing for this long is out of its fight: the next action begins a new one (`not_before`).
+/// The slowest of retail's kits act every 12 s.
+pub const FIGHT_OVER_AFTER: Duration = Duration::from_secs(20);
 
 /// What the Action sheet says about an action, as far as rotations go.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -50,6 +53,10 @@ pub struct RotationState {
     used_on: HashMap<(u32, ObjectId), Instant>,
     /// A GCD action that has to come next (an entry's `then`.)
     next: Option<u32>,
+    /// When this fight's first action was, and its latest (for `not_before`): a fight is over once the NPC has
+    /// used nothing for `FIGHT_OVER_AFTER` (it gave up, was sent home, or the party fell.)
+    began: Option<Instant>,
+    latest: Option<Instant>,
     /// An ability was used since the last GCD action.
     weaved: bool,
     /// How many abilities since the last GCD action (party bots' rotation scripts weave up to two.)
@@ -65,20 +72,21 @@ pub struct Situation {
     pub self_hp: f32,
     /// The NPCs on its own side by BNpcBase, one of each (the lowest layout ID), for entries used `on_ally`.
     pub allies: HashMap<u32, ObjectId>,
-    /// The most hurt living NPC of its own side other than itself and its health in %, for entries with
-    /// `ally_hp_below`.
-    pub hurt_ally: Option<(ObjectId, f32)>,
+    /// The living NPCs of its own side other than itself and their health in %, lowest layout ID first, for
+    /// entries with `ally_hp_below`.
+    pub side: Vec<(ObjectId, f32)>,
 }
 
 impl Situation {
-    /// Whom an entry is used on: its ally for one `on_ally`, the hurt one for one with `ally_hp_below` (no one while
-    /// none is that hurt), otherwise the NPC's target.
+    /// Whom an entry is used on: its ally for one `on_ally`, the first hurt one for one with `ally_hp_below` (no one
+    /// while none is that hurt), otherwise the NPC's target.
     pub fn target_for(&self, entry: &RotationAction) -> Option<ObjectId> {
         if let Some(below) = entry.ally_hp_below {
             return self
-                .hurt_ally
-                .filter(|(_, health)| *health < below)
-                .map(|(ally, _)| ally);
+                .side
+                .iter()
+                .find(|(_, health)| *health < below)
+                .map(|(ally, _)| *ally);
         }
         match entry.on_ally {
             Some(base) => self.allies.get(&base).copied(),
@@ -169,6 +177,11 @@ impl RotationState {
                     continue;
                 }
             }
+            if entry.not_before.is_some_and(|seconds| {
+                self.fight_age(now) < Duration::from_secs_f32(seconds.max(0.0))
+            }) {
+                continue;
+            }
             if entry
                 .target_hp_below
                 .is_some_and(|below| situation.target_hp >= below)
@@ -184,6 +197,16 @@ impl RotationState {
             return Some(entry.action);
         }
         None
+    }
+
+    /// How old its fight is: the time since the first action of it, nothing before that.
+    pub fn fight_age(&self, now: Instant) -> Duration {
+        match (self.began, self.latest) {
+            (Some(began), Some(latest)) if now.duration_since(latest) < FIGHT_OVER_AFTER => {
+                now.duration_since(began)
+            }
+            _ => Duration::ZERO,
+        }
     }
 
     /// When it last used `action`.
@@ -226,6 +249,13 @@ impl RotationState {
         now: Instant,
         mechanics: Option<ActionMechanics>,
     ) {
+        if self
+            .latest
+            .is_none_or(|latest| now.duration_since(latest) >= FIGHT_OVER_AFTER)
+        {
+            self.began = Some(now);
+        }
+        self.latest = Some(now);
         self.used.insert(action, now);
         self.used_on.insert((action, target), now);
         let gcd = mechanics.is_some_and(|m| m.gcd);
@@ -343,7 +373,7 @@ mod tests {
                 target_hp: 100.0,
                 self_hp: 100.0,
                 allies: HashMap::new(),
-                hurt_ally: None,
+                side: Vec::new(),
             };
             if let Some(action) = state.choose(rotation, &situation, &mut mechanics) {
                 state.record(rotation, action, ObjectId(1), now, mechanics(action));
@@ -532,7 +562,7 @@ mod tests {
             target_hp: 100.0,
             self_hp: 100.0,
             allies: HashMap::new(),
-            hurt_ally: None,
+            side: Vec::new(),
         };
         assert_eq!(
             state.choose(&rotation, &on_other, &mut mechanics),
@@ -544,7 +574,7 @@ mod tests {
             target_hp: 100.0,
             self_hp: 100.0,
             allies: HashMap::new(),
-            hurt_ally: None,
+            side: Vec::new(),
         };
         assert_eq!(
             state.choose(&rotation, &on_same, &mut mechanics),
@@ -566,7 +596,7 @@ mod tests {
             target_hp: 50.0,
             self_hp: 100.0,
             allies: HashMap::new(),
-            hurt_ally: None,
+            side: Vec::new(),
         };
         assert_eq!(state.choose(&finisher, &healthy, &mut mechanics), None);
         let low = Situation {
@@ -575,7 +605,7 @@ mod tests {
             target_hp: 10.0,
             self_hp: 100.0,
             allies: HashMap::new(),
-            hurt_ally: None,
+            side: Vec::new(),
         };
         assert_eq!(
             state.choose(&finisher, &low, &mut mechanics),
@@ -583,9 +613,11 @@ mod tests {
         );
     }
     #[test]
-    fn a_heal_waits_for_an_ally_hurt_enough() {
-        // Castrum Meridianum's BNpcBase 14574 (Bob's Chronofoil capture 6320ae56): its heal began on an ally at 4 to
-        // 9 %, and never while the same ally went from 47 to 12 %.
+    fn a_heal_waits_for_its_time_and_an_ally_hurt_enough() {
+        // Castrum Meridianum's BNpcBase 14574 and its heal (29178), three uses in five retail runs (Bob's Chronofoil
+        // captures 9ba7d981, 6320ae56 and deea324c): begun 43.3 to 45.3 s after its first cast though allies were at
+        // 6 to 8 % from 25 s, on allies at 9, 21 and 31 % (the last with another at 23 %: the lowest layout ID below
+        // half, not the most hurt); the others stood at 59 % and more.
         // Thunder stands in for the heal: the test's mechanics know it as a spell.
         const HEAL: u32 = THUNDER;
         let rotation = Rotation {
@@ -593,7 +625,9 @@ mod tests {
             actions: vec![
                 RotationAction {
                     action: HEAL,
-                    ally_hp_below: Some(10.0),
+                    ally_hp_below: Some(50.0),
+                    not_before: Some(43.0),
+                    every: Some(43.0),
                     ..Default::default()
                 },
                 RotationAction {
@@ -602,24 +636,43 @@ mod tests {
                 },
             ],
         };
-        let state = RotationState::default();
-        let with = |hurt_ally| Situation {
-            now: Instant::now(),
+        let start = Instant::now();
+        let with = |after: f32, side: &[(u32, f32)]| Situation {
+            now: start + Duration::from_secs_f32(after),
             target: ObjectId(1),
             target_hp: 100.0,
             self_hp: 100.0,
             allies: HashMap::new(),
-            hurt_ally,
+            side: side.iter().map(|(id, hp)| (ObjectId(*id), *hp)).collect(),
         };
-        for none_hurt in [None, Some((ObjectId(7), 12.0))] {
-            let situation = with(none_hurt);
+        let mut state = RotationState::default();
+        // Its spell each turn (3.2 s apart here, clear of rounding), an ally at 7 % or not.
+        let mut at = 0.0;
+        while at < 43.0 {
+            let situation = with(at, &[(7, 31.0), (8, 7.0)]);
             assert_eq!(
                 state.choose(&rotation, &situation, &mut mechanics),
-                Some(TRUE_THRUST)
+                Some(TRUE_THRUST),
+                "at {at}"
             );
-            assert_eq!(situation.target_for(&rotation.actions[0]), None);
+            state.record(
+                &rotation,
+                TRUE_THRUST,
+                ObjectId(1),
+                situation.now,
+                mechanics(TRUE_THRUST),
+            );
+            at += 3.2;
         }
-        let situation = with(Some((ObjectId(7), 8.0)));
+        // The next turn (past 43 s): nobody below half, so its spell is still what's chosen...
+        let situation = with(at, &[(7, 59.0), (8, 50.0)]);
+        assert_eq!(
+            state.choose(&rotation, &situation, &mut mechanics),
+            Some(TRUE_THRUST)
+        );
+        assert_eq!(situation.target_for(&rotation.actions[0]), None);
+        // ...and with two below, the heal on the first of them, not the most hurt.
+        let situation = with(at, &[(6, 80.0), (7, 31.0), (8, 23.0)]);
         assert_eq!(
             state.choose(&rotation, &situation, &mut mechanics),
             Some(HEAL)
@@ -627,6 +680,20 @@ mod tests {
         assert_eq!(
             situation.target_for(&rotation.actions[0]),
             Some(ObjectId(7))
+        );
+        state.record(&rotation, HEAL, ObjectId(7), situation.now, mechanics(HEAL));
+        // Not again in the 19 s retail's went on fighting with allies at 3 to 34 %.
+        let situation = with(at + 18.6, &[(8, 3.0)]);
+        assert_eq!(
+            state.choose(&rotation, &situation, &mut mechanics),
+            Some(TRUE_THRUST)
+        );
+        // A fight later (nothing used for FIGHT_OVER_AFTER, as after the party fell), the wait is from its start.
+        let situation = with(at + 120.0, &[(8, 3.0)]);
+        assert_eq!(state.fight_age(situation.now), Duration::ZERO);
+        assert_eq!(
+            state.choose(&rotation, &situation, &mut mechanics),
+            Some(TRUE_THRUST)
         );
     }
     #[test]
@@ -656,7 +723,7 @@ mod tests {
             target_hp: 100.0,
             self_hp: 100.0,
             allies: HashMap::new(),
-            hurt_ally: None,
+            side: Vec::new(),
         };
         assert_eq!(
             state.choose(&rotation, &alone, &mut mechanics),
@@ -664,7 +731,7 @@ mod tests {
         );
         let with_yodomi = Situation {
             allies: HashMap::from([(YODOMI, ObjectId(7))]),
-            hurt_ally: None,
+            side: Vec::new(),
             ..alone
         };
         assert_eq!(

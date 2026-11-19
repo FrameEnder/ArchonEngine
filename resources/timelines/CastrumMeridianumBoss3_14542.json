@@ -263,7 +263,7 @@
                 "action_id": 29352,
                 "target": "itself"
             },
-            "comment": "8.0 s: a 4.7 s cast on everyone, and 25.3 s; every 17.3 s here"
+            "comment": "8.0 s: a 4.7 s cast on everyone, and 25.3 s; every 17.3 s (the third would have come 2 s after it fell in the longest, deea324c's 40 s)"
         },
         {
             "time": 14.8,
@@ -274,7 +274,7 @@
                 "action_id": 29353,
                 "target": "itself"
             },
-            "comment": "14.8 s: no cast, on everyone; again every 17.3 s here (not seen: it fell 19 to 31 s into the last part)"
+            "comment": "14.8 s: no cast, on everyone; again every 17.3 s (17.3 to 17.4 s on in Bob's Chronofoil capture deea324c of 2026-11-19, whose last part ran 40 s; it fell 19 to 31 s into it in the other runs)"
         },
         {
             "time": 16.7,
@@ -285,7 +285,7 @@
                 "action_id": 29353,
                 "target": "itself"
             },
-            "comment": "16.7 s: no cast, on everyone; again every 17.3 s here (not seen: it fell 19 to 31 s into the last part)"
+            "comment": "16.7 s: no cast, on everyone; again every 17.3 s (17.3 to 17.4 s on in Bob's Chronofoil capture deea324c of 2026-11-19, whose last part ran 40 s; it fell 19 to 31 s into it in the other runs)"
         },
         {
             "time": 18.5,
@@ -296,7 +296,7 @@
                 "action_id": 29353,
                 "target": "itself"
             },
-            "comment": "18.5 s: no cast, on everyone; again every 17.3 s here (not seen: it fell 19 to 31 s into the last part)"
+            "comment": "18.5 s: no cast, on everyone; again every 17.3 s (17.3 to 17.4 s on in Bob's Chronofoil capture deea324c of 2026-11-19, whose last part ran 40 s; it fell 19 to 31 s into it in the other runs)"
         }
     ],
     "comment": "Castrum Meridianum's last boss (BNpcBase 14542, BNpcName 2118, layout 9060634): level 50, 119560 HP, there as the cutscene before its room begins. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.8) and Bob's 9ba7d981 (visit 0.12) and 50e72631 (visit 0.3) of 2026-11-17, all with Duty Support: five pulls (Connor's party fell twice), all the same to 0.2 s from the pull (battle talk 33515). Auto-attack 872 (264 to the tank); 28033 937 to a player and 768 to a member; 28798 827 to the tank; the last part's 29352 353 and 298, 29353 362 and 308. What goes with its other casts is the director's (content/w1d4_re.lua): the helpers' 28787, 29163, 28793, 28794, 28797, 28790, 29164 and 29356. Below 20 % the director starts the last part (`restart_timeline` with 33520). Hitbox and range not recorded."

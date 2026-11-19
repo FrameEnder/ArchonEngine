@@ -33,16 +33,18 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
   (`quest_side_talks.json`: 1007683 and 1007682); quest 1047 is scripted from it. **AcceptQuest**: retail sent none
   as 1047 was taken (it goes straight to sequence 255), in two captures; Kawari sends one with every `accept_quest`.
   What the client shows differently isn't known.
-* **Castrum Meridianum** (duty 15) is built from four runs (`dungeons.md`) and unplayed, **without its layout**: the
+* **Castrum Meridianum** (duty 15) is built from five runs (`dungeons.md`) and unplayed, **without its layout**: the
   places that set things off on the way (the first talks, map effects 2-3 and 8-9, the three in hiding, talks 33510,
   33513 and 33514, the objectives as a boss's room is entered) are where the party was in the runs, not the game's
   event ranges; a party that takes another line may set them off early, late or not at all (the script's `WHERE_*`).
   What the map effects are (gates, lights) isn't known either: they're sent when retail sent them, and whether
   Kawari's collision lets the party through before them is untested. The device after the first boss sends every
-  player on at once (`warp_players`), not only who used it. Also guessed: the bosses' rounds past the runs, the last
-  boss's last part past 25 s. A fall is retail's from the last room on (the entrance, then the shortcut to outside
+  player on at once (`warp_players`), not only who used it. Also guessed: the bosses' rounds past the runs (the first's seen to 243 s, the others' twice), the last
+  boss's last part past 40 s. A fall is retail's from the last room on (the entrance, then the shortcut to outside
   the last room: `update_shortcut_spot`, unplayed); before it the shortcut isn't shown, since where retail's goes
-  then wasn't seen. The heal of BNpcBase 14574 (`ally_hp_below` 10) is from one use.
+  then wasn't seen. The heal of BNpcBase 14574 is from three uses (from 43 s into its fight, on the first of its
+  side below half): when it comes again wasn't seen (`every` 43, a guess), and "below half" is anywhere from 32 to
+  59 %. 28785, 28798, 29169 and 29170 hit no player but a Paladin: their `players` amounts are his times 1.5 or 1.75.
 * **Not read yet**: what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came
   back in from Western Thanalan; the script's `onPartyWipe` is a guess); what came after the story (from 9688 s:
   warps 131089 and 131091, aetherytes, events 0xB0013 and 0xB0002, quest 524's completion with 4522's).
@@ -323,11 +325,11 @@ None of it played yet; the page not used against the running server.
 
 * Only Stun is in `status_resistance.json` (the only status retail's enemies were seen to refuse: Holy's). Sleep,
   Bind, Heavy and the rest are given in full every time, as before.
-* How long an enemy goes on refusing Stun wasn't seen to end (48.6 s at the longest): forgotten 60 s after the last
-  that took hold, a guess. A use counts once it's 2.5 s old, which fits 96 % of retail's (the rest were refused a
-  little sooner).
-* The fourteen kinds that refuse it outright are those the captures show; every boss not in them takes Stun as an
-  ordinary enemy does until a capture says otherwise.
+* How long an enemy goes on refusing Stun wasn't seen to end (48.6 s at the longest; 39.5 s in deea324c): forgotten
+  60 s after the last that took hold, a guess. A use counts once it's 2.5 s old, which fits 96 % of retail's (the
+  rest were refused a little sooner).
+* The sixteen kinds that refuse it outright are those the captures show (two of them from one refusal each: 14542,
+  14455); every boss not in them takes Stun as an ordinary enemy does until a capture says otherwise.
 * The helpers' timeline was two files until 2026-11-18 (`combat.md`), so in every duty with helpers but one their
   recorded damage wasn't used; which duties were short (the Copperbell Mines' or all the others') depended on the
   order the server's folder listed the files in, and none has been played since the merge.

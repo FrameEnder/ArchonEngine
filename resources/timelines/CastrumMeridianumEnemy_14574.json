@@ -18,8 +18,10 @@
         "actions": [
             {
                 "action": 29178,
-                "ally_hp_below": 10,
-                "comment": "a 1.2 s cast: a heal (747) on the most hurt of its side, begun with it at 4 to 9 % (once in four runs: Bob's Chronofoil capture 6320ae56 of 2026-11-18; not used as the same ally fell from 47 to 12 %)"
+                "ally_hp_below": 50,
+                "not_before": 43,
+                "every": 43,
+                "comment": "a 1.2 s cast: a heal (747, 736, 715) on one of its side. Three uses in five retail runs (Bob's Chronofoil captures 9ba7d981 of 2026-11-17, 6320ae56 of 2026-11-18 and deea324c of 2026-11-19; always the one of layout 9088912, whose twin falls first): begun 43.3, 43.4 and 45.3 s after its first cast, in the first of its spell's turns from 43 s on, though its twin had been at 6 to 8 % from 25 s; on allies at 9, 21 and 31 % of their health, the last with another at 23 % (each time the lowest layout ID of those below half; the others stood at 59 % and more). The two that lived 42 and 45 s never used it. Not used again in the 19 s one fought on with allies at 3 to 34 %: `every` is a guess"
             },
             {
                 "action": 969,

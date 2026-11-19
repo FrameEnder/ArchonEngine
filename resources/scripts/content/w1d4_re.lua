@@ -37,7 +37,8 @@
 --     3.1 and 3.3 s after the cast it was in) its last part: talk 33520, then the timeline's points after it.
 --
 -- Not known, so guessed or left out: the event ranges (above); the second and last bosses' clocks past what the
--- runs show (the rounds go on); what the last part does past 25 s (its 29352 and three 29353s every 17.3 s here);
+-- runs show (the rounds go on: the first's to 243 s, the last's 74.2 s round twice); what the last part does past 40 s
+-- (its 29352 and three 29353s every 17.3 s, seen twice);
 -- where 28788 takes the last boss when it isn't the middle (the middle here); a wipe (the party fell twice at the
 -- last boss in Connor's run and was back at it within 107 s: the fight begins again, everyone back in its room;
 -- at the first two the duty's entrance, as everywhere); the director's 0x80000007 [42] (sent as retail did); what

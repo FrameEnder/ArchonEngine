@@ -167,7 +167,9 @@ mod tests {
     fn some_enemies_refuse_stun_outright() {
         let mut resistance = Resistance::default();
         let now = Instant::now();
-        for base in [14582, 14583] {
+        // Cape Westwind's (59 of 59), and the two that refused their only one: Castrum Meridianum's last boss and
+        // the Praetorium's last boss's four (Kawari Witness's `refuses:2`, Bob's captures deea324c and 6320ae56.)
+        for base in [14582, 14583, 14542, 14455] {
             assert_eq!(
                 resistance.take(base, ObjectId(0x4000_2000), STUN, 4.0, now),
                 Taken::Refused

@@ -93,7 +93,9 @@ impl Shouts {
 /// * an ability (off the GCD) once its recast (or `every`) has passed, at most one between two GCD actions;
 /// * `refresh`: not again on the same target for that long (a damage-over-time or debuff, re-applied as it wears off);
 /// * `then`: the GCD action that has to follow this one (Life Surge, then Vorpal Thrust);
-/// * `target_hp_below` / `self_hp_below`: only then (in %).
+/// * `target_hp_below` / `self_hp_below`: only then (in %);
+/// * `not_before`: only once its fight is that old;
+/// * `on_ally` / `ally_hp_below`: on one of its own side, while there is one.
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct Rotation {
     /// Seconds between this NPC's weaponskills and spells. NPCs act far less often than players (retail's quest battle
@@ -129,11 +131,18 @@ pub struct RotationAction {
     /// Chronofoil capture df6f5af9.)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub on_ally: Option<u32>,
-    /// Use it on the most hurt living NPC of its own side (not itself) instead of its target, and only while one is
-    /// below this % of its health: Castrum Meridianum's BNpcBase 14574 began its heal (29178, 747) on one at 4 to
-    /// 9 % (Bob's Chronofoil capture 6320ae56 of 2026-11-18, its one use in four runs.)
+    /// Use it on a living NPC of its own side (not itself) that's below this % of its health instead of its target
+    /// (the lowest layout ID of them), and only while there is one. Castrum Meridianum's BNpcBase 14574 and its heal
+    /// (29178), three uses in five retail runs: on allies at 9, 21 and 31 % of their health, the last with another
+    /// at 23 % (so not the most hurt; each time the lowest layout ID of those below half), and none of the others,
+    /// at 59 % and more (Bob's Chronofoil captures 9ba7d981, 6320ae56 and deea324c, 2026-11-17 to 19.)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ally_hp_below: Option<f32>,
+    /// Not until its fight is this many seconds old (from its first action of it). The same heal began 43.3, 43.4
+    /// and 45.3 s after the NPC's first cast, in the first of its spell's turns from 43 s on, though allies had been
+    /// at 6 to 8 % from 25 s (the two that lived 42 and 45 s never used it.)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub not_before: Option<f32>,
     /// Where the numbers came from (ignored by the server.)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,

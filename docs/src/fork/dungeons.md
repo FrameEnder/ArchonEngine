@@ -18,7 +18,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Howling Eye (Garuda) | 58 | 1047 | `content/r1fa_re.lua` | one run with Duty Support (6a5244ec) and two Duty Finder runs (09ecf8e7, 6c495fc4), 2026-11-08 |
 | Brayflox's Longstop | 8 | 1041 | `content/s1d2_re.lua` | one run with Duty Support (44df02fc) and one Duty Finder run (c9145fdc), 2026-11-03 |
 | The Stone Vigil | 11 | 1042 | `content/r1d1_re.lua` | one run with Duty Support (1cefedf4) and one Duty Finder run (341808b0), 2026-11-07 |
-| Castrum Meridianum | 15 | 1043 | `content/w1d4_re.lua` | four runs with Duty Support (the fourth Bob's 6320ae56 of 2026-11-18, a Paladin): Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
+| Castrum Meridianum | 15 | 1043 | `content/w1d4_re.lua` | five runs with Duty Support (the fourth Bob's 6320ae56 of 2026-11-18, a Paladin; the fifth his deea324c of 2026-11-19, a White Mage, the fights drawn out): Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
 | The Porta Decumana | 830 | 1048 | `content/w1d5_battle.lua` | four runs with Duty Support (the fourth Bob's 6320ae56 of 2026-11-18, a Paladin): Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
 | The Praetorium | 16 | 1044 | `content/w1d5_re.lua` | five runs with Duty Support (Connor's af05916c, Bob's 9ba7d981 twice, 50e72631 and 6320ae56): the two lifts and three more objects, six cutscenes, the ride on the armour (Mount 17, action 1128), three bosses with their helpers, the last one's second part with its four and the gauge. No layout dump. **Unplayed** ([below](#the-praetorium)) |
 
@@ -1159,24 +1159,53 @@ last room, and when it first shows, isn't known: it was only used there.
 two falls at the last boss) fits the three otherwise: the first boss's casts to the round's 31.5 s through 196 s, the
 talks, waves and objectives. New from it: the cutscene's eight (above); the fall and the shortcut; **BNpcBase 14574's
 29178 is a heal** (747 on one of its own side at 4 % of its health, a 1.2 s cast begun with it at 4 to 9 %; it had
-been read as an attack that hit no one): its timeline uses it on the most hurt of its side below 10 %
-(`ally_hp_below`, [Combat](combat.md)); the soldiers' status 290 (28777) has no timer; and what the attacks that
+been read as an attack that hit no one; when and on whom is the fifth run's, below); the soldiers' status 290 (28777) has no timer; and what the attacks that
 had hit no player do to one: 29170 114-157, 29169 136-188, 28785 939 and 1044, 28798 1202-1620 (2255 to the members
 it turned on), a helper's 28787 802. Those are a Paladin's: he took 1/1.75 of what Bob's damage dealer and healer
 had from the same enemies' auto-attacks and about 1/1.5 from the duty's spells, so the timelines' `players` amounts
 for them are the Paladin's times that (236, 298, 1488, 2112, 1203), an estimate.
 
+**The fifth run** (Bob's deea324c, visit 0.1, 2026-11-19: a White Mage of 2657 HP, "ran it very poorly … dragging
+out a terrible play … so you could see how much damage a healer takes"; 2096 s, the bosses alive 245, 149 and 239 s,
+one fall at the last) fits the script as it stood (`15-deea324c`: 163 events). What the long fights showed:
+
+* **The first boss's round goes on, 31.3 s long**: 28773 seven times to 232 s, 29268 six and 28775 five, 31.1 to
+  31.6 s apart (31.5 in the timeline until now, from two rounds). The second boss's 53.8 s round and the last's
+  74.2 s round each came a second time, as written.
+* **The last part past 25 s**: 29352 again 17.4 s after the first and the three 29353s 17.3 to 17.4 s after theirs,
+  as guessed; the part ran 40 s here (19 to 31 s before).
+* **When BNpcBase 14574 heals** (29178; three uses in the five runs: 736, 747 and 715, always by the one of layout
+  9088912, whose twin 9088910 falls first). Not by an ally's health alone, as the fourth run had it read (below
+  10 %): the cast began 43.3, 43.4 and 45.3 s after its own first cast, in the first of its spell's turns from 43 s
+  on, though its twin had been at 6 to 8 % from 25 s; the two that lived 42 and 45 s never used it. On whom: allies
+  at 9, 21 and 31 % of their health, the last with another at 23 %, so not the most hurt; each time the lowest
+  layout ID of those below half (the others stood at 59 % and more). Not again in the 19 s one fought on with allies
+  at 3 to 34 %. So the timeline's entry is `not_before` 43, `ally_hp_below` 50 (the first of them by layout ID) and
+  `every` 43, the last a guess ([Combat](combat.md)).
+* **What a healer took** is what the timelines' `players` amounts already were (a damage dealer's: 28779 717 for
+  743, 28794 1210 for 1170, 28033 907 for 937, the soldiers' auto-attacks within 5 %), so only a tank takes less.
+  New amounts, where an attack had hit no player or only the Paladin: 28781 1279, 28784 1298, 28787 1176 (the
+  estimate from the Paladin's was 1203), 29173 552, 29174 524, 29181 653, 29182 589, 29183 644, 29184 569.
+  28785, 28798, 29169 and 29170 still have only the Paladin's, times 1.5 or 1.75.
+* **Stun**: the last boss (14542) refused it (Holy, 13 s in; Kawari Witness's `refuses:2`), so it's with the kinds
+  that refuse outright; the other 172 Holys on enemies went as `status_resistance.json` says but three (refused
+  2.4 s after a quarter, the known edge), and an enemy still refused 39.5 s after its last.
+* **The fall** at the last boss was the fourth run's again: no director wipe, the screen's fade 3.0 s after he
+  fell, the boss casting until then (fixture `wipes`, by hand).
+
 **Not known, so guessed or left out** (also in `known-issues.md`): the event ranges; the rounds past what the runs
-show (they go on); the last part past 25 s (its casts every 17.3 s); where 28788 takes the boss the once it wasn't
+show (they go on); the last part past 40 s (its casts every 17.3 s, seen twice); when 14574's heal comes again;
+where 28788 takes the boss the once it wasn't
 the middle; what the wave soldiers' 28777 status (290) does; what 0x80000007 `[42]` and EObj 2007457's ActorControl
-409 are; the damage of 28773, 28781 and 29146 to a player (29146 hit a member for 1098 in the fourth run); the
+409 are; the damage of 28773 and 29146 to a player (29146 hit a member for 1098 in the fourth run); the
 shortcut before the last room.
 
-**Tests**: duty fixtures `15-af05916c`, `15-9ba7d981`, `15-50e72631` and `15-6320ae56` (`questkit duty-sim`: 224,
-105, 105 and 225 of retail's events: the talks, music, objectives, every NPC brought out, the last boss's
+**Tests**: duty fixtures `15-af05916c`, `15-9ba7d981`, `15-50e72631`, `15-6320ae56` and `15-deea324c` (`questkit
+duty-sim`: 224, 105, 105, 225 and 163 of retail's events: the talks, music, objectives, every NPC brought out, the last boss's
 ActionTimelines, the clear; and a rehearsed wipe at each boss). Connor's and Bob's two falls each are in their
 fixtures by hand (`wipes`: the fall and the boss's coming back), as the director sent nothing for them;
-`a_shortcut_goes_where_it_was_last_pointed` (`director.rs`), `a_heal_waits_for_an_ally_hurt_enough` (`rotation.rs`).
+`a_shortcut_goes_where_it_was_last_pointed` (`director.rs`), `a_heal_waits_for_its_time_and_an_ally_hurt_enough` (`rotation.rs`), `some_enemies_refuse_stun_outright`
+(`resistance.rs`).
 
 ## The Porta Decumana
 
