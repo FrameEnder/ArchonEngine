@@ -79,7 +79,10 @@ Then two checks:
   timeline too, and it's checked the same way: battle talk (`talk`, against `battle_talk`), each laid-out NPC's
   ActionTimelines (`timeline [layout, id]`, ActorControl 407, against `play_action_timeline`) and every NPC brought out
   after the start (`appear`, against `spawn_bnpc`); older fixtures don't have these kinds, and they're compared only
-  where a fixture has them. A fixture's NPC health is to a hundredth of a percent since 2026-11-18 (a tenth hid the
+  where a fixture has them. Several NPCs the script brings out from one layout (the Praetorium's four of 9055068) are
+  each in `info["actor" .. id]` as on the server, the script's spawns matched to retail's lives in order, and their
+  ActionTimelines count by layout; a health of 0.01 %, the lowest a fixture keeps for someone alive, is 1 HP to the
+  script (an NPC held there by a health floor). A fixture's NPC health is to a hundredth of a percent since 2026-11-18 (a tenth hid the
   Porta Decumana's 36 % line crossed at 35.98 % until the next hit 5 s later). A battle-sim fixture's `random`
   (`[2, ...]`) is what `math.random` gives the script's first rolls, retail's choices where a run shows them (The
   Ultimate Weapon's two sets of 29756 in either order, `5061-6320ae56`); a quest fixture's step has the same

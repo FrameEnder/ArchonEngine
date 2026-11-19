@@ -221,6 +221,12 @@ pub enum LuaDirectorTask {
     UpdateShortcut {
         poprange_id: u32,
     },
+    /// Put a player on a mount as an event does, with no summoning cast, or take them off theirs (mount 0):
+    /// `mount_player`.
+    MountPlayer {
+        actor_id: ObjectId,
+        mount: u16,
+    },
     /// Point the duty's shortcut at a spot instead of a pop range (`update_shortcut_spot`).
     UpdateShortcutSpot {
         position: Position,
@@ -1184,6 +1190,17 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::UpdateShortcut { poprange_id });
             Ok(())
         });
+        // A player put on a mount by one of the duty's objects, as a quest's event does it, or taken off it (mount
+        // 0): the Praetorium's armour (EObj 2012819 gave Mount 17: ActorControlSelf 928 [9], SetMode 4, the Mount
+        // packet and 263 [1] as its one-second event ended; Bob's Chronofoil capture 6320ae56), and its end as
+        // cutscene 392 begins (SetMode 1 and ActorControl 930.) `ZoneConnection::mount_by_event`.
+        methods.add_method_mut("mount_player", |_, this, (actor_id, mount): (u32, u16)| {
+            this.tasks.push(LuaDirectorTask::MountPlayer {
+                actor_id: ObjectId(actor_id),
+                mount,
+            });
+            Ok(())
+        });
         // The shortcut pointed at a spot, for a duty whose pop ranges aren't known: where retail's shortcut put the
         // player (Castrum Meridianum's, outside the last room: Bob's Chronofoil capture 6320ae56.)
         methods.add_method_mut(
@@ -1974,8 +1991,8 @@ impl DirectorData {
 
     /// Called every server tick for scripts that define `onUpdate`, with the health (in percent) of every living NPC
     /// by its layout ID, the player's, and (fourth) everyone's details: `info[layout] = { hp, max_hp, x, y, z, target, id,
-    /// target_id }` (`target`: the layout ID it's after, or "player"; `id` and `target_id` the actor IDs), and
-    /// `info.player` the same for the player, for scripts that need real numbers or distances (content/lib/Battle.lua.)
+    /// target_id }` (`target`: the layout ID it's after, or "player"; `id` and `target_id` the actor IDs),
+    /// `info["actor" .. id]` the same for every living NPC by its actor ID, and `info.player` the same for the player, for scripts that need real numbers or distances (content/lib/Battle.lua.)
     pub fn update(
         &mut self,
         npc_health: &HashMap<u32, u32>,
@@ -2669,7 +2686,7 @@ fn update_director(instance: &mut Instance) {
         };
         let common = actor.get_common_spawn();
         let target = common.target_id.object_id;
-        info.entry(key).or_insert(ActorInfo {
+        let details = ActorInfo {
             hp: common.health_points,
             max_hp: common.max_health_points,
             position: common.position.0,
@@ -2678,7 +2695,14 @@ fn update_director(instance: &mut Instance) {
             has_target: target.is_valid(),
             actor_id: actor_id.0,
             target_id: target.0,
-        });
+        };
+        // Every living NPC by its actor ID too ("actor<id>"): several brought out from one layout are one entry
+        // by layout (whichever comes first), and a script that spawned them has their IDs (the Praetorium's last
+        // boss's four of layout 9055068, each gone at 1 HP.)
+        if matches!(actor, NetworkedActor::Npc { .. }) {
+            info.insert(format!("actor{}", actor_id.0), details);
+        }
+        info.entry(key).or_insert(details);
     }
     // Every player too, as "player1", "player2"... ("player" is one of them): a duty's line is crossed by whoever
     // reaches it first (the Thousand Maws of Toto-Rak's rooms, another player's in a Duty Finder run.)
@@ -3771,6 +3795,14 @@ pub fn director_tick(
                 let director = instance.directors.first_mut().unwrap();
                 director.shortcut_poprange_id = Some(*poprange_id);
                 director.shortcut_spot = None;
+            }
+            LuaDirectorTask::MountPlayer { actor_id, mount } => {
+                let mut network = network.lock();
+                network.send_to_by_actor_id(
+                    *actor_id,
+                    FromServer::MountByEvent(*mount),
+                    DestinationNetwork::ZoneClients,
+                );
             }
             LuaDirectorTask::UpdateShortcutSpot { position, rotation } => {
                 let director = instance.directors.first_mut().unwrap();

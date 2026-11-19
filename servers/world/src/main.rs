@@ -5560,6 +5560,13 @@ async fn process_server_msg(
             FromServer::SetCurrentMount(current_mount) => {
                 connection.player_data.volatile.current_mount = current_mount as i32;
             }
+            FromServer::MountByEvent(mount) => {
+                if mount != 0 {
+                    connection.mount_by_event(mount).await;
+                } else {
+                    connection.dismount_by_event().await;
+                }
+            }
             FromServer::FriendRemoved(their_content_id, their_name) => {
                 connection
                     .friend_removed(their_content_id, their_name)

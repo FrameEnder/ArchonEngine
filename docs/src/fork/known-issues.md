@@ -56,10 +56,12 @@ with `facts.json` (278 facts); and nine minutes in Thanalan.
   (`dungeons.md`, `quest-battles.md`), with the facts about them.
 * **A tank takes a damage dealer's damage**: a timeline's `players` amount is given to every job
   ([Combat](combat.md)). The Paladin's own numbers are only used, scaled up, where no other job's were recorded.
-* **The Praetorium isn't scripted.** Its five runs are read and agree (`dungeons.md`: the way through, the six
-  cutscenes, the objects, the bosses' fights' lengths and lines); building it needs the ride (Mount 17 from an
-  object, action 1128 on the way's enemies), the lifts' destinations as spots, the last boss's gauge and the three
-  bosses' clocks from the drafts.
+* **The Praetorium** (duty 16, `content/w1d5_re.lua`) is built from five runs and **unplayed**
+  ([Dungeons](dungeons.md#the-praetorium) has what's guessed). What most needs a look in game: the armour (that the
+  mount comes from the object, that its action 1128 can be used and hits, that it survives the warp below and goes
+  at the cutscene); the lifts' and objects' places (no layout: each works from its own floor by height); the
+  positions that set things off; the last boss's second part (the four of base 14455 at 1 HP, the gauge, its end);
+  the script's name (`w1d5_re`, by analogy).
 * **Not read yet**: the facts about Duty Support's
   fourth set (72: its Lancer's and the others' kits in Castrum Meridianum and the Praetorium, where it had been
   built from the Porta Decumana alone), the open-world enemies whose timelines lack an action (bases 55, 62, 64,

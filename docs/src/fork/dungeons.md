@@ -20,7 +20,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Stone Vigil | 11 | 1042 | `content/r1d1_re.lua` | one run with Duty Support (1cefedf4) and one Duty Finder run (341808b0), 2026-11-07 |
 | Castrum Meridianum | 15 | 1043 | `content/w1d4_re.lua` | four runs with Duty Support (the fourth Bob's 6320ae56 of 2026-11-18, a Paladin): Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
 | The Porta Decumana | 830 | 1048 | `content/w1d5_battle.lua` | four runs with Duty Support (the fourth Bob's 6320ae56 of 2026-11-18, a Paladin): Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
-| The Praetorium | 16 | 1044 | none yet | five runs read (2026-11-18): [what they show](#the-praetorium-read-not-scripted) |
+| The Praetorium | 16 | 1044 | `content/w1d5_re.lua` | five runs with Duty Support (Connor's af05916c, Bob's 9ba7d981 twice, 50e72631 and 6320ae56): the two lifts and three more objects, six cutscenes, the ride on the armour (Mount 17, action 1128), three bosses with their helpers, the last one's second part with its four and the gauge. No layout dump. **Unplayed** ([below](#the-praetorium)) |
 
 Every duty script in this table is checked against AutoDuty's route for its territory (`questkit autoduty`, see
 [questkit](questkit.md)): on 2026-11-13 each names every object AutoDuty uses, and Sastasha's keys are the one
@@ -1275,40 +1275,98 @@ talks, the three's ActionTimelines, every NPC's coming, the completion; and a re
 give the script the cutscene's end ([Testing](testing.md)); `a_cast_the_fight_stops_never_lands`
 (`bundle_tests.rs`).
 
-## The Praetorium (read, not scripted)
+## The Praetorium
 
 ContentFinderCondition 16, territory 1044, director 0x80030056, InstanceContent 86, during The Ultimate Weapon (4522).
-**There is no script yet** (its name would be the ContentFinderCondition's ShortCode, `w1d5_re` by analogy, not
-checked against the sheet): this is what five retail runs with Duty Support show, read on 2026-11-18, to build it
-from. Connor's Chronofoil capture af05916c (visit 0.10, a healer), Bob's 9ba7d981 (0.14, left at the last boss, and
-0.16), 50e72631 (0.5) and 6320ae56 (0.3, a Paladin, with Kawari Witness). The five agree on everything below; the
-seconds are 6320ae56's from DutyCommence (0x40000001 `[7200]`, 70 s after the opening scene 1, flags 0x0C53A401).
-The bosses' and enemies' draft timelines are in kawari-diagnostics (`drafts/duty-16/`, `questkit sources --duty 16`
-over the five runs).
+`content/w1d5_re.lua` (the ContentFinderCondition's ShortCode by analogy with `w1d4_re`, not checked against the
+sheet: the server log says if it looked for another name), built on 2026-11-18 from five retail runs with Duty
+Support and **unplayed**: Connor's Chronofoil capture af05916c (visit 0.10, a healer), Bob's 9ba7d981 (0.14, left at
+the last boss, and 0.16), 50e72631 (0.5) and 6320ae56 (0.3, a Paladin, with Kawari Witness). The five agree on
+everything below; the seconds are 6320ae56's from DutyCommence (0x40000001 `[7200]`, 70 s after the opening scene 1,
+flags 0x0C53A401). **No layout dump**, as for Castrum Meridianum: what the party sets off by walking is set off by
+where they were in the runs (the script's `WHERE_*`).
 
 | When | What |
 |---|---|
-| 2.1, ~50 | Talks 32920 and 32921 (BNpcName 1486; the second 9.7 to 94 s in: by where the party is). Four enemies stand by the entrance (9081944-9081947, bases 14557 and 14558), and BNpcBase 14567 (BNpcName 1486, 258900 HP, layout 9168666), which isn't fought: ActorControl 63 `[48]` moved it, `[11]` cleared a render flag and `[0]` took it away (Witness) |
-| 59.7-62.3 | **The lift** (EObj 2012811, GimmickAccessor 0x404): a one-second event, PrepareZoning, the screen's fade (ActorControlSelf 263 `[1]`, 236 `[1]`) and everyone 30 yalms down at (200.1, 156.5, 13.6). Five more enemies there (9081963-9081967) and, once they're met, ten in two packs (9081969-9081978); map effects 1, 2 and 4 (timeline 2, state 1) at 66.9, 121.5 and 132.4 as packs fall, 3 at 329.9 |
+| 2.1, ~50 | Talk 32920 (BNpcName 1486) ten yalms in from the entrance (2.1 s in three runs, the player already running; 9.7 and 54 s in the others), and 32921 as the last of the four by the entrance falls. Four enemies stand by the entrance (9081944-9081947, bases 14557 and 14558), and BNpcBase 14567 (BNpcName 1486, 258900 HP, layout 9168666), which isn't fought: ActorControl 63 `[48]` moved it, `[11]` cleared a render flag and `[0]` took it away (Witness) |
+| 59.7-62.3 | **The lift** (EObj 2012811, GimmickAccessor 0x404): a one-second event, PrepareZoning, the screen's fade (ActorControlSelf 263 `[1]`, 236 `[1]`) and everyone 30 yalms down at (200.1, 156.5, 13.6). Five more enemies below (9081963-9081967, there as the four fall); map effect 1 (timeline 2, state 1) 4.6 s after the lift; the five dead: map effect 2 and ten more (9081969-9081978); map effect 4 further in (north of z -51.5); the ten dead: map effect 3 |
 | 343.0-345.6 | **A second lift** (EObj 2012813, GimmickAccessor 0x406) to (240.8, 71.5, 0.3) |
-| 355.4 | Objective 0 done (0x80000015 `[1]`, 0x80000016 `[0, 1]`) and **scene 3 with cutscene 280** `[5, 280, 1, 37, 0]` (flags 0x08502403; 185 s); the first boss is there 2.2 s into it |
-| 541.5-653.8 | **The first boss** (9054638, BNpcBase 14450, BNpcName 2134, 62291 HP; arena 15 yalms round (192, 0)): 28467, 28468 with helpers' 28469 and 28470 from eight spots each, 28471 with 28472 on the party, 28473, 28474 (the draft's numbers). 112 to 124 s in the five runs. It fallen: music 149 (0x80000001), objective 1, talk 32916 a second later |
+| 355.4 | West of x 208 on that floor: objective 0 done (0x80000015 `[1]`, 0x80000016 `[0, 1]`) and **scene 3 with cutscene 280** `[5, 280, 1, 37, 0]` (flags 0x08502403; 185 s); the first boss is there 2.2 s into it |
+| 541.5-653.8 | **The first boss** (9054638, BNpcBase 14450, BNpcName 2134, 62291 HP; arena 15 yalms round (192, 0)): its casts the same to 0.2 s from its pull in every run (`PraetoriumBoss1_14450.json`): 28474 on everyone at 6.2 s, 28467 (no cast: in the middle a second later) at 18.3, 28468 at 20.4 with four helpers' 28469 6 yalms round the middle and four 28470 12 out (a cross the first time; the second, a cross in two runs and turned 30 degrees in two), 28467 and 28471 at 38.6 and 40.7 with a helper's 28472 on each of the party 5.9 s in, then 28474, 28467, 28468, 28473 (a cone), 28467, 28471, 28473 from 58.9 s (every 52.7 s here past the runs). EventLogMessage 2012 `[451, 15]` at its pull (PlaceName 451), EObj 2000789 shown a second later, its wall 2000828 15 s on. 114 to 123 s. It fallen: music 149 (0x80000001), objective 1, talk 32916 a second later, EObjs 2000876, 2000828 and 2000829 gone, 2012815 and 2012819 working, and **the sixteen of the way ahead spawned** (9082001-9082005, 9082022-9082032) |
 | 659.1-661.7 | **EObj 2012815** (GimmickAccessor 0x40E): everyone at (146.9, 102.0, -37.5). Talks 32917 and 32918 12.6 and 19.6 s after 32916 |
-| 674.8-842.2 | **The armour** (EObj 2012819, GimmickAccessor 0x40A): a one-second event and **Mount 17**; the player uses **action 1128** from it (39 times) on the enemies of the way: 9082001-9082005, 9082022-9082032, then after a PrepareZoning 739.0 (everyone at (108.7, -106.0, 0.5), still mounted) 9168161-9168164, 9168175-9168177, four of base 14566 one after another (9082092-9082095) and base 14616 (9089992, 34951 HP). Map effects 5, 8, 12, 9, 13, 10, 11, 14 and 18 on the way |
-| 842.2 | **Cutscene 392** `[5, 392, 1, 0, 0]` (107 s), map effects 6 and 7 with it; the mount is gone after it |
-| 960.3 | Objective 2 and **cutscene 283** `[5, 283, 1, 151, 0]` (240 s); the second boss there 2.3 s in |
-| 1208.2-1348.2 | **The second boss** (9054847, BNpcBase 14451, BNpcName 2135, 77877 HP; arena 20 yalms round (-164, 0)): talks 32900 as it's pulled (map effect 0, timeline 2 state 1), 32902 at 9.3 s, 32901 at 29.5, 32903 at 68.6 to 119.7 (by its health or its casts); two of base 14452 (9054848) at 33 and 97 s. 133 to 156 s. It fallen: objective 3, map effects 0 (8, 4) and 15, **cutscene 284** `[5, 284, 1, 149, 0]` (103 s) |
+| 674.8-842.2 | **The armour** (EObj 2012819, GimmickAccessor 0x40A): a one-second event and **Mount 17**; the player uses **action 1128** from it (39 times) (4500 to each enemy it hits, every time) on the sixteen. The last five dead (9082028-9082032): map effect 5, and the way's end (a ramp by (231, 66)) takes everyone below with a PrepareZoning (739.0: (108.7, -106.0, 0.5), still mounted) to seven more (9168161-9168164, 9168175-9168177, there as the party is). A player north of z -29.5: map effect 8 and the first of four of base 14566 (9082092; it dead: map effect 12, timeline 1); the three of 9168162-9168164 dead and a player west of x 54.5: map effect 9 and the second (13); all seven dead and a player west of x -16.5: map effect 10 and the third; it dead: map effect 11 and the fourth 0.6 s on; it dead: map effects 14 and 18 and base 14616 (9089992, 34951 HP) |
+| 842.2 | Base 14616 dead: **cutscene 392** `[5, 392, 1, 0, 0]` (107 s), map effect 6 (timeline 1, state 4) with it and 7 (4, 4) 2 s on; the mount goes 1.6 s into it (SetMode 1 and ActorControl 930) |
+| 960.3 | West of x -130: objective 2 and **cutscene 283** `[5, 283, 1, 151, 0]` (240 s); the second boss there 2.3 s in |
+| 1208.2-1348.2 | **The second boss** (9054847, BNpcBase 14451, BNpcName 2135, 77877 HP; arena 20 yalms round (-164, 0)): talk 32900 4.1 s after its pull in all five runs (map effect 0, timeline 2 state 1, with it), 32902 and 32901 9.2 and 29.6 s after that, 32903 as its health goes below 20 % (19.8 to 19.9 % in four runs, 18.4 in one). Its casts the same to 0.4 s (`PraetoriumBoss2_14451.json`, to 148.8 s: 28483 on its target, 28477 shared, 28482 and 28478 cones, 28476 on everyone, 28481 round it, 28475 with no cast before some of them: where it goes then wasn't read); 0.9 s after each 28479 lands one of base 14452 (9054848) comes, north of the middle then south, with its 28480. EventLogMessage 2012 `[454, 15]`, wall 2000822. 137 to 160 s. It fallen: objective 3, map effects 0 (8, 4) and 15, **cutscene 284** `[5, 284, 1, 149, 0]` (103 s) |
 | 1465.9 | **EObj 2012817** (GimmickAccessor 0x408; spawned as cutscene 283 began): objective 4, map effect 16, **cutscene 118** `[5, 118, 0, 152, 1]` (278 s); as it ends everyone at (-550.2, -268.0, 220.3) and the last boss there |
-| 1750.7-1995.3 | **The last boss** (9055066, BNpcBase 14453, BNpcName 2136, 93255 HP; a room 15 by 20 round (-562, 220)): talks 32904 (the pull), 32906, 32905, 32907 at 39.5, 62.1 and 80.5 s, 32919 at 142.8 (140 to 142 in four runs), 32908 and 32909 at 220.7 and 232.9; helpers of bases 14454, 14455 and 14456 (28 of the last) for its 28485-28498 and 29051-29052; a **gauge** from 151.3 s: the director's 0x8000000C `[58, n]` once a second, n up 111 a second (to 0xFFFFFFFF at the end). It fallen: the duty complete (0x40000003), **cutscene 374** `[5, 374, 0, 18, 0]`, then out |
+| 1750.7-1995.3 | **The last boss** (9055066, BNpcBase 14453, BNpcName 2136, 93255 HP; a room 15 by 20 round (-562, 220)): talks 32904 (the pull), 32906, 32905, 32907 at 39.5, 62.1 and 80.5 s; [its fight](#the-praetoriums-last-boss) below. It doesn't fall: at 1 HP the duty is complete (0x40000003), **cutscene 374** `[5, 374, 0, 18, 0]`, then everyone out at (-764.7, -344.0, 0.5) |
 
 **A fall on the way** (Bob's, 157 s after the first pull, the members still up): no wipe; he was at the entrance 4 s
 later and took the lift again. What a fall at a boss does wasn't seen here.
 
-**What building it needs that the fork doesn't have yet**: the ride (a duty's mount given by an object, its action
-1128 against the enemies, the mount kept through a warp and taken at a cutscene); the two lifts and the two other
-objects (GimmickAccessors 0x404, 0x406, 0x40E, 0x408 with their destinations, which aren't pop ranges we know: the
-layout isn't dumped; `update_shortcut_spot`'s warp does the same for a spot); the last boss's gauge; and, as in
-Castrum Meridianum, where the party sets things off without the event ranges.
+### The Praetorium's last boss
+
+`PraetoriumBoss3_14453.json` has its own casts (the same to 0.4 s from its pull in four runs): 28495 on everyone at
+7.1 s, 28494 on its target, 28493 shared, and the ones the director answers:
+
+* **28496** (no cast, 15.3, 60.9, 79.3 and 109.2 s): it's in the middle a second later.
+* **28486** (17.2 s, no cast): a helper's 29779 in the middle (5.7 s) and, 3.1 s on, three of BNpcBase 14456's
+  28487 across the middle, 4 yalms apart, all the way the boss faces. A 14456 comes for one cast (1.9 s before it)
+  and goes: 28 of them a run.
+* **28484** (25.3 and 80.6 s): 3.1 s after it begins the five of BNpcBase 14454 (there with the boss from the first,
+  untargetable) go to the room's west edge (28485), 8 yalms apart, at one of two sets of places 4 yalms off each
+  other (at random each time); 1.8 s on their 28486, 3.8 s on ActionTimeline 7737, and 4.9 s on five 14456s' 28488
+  from those places (a rectangle 40 by 4 each: 1370 to a player).
+* **29051** (62.1 and 110.4 s): from 3.9 s in, four rows of three helpers' 29052 2 s apart, north to south or south
+  to north (either, in the runs).
+* **28491** (116.6 s): 3.9 s in, a helper's 28492 on each of the party.
+
+**The second part** begins 139.7 to 142.9 s in (7.0 s after its 28495 began in two runs, 10.0 in two; its health 11
+to 15 %: 141.2 s here): talk 32919; 5.0 s on it can't be targeted (ActorControl 54) and leaves (28496, then 28497
+and ActorControls 20 `[2552, 388]`, 62 `[0, 1]` and 63 `[27]`), and **four of BNpcBase 14455** (7715 HP, there from the
+first too) take places at the corners of a rectangle 15 by 20 round the middle and fight. Seconds from the talk:
+
+| At | What |
+|---|---|
+| 7.5 on | The **gauge**: the director's 0x8000000C `[58, n]` once a second, n up 111 a second, **while any of the four is above 1 HP** (it stopped at 65.5 to 76.5 s in the runs, as the last of them got there) |
+| 11.8, 34.9, 63.0 | Each of the four still there casts 28498 (4.7 s) on one of the party |
+| 16.8, 48.9, 68.0 | The 14454s and the 14456s' 28488 again (the cast 4.2 s after they go to their places) |
+| 27.8 | Their 29051, and the rows of 29052 from 31.5 s, south to north in all four runs |
+| 49.9 | Their 28491, and the 28492s 3.9 s in |
+| | **Each of the four doesn't fall**: at 1 HP it goes (ActorControl 54 `[0]`, ActionTimeline 7737) once it's free: at once, or 2.2 s after the cast it was in (all sixteen in four runs) |
+| 67.9 or 77.9 | **It ends**: talk 32908 and ActorControl 70 `[8201036]`. 67.9 s in the one run where all four were at 1 HP by then (66.1 s), 77.9 in the three where the last got there at 68.4, 70.1 and 76.7 s: a look every 10 s here, 87.9 the last whatever they are (a guess: none was missed) |
+| +2.1 | Its 28499 on everyone (605 to 1650: what scales it wasn't read) |
+| +5.1, +7.4 | ActorControls 70 `[8201619]`, then 62 and 63 `[0]`; the gauge gone (0xFFFFFFFF) at +9.1 |
+| +12.2 | Talk 32909, it can be targeted, and fights on: 28495 7.1 s later. It was at 1 HP 7 to 12 s after that cast began |
+
+**What was built for it** (2026-11-18): `director:mount_player(actor_id, mount)` (a player put on a mount by an
+object as a quest's event does, `ZoneConnection::mount_by_event`, or taken off it with 0: `FromServer::MountByEvent`);
+`info["actor" .. id]` in `onUpdate` (every living NPC by its actor ID too: several from one layout are one entry by
+layout); the lifts and the other objects are `onGimmickAccessor` with event action 23 and `warp_players`, as Castrum
+Meridianum's device, each working only from its own floor; action 1128 is `PraetoriumArmor_01128.lua` (a set 4500).
+
+**Not known, so guessed or left out**: the event ranges; why the second part began at 139.7 or 142.8 s, and what a
+gauge that fills does (28500, an enrage by Boss Mod's name, was never used); where 28475 takes the second boss (it
+stays where it is); the bosses' clocks past what the runs show (the rounds go on); **a fall at a boss** (not seen: the
+party goes back to where the last lift or cutscene put it, `set_start`, the first two bosses' rooms reset themselves
+and the last boss comes back whole with its own; a fall on the way was the entrance on retail, 4 s later, with no
+wipe); whether the 14455s attack between their casts (they do); the members during the ride (they walk; retail's
+weren't read); whether the server lets a mounted player use 1128 (nothing forbids it, untested); ActorControls 20, 62,
+63 and 70 on the last boss (sent as retail did); the ten of BNpcBase 6358 that showed for a moment along the way (left
+out); the knockbacks of 28476, 28480, 28481 and 28482 (their rows weren't read: damage only); BNpcBase 14616, which
+retail spawned as not hostile, is hostile here so that it can be fought.
+
+**Who's there** (drop-in `territory_1044.json`, from `questkit chronofoil --dropin 1044` over the four captures: 55
+battle NPCs of 18 kinds, all `nonpop` but the four by the entrance and base 14567; three helper objects with made-up
+layouts 1, 2 and 3 for the bosses' helpers, which retail spawned with layout 0). Timelines `PraetoriumBoss1_14450`,
+`PraetoriumBoss2_14451`, `PraetoriumBoss3_14453` and `PraetoriumEnemy_<base>` (fourteen kinds, from the drafts), and
+`Helper_9020.json`'s amounts for 28469, 28472, 28492 and 29052.
+
+**Tests**: duty fixtures `16-af05916c`, `16-9ba7d981`, `16-50e72631` and `16-6320ae56` (`questkit duty-sim`: 137, 127,
+137 and 137 of retail's events: every talk, objective, NPC brought out, the 14454s' and 14455s' ActionTimelines, the
+clear; and a rehearsed wipe at the first two bosses). One known difference (`known.json`): in 6320ae56 one of the
+four reached 1 HP 0.3 s before the others' 28491 and went at once; the script's second part runs 1.6 s ahead of that
+run's, so there it was already casting.
 
 ## At a wipe, duty by duty (2026-11-10)
 

@@ -1,0 +1,138 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "attack_range": 3.0,
+    "from_pull": true,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "players": 428,
+            "npcs": 260
+        },
+        "28473": {
+            "npcs": 1891
+        },
+        "28474": {
+            "players": 927,
+            "npcs": 831
+        }
+    },
+    "timepoints": [
+        {
+            "time": 6.2,
+            "data": {
+                "type": "action",
+                "action_id": 28474,
+                "target": "itself"
+            },
+            "comment": "6.2 s after the pull (6.1 or 6.2 in four runs): a 4.7 s cast on everyone"
+        },
+        {
+            "time": 18.3,
+            "data": {
+                "type": "action",
+                "action_id": 28467,
+                "target": "nobody"
+            },
+            "comment": "18.3 s: no cast, it goes to the middle"
+        },
+        {
+            "time": 20.4,
+            "data": {
+                "type": "action",
+                "action_id": 28468,
+                "target": "itself"
+            },
+            "comment": "20.4 s: a 4.7 s cast; four helpers' 28469 and four 28470 round the middle"
+        },
+        {
+            "time": 38.6,
+            "data": {
+                "type": "action",
+                "action_id": 28467,
+                "target": "nobody"
+            },
+            "comment": "38.6 s"
+        },
+        {
+            "time": 40.7,
+            "data": {
+                "type": "action",
+                "action_id": 28471,
+                "target": "itself"
+            },
+            "comment": "40.7 s: a 4.7 s cast; a helper's 28472 on each of the party 5.9 s in"
+        },
+        {
+            "time": 58.9,
+            "every": 52.7,
+            "data": {
+                "type": "action",
+                "action_id": 28474,
+                "target": "itself"
+            },
+            "comment": "58.9 s: on everyone; then every 52.7 s (a guess: it fell at 115 to 124 s, and 28474 and 28468 came 52.7 s apart)"
+        },
+        {
+            "time": 71.0,
+            "every": 52.7,
+            "data": {
+                "type": "action",
+                "action_id": 28467,
+                "target": "nobody"
+            },
+            "comment": "71.0 s: to the middle; then every 52.7 s (a guess: it fell at 115 to 124 s, and 28474 and 28468 came 52.7 s apart)"
+        },
+        {
+            "time": 73.1,
+            "every": 52.7,
+            "data": {
+                "type": "action",
+                "action_id": 28468,
+                "target": "itself"
+            },
+            "comment": "73.1 s: the helpers' 28469 and 28470, turned or not; then every 52.7 s (a guess: it fell at 115 to 124 s, and 28474 and 28468 came 52.7 s apart)"
+        },
+        {
+            "time": 80.3,
+            "every": 52.7,
+            "data": {
+                "type": "action",
+                "action_id": 28473,
+                "target": "itself"
+            },
+            "comment": "80.3 s: a 4.7 s cast, a cone before it; then every 52.7 s (a guess: it fell at 115 to 124 s, and 28474 and 28468 came 52.7 s apart)"
+        },
+        {
+            "time": 90.4,
+            "every": 52.7,
+            "data": {
+                "type": "action",
+                "action_id": 28467,
+                "target": "nobody"
+            },
+            "comment": "90.4 s: to the middle; then every 52.7 s (a guess: it fell at 115 to 124 s, and 28474 and 28468 came 52.7 s apart)"
+        },
+        {
+            "time": 92.5,
+            "every": 52.7,
+            "data": {
+                "type": "action",
+                "action_id": 28471,
+                "target": "itself"
+            },
+            "comment": "92.5 s: the helpers' 28472; then every 52.7 s (a guess: it fell at 115 to 124 s, and 28474 and 28468 came 52.7 s apart)"
+        },
+        {
+            "time": 104.9,
+            "every": 52.7,
+            "data": {
+                "type": "action",
+                "action_id": 28473,
+                "target": "itself"
+            },
+            "comment": "104.9 s: the cone; then every 52.7 s (a guess: it fell at 115 to 124 s, and 28474 and 28468 came 52.7 s apart)"
+        }
+    ],
+    "comment": "The Praetorium's first boss (ContentFinderCondition 16, territory 1044; BNpcBase 14450, BNpcName 2134, layout 9054638): level 50, 62291 HP, there 2.2 s into cutscene 280. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.10) and Bob's 9ba7d981 (2026-11-17, visits 0.14 and 0.16), 50e72631 (2026-11-17, visit 0.5) and 6320ae56 (2026-11-18, visit 0.3), all with Duty Support: its casts were the same to 0.7 s from its first being hit in all five runs, and it fell at 115 to 124 s. Auto-attack 870 (428 to a player, 260 to Duty Support's tank); 28474 (4.7 s, on everyone: 927 and 831), 28473 (4.7 s, a cone of 25 yalms, 90 degrees: 1891 to a member), 28467 (no cast: to the middle a second later), 28468 and 28471 (4.7 s: the helpers' 28469, 28470 and 28472, the director's: content/w1d5_re.lua). Past 105 s the round from 58.9 s goes on every 52.7 s, a guess. Hitbox and range not recorded."
+}

@@ -326,6 +326,9 @@ pub enum FromServer {
     LinkshellInviteAccepted(u64, u64, String, String),
     /// Inform the zone connection about their current mount's model id. Helps persist mounts across zone transitions and through log-outs.
     SetCurrentMount(u16),
+    /// Put the player on a mount as an event does, or take them off one (0): a duty's director's `mount_player`
+    /// (the Praetorium's armour.) `ZoneConnection::mount_by_event` and `dismount_by_event`.
+    MountByEvent(u16),
     /// Inform the chat connection that it needs to refresh its non-party ChatChannels due to some event necessitating it.
     MustRefreshChatChannels,
     /// Inform the client that a friend removal has taken place.

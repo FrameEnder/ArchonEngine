@@ -1,0 +1,12 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "28498": {
+            "players": 671,
+            "npcs": 546
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The Praetorium's BNpcBase 14455: what it did in five retail runs (Connor's Chronofoil capture af05916c (2026-11-09, visit 0.10) and Bob's 9ba7d981 (2026-11-17, visits 0.14 and 0.16), 50e72631 (2026-11-17, visit 0.5) and 6320ae56 (2026-11-18, visit 0.3), all with Duty Support; `questkit sources --duty 16`: its rotation's pace and each action's median amounts). The last boss's second part: four fight in its place (28485 as they come; 28498 on each of the party, 671 and 546; 29051 and 28491 as the boss's); the director's (content/w1d5_re.lua), so no rotation. A draft from Bob's Chronofoil captures (50e72631, 6320ae56, 9ba7d981, af05916c), not yet checked in game: ContentFinderCondition 16, BNpcBase 14455, BNpcName 11285, level 50, 7715 HP, 20 seen in 5 runs. `players` and `npcs` are the median damage to each, `every` the median time between uses."
+}

@@ -1,0 +1,187 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "attack_range": 3.0,
+    "from_pull": true,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "players": 438,
+            "npcs": 262
+        },
+        "28493": {
+            "players": 1317,
+            "npcs": 1040
+        },
+        "28494": {
+            "players": 986,
+            "npcs": 755
+        },
+        "28495": {
+            "players": 900,
+            "npcs": 828
+        },
+        "28499": {
+            "players": 1586,
+            "npcs": 1400
+        }
+    },
+    "timepoints": [
+        {
+            "time": 7.1,
+            "data": {
+                "type": "action",
+                "action_id": 28495,
+                "target": "itself"
+            },
+            "comment": "7.1 s: a 4.7 s cast on everyone"
+        },
+        {
+            "time": 15.3,
+            "data": {
+                "type": "action",
+                "action_id": 28496,
+                "target": "nobody"
+            },
+            "comment": "15.3 s: no cast: to the middle"
+        },
+        {
+            "time": 17.2,
+            "data": {
+                "type": "action",
+                "action_id": 28486,
+                "target": "itself"
+            },
+            "comment": "17.2 s: no cast; a helper's 29779 and three of BNpcBase 14456's 28487 in the middle, the way it faces"
+        },
+        {
+            "time": 25.3,
+            "data": {
+                "type": "action",
+                "action_id": 28484,
+                "target": "itself"
+            },
+            "comment": "25.3 s: a 2.7 s cast: five of BNpcBase 14454 at the room's west edge, then five 14456s' 28488 from there"
+        },
+        {
+            "time": 39.5,
+            "data": {
+                "type": "action",
+                "action_id": 28494,
+                "target": "target"
+            },
+            "comment": "39.5 s: a 4.7 s cast on its target"
+        },
+        {
+            "time": 48.8,
+            "data": {
+                "type": "action",
+                "action_id": 28493,
+                "target": "other"
+            },
+            "comment": "48.8 s: a 4.7 s cast on one of the party, shared"
+        },
+        {
+            "time": 60.9,
+            "data": {
+                "type": "action",
+                "action_id": 28496,
+                "target": "nobody"
+            },
+            "comment": "60.9 s"
+        },
+        {
+            "time": 62.1,
+            "data": {
+                "type": "action",
+                "action_id": 29051,
+                "target": "itself"
+            },
+            "comment": "62.1 s: a 2.7 s cast: four rows of three helpers' 29052, 2 s apart"
+        },
+        {
+            "time": 79.3,
+            "data": {
+                "type": "action",
+                "action_id": 28496,
+                "target": "nobody"
+            },
+            "comment": "79.3 s"
+        },
+        {
+            "time": 80.6,
+            "data": {
+                "type": "action",
+                "action_id": 28484,
+                "target": "itself"
+            },
+            "comment": "80.6 s"
+        },
+        {
+            "time": 91.8,
+            "data": {
+                "type": "action",
+                "action_id": 28493,
+                "target": "other"
+            },
+            "comment": "91.8 s"
+        },
+        {
+            "time": 101.0,
+            "data": {
+                "type": "action",
+                "action_id": 28494,
+                "target": "target"
+            },
+            "comment": "101.0 s"
+        },
+        {
+            "time": 109.2,
+            "data": {
+                "type": "action",
+                "action_id": 28496,
+                "target": "nobody"
+            },
+            "comment": "109.2 s"
+        },
+        {
+            "time": 110.4,
+            "data": {
+                "type": "action",
+                "action_id": 29051,
+                "target": "itself"
+            },
+            "comment": "110.4 s"
+        },
+        {
+            "time": 116.6,
+            "data": {
+                "type": "action",
+                "action_id": 28491,
+                "target": "itself"
+            },
+            "comment": "116.6 s: a 2.7 s cast: a helper's 28492 on each of the party 3.9 s in"
+        },
+        {
+            "time": 132.8,
+            "data": {
+                "type": "action",
+                "action_id": 28495,
+                "target": "itself"
+            },
+            "comment": "132.8 s"
+        },
+        {
+            "time": 7.1,
+            "every": 30.0,
+            "after": 32909,
+            "data": {
+                "type": "action",
+                "action_id": 28495,
+                "target": "itself"
+            },
+            "comment": "after the second part (the director's talk 32909): 7.1 s, then every 30 s here (it fell 7 to 12 s after this one in the runs)"
+        }
+    ],
+    "comment": "The Praetorium's last boss (BNpcBase 14453, BNpcName 2136, layout 9055066): level 50, 93255 HP, there as cutscene 118 ends. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.10) and Bob's 9ba7d981 (2026-11-17, visits 0.14 and 0.16), 50e72631 (2026-11-17, visit 0.5) and 6320ae56 (2026-11-18, visit 0.3), all with Duty Support: its casts were the same to 0.4 s from its pull (battle talk 32904) in the five runs (one left at 103 s), to 132.8 s. Auto-attack 870 (438 and 262); 28495 on everyone (900 and 828), 28494 on its target (986 and 755), 28493 shared (1317 and 1040); what goes with 28486, 28484, 29051 and 28491 is the director's (content/w1d5_re.lua), as is the second part from 139.7 to 142.9 s (talk 32919: it leaves, four of BNpcBase 14455 fight in its place for 77.9 s, then its 28499 on everyone, 1586 and 1400, and talk 32909, from which this timeline's last point runs). It fell 7 to 12 s after the 28495 that follows. Hitbox and range not recorded."
+}

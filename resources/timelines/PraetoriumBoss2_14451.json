@@ -1,0 +1,304 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 872,
+    "attack_range": 3.0,
+    "from_pull": true,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "872": {
+            "players": 434,
+            "npcs": 262
+        },
+        "28476": {
+            "players": 620,
+            "npcs": 572
+        },
+        "28477": {
+            "players": 1067,
+            "npcs": 829
+        },
+        "28478": {
+            "players": 2099
+        },
+        "28481": {
+            "npcs": 1636
+        },
+        "28483": {
+            "players": 1013,
+            "npcs": 733
+        }
+    },
+    "timepoints": [
+        {
+            "time": 5.2,
+            "data": {
+                "type": "action",
+                "action_id": 28483,
+                "target": "target"
+            },
+            "comment": "5.2 s: a 4.7 s cast on its target"
+        },
+        {
+            "time": 13.5,
+            "data": {
+                "type": "action",
+                "action_id": 28477,
+                "target": "other"
+            },
+            "comment": "13.5 s: a 4.7 s cast on one of the party, shared"
+        },
+        {
+            "time": 25.6,
+            "data": {
+                "type": "action",
+                "action_id": 28482,
+                "target": "itself"
+            },
+            "comment": "25.6 s: a 2.7 s cast, a cone before it"
+        },
+        {
+            "time": 33.8,
+            "data": {
+                "type": "action",
+                "action_id": 28479,
+                "target": "itself"
+            },
+            "comment": "33.8 s: a 2.7 s cast: one of BNpcBase 14452 comes 0.9 s after it lands"
+        },
+        {
+            "time": 45.1,
+            "data": {
+                "type": "action",
+                "action_id": 28475,
+                "target": "nobody"
+            },
+            "comment": "45.1 s: no cast: it goes"
+        },
+        {
+            "time": 46.6,
+            "data": {
+                "type": "action",
+                "action_id": 28478,
+                "target": "itself"
+            },
+            "comment": "46.6 s: a 6.7 s cast, a cone of 45 yalms"
+        },
+        {
+            "time": 57.7,
+            "data": {
+                "type": "action",
+                "action_id": 28483,
+                "target": "target"
+            },
+            "comment": "57.7 s"
+        },
+        {
+            "time": 65.9,
+            "data": {
+                "type": "action",
+                "action_id": 28475,
+                "target": "nobody"
+            },
+            "comment": "65.9 s"
+        },
+        {
+            "time": 67.2,
+            "data": {
+                "type": "action",
+                "action_id": 28476,
+                "target": "itself"
+            },
+            "comment": "67.2 s: a 4.7 s cast on everyone, a knockback"
+        },
+        {
+            "time": 74.4,
+            "data": {
+                "type": "action",
+                "action_id": 28477,
+                "target": "other"
+            },
+            "comment": "74.4 s"
+        },
+        {
+            "time": 81.5,
+            "data": {
+                "type": "action",
+                "action_id": 28481,
+                "target": "itself"
+            },
+            "comment": "81.5 s: a 3.2 s cast, a circle round it"
+        },
+        {
+            "time": 91.1,
+            "data": {
+                "type": "action",
+                "action_id": 28482,
+                "target": "itself"
+            },
+            "comment": "91.1 s"
+        },
+        {
+            "time": 97.3,
+            "data": {
+                "type": "action",
+                "action_id": 28479,
+                "target": "itself"
+            },
+            "comment": "97.3 s"
+        },
+        {
+            "time": 109.4,
+            "data": {
+                "type": "action",
+                "action_id": 28475,
+                "target": "nobody"
+            },
+            "comment": "109.4 s"
+        },
+        {
+            "time": 111.0,
+            "data": {
+                "type": "action",
+                "action_id": 28478,
+                "target": "itself"
+            },
+            "comment": "111.0 s"
+        },
+        {
+            "time": 124.1,
+            "data": {
+                "type": "action",
+                "action_id": 28483,
+                "target": "target"
+            },
+            "comment": "124.1 s"
+        },
+        {
+            "time": 133.2,
+            "data": {
+                "type": "action",
+                "action_id": 28475,
+                "target": "nobody"
+            },
+            "comment": "133.2 s"
+        },
+        {
+            "time": 134.4,
+            "data": {
+                "type": "action",
+                "action_id": 28476,
+                "target": "itself"
+            },
+            "comment": "134.4 s"
+        },
+        {
+            "time": 141.7,
+            "data": {
+                "type": "action",
+                "action_id": 28477,
+                "target": "other"
+            },
+            "comment": "141.7 s"
+        },
+        {
+            "time": 148.8,
+            "data": {
+                "type": "action",
+                "action_id": 28481,
+                "target": "itself"
+            },
+            "comment": "148.8 s"
+        },
+        {
+            "time": 158.4,
+            "every": 67.3,
+            "data": {
+                "type": "action",
+                "action_id": 28482,
+                "target": "itself"
+            },
+            "comment": "158.4 s, then every 67.3 s: not seen (it fell at 137 to 160 s); the round from 91.1 s again"
+        },
+        {
+            "time": 164.6,
+            "every": 67.3,
+            "data": {
+                "type": "action",
+                "action_id": 28479,
+                "target": "itself"
+            },
+            "comment": "164.6 s, then every 67.3 s: not seen (it fell at 137 to 160 s); the round from 91.1 s again"
+        },
+        {
+            "time": 176.7,
+            "every": 67.3,
+            "data": {
+                "type": "action",
+                "action_id": 28475,
+                "target": "nobody"
+            },
+            "comment": "176.7 s, then every 67.3 s: not seen (it fell at 137 to 160 s); the round from 91.1 s again"
+        },
+        {
+            "time": 178.3,
+            "every": 67.3,
+            "data": {
+                "type": "action",
+                "action_id": 28478,
+                "target": "itself"
+            },
+            "comment": "178.3 s, then every 67.3 s: not seen (it fell at 137 to 160 s); the round from 91.1 s again"
+        },
+        {
+            "time": 191.4,
+            "every": 67.3,
+            "data": {
+                "type": "action",
+                "action_id": 28483,
+                "target": "target"
+            },
+            "comment": "191.4 s, then every 67.3 s: not seen (it fell at 137 to 160 s); the round from 91.1 s again"
+        },
+        {
+            "time": 200.5,
+            "every": 67.3,
+            "data": {
+                "type": "action",
+                "action_id": 28475,
+                "target": "nobody"
+            },
+            "comment": "200.5 s, then every 67.3 s: not seen (it fell at 137 to 160 s); the round from 91.1 s again"
+        },
+        {
+            "time": 201.7,
+            "every": 67.3,
+            "data": {
+                "type": "action",
+                "action_id": 28476,
+                "target": "itself"
+            },
+            "comment": "201.7 s, then every 67.3 s: not seen (it fell at 137 to 160 s); the round from 91.1 s again"
+        },
+        {
+            "time": 209.0,
+            "every": 67.3,
+            "data": {
+                "type": "action",
+                "action_id": 28477,
+                "target": "other"
+            },
+            "comment": "209.0 s, then every 67.3 s: not seen (it fell at 137 to 160 s); the round from 91.1 s again"
+        },
+        {
+            "time": 216.1,
+            "every": 67.3,
+            "data": {
+                "type": "action",
+                "action_id": 28481,
+                "target": "itself"
+            },
+            "comment": "216.1 s, then every 67.3 s: not seen (it fell at 137 to 160 s); the round from 91.1 s again"
+        }
+    ],
+    "comment": "The Praetorium's second boss (BNpcBase 14451, BNpcName 2135, layout 9054847): level 50, 77877 HP, there 2.3 s into cutscene 283. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.10) and Bob's 9ba7d981 (2026-11-17, visits 0.14 and 0.16), 50e72631 (2026-11-17, visit 0.5) and 6320ae56 (2026-11-18, visit 0.3), all with Duty Support: its casts were the same to 0.4 s from its pull in all five runs (battle talk 32900 comes 4.1 s after it), to 148.8 s; it fell at 137 to 160 s. Auto-attack 872 (434 and 262); 28483 on its target (1013 and 733), 28477 shared (1067 and 829), 28482 (a cone of 7 yalms, 120 degrees, a knockback: it hit no one), 28479 (one of BNpcBase 14452 comes, the director's: content/w1d5_re.lua), 28475 (no cast: it goes somewhere else in its room, which wasn't read: it stays here), 28478 (a cone of 45 yalms, 90 degrees: 2099 to a player), 28476 (everyone, a knockback: 620 and 572), 28481 (a circle of 7: 1636 to a member). Past 148.8 s the round from 91.1 s goes on every 67.3 s, a guess. Hitbox and range not recorded."
+}

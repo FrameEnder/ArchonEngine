@@ -308,6 +308,7 @@ class Stage:
         self.delay = 0.0
         self.calls: list[tuple] = []
         self.next_actor = 900000
+        self.actor_layouts: dict[int, int] = {}
         self.lua.globals().LOG = self._log
         # The script's clock is the run's (a script that times things by `os.time()`: the Bowl of Embers'.)
         self.lua.globals().NOW = lambda: self.clock
@@ -330,11 +331,17 @@ class Stage:
         if name == "delay":
             self.delay = float(args[0] or 0) if args else 0.0
             return None
-        self.calls.append((round(self.clock + self.delay, 2), name,
-                           [dict(a.items()) if hasattr(a, "items") else a for a in args]))
+        args = [dict(a.items()) if hasattr(a, "items") else a for a in args]
+        if name == "play_action_timeline" and args and args[0] in self.actor_layouts:
+            # Retail's ActionTimelines are a fixture's by layout: one of several NPCs of the same layout (the
+            # Praetorium's five of 9055067), which the script can only tell apart by actor ID, counts as its layout.
+            args[0] = self.actor_layouts[args[0]]
+        self.calls.append((round(self.clock + self.delay, 2), name, args))
         if name in ("spawn_bnpc", "spawn_boss", "spawn_eobj", "spawn_tethered_bnpc", "spawn_bnpc_part"):
             # The server gives back the new actor's ID.
             self.next_actor += 1
+            if args and isinstance(args[0], (int, float)):
+                self.actor_layouts[self.next_actor] = int(args[0])
             return self.next_actor
         return None
 
@@ -350,6 +357,14 @@ class Stage:
 
 
 SPAWNS = ("spawn_bnpc", "spawn_boss", "spawn_bnpc_part")
+
+
+def _points(pct: float, max_hp: int) -> int:
+    """A fixture's health in percent as points. Its lowest for someone alive, 0.01 %, is 1 HP: an NPC that doesn't
+    fall is held there (the Praetorium's last boss and its four, whose scripts wait for exactly that.)"""
+    if 0 < pct <= 0.01:
+        return 1
+    return round(pct * max_hp / 100)
 
 
 class World:
@@ -467,12 +482,29 @@ class World:
             # 40 %" is 40.0-40.99 there (the Howling Eye's Garuda vanished at 40.2-40.4 %.)
             health[layout] = int(pct)
             x, y, z = _position_then(life["pos"], then)
-            entry = {"hp": round(pct * life["max_hp"] / 100), "max_hp": life["max_hp"], "x": x, "y": y, "z": z,
+            entry = {"hp": _points(pct, life["max_hp"]), "max_hp": life["max_hp"], "x": x, "y": y, "z": z,
                      "id": layout}
             if life["pulled"] is not None and then >= life["pulled"]:
                 entry["target"] = "player"
                 entry["target_id"] = 1
             info[layout] = lua.table_from(entry)
+        # Several of one layout brought out together (the Praetorium's four of 9055068) are each there by actor ID
+        # too, as on the server (`info["actor" .. id]`): the script's spawns in order, retail's lives in the
+        # fixture's, each for as long as retail's run has it.
+        for layout, life in self.life.items():
+            twins = [other for other in self.lives[layout] if other["spawn"] == life["spawn"]]
+            if len(twins) < 2:
+                continue
+            then = t - self.offset[layout]
+            actors = [actor for actor, of in stage.actor_layouts.items() if of == layout][-len(twins):]
+            for actor, twin in zip(actors, twins):
+                if twin["death"] is not None and then >= twin["death"]:
+                    continue
+                twin_pct = _health_then(twin["hp"], then) if twin["hp"] else 100.0
+                tx, ty, tz = _position_then(twin["pos"], then)
+                info[f"actor{actor}"] = lua.table_from({
+                    "hp": _points(twin_pct, twin["max_hp"]), "max_hp": twin["max_hp"],
+                    "x": tx, "y": ty, "z": tz, "id": actor})
         retail_t = t - self.shift
         player = self.fixture["player"]
         player_pct = _health_then(player["hp"], retail_t) if player.get("hp") else 100.0
