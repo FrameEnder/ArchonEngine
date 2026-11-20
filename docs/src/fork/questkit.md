@@ -444,6 +444,19 @@ reads, chat left out), so `compare` and the rest can use it.
   StatusEffectList, a few spawns) the client had already changed fields in memory (action IDs, effect entries, status
   timers) by the time the Recorder's hook saw the packet. **For packet layouts, Chronofoil's bytes are the wire's.**
 
+## triggers
+
+`questkit triggers <run exports> --boss <BNpcBase>` (2026-11-20; `questkit/triggers.py`): is each of a boss's events
+set off by its clock or by its health? For every event of its fight in every run (each cast of an action, the first,
+second, … of it; each battle talk; each map effect; each wave, the battle NPCs first seen together), its seconds from
+the pull and the boss's health then, side by side, and a verdict from the spreads: `clock` (within 3 s, its health
+spread more than 4.5 points), `health` (within 3 points, its seconds more than 4.5 apart), `either` (the runs went
+alike, so they can't tell), or `neither alone` with which comes nearer. Bob asked for it to be checked more often
+(events are often set off by health); run it on a fight's exports before writing its script, and say which the runs
+show. The exports are `questkit chronofoil <capture> --battle <visit> --out …`. Test: `Triggers` (three parties,
+slow to fast: the casts on the clock, a talk at 70 %). What it found in Castrum Meridianum and the Praetorium:
+[Dungeons](dungeons.md).
+
 ## battle-sim
 
 ```shell

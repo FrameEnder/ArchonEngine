@@ -14,6 +14,7 @@ from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle,
 from questkit import autoduty, fishing_data, questionable, repo  # noqa: E402
 from questkit import chronofoil_layers  # noqa: E402
 from questkit import chronofoil_entrances  # noqa: E402
+from questkit import triggers  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -1587,6 +1588,55 @@ class DropinTest(unittest.TestCase):
         self.assertAlmostEqual(spawn["rotation"], 3.14159, places=4)
         self.assertEqual(spawn["position"], [-213.5, -28.5, 128.0])
         self.assertEqual((spawn["flags"], spawn["max_links"], spawn["link_range"]), (2, 4, 20))
+
+
+class Triggers(unittest.TestCase):
+    """Bob, 2026-11-20: events in boss fights are usually set off by the boss's health, "check for this behavior more
+    often". `questkit triggers` puts each event's seconds from the pull beside the boss's health across runs."""
+
+    @staticmethod
+    def make_run(drop_per_second, wave_at=None, talk_below=None):
+        # A boss (BNpcBase 1, 1000 HP) losing health at its party's pace from its pull at 10 s; a cast every 20 s on
+        # its clock; a talk when it falls below `talk_below` %; a wave seen at `wave_at` s after the pull.
+        samples, events, actions = [], [], [{"S": 10.0, "Source": 5, "Action": 1, "Targets": []}]
+        talked = False
+        for tenth in range(0, 1200):
+            t = 10.0 + tenth / 10
+            hp = max(0, 1000 - drop_per_second * (t - 10))
+            samples.append({"S": t, "Id": 5, "Hp": hp})
+            if talk_below and not talked and hp / 10 < talk_below:
+                talked = True
+                events.append({"S": t, "Kind": "battle talk", "Id": 0, "Text": "text 77 name 1 icon 0 6000 ms"})
+        for k in range(1, 5):
+            events.append({"S": 10.0 + 20 * k, "Kind": "cast", "Id": 5, "Text": "action 900 spell 900"})
+        actors = {"5": {"Kind": "battle npc", "BaseId": 1, "MaxHp": 1000, "Seen": 0.0, "Died": 130.0, "LayoutId": 9}}
+        if wave_at is not None:
+            for n in range(3):
+                actors[str(100 + n)] = {"Kind": "battle npc", "BaseId": 2, "LayoutId": 50 + n, "Seen": 10.0 + wave_at}
+        return {"Actors": actors, "Samples": samples, "Events": events, "Actions": actions}
+
+    def test_the_clock_and_health_told_apart(self):
+        with tempfile.TemporaryDirectory() as folder:
+            paths = []
+            # Three parties, slow to fast: the casts come on the clock, the talk at 70 %.
+            for name, pace in (("slow", 3.0), ("middling", 5.0), ("fast", 8.0)):
+                path = Path(folder) / f"{name}.json"
+                path.write_text(json.dumps(self.make_run(pace, wave_at=45.0, talk_below=70)))
+                paths.append(path)
+            rows = {row["event"]: row for row in triggers.compare(paths, 1)}
+        self.assertEqual(rows["cast 900 #2"]["verdict"], "clock")
+        self.assertEqual(rows["cast 900 #2"]["seconds"], [40.0, 40.0, 40.0])
+        talk = rows["battle talk text 77 name 1 icon 0 #1"]
+        self.assertEqual(talk["verdict"], "health")
+        self.assertTrue(all(69.5 <= health <= 70.0 for health in talk["health"]), talk)
+        wave = next(row for event, row in rows.items() if event.startswith("wave #1"))
+        self.assertEqual(wave["verdict"], "clock")
+        self.assertIn("3:", wave["event"])
+        self.assertIn("verdict", triggers.report(list(rows.values())))
+
+    def test_one_run_says_nothing(self):
+        self.assertEqual(triggers.verdict([10.0], [90.0]), "one run")
+        self.assertEqual(triggers.verdict([10.0, 10.5], [90.0, 91.0]), "either (the runs went alike)")
 
 
 class DutyEntrances(unittest.TestCase):

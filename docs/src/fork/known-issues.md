@@ -836,6 +836,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * **Layer filter keys after A Realm Reborn** (2026-11-19): Connor's capture af05916c, read whole with `--layers`, names
   keys the table hasn't: the Waking Sands' 96535 and 96536 (after 1191, 1192 and 3878) and the Rising Stones' (351:
   96654 to 100185, after 3878 to 1448). Not in `layer_keys.json` yet (the test would fail); 2.x's story isn't played.
+* **Player NPCs held up at Castrum Meridianum's first boss's door** (Bob, 2026-11-20: "the player NPCs had a hard
+  time passing the wall barrier"): the server log has them stopped by the zone's collision at (36.0, 72.0, -46.2),
+  where the room's wall (EObj 2000587, bound 9061282) and line (2000588) stand at (34.1, 71.6, -45.9), then walking
+  on after their patience. The wall's own gimmick was already out of the collision (hidden at the start), so what
+  stops them there is collision the navmesh tool didn't tag with an event object: not known without the zone's
+  layout or collision file to look at.
 * **The Scenario Guide's click opens no map** for A Hero in Need (1037, not yet taken) from the Waking Sands (Bob's
   mark of 2026-11-19; M opens the map). Everything the server sends for it is retail's and the click sends nothing,
   so the client is refusing for a reason of its own, not found yet: Kawari Probe 0.7.2's Stuck window records the

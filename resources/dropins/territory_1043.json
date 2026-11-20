@@ -89,7 +89,7 @@
                         "link_range": 20,
                         "max_links": 0,
                         "name_id": 557,
-                        "nonpop": false,
+                        "nonpop": true,
                         "type": "battle_npc",
                         "display_flags": 262144,
                         "mount": 251,
@@ -4699,7 +4699,7 @@
                         "link_range": 20,
                         "max_links": 0,
                         "name_id": 2106,
-                        "nonpop": false,
+                        "nonpop": true,
                         "type": "battle_npc",
                         "display_flags": 262145,
                         "appearance": {
@@ -4815,7 +4815,7 @@
                         "link_range": 20,
                         "max_links": 0,
                         "name_id": 2106,
-                        "nonpop": false,
+                        "nonpop": true,
                         "type": "battle_npc",
                         "display_flags": 262145,
                         "appearance": {
@@ -4931,7 +4931,7 @@
                         "link_range": 20,
                         "max_links": 0,
                         "name_id": 2109,
-                        "nonpop": false,
+                        "nonpop": true,
                         "type": "battle_npc",
                         "display_flags": 262145,
                         "appearance": {
@@ -5047,7 +5047,7 @@
                         "link_range": 20,
                         "max_links": 0,
                         "name_id": 2109,
-                        "nonpop": false,
+                        "nonpop": true,
                         "type": "battle_npc",
                         "display_flags": 262145,
                         "appearance": {

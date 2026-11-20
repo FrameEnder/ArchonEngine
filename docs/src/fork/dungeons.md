@@ -1133,6 +1133,7 @@ Five non-hostile ones (BNpcBases 6358, 14580, 14618, 14671, 14672) stand as reta
 | Map effect 0 (2, 1) | The six of layouts 9088382-9088387 dead (122.2 s) |
 | Map effect 1 (2, 1), 2 and 3 (4, 4) | The five of 9088400-9088404 dead (246.2 s) |
 | Objective 0 done | Into the first boss's room (252.9 s, 2.2 s before its pull) |
+| The first boss and its four (layouts 9060841, 9169252, 9169255-9169257) come out, `nonpop` (Bob's mark of 2026-11-20: "not spawned after the wall barrier blocking entry to them is removed instead their always there"; retail's came 0.3 to 0.4 s after map effect 1 in every run where the party was in range) | With the five above dead (246.2 s) |
 | The first boss: music 37 at its pull, its wall (EObj 2000587) shut 15 s on (EventLogMessage 2012 with PlaceName 434) | 255.1 s |
 | It fallen: music 148, 0x80000007 `[42]`, objective 1, talk 33508, map effect 4, the wall and line (2000588) open, EObj 2000597 usable (SetTargetable, state 0); talk 33509 7.0 s on | 445.5 s |
 | EObj 2000597 used (EventAction 23, 1.0 s): PrepareZoning and everyone at (-11.0, 56.4, 205.9) | 452.8 s |
@@ -1212,6 +1213,17 @@ had hit no player do to one: 29170 114-157, 29169 136-188, 28785 939 and 1044, 2
 it turned on), a helper's 28787 802. Those are a Paladin's: he took 1/1.75 of what Bob's damage dealer and healer
 had from the same enemies' auto-attacks and about 1/1.5 from the duty's spells, so the timelines' `players` amounts
 for them are the Paladin's times that (236, 298, 1488, 2112, 1203), an estimate.
+
+**Clock or health** (2026-11-20, Bob: "every event for the Black Efts fight is based on his health status, the new
+spawns, his dialogue during those spawns, and check for this behavior more often"). `questkit triggers` puts each
+event's seconds from the pull beside the boss's health in every run ([QuestKit](questkit.md#triggers)). For the first
+boss (the Black Eft, BNpcBase 14538) the five runs say **the clock**: its three waves' talks and 28774s came at
+12.3 to 15.4 s, 38.5 to 41.3 s and 76.0 to 78.6 s from the pull, with its health at 96.8 to 99.1 %, 87.5 to 94.7 %
+and 74.1 to 82.9 %; the waves themselves 5 s after each (the third: 81.2 to 83.6 s, at 70.4 to 81.8 %), and every
+later cast to 1.1 to 2.4 s across the runs while its health spread 12 to 45 points (the slow White Mage's run
+healthiest). So the waves stay on its clock. The second boss's casts are its clock too (to the last, 22 points of
+health apart), and the last boss's rounds; its last part is its health (talk 33520 below 20 %), as the script has
+it. Only the deaths' talks and map effects go with health (at 0).
 
 **The bombardment** (2026-11-20, Bob's mark: "the random AOEs that appear during the first stretch have a set
 placement, and do not directly target players their suppose to resemble cannon bombardment"): BNpcBase 14572's

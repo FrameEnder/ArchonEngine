@@ -12,7 +12,8 @@
 --   * a line as the party sets off (talks 33506, 33507), map effects 2 and 3 a little further;
 --   * the six of layouts 9088382-9088387 dead: map effect 0. The five of 9088400-9088404 dead: map effect 1, and 2
 --     and 3 again;
---   * the first boss's room (objective 0 as the party comes in); it fallen, the device by its room (EObj 2000597) can
+--   * the first boss and its four come out as the five fall (the way into its room opens); its room (objective 0 as the
+--     party comes in); it fallen, the device by its room (EObj 2000597) can
 --     be used (EventAction 23, 1 s) and puts the party at (-11, 56.4, 205.9), far to the south;
 --   * map effects 8 and 9; the three of 9088917-9088919 dead: map effect 5; the two of 9088929 and 9088930 dead:
 --     map effect 6, and 8 and 9 again;
@@ -158,8 +159,13 @@ AFTER_29357 = 9.6
 -- The packs whose fall opens the way: every layout dead, then the map effects { index, timeline, state }.
 PACKS = {
     { layouts = { 9088382, 9088383, 9088384, 9088385, 9088386, 9088387 }, effects = { { 0, 2, 1 } } },
+    -- With them dead the way into the first boss's room opens, and it and its four come out (0.3 to 0.4 s after the
+    -- map effects in every run where the party was near: Bob's mark of 2026-11-20, "the black eft, and his 4 Cohort
+    -- allies seem to not be spawned after the wall barrier blocking entry to them is removed instead their always
+    -- there"; `nonpop` in the drop-in.)
     { layouts = { 9088400, 9088401, 9088402, 9088403, 9088404 },
-      effects = { { 1, 2, 1 }, { 2, 4, 4 }, { 3, 4, 4 } } },
+      effects = { { 1, 2, 1 }, { 2, 4, 4 }, { 3, 4, 4 } },
+      spawns = { BOSS1, 9169252, 9169255, 9169256, 9169257 } },
     { layouts = { 9088917, 9088918, 9088919 }, effects = { { 5, 2, 1 } } },
     { layouts = { 9088929, 9088930 }, effects = { { 6, 2, 1 }, { 8, 4, 4 }, { 9, 4, 4 } } },
 }
@@ -634,6 +640,9 @@ function onActorDeath(director, layout_id, position)
             once("pack" .. index)
             for _, effect in ipairs(pack.effects) do
                 director:map_effect(effect[1], effect[2], effect[3])
+            end
+            for _, layout in ipairs(pack.spawns or {}) do
+                director:spawn_bnpc(layout)
             end
         end
     end

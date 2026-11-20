@@ -778,6 +778,13 @@ def _lint(args) -> int:
     return 0 if report.ok else 1
 
 
+def _triggers(args) -> int:
+    from . import triggers
+
+    print(triggers.report(triggers.compare(args.runs, args.boss)))
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="questkit", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -852,6 +859,12 @@ def main(argv=None) -> int:
     p.add_argument("--npc", help="only NPCs whose name or layout ID contains this")
     p.add_argument("--out", help="write the report to this file")
     p.set_defaults(run=_battle)
+
+    p = commands.add_parser("triggers", help="is each of a boss's events set off by its clock or its health? (across "
+                                             "retail runs' exports)")
+    p.add_argument("runs", nargs="+", help="run exports (questkit chronofoil <capture> --battle <visit> --out …)")
+    p.add_argument("--boss", type=int, required=True, help="the boss's BNpcBase")
+    p.set_defaults(run=_triggers)
 
     p = commands.add_parser("chronofoil", help="what's in Chronofoil captures (retail sessions): zones, duties, fights")
     p.add_argument("captures", nargs="*",
