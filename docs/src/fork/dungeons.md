@@ -1214,6 +1214,24 @@ it turned on), a helper's 28787 802. Those are a Paladin's: he took 1/1.75 of wh
 had from the same enemies' auto-attacks and about 1/1.5 from the duty's spells, so the timelines' `players` amounts
 for them are the Paladin's times that (236, 298, 1488, 2112, 1203), an estimate.
 
+**Who's out when** (2026-11-20, Bob's marks: "why is cid here he is not suppose to be in this fight at this moment"
+at the first boss). Cid (BNpcBase 14580, BNpcName 1486, layout 9089788) and 14618 (9091115) come out with the second
+boss's fall: retail showed 9091115 1.5 to 1.7 s before its death came and Cid only after it (once the party was within
+about 105 yalms: 4.9 to 44 s on), in all five runs. The two by the last room's door (14671, 14672: 9206933, 9206934)
+come out with the last cutscene (never seen before it). All four are `nonpop` now (`AFTER_BOSS2`,
+`AT_THE_LAST_ROOM`); Cid's talks before then go out with no actor, as retail's did (`DirectorPopupMessage` with
+actor 0). The fixtures allow Cid's appearance 50 s (`tolerances`): retail's client saw him only as the party came near.
+
+**After a wipe** (Bob: "his dialogue is still happening after a wipe"): the Black Eft was still hurt and had a target
+as the party went back, so the script took him to be pulled again at once and his opening talk (33523) and the rest
+came 0.5 s after the party was sent back. A boss is now pulled again only once it has been home, whole and with no
+target (`resetting`, `onPartyWipe`).
+
+**His health against retail's** (Bob: "his health is in no way falling as expecting from what I saw in retail"): in
+that run he was at 76.6 % 94 s after the pull (65217 to 51290 from 12 s on, the party's hits on him 14.5 thousand);
+retail's five were at 70.0 to 78.2 % at 105.6 s and 70.4 to 81.8 % at 82 s, from 12.9 to 17.6 thousand in their first
+93 s. So his health fell as retail's did up to the wipe; past it there's nothing to compare.
+
 **Clock or health** (2026-11-20, Bob: "every event for the Black Efts fight is based on his health status, the new
 spawns, his dialogue during those spawns, and check for this behavior more often"). `questkit triggers` puts each
 event's seconds from the pull beside the boss's health in every run ([QuestKit](questkit.md#triggers)). For the first

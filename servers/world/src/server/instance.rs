@@ -283,6 +283,12 @@ pub struct Instance {
     /// Each bot party's leader: where they stood last tick and the way their formation faces (`party_bot`: it turns
     /// with them only as they move.)
     pub formation_facings: HashMap<ObjectId, (glam::Vec3A, f32)>,
+    /// Where each bot party's leader has walked lately (`party_bot::FOOTSTEP_EVERY` apart, the last
+    /// `party_bot::FOOTSTEPS`): ground the client let a player cross, whatever the zone's collision has there. A bot held
+    /// up on its way follows them along it (Bob's marks of 2026-11-20 in Castrum Meridianum: "player NPCs couldn't path
+    /// through wall barrier", the way into the first boss's room that map effect 1 opens, which the collision and
+    /// navmesh were built with.)
+    pub footsteps: HashMap<ObjectId, std::collections::VecDeque<glam::Vec3A>>,
     /// Whether this instance is a trial (`GameData::content_is_trial`), once asked (`party_bot`'s boss fights.)
     pub trial: Option<bool>,
     /// NPCs a director keeps busy until when (`director:busy_bnpc`): they don't move or act on their own, though their

@@ -200,6 +200,9 @@ CUTSCENE_LAST_AFTER = 2.3 -- seconds from the last of the eight's fall to the cu
 APPEAR_TIMELINE = 142
 APPEAR_AFTER = 0.7
 
+-- Who comes out with the second boss's fall and with the last cutscene (`nonpop` in the drop-in.)
+AFTER_BOSS2 = { GUIDE, 9091115 }
+AT_THE_LAST_ROOM = { 9206933, 9206934 }
 CUTSCENE_LAST = 275
 CUTSCENE_LAST_PARAMS = { 0, 151, 0, 0 }
 LAST_ROOM = { x = -83.88, y = 72.0, z = -35.23, rotation = -1.401 }
@@ -221,6 +224,8 @@ next_helper = 0
 party = {}
 fight = nil -- 1, 2 or 3 while that boss is fought
 waves = 0
+-- The bosses on their way back home after a wipe (not pulled again until they're there.)
+resetting = {}
 flares = 0
 boss_health = nil
 last_part = false
@@ -609,7 +614,19 @@ function onUpdate(director, health, player_health, info)
         theWay(director)
         local function pulled(layout)
             local it = info[layout]
-            return it ~= nil and (it.target ~= nil or (health[layout] ~= nil and health[layout] < 100))
+            if it == nil then
+                return false
+            end
+            -- After a wipe a boss isn't pulled again until it has been back home, whole and with no one to fight: it
+            -- was hurt and still had a target as the party went back, and the fight began again at once, its talk
+            -- with it (Bob's marks of 2026-11-20: "the dialogue also played for the black eft after a reset".)
+            if resetting[layout] then
+                if it.target == nil and (health[layout] == nil or health[layout] >= 100) then
+                    resetting[layout] = nil
+                end
+                return false
+            end
+            return it.target ~= nil or (health[layout] ~= nil and health[layout] < 100)
         end
         if fight == nil then
             if not dead[BOSS1] and pulled(BOSS1) then
@@ -674,6 +691,12 @@ function onActorDeath(director, layout_id, position)
         director:map_effect(7, 2, 1)
         after(2.1, function(d) d:map_effect(10, 2, 1) end)
         after(7.0, function(d) talk(d, 33521) end)
+        -- Cid (BNpcName 1486, 9089788) and the one at the hidden three's corner (9091115) come out with its fall: retail
+        -- showed 9091115 1.5 to 1.7 s before the death came, both only after it in all five runs (Bob's mark of
+        -- 2026-11-20 at the first boss's room: "why is cid here he is not suppose to be in this fight at this moment".)
+        for _, layout in ipairs(AFTER_BOSS2) do
+            director:spawn_bnpc(layout)
+        end
     elseif layout_id == BOSS3 then
         fight = "over"
         later = {}
@@ -703,6 +726,11 @@ function onActorDeath(director, layout_id, position)
             d:play_cutscene(CUTSCENE_LAST, CUTSCENE_LAST_PARAMS)
             d:hide_eobj(EOBJ_BEFORE_LAST)
             bringLastBoss(d)
+            -- The two by the last room's door (9206933, 9206934) come out with it: never seen before the cutscene in
+            -- the five runs (seen within 20 yalms of them, 1 s into it where the party came near.)
+            for _, layout in ipairs(AT_THE_LAST_ROOM) do
+                d:spawn_bnpc(layout)
+            end
         end)
         after(CUTSCENE_LAST_AFTER + 1.0, function(d)
             for index = 12, 14 do
@@ -730,6 +758,7 @@ function onPartyWipe(director)
     if fight == "over" then
         return
     end
+    resetting = { [BOSS1] = true, [BOSS2] = true, [BOSS3] = true }
     local was = fight
     fight = nil
     later = {}

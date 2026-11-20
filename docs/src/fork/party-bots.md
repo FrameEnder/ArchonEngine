@@ -652,6 +652,16 @@ the player in their diamond, inside the circle (captures 6320ae56, deea324c, 9ba
 
 Tests: `player_npcs_go_back_to_their_places_in_the_diamond`, `the_circle_holds_everyone_in_while_it_shows`.
 
+**After the player, the way they walked** (2026-11-20, Bob's marks in Castrum Meridianum: "player NPCs couldn't path
+through wall barrier"). The way into the first boss's room is shut by a barrier that map effect 1 opens as the five
+before it fall; the zone's collision and navmesh were built with it, and no event object owns it, so it stood for the
+bots and there was no navmesh path through. Each instance now keeps where each bot party's leader walked
+(`Instance::footsteps`: a step every 0.7 yalms, the last 400), ground the client let a player cross. A bot held up on
+its way out of combat (past `WALL_PATIENCE`), or with no navmesh path to its spot, follows them along it
+(`along_the_trail`: from the step nearest it, within 4 yalms, on to the one nearest its spot), and where the player
+walked (within 1.5 yalms of a step) it goes on through what the collision has there; a gimmick the director put up
+still stops it. Test `a_bot_held_up_follows_the_way_its_player_walked`.
+
 "Standing in the air" itself was the floor (Bob, the same day: "literally standing in the air about 1 yalm … a fix you
 made for Cape Westwind's boss"): since 2026-11-18 anyone with a second surface less than 2 yalms over the floor they
 stood on was put on that surface (`collision::settle`'s `HEADROOM`); now only someone between the two goes up, not

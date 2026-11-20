@@ -507,6 +507,42 @@ pub(crate) fn run_along_at(
     (Some((at, facing)), blocked)
 }
 
+/// How far apart the leader's footsteps are kept (yalms; `Instance::footsteps`), how many, and how near one a bot is
+/// on ground they walked.
+const FOOTSTEP_EVERY: f32 = 0.7;
+const FOOTSTEPS: usize = 400;
+const TRODDEN_WITHIN: f32 = 1.5;
+/// The trail's nearest step to a bot this far off at most is where it joins it.
+const TRAIL_JOIN: f32 = 4.0;
+
+/// A path for a bot at `here` after its player the way they walked (`trail`, oldest first) to `spot`: from the step
+/// nearest it (within `TRAIL_JOIN`) on through the later ones, then to the spot. None when it isn't near their way.
+fn along_the_trail(
+    trail: &[Vec3A],
+    here: Vec3A,
+    spot: Vec3A,
+) -> Option<std::collections::VecDeque<Vec3A>> {
+    let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
+    let (join, _) = trail
+        .iter()
+        .enumerate()
+        .map(|(index, step)| (index, flat(*step, here)))
+        .filter(|(_, distance)| *distance <= TRAIL_JOIN)
+        // The latest of the nearest (a way walked twice: the later.)
+        .min_by(|a, b| a.1.total_cmp(&b.1).then(b.0.cmp(&a.0)))?;
+    let mut path: std::collections::VecDeque<Vec3A> = trail[join..].iter().copied().collect();
+    // Not past the spot: up to the step nearest it.
+    if let Some((end, _)) = path
+        .iter()
+        .enumerate()
+        .min_by(|a, b| flat(*a.1, spot).total_cmp(&flat(*b.1, spot)))
+    {
+        path.truncate(end + 1);
+    }
+    path.push_back(spot);
+    Some(path)
+}
+
 /// How long the zone's collision may hold a bot up on its navmesh path before it goes on anyway: something in the
 /// collision that isn't there for players. Bob's Copperbell Mines bundle of 2026-10-27: the three bots never left the
 /// entrance, stopped a yalm or two in by the zone's collision while he walked off, most likely the duty's entrance
@@ -3732,6 +3768,25 @@ fn update_party(
                 .map(|actor| (*id, (actor.position().0, actor.rotation())))
         })
         .collect();
+    // Where the leader walked (`Instance::footsteps`), and the trail as it stands for this tick's bots.
+    if let Some((position, _)) = where_is.get(&leader).copied() {
+        let steps = instance.footsteps.entry(leader).or_default();
+        if steps
+            .back()
+            .is_none_or(|last| last.distance(position) >= FOOTSTEP_EVERY)
+        {
+            steps.push_back(position);
+            while steps.len() > FOOTSTEPS {
+                steps.pop_front();
+            }
+        }
+    }
+    let trail: Vec<Vec3A> = instance
+        .footsteps
+        .get(&leader)
+        .map(|steps| steps.iter().copied().collect())
+        .unwrap_or_default();
+
     // The way the formation faces: the leader's, taken only as they move (`FORMATION_MOVED`).
     let formation_facing = where_is.get(&leader).copied().map(|(position, rotation)| {
         let entry = instance
@@ -4167,10 +4222,23 @@ fn update_party(
             let drifted = path.back().is_none_or(|end| flat(*end, spot) > SPOT_MOVED);
             let due = path.is_empty() || now.duration_since(bot.reaimed) >= REAIM_EVERY;
             let mut reaimed = bot.reaimed;
-            if drifted && due {
+            let held_up = bot
+                .walled_since
+                .is_some_and(|since| now.duration_since(since) >= WALL_PATIENCE);
+            if (drifted && due) || held_up {
                 path = instance_navmesh_path(navmesh, here, spot).into();
-                if path.back().is_none_or(|end| flat(*end, spot) > AT_SPOT) {
-                    path.push_back(spot); // straight on where the navmesh stops
+                let reaches = path.back().is_some_and(|end| flat(*end, spot) <= AT_SPOT);
+                // Held up, or no way there on the navmesh: after the player, the way they walked.
+                match (held_up || !reaches)
+                    .then(|| along_the_trail(&trail, here, spot))
+                    .flatten()
+                {
+                    Some(steps) => path = steps,
+                    None => {
+                        if !reaches {
+                            path.push_back(spot); // straight on where the navmesh stops
+                        }
+                    }
                 }
                 reaimed = now;
             }
@@ -4197,6 +4265,13 @@ fn update_party(
                 .walled_since
                 .map(|since| now.duration_since(since))
                 .unwrap_or_default();
+            // Where the player walked, the client had no wall: on through what the zone's collision has there (a
+            // gimmick the director put up still stops it.)
+            let walled_for = if trail.iter().any(|step| flat(*step, here) <= TRODDEN_WITHIN) {
+                walled_for.max(WALL_PATIENCE)
+            } else {
+                walled_for
+            };
             let blocked;
             (at, blocked) = walk_like_a_player(
                 &instance.navmesh,
@@ -5052,6 +5127,26 @@ mod tests {
             ..light_party
         };
         assert_eq!(roles_left(two_melee, ROLE_RANGED), [1, 1, 1, 0]);
+    }
+
+    #[test]
+    fn a_bot_held_up_follows_the_way_its_player_walked() {
+        // Bob's marks of 2026-11-20 in Castrum Meridianum: "player NPCs couldn't path through wall barrier" (the way
+        // into the first boss's room, which the collision and navmesh have shut.) The player walked in along x.
+        let trail: Vec<Vec3A> = (0..20).map(|x| Vec3A::new(x as f32, 0.0, 0.0)).collect();
+        let spot = Vec3A::new(15.0, 0.0, 1.0);
+        let path = along_the_trail(&trail, Vec3A::new(3.2, 0.0, 1.0), spot).unwrap();
+        // From the step nearest it, on to the step nearest its spot, then the spot.
+        assert_eq!(path.front().copied(), Some(Vec3A::new(3.0, 0.0, 0.0)));
+        assert_eq!(
+            path.iter().rev().nth(1).copied(),
+            Some(Vec3A::new(15.0, 0.0, 0.0))
+        );
+        assert_eq!(path.back().copied(), Some(spot));
+        assert_eq!(path.len(), 14);
+        // Nowhere near the way they walked: not this.
+        assert!(along_the_trail(&trail, Vec3A::new(3.0, 0.0, 9.0), spot).is_none());
+        assert!(along_the_trail(&[], Vec3A::ZERO, spot).is_none());
     }
 
     #[test]
