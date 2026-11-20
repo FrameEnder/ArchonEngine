@@ -651,3 +651,8 @@ the player in their diamond, inside the circle (captures 6320ae56, deea324c, 9ba
   commences or goes on (`mod.rs`, `wipe.rs`).
 
 Tests: `player_npcs_go_back_to_their_places_in_the_diamond`, `the_circle_holds_everyone_in_while_it_shows`.
+
+"Standing in the air" itself was the floor (Bob, the same day: "literally standing in the air about 1 yalm … a fix you
+made for Cape Westwind's boss"): since 2026-11-18 anyone with a second surface less than 2 yalms over the floor they
+stood on was put on that surface (`collision::settle`'s `HEADROOM`); now only someone between the two goes up, not
+one standing on the lower ([Combat](combat.md)).

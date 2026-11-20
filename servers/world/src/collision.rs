@@ -71,6 +71,12 @@ const SETTLE_RISE: f32 = 3.0;
 /// ground the client shows is 65.08): the nearer floor was the one beneath, and he "teleported then moved under the
 /// ground" (Bob, 2026-11-18; the server's capture has him at 62.3 where the ground is 64.4.)
 const HEADROOM: f32 = 2.0;
+/// Within this of a floor (yalms, over it) someone stands on it, whatever is over their head: `HEADROOM` only lifts one
+/// who is between two floors, not one on the lower. Lifting those too (from 2026-11-18) stood the Player NPCs about a
+/// yalm up in the air in Castrum Meridianum, on something less than 2 yalms over the ground they stood on (Bob,
+/// 2026-11-20: "they was literally standing in the air about 1 yalm … before that this bug never existed".) Cape
+/// Westwind's boss came down 0.45 over the floor beneath the ground, so he still goes up to the ground.
+const ON_THE_FLOOR: f32 = 0.25;
 
 /// The collision, ready to ask where the floor is and what's in the way. Cloning it is cheap (the triangles are
 /// shared): each instance keeps its own copy of which gimmicks are gone.
@@ -705,9 +711,12 @@ impl Collision {
         let below = self.body_floor(x, z, y + self.climb, y - SETTLE_DEPTH);
         let above = self.floor(x, z, y + SETTLE_RISE, y + self.climb);
         // The nearer of the two: a little under a floor is on it, well under one is over the floor below. Between two
-        // with no room to stand on the lower, it's on the upper (`HEADROOM`.)
+        // with no room to stand on the lower, it's on the upper (`HEADROOM`), unless it stands on the lower
+        // (`ON_THE_FLOOR`.)
         let floor = match (below, above) {
-            (Some(below), Some(above)) if above - below < HEADROOM => Some(above),
+            (Some(below), Some(above)) if above - below < HEADROOM && y - below > ON_THE_FLOOR => {
+                Some(above)
+            }
             (Some(below), Some(above)) => Some(if y - below <= above - y { below } else { above }),
             (below, above) => below.or(above),
         };
@@ -1041,8 +1050,16 @@ mod tests {
             f32::INFINITY,
         );
         assert!(!walk.blocked && walk.at.y == 65.08, "{walk:?}");
-        // One already on the lower (walked there before 2026-11-18) comes up at its next step too.
-        assert_eq!(c.settle(Vec3A::new(0.0, 63.9, 0.0)).y, 65.08);
+        // One standing on the lower stays on it: something less than 2 yalms over the ground isn't the floor. That
+        // stood the Player NPCs a yalm up in the air in Castrum Meridianum (Bob, 2026-11-20.)
+        assert_eq!(c.settle(Vec3A::new(0.0, 63.9, 0.0)).y, 63.9);
+        assert_eq!(c.settle(Vec3A::new(0.0, 64.1, 0.0)).y, 63.9);
+        let walk = c.walk(
+            Vec3A::new(0.0, 63.9, 0.0),
+            Vec3A::new(5.0, 63.9, 0.0),
+            f32::INFINITY,
+        );
+        assert!(!walk.blocked && walk.at.y == 63.9, "{walk:?}");
     }
 
     #[test]
