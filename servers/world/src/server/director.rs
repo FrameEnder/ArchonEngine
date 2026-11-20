@@ -8,8 +8,8 @@ use std::{
 
 use kawari::{
     common::{
-        ContentDirectorEvent, DirectorEvent, DirectorTrigger, DutyOption, EOBJ_SHORTCUT,
-        EventState, GimmickAccessorType, GimmickRectEvent, HandlerId, HandlerType,
+        ContentDirectorEvent, DirectorEvent, DirectorTrigger, DutyOption, EventState,
+        GimmickAccessorType, GimmickRectEvent, HandlerId, HandlerType,
         InstanceContentDirectorEvent, LeveDirectorEvent, LogMessageType, ObjectId, ObjectTypeId,
         ObjectTypeKind, Position, PublicContentType, TerritoryIntendedUse, WARP_DELAY, WarpType,
         timestamp_secs,
@@ -490,6 +490,8 @@ pub enum LuaDirectorTask {
     },
     /// Show the duty's exits (every event object in the zone whose gimmick is the duty exit, `Zone::exit_eobjs`.)
     ShowExits,
+    /// Show the duty's shortcuts (`Zone::shortcut_eobjs`: 2000700, or Castrum Meridianum's 2000603, `is_duty_shortcut`.)
+    ShowShortcuts,
     /// Bring a BNpc spawned hidden (its display flags have INVISIBLE, as retail's spawn had) into view `delay` seconds
     /// from now: ActorControl `Appear` (a fade-in, and `action_timeline` played on it) then `SetTargetable`, as retail
     /// did for the Copperbell Mines' ambushing gigas (158, 0.6-0.9 s after their spawn; Bob's captures of 2026-10-25.)
@@ -1183,9 +1185,7 @@ impl UserData for LuaDirector {
         );
         methods.add_method_mut("update_shortcut", |_, this, poprange_id: u32| {
             // Show the shortcut object because it's hidden by default
-            this.tasks.push(LuaDirectorTask::ShowEObj {
-                base_id: EOBJ_SHORTCUT,
-            });
+            this.tasks.push(LuaDirectorTask::ShowShortcuts);
             this.tasks
                 .push(LuaDirectorTask::UpdateShortcut { poprange_id });
             Ok(())
@@ -1206,9 +1206,7 @@ impl UserData for LuaDirector {
         methods.add_method_mut(
             "update_shortcut_spot",
             |_, this, (x, y, z, rotation): (f32, f32, f32, f32)| {
-                this.tasks.push(LuaDirectorTask::ShowEObj {
-                    base_id: EOBJ_SHORTCUT,
-                });
+                this.tasks.push(LuaDirectorTask::ShowShortcuts);
                 this.tasks.push(LuaDirectorTask::UpdateShortcutSpot {
                     position: Position(glam::Vec3A::new(x, y, z)),
                     rotation,
@@ -2813,6 +2811,12 @@ pub fn director_tick(
                 .iter()
                 .map(|base_id| LuaDirectorTask::ShowEObj { base_id: *base_id })
                 .collect(),
+            LuaDirectorTask::ShowShortcuts => instance
+                .zone
+                .shortcut_eobjs
+                .iter()
+                .map(|base_id| LuaDirectorTask::ShowEObj { base_id: *base_id })
+                .collect(),
             task => vec![task],
         })
         .collect();
@@ -4325,7 +4329,7 @@ pub fn director_tick(
                 );
             }
             // Expanded into `ShowEObj`s above.
-            LuaDirectorTask::ShowExits => {}
+            LuaDirectorTask::ShowExits | LuaDirectorTask::ShowShortcuts => {}
             LuaDirectorTask::RetreatBattleNpc { who, to } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {
                     tracing::warn!("Failed to find bnpc {who} to send back!");
@@ -4682,8 +4686,10 @@ pub fn handle_director_messages(
                     // its own place, after its line (Param2, a LogMessage, from the gimmick's own handler): Haukke
                     // Manor's way back up from the cellar (GimmickAccessor 0x41A), Bob's Chronofoil captures of
                     // 2026-11-02: scene 1, then LogMessage 2049 from 0x000F041A, EventFinish and the warp.
+                    let duty_shortcut =
+                        crate::server::zone::is_duty_shortcut(&mut game_data.lock(), base_id);
                     let pop_range_id =
-                        (gimmick_param1 != 0 && base_id != EOBJ_SHORTCUT).then_some(gimmick_param1);
+                        (gimmick_param1 != 0 && !duty_shortcut).then_some(gimmick_param1);
                     if pop_range_id.is_some() && gimmick_param2 != 0 {
                         let ipc = EventLogMessage {
                             handler_id: HandlerId::new(HandlerType::GimmickAccessor, *id as u16),

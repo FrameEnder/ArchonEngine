@@ -96,8 +96,16 @@ with a bound layout retail hid with ActorControl 106 [7], within 15 yalms of the
 | 1047 | The Howling Eye | 2000274 | 4247837 | (-0.113, -2.029, 17.533) |
 | 1048 | The Porta Decumana | 2007457 | 9088353 | (-758, -400, -600) |
 
-The other duty entries in the captures (quest battles, trials, the Hall of the Novice) showed no circle. Kawari
-puts players at the circle's bound object, which it reads from the layout; that the spot is retail's isn't checked
+The other duty entries in the captures (quest battles, trials, the Hall of the Novice) showed no circle.
+
+**By layout ID, not EObj ID** (2026-11-19, Bob's next run: "stuck in circular barrier"): an EObj ID isn't one duty's
+circle alone. 2007457 is the Porta Decumana's circle and also Castrum Meridianum's way to its last hall (layout
+9090412), and it came first in the list: at DutyCommence (16.9 s in) Kawari hid that, and the real circle (2000562)
+never hid, so he couldn't leave it. The circles are now recorded by territory and layout ID,
+`resources/data/entrance_circles.json` (`entrance_facing.rs`'s `entrance_circle`), which `Zone::find_entrance` and
+`Instance::find_entrance_circle` read first; the EObj IDs are only for a duty not recorded, and the `--layers` check
+compares layout IDs (test `the_entrance_circle_is_retails_by_layout`). His entry itself was retail's (247.663,
+87.14987, -94.968) on `95fe982`. Kawari puts players at the circle's bound object, which it reads from the layout; that the spot is retail's isn't checked
 for Castrum Meridianum and the Praetorium (no layout of theirs here).
 
 ## Facing at the entrance
@@ -1185,8 +1193,15 @@ object whose event is GimmickAccessor 74: scene 1, flags 0x2001, 1.4 s) and it p
 everyone to the entrance as in any duty; the script takes the boss away, brings it back at `onDutyRecommence`, and
 from the last room's cutscene on points the shortcut at that spot: **`director:update_shortcut_spot(x, y, z,
 rotation)`** (new: the shortcut's `update_shortcut` takes a pop range, and this duty's aren't known;
-`DirectorData::shortcut_goes`, test `a_shortcut_goes_where_it_was_last_pointed`). Where the shortcut goes before the
-last room, and when it first shows, isn't known: it was only used there.
+`DirectorData::shortcut_goes`, test `a_shortcut_goes_where_it_was_last_pointed`). **When it shows** (2026-11-19): the
+shortcut is EObj 2000603 (layout 9088364, at (241.5, 87.4, -90.7) by the entrance), and retail spawned it hidden
+(state 7) in all five runs, still hidden 414 s in, shown (state 0) by 1308.8 s and 1529.3 s, after the last room's
+cutscene: what `update_shortcut_spot` does. Kawari only knew 2000700 as a shortcut and showed 2000603 from the start
+(Bob's mark: "shortcut showing when it's only suppose to show once reaching the last boss"). A duty's shortcut is now
+2000700 or any EObj whose event is the same GimmickAccessor as 2000700's (`zone::is_duty_shortcut`; 74, which
+2000603's is too): spawned hidden, all of them shown by `update_shortcut`/`update_shortcut_spot` (`ShowShortcuts`,
+`Zone::shortcut_eobjs`), and taken where the director points. Where it goes before the last room isn't known: it was
+only used there.
 
 **The fourth run** (Bob's 6320ae56, visit 0.1, 2026-11-18: a Paladin, so the enemies went for a player; 1963.9 s,
 two falls at the last boss) fits the three otherwise: the first boss's casts to the round's 31.5 s through 196 s, the

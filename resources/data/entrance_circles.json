@@ -1,0 +1,21 @@
+{
+    "comment": "Each duty's entrance circle by territory: the layout ID of the EObj retail hid with ActorControl 106 [7] at DutyCommence, whose bound object is where players come in (Bob's Chronofoil captures, read with `questkit chronofoil <captures> --layers`; tools/questkit/questkit/data/entrances.json). An EObj ID can be a circle in one duty and something else in another: 2007457 is the Porta Decumana's circle and Castrum Meridianum's way to its last hall, and Kawari took it for Castrum Meridianum's circle there until 2026-11-19 (Bob's mark: \"stuck in circular barrier\"), hiding the wrong object at DutyCommence. So the layout ID decides where there is one here; ENTRANCE_CIRCLE_IDS (core/src/common/game.rs) is only for duties not in the captures. `runs`: the entries each was seen in.",
+    "territories": {
+        "281": 4600249,
+        "1042": 4239683,
+        "1043": 9088360,
+        "1044": 9058469,
+        "1047": 4247837,
+        "1048": 9088353,
+        "1067": 4377979
+    },
+    "runs": {
+        "281": 1,
+        "1042": 15,
+        "1043": 6,
+        "1044": 5,
+        "1047": 1,
+        "1048": 4,
+        "1067": 1
+    }
+}

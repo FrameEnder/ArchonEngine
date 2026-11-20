@@ -1613,7 +1613,13 @@ class DutyEntrances(unittest.TestCase):
         problems = chronofoil_entrances.check([seen])
         self.assertEqual(len(problems), 1)
         self.assertIn("1999999", problems[0])
-        self.assertIn("random pop range", problems[0])
+        self.assertIn("says layout 9088360", problems[0])
+        # Castrum Meridianum's way to its last hall shares its EObj ID with the Porta Decumana's circle (2007457): the
+        # layout decides (Bob's mark of 2026-11-19, "stuck in circular barrier").
+        wrong = dict(seen, circle={"base": 2007457, "layout": 9090412, "bound": 9084912, "hidden_after": 16.9})
+        self.assertIn("says layout 9088360", chronofoil_entrances.check([wrong])[0])
+        unknown = dict(seen, territory=9999, facing=None)
+        self.assertIn("hasn't the territory", chronofoil_entrances.check([unknown])[0])
         # A facing the table has otherwise, and a territory it hasn't.
         self.assertIn("says -1.5871", chronofoil_entrances.check([dict(seen, circle=None, facing=1.0)])[0])
         self.assertIn("no entry", chronofoil_entrances.check([dict(seen, circle=None, territory=9999)])[0])

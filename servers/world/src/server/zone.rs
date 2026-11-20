@@ -130,6 +130,8 @@ pub struct Zone {
     /// Maws of Toto-Rak's is 2000683 (its EObj Data the same GimmickAccessor, 5; retail spawned it hidden and showed it
     /// as the duty was complete, Bob's Chronofoil captures caa5e908 and 1fac2416 of 2026-10-30.)
     pub exit_eobjs: Vec<u32>,
+    /// The duty's shortcuts (`is_duty_shortcut`): spawned hidden, shown when the director points them somewhere.
+    pub shortcut_eobjs: Vec<u32>,
 }
 
 /// Whether this event object's gimmick is the duty exit (its EObj Data a GimmickAccessor of the DutyExit kind.)
@@ -142,6 +144,20 @@ fn is_duty_exit(game_data: &mut GameData, base_id: u32) -> bool {
         && game_data
             .lookup_gimmick_accessor(data & 0xFFFF)
             .is_some_and(|(kind, ..)| matches!(kind, GimmickAccessorType::DutyExit))
+}
+
+/// Whether an EObj is a duty's shortcut: 2000700, or one whose event is the same gimmick as 2000700's (its
+/// GimmickAccessor, from the EObj sheet's Data). Castrum Meridianum's is 2000603 (by the entrance, layout 9088364),
+/// whose GimmickAccessor is 74 as 2000700's is in the duties before it (Bob's Chronofoil captures 6320ae56 and
+/// deea324c: scene 1, flags 0x2001); retail spawned it hidden (state 7) until the last room, and Kawari, knowing
+/// 2000700 alone, showed it from the start (Bob's mark of 2026-11-19).
+pub fn is_duty_shortcut(game_data: &mut GameData, base_id: u32) -> bool {
+    if base_id == EOBJ_SHORTCUT {
+        return true;
+    }
+    let shortcut = game_data.get_eobj_data(EOBJ_SHORTCUT);
+    shortcut >> 16 == HandlerType::GimmickAccessor as u32
+        && game_data.get_eobj_data(base_id) == shortcut
 }
 
 /// A gathering point that's only up at certain Eorzea times.
@@ -588,7 +604,16 @@ impl Zone {
         }
     }
 
+    /// The entrance by its circle's EObj ID (`Some(base_id)`) or its layout ID.
     fn find_entrance_from_base_id(&self, base_id: u32) -> Option<&InstanceObject> {
+        self.find_entrance_by(Some(base_id), None)
+    }
+
+    fn find_entrance_by(
+        &self,
+        base_id: Option<u32>,
+        layout_id: Option<u32>,
+    ) -> Option<&InstanceObject> {
         // First, we need to find the EventObject for the entrance:
         let mut bound_id = None;
         for layer_group in &self.layer_groups {
@@ -599,7 +624,8 @@ impl Zone {
 
                 for object in &layer.objects {
                     if let LayerEntryData::EventObject(eobj) = &object.data
-                        && eobj.parent_data.base_id == base_id
+                        && (base_id == Some(eobj.parent_data.base_id)
+                            || layout_id == Some(object.instance_id))
                     {
                         bound_id = Some(eobj.bound_instance_id);
                         break;
@@ -629,7 +655,15 @@ impl Zone {
     }
 
     /// Tries to locate the entrance circle used in instanced content.
+    ///
+    /// Fork: retail's circle for this territory first, by its layout ID (`entrance_circles.json`), as an EObj ID can
+    /// be a circle in one duty and something else in another; the EObj IDs only for a duty not recorded.
     pub fn find_entrance(&self) -> Option<&InstanceObject> {
+        if let Some(layout_id) = crate::entrance_facing::entrance_circle(self.id)
+            && let Some(object) = self.find_entrance_by(None, Some(layout_id))
+        {
+            return Some(object);
+        }
         for base_id in ENTRANCE_CIRCLE_IDS {
             if let Some(object) = self.find_entrance_from_base_id(base_id) {
                 return Some(object);
@@ -733,10 +767,11 @@ impl Zone {
                         if exit && !self.exit_eobjs.contains(&eobj.parent_data.base_id) {
                             self.exit_eobjs.push(eobj.parent_data.base_id);
                         }
-                        let event_state = if (eobj.parent_data.base_id == EOBJ_SHORTCUT
-                            && !explorer_mode)
-                            || exit
-                        {
+                        let shortcut = is_duty_shortcut(game_data, eobj.parent_data.base_id);
+                        if shortcut && !self.shortcut_eobjs.contains(&eobj.parent_data.base_id) {
+                            self.shortcut_eobjs.push(eobj.parent_data.base_id);
+                        }
+                        let event_state = if (shortcut && !explorer_mode) || exit {
                             EventState::OFF | EventState::UNK2 | EventState::UNK3
                         } else if explorer_mode {
                             // HACK: disable all walls in Explorer Mode

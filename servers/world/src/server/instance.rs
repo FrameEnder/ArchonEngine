@@ -1061,7 +1061,24 @@ impl Instance {
     }
 
     /// Returns the entrance circle event object (if found).
+    ///
+    /// Fork: retail's circle for this territory first, by its layout ID (`entrance_circles.json`): Castrum
+    /// Meridianum's way to its last hall shares its EObj ID (2007457) with the Porta Decumana's circle, and was hidden
+    /// at DutyCommence in its circle's place (Bob's mark of 2026-11-19, "stuck in circular barrier").
     pub fn find_entrance_circle(&self) -> Option<ObjectId> {
+        if let Some(layout_id) = crate::entrance_facing::entrance_circle(self.zone.id)
+            && let Some(id) = self
+                .actors
+                .iter()
+                .find_map(|(actor_id, actor)| match actor {
+                    NetworkedActor::Object { object, .. } if object.layout_id == layout_id => {
+                        Some(*actor_id)
+                    }
+                    _ => None,
+                })
+        {
+            return Some(id);
+        }
         // Prefer EObjs in LVD_zone_01 as that's where the circle is usually placed, otherwise other EObjs conflict such as in E8N.
         for base_id in ENTRANCE_CIRCLE_IDS {
             if let Some(id) = self.find_object_by_eobj_id_and_layer_name(base_id, "LVD_zone_01") {
@@ -1181,5 +1198,43 @@ pub fn remove_actor_from_instance(
                 DestinationNetwork::ZoneClients,
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn object(base_id: u32, layout_id: u32) -> SpawnObject {
+        SpawnObject {
+            base_id,
+            layout_id,
+            ..Default::default()
+        }
+    }
+
+    /// Bob's mark of 2026-11-19 in Castrum Meridianum, "stuck in circular barrier": its way to the last hall (EObj
+    /// 2007457, layout 9090412) shares its EObj ID with the Porta Decumana's circle, and was hidden at DutyCommence in
+    /// place of the circle (2000562, layout 9088360; ActorControl 106 [7] 16.9 s in, the circle never). Retail's
+    /// circle is recorded by layout ID (`entrance_circles.json`) and comes first.
+    #[test]
+    fn the_entrance_circle_is_retails_by_layout() {
+        let mut instance = Instance::default();
+        instance.zone.id = 1043;
+        instance.insert_object(
+            ObjectId(1),
+            object(2007457, 9090412),
+            "LVD_zone_01".to_string(),
+        );
+        instance.insert_object(
+            ObjectId(2),
+            object(2000562, 9088360),
+            "LVD_zone_01".to_string(),
+        );
+        assert_eq!(instance.find_entrance_circle(), Some(ObjectId(2)));
+
+        // A duty not recorded still goes by the EObj IDs.
+        instance.zone.id = 9999;
+        assert_eq!(instance.find_entrance_circle(), Some(ObjectId(1)));
     }
 }

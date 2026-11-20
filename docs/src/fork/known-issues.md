@@ -41,8 +41,8 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
   Kawari's collision lets the party through before them is untested. The device after the first boss sends every
   player on at once (`warp_players`), not only who used it. Also guessed: the bosses' rounds past the runs (the first's seen to 243 s, the others' twice), the last
   boss's last part past 40 s. A fall is retail's from the last room on (the entrance, then the shortcut to outside
-  the last room: `update_shortcut_spot`, unplayed); before it the shortcut isn't shown, since where retail's goes
-  then wasn't seen. The heal of BNpcBase 14574 is from three uses (from 43 s into its fight, on the first of its
+  the last room: `update_shortcut_spot`, unplayed); before it the shortcut (2000603) isn't shown, as on retail (hidden
+  until after the last room's cutscene in all five runs; shown from the start in Kawari until 2026-11-20). The heal of BNpcBase 14574 is from three uses (from 43 s into its fight, on the first of its
   side below half): when it comes again wasn't seen (`every` 43, a guess), and "below half" is anywhere from 32 to
   59 %. 28785, 28798, 29169 and 29170 hit no player but a Paladin: their `players` amounts are his times 1.5 or 1.75.
 * **Not read yet**: what Cape Westwind does when it's lost (visit 0.6: the player fell 315 s in and came

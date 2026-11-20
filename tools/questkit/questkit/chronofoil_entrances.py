@@ -6,11 +6,14 @@ hides with ActorControl 106 [7] at DutyCommence and shows again after a wipe. Ka
 (resources/data/entrance_facing.json). A duty whose circle isn't in the list comes in at a random pop range of the
 whole duty, and its circle never hides: the Stone Vigil (Bob's bundle 20261107-205303), then Castrum Meridianum
 (Bob's mark of 2026-11-19, "the starting spawn point isn't even slightly set-up") with five runs of it in hand.
+Then its EObj ID wasn't enough: 2007457 is the Porta Decumana's circle and Castrum Meridianum's way to its last hall,
+and Kawari hid that in its circle's place (Bob's mark the same night, "stuck in circular barrier"). So the circles are
+recorded by territory and layout ID (resources/data/entrance_circles.json), which the server reads first.
 
 `observe` reads every duty entry out of a capture: the territory and ContentFinderCondition, where retail put the
 player (ZoneInit's position), which way the client said it faced in its first position update, and the circle (the
 first object with a bound layout that retail hid with ActorControl 106 [7] in the duty). `check` says where the
-server doesn't know the circle or the facing. The observations are numbers only, kept in
+server doesn't know the circle (by layout ID) or the facing. The observations are numbers only, kept in
 `tools/questkit/questkit/data/entrances.json` so the test suite runs the check without the captures
 (`questkit chronofoil <captures> --layers --save` adds a capture's).
 
@@ -34,6 +37,7 @@ from .chronofoil import Names
 OBSERVATIONS = Path(__file__).resolve().parent / "data" / "entrances.json"
 GAME_RS = repo.ROOT / "core" / "src" / "common" / "game.rs"
 ENTRANCE_FACING = repo.ROOT / "resources" / "data" / "entrance_facing.json"
+ENTRANCE_CIRCLES = repo.ROOT / "resources" / "data" / "entrance_circles.json"
 HIDE = (106, 7)
 # The first position update counts as the entrance's facing only this soon after the zone loaded (as
 # entrance_facing.json's were taken), before the player could have turned.
@@ -108,6 +112,12 @@ def known_circles() -> set[int]:
     return {int(number) for number in re.findall(r"\d+", body)}
 
 
+def known_circle_layouts() -> dict[int, int]:
+    """entrance_circles.json: each territory's circle by layout ID."""
+    return {int(territory): layout
+            for territory, layout in json.loads(ENTRANCE_CIRCLES.read_text())["territories"].items()}
+
+
 def known_facings() -> dict[int, float]:
     return {int(territory): facing
             for territory, facing in json.loads(ENTRANCE_FACING.read_text())["territories"].items()}
@@ -115,17 +125,20 @@ def known_facings() -> dict[int, float]:
 
 def check(observations: list[dict]) -> list[str]:
     """Where retail hid a circle the server doesn't know, or turned players a way it doesn't know or knows otherwise."""
-    circles = known_circles()
+    layouts = known_circle_layouts()
     facings = known_facings()
     problems = []
     for seen in observations:
         where = (f"capture {seen['capture']}, territory {seen['territory']} "
                  f"(ContentFinderCondition {seen['content_finder_condition']})")
         circle = seen.get("circle")
-        if circle and circle["base"] not in circles:
+        if circle and layouts.get(seen["territory"]) != circle["layout"]:
+            ours = layouts.get(seen["territory"])
             problems.append(f"{where}: retail's entrance circle is EObj {circle['base']} (layout {circle['layout']}, "
                             f"hidden {circle['hidden_after']} s in; players at {seen['position']}); "
-                            "ENTRANCE_CIRCLE_IDS hasn't it, so players come in at a random pop range")
+                            + ("entrance_circles.json hasn't the territory, so the server goes by the EObj IDs "
+                               "(ENTRANCE_CIRCLE_IDS) and may take another object or none (a random pop range)"
+                               if ours is None else f"entrance_circles.json says layout {ours}"))
         facing = seen.get("facing")
         if facing is not None:
             ours = facings.get(seen["territory"])
@@ -155,8 +168,8 @@ def save(observations: list[dict]):
         "comment": "Every duty entry in the Chronofoil captures read so far: where retail put the player, the "
                    "facing in the client's first position update (null when it came more than 3 s in), and the "
                    "entrance circle retail hid with ActorControl 106 [7] (numbers only; `questkit chronofoil "
-                   "<captures> --layers --save` adds a capture's). The test suite checks ENTRANCE_CIRCLE_IDS "
-                   "(core/src/common/game.rs) has each circle and resources/data/entrance_facing.json each facing.",
+                   "<captures> --layers --save` adds a capture's). The test suite checks resources/data/"
+                   "entrance_circles.json has each circle and resources/data/entrance_facing.json each facing.",
         "observations": observations,
     }, indent=1)
     OBSERVATIONS.write_text(text + "\n")

@@ -1,5 +1,5 @@
 {
- "comment": "Every duty entry in the Chronofoil captures read so far: where retail put the player, the facing in the client's first position update (null when it came more than 3 s in), and the entrance circle retail hid with ActorControl 106 [7] (numbers only; `questkit chronofoil <captures> --layers --save` adds a capture's). The test suite checks ENTRANCE_CIRCLE_IDS (core/src/common/game.rs) has each circle and resources/data/entrance_facing.json each facing.",
+ "comment": "Every duty entry in the Chronofoil captures read so far: where retail put the player, the facing in the client's first position update (null when it came more than 3 s in), and the entrance circle retail hid with ActorControl 106 [7] (numbers only; `questkit chronofoil <captures> --layers --save` adds a capture's). The test suite checks resources/data/entrance_circles.json has each circle and resources/data/entrance_facing.json each facing.",
  "observations": [
   {
    "capture": "0cafbf61",

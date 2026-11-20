@@ -310,9 +310,13 @@ fn process_debug_commands(
 
             true
         }
+        // Only with a number: Bob's "!shortcut showing when it's only suppose to show…" (meant as a !mark, 2026-11-19)
+        // read as shortcut 0 and warped him to the duty's middle.
         "!shortcut" => {
             let mut data = data.lock();
-            if let Some((_, id)) = chat_message.split_once(' ') {
+            if let Some((_, id)) = chat_message.split_once(' ')
+                && let Ok(id) = id.trim().parse::<u32>()
+            {
                 let shortcut_poprange_id;
                 {
                     let Some(instance) = data.find_actor_instance(from_actor_id) else {
@@ -323,8 +327,7 @@ fn process_debug_commands(
                         return true;
                     };
 
-                    shortcut_poprange_id =
-                        director.get_debug_shortcut(id.parse().unwrap_or_default());
+                    shortcut_poprange_id = director.get_debug_shortcut(id);
                 }
 
                 let mut network = network.lock();
