@@ -75,12 +75,17 @@ pub struct Situation {
     /// The living NPCs of its own side other than itself and their health in %, lowest layout ID first, for
     /// entries with `ally_hp_below`.
     pub side: Vec<(ObjectId, f32)>,
+    /// One of those it's fighting, picked at random this turn, for entries `at_random_foe`.
+    pub random_foe: Option<ObjectId>,
 }
 
 impl Situation {
     /// Whom an entry is used on: its ally for one `on_ally`, the first hurt one for one with `ally_hp_below` (no one
     /// while none is that hurt), otherwise the NPC's target.
     pub fn target_for(&self, entry: &RotationAction) -> Option<ObjectId> {
+        if entry.at_random_foe {
+            return self.random_foe.or(Some(self.target));
+        }
         if let Some(below) = entry.ally_hp_below {
             return self
                 .side
@@ -374,6 +379,7 @@ mod tests {
                 self_hp: 100.0,
                 allies: HashMap::new(),
                 side: Vec::new(),
+                random_foe: None,
             };
             if let Some(action) = state.choose(rotation, &situation, &mut mechanics) {
                 state.record(rotation, action, ObjectId(1), now, mechanics(action));
@@ -563,6 +569,7 @@ mod tests {
             self_hp: 100.0,
             allies: HashMap::new(),
             side: Vec::new(),
+            random_foe: None,
         };
         assert_eq!(
             state.choose(&rotation, &on_other, &mut mechanics),
@@ -575,6 +582,7 @@ mod tests {
             self_hp: 100.0,
             allies: HashMap::new(),
             side: Vec::new(),
+            random_foe: None,
         };
         assert_eq!(
             state.choose(&rotation, &on_same, &mut mechanics),
@@ -597,6 +605,7 @@ mod tests {
             self_hp: 100.0,
             allies: HashMap::new(),
             side: Vec::new(),
+            random_foe: None,
         };
         assert_eq!(state.choose(&finisher, &healthy, &mut mechanics), None);
         let low = Situation {
@@ -606,6 +615,7 @@ mod tests {
             self_hp: 100.0,
             allies: HashMap::new(),
             side: Vec::new(),
+            random_foe: None,
         };
         assert_eq!(
             state.choose(&finisher, &low, &mut mechanics),
@@ -644,6 +654,7 @@ mod tests {
             self_hp: 100.0,
             allies: HashMap::new(),
             side: side.iter().map(|(id, hp)| (ObjectId(*id), *hp)).collect(),
+            random_foe: None,
         };
         let mut state = RotationState::default();
         // Its spell each turn (3.2 s apart here, clear of rounding), an ally at 7 % or not.
@@ -697,6 +708,38 @@ mod tests {
         );
     }
     #[test]
+    fn a_bombardment_goes_on_one_of_those_it_fights() {
+        // Castrum Meridianum's BNpcBase 14572 and its 29176: once, 43.3 to 46.4 s into its fight, on the spot one of
+        // the party stood on, the tank's or another's (nine uses in five retail runs; Bob's mark of 2026-11-20.)
+        let entry = RotationAction {
+            action: THUNDER,
+            at_random_foe: true,
+            not_before: Some(43.0),
+            ..Default::default()
+        };
+        let mut situation = Situation {
+            now: Instant::now(),
+            target: ObjectId(1),
+            target_hp: 100.0,
+            self_hp: 100.0,
+            allies: HashMap::new(),
+            side: Vec::new(),
+            random_foe: Some(ObjectId(7)),
+        };
+        assert_eq!(situation.target_for(&entry), Some(ObjectId(7)));
+        // Nobody else picked (no one on its list yet): its target.
+        situation.random_foe = None;
+        assert_eq!(situation.target_for(&entry), Some(ObjectId(1)));
+        // Any other entry goes on its target as before.
+        situation.random_foe = Some(ObjectId(7));
+        let plain = RotationAction {
+            action: TRUE_THRUST,
+            ..Default::default()
+        };
+        assert_eq!(situation.target_for(&plain), Some(ObjectId(1)));
+    }
+
+    #[test]
     fn on_ally_waits_for_the_ally_and_goes_on_it() {
         // The Akoman's drain on a yodomi (quest battle 17): first while one is out, otherwise its usual action.
         const YODOMI: u32 = 1710;
@@ -724,6 +767,7 @@ mod tests {
             self_hp: 100.0,
             allies: HashMap::new(),
             side: Vec::new(),
+            random_foe: None,
         };
         assert_eq!(
             state.choose(&rotation, &alone, &mut mechanics),
@@ -732,6 +776,7 @@ mod tests {
         let with_yodomi = Situation {
             allies: HashMap::from([(YODOMI, ObjectId(7))]),
             side: Vec::new(),
+            random_foe: None,
             ..alone
         };
         assert_eq!(

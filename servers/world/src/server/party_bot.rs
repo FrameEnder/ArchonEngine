@@ -245,6 +245,9 @@ pub struct PartyBot {
     pub duty_filled: bool,
     /// Its spot in a boss fight (`placement::boss_fight_spot`), kept while what it fights is in reach from it.
     pub boss_spot: Option<Vec3A>,
+    /// Its corner of the diamond out of combat (`diamond_spots`: yalms ahead, yalms to the melee side of the player),
+    /// as last worked out, for putting it there at once (`formation_spot_now`.)
+    pub diamond: Option<(f32, f32)>,
 }
 
 impl PartyBot {
@@ -298,6 +301,7 @@ impl PartyBot {
             look_kind: BotLook::PartyMember,
             duty_filled: false,
             boss_spot: None,
+            diamond: None,
         }
     }
 }
@@ -2062,6 +2066,7 @@ fn spawn_bot(
             look_kind: shown_look,
             duty_filled: false,
             boss_spot: None,
+            diamond: None,
         },
     );
 
@@ -2345,6 +2350,11 @@ pub fn arrive(
             }
             Err(error) => tracing::warn!("{} couldn't come along: {error}", bot.saved.name),
         }
+    }
+    // Each in its corner of the diamond round the player as they come in (`formation_spot_now`), not on one spot
+    // behind them: inside a duty's entrance circle, as retail's Duty Support members came in.
+    if let Some(instance) = data.find_actor_instance_mut(leader) {
+        place_in_the_diamond(instance, game_data, leader);
     }
     if !later.is_empty() {
         tracing::info!(
@@ -3389,13 +3399,7 @@ pub(super) fn get_up_beside(
     id: ObjectId,
     leader: ObjectId,
 ) {
-    let Some(spot) = instance.find_actor(leader).map(|actor| {
-        let mut position = actor.position();
-        let behind = actor.rotation() + std::f32::consts::PI;
-        position.0.x += FOLLOW_DISTANCE * behind.sin();
-        position.0.z += FOLLOW_DISTANCE * behind.cos();
-        (position, actor.rotation())
-    }) else {
+    let Some(spot) = formation_spot_now(instance, id, leader) else {
         return;
     };
     let Some(mut actor) = instance.actors.remove(&id) else {
@@ -3434,6 +3438,82 @@ pub(super) fn get_up_beside(
     tracing::info!("Party bot {id} got up by itself beside {leader}");
 }
 
+/// Where a bot is put at once beside the one it follows (got up by itself, back at a wipe): its corner of the diamond
+/// round them (`PartyBot::diamond`), facing their way, on the floor there; `FOLLOW_DISTANCE` behind them before it
+/// has one. Retail's Duty Support members came in and back in their diamond, inside the entrance circle (Bob's
+/// captures 6320ae56, deea324c, 9ba7d981: 1.0 to 2.0 yalms from the player); Kawari put every bot on one spot
+/// behind the player, at Castrum Meridianum's entrance at the circle's edge, and from there they walked out
+/// through it into the air (Bob's mark of 2026-11-20: "the player NPCS are standing in the air".) The formation
+/// faces the player's way from then on.
+fn formation_spot_now(
+    instance: &mut Instance,
+    id: ObjectId,
+    leader: ObjectId,
+) -> Option<(Position, f32)> {
+    let (anchor, facing) = instance
+        .find_actor(leader)
+        .map(|actor| (actor.position().0, actor.rotation()))?;
+    let (ahead, side) = instance
+        .party_bots
+        .get(&id)
+        .and_then(|bot| bot.diamond)
+        .unwrap_or((-FOLLOW_DISTANCE, 0.0));
+    let spot = spot_around(anchor, facing, ahead, side);
+    // On the player's floor: the spot's settled floor if it's near theirs, else where they stand.
+    let settled = match instance.collision.as_deref() {
+        Some(collision) => collision.settle(spot),
+        None => instance.navmesh.ground_under(spot).unwrap_or(spot),
+    };
+    let at = if (settled.y - anchor.y).abs() <= 2.0 {
+        settled
+    } else {
+        anchor
+    };
+    instance.formation_facings.insert(leader, (anchor, facing));
+    Some((Position(at), facing))
+}
+
+/// Puts each of `leader`'s bots in its corner of the diamond round them at once (`diamond_spots`,
+/// `formation_spot_now`): as they come into a zone with them.
+fn place_in_the_diamond(instance: &mut Instance, game_data: &mut GameData, leader: ObjectId) {
+    let Some(NetworkedActor::Player { spawn: player, .. }) = instance.find_actor(leader) else {
+        return;
+    };
+    let player_role = game_data
+        .classjob_role(player.common.class_job)
+        .map(|(role, _, _)| role)
+        .unwrap_or(ROLE_MELEE);
+    let mut bots: Vec<(ObjectId, u32, u8)> = instance
+        .party_bots
+        .iter()
+        .filter(|(_, bot)| bot.leader == leader)
+        .map(|(id, bot)| {
+            let role = match bot.role {
+                BotRole::Tank => ROLE_TANK,
+                BotRole::Healer => ROLE_HEALER,
+                BotRole::Dps if bot.attack_range > MELEE_RANGE => ROLE_RANGED,
+                BotRole::Dps => ROLE_MELEE,
+            };
+            (*id, bot.order as u32, role)
+        })
+        .collect();
+    bots.sort_by_key(|(_, order, _)| *order);
+    let roles: Vec<(ObjectId, u8)> = bots.iter().map(|(id, _, role)| (*id, *role)).collect();
+    let spots = diamond_spots(player_role, &roles);
+    for (id, _, _) in &bots {
+        if let Some(bot) = instance.party_bots.get_mut(id) {
+            bot.diamond = spots.get(id).copied();
+        }
+        let Some((position, rotation)) = formation_spot_now(instance, *id, leader) else {
+            continue;
+        };
+        if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(*id) {
+            spawn.common.position = position;
+            spawn.common.rotation = rotation;
+        }
+    }
+}
+
 /// A Player NPC goes back with its party at a wipe as retail's other party members did (three wipes in parties of
 /// players, Bob's Chronofoil captures 1aac5be2, 84cdbfb1 and dd09ac61): it stays spawned (no DeleteActor or
 /// SpawnPlayer for any member), and as the player is sent back it gets an ActorSetPos of its own with the player's
@@ -3447,13 +3527,7 @@ pub(super) fn return_beside(
     id: ObjectId,
     leader: ObjectId,
 ) {
-    let Some(spot) = instance.find_actor(leader).map(|actor| {
-        let mut position = actor.position();
-        let behind = actor.rotation() + std::f32::consts::PI;
-        position.0.x += FOLLOW_DISTANCE * behind.sin();
-        position.0.z += FOLLOW_DISTANCE * behind.cos();
-        (position, actor.rotation())
-    }) else {
+    let Some(spot) = formation_spot_now(instance, id, leader) else {
         return;
     };
     let Some(NetworkedActor::Npc {
@@ -3702,6 +3776,12 @@ fn update_party(
             .unwrap_or(ROLE_MELEE);
         diamond_spots(player_role, &roles)
     };
+
+    for (id, spot) in &spots {
+        if let Some(bot) = instance.party_bots.get_mut(id) {
+            bot.diamond = Some(*spot);
+        }
+    }
 
     // In a boss fight, each bot's place among those of its kind (healers, ranged, melee), for its spot round the boss.
     let mut slots: HashMap<ObjectId, usize> = HashMap::new();

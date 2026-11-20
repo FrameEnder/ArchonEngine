@@ -31,7 +31,10 @@
             },
             {
                 "action": 29176,
-                "comment": "4 uses; 2.7 s cast"
+                "at_random_foe": true,
+                "not_before": 43,
+                "every": 600,
+                "comment": "a 2.7 s cast on a spot: the spot one of the party stood on as it began (0.0 to 0.1 yalms off: the tank's, the player's or another member's), 0.8 to 8.9 yalms from it. Nine uses in five retail runs, once by each that cast it, 43.3 to 46.4 s into its fight (its first action or the first on it), so the three of a group cast it within half a second of each other (Connor's Chronofoil capture af05916c and Bob's 9ba7d981, 50e72631, 6320ae56 and deea324c). Not used twice by one: `every` 600 keeps it to once a fight. Until 2026-11-20 it had no `every` and went on its target each turn it was free, at a set place (Bob's mark: \"the random AOEs … have a set placement, and do not directly target players, they're supposed to resemble cannon bombardment\")"
             }
         ]
     }

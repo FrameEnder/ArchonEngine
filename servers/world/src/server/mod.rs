@@ -481,6 +481,16 @@ impl WorldServer {
             }
 
             instance.directors.push(director);
+            // Fork: the entrance circle's barrier keeps everyone in until the duty commences (DutyCommence hides it
+            // and takes it away), Player NPCs too: they walked through it, its gimmick being one the director hadn't
+            // touched (Bob's mark of 2026-11-20 in Castrum Meridianum: "they do not respect the interior lock of the
+            // starting ring barrier".)
+            if let Some(circle) = instance.find_entrance_circle()
+                && let Some(NetworkedActor::Object { object, .. }) = instance.find_actor(circle)
+            {
+                let layout_id = object.layout_id;
+                instance.seal_gimmick(layout_id);
+            }
         } else {
             tracing::warn!(
                 "No director created for TerritoryIntendedUse {}! If this is unexpected, please report it.",

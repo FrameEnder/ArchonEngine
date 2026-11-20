@@ -1213,6 +1213,15 @@ it turned on), a helper's 28787 802. Those are a Paladin's: he took 1/1.75 of wh
 had from the same enemies' auto-attacks and about 1/1.5 from the duty's spells, so the timelines' `players` amounts
 for them are the Paladin's times that (236, 298, 1488, 2112, 1203), an estimate.
 
+**The bombardment** (2026-11-20, Bob's mark: "the random AOEs that appear during the first stretch have a set
+placement, and do not directly target players their suppose to resemble cannon bombardment"): BNpcBase 14572's
+29176, a 2.7 s cast on a spot, which Kawari cast at its target every turn it was free (51 in his run). Retail's, nine
+in five runs: each 14572 that cast it did so once, 43.3 to 46.4 s into its fight, so a group's came within half a
+second of each other, each on the spot one of the party stood on as it began (0.0 to 0.1 yalms off: the tank, the
+player or another member, not always its target), 0.8 to 8.9 yalms from the caster. Its timeline entry is now
+`at_random_foe`, `not_before` 43, `every` 600 ([Combat](combat.md)). The map effects 2 and 3 west of x = 208 (the
+scenery's) came as retail's did. The first stretch's Player NPCs: [Party bots](party-bots.md#at-a-wipe-2026-11-10).
+
 **The fifth run** (Bob's deea324c, visit 0.1, 2026-11-19: a White Mage of 2657 HP, "ran it very poorly … dragging
 out a terrible play … so you could see how much damage a healer takes"; 2096 s, the bosses alive 245, 149 and 239 s,
 one fall at the last) fits the script as it stood (`15-deea324c`: 163 events). What the long fights showed:

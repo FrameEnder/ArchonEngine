@@ -137,8 +137,17 @@ fn entrance_circle(network: &mut NetworkState, instance: &mut Instance, shown: b
     } else {
         EventState::OFF | EventState::UNK2 | EventState::UNK3
     };
+    let mut layout_id = 0;
     if let Some(NetworkedActor::Object { object, .. }) = instance.find_actor_mut(circle) {
         object.event_state = state;
+        layout_id = object.layout_id;
+    }
+    // Its barrier with it: shown, it holds everyone in again, Player NPCs too, until the duty goes on (Bob's mark of
+    // 2026-11-20: after a wipe in Castrum Meridianum they walked out through it.)
+    if shown {
+        instance.seal_gimmick(layout_id);
+    } else {
+        instance.set_gimmick_gone(layout_id, true);
     }
     network.send_ac_in_range_instance(
         instance,
@@ -416,4 +425,35 @@ pub fn wipe_tick(
     }
 
     instance.party_wipe = Some(wipe);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::server::test_world::TestWorld;
+    use kawari::ipc::zone::SpawnObject;
+
+    /// Bob's mark of 2026-11-20 in Castrum Meridianum: after a wipe the Player NPCs walked out through the entrance
+    /// circle, shown again but not holding anyone. Shown, its barrier is one the director put up (`seal_gimmick`:
+    /// no way past for bots, as there's none for players); hidden as the duty goes on, it's gone.
+    #[test]
+    fn the_circle_holds_everyone_in_while_it_shows() {
+        let mut world = TestWorld::new();
+        world.instance.zone.id = 1043;
+        world.instance.insert_object(
+            ObjectId(77),
+            SpawnObject {
+                base_id: 2000562,
+                layout_id: 9088360,
+                ..Default::default()
+            },
+            String::default(),
+        );
+        let network = world.network.clone();
+        entrance_circle(&mut network.lock(), &mut world.instance, true);
+        assert!(world.instance.gimmicks_sealed.contains(&9088360));
+        entrance_circle(&mut network.lock(), &mut world.instance, false);
+        assert!(!world.instance.gimmicks_sealed.contains(&9088360));
+        assert!(world.instance.gimmicks_gone.contains(&9088360));
+    }
 }

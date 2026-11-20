@@ -1788,6 +1788,11 @@ pub fn npc_behavior(
                     self_hp: health_percent.get(id).copied().unwrap_or(100.0),
                     allies,
                     side,
+                    // For an entry `at_random_foe`: one of those it's fighting, at random.
+                    random_foe: {
+                        let foes: Vec<ObjectId> = enmity.keys().copied().collect();
+                        fastrand::choice(&foes).copied()
+                    },
                 };
                 let mut game_data = game_data.lock();
                 let mut mechanics = |action| game_data.get_action_mechanics(action);

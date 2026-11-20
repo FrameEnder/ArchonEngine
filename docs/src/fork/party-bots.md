@@ -635,3 +635,19 @@ player's warp type, its mode back to normal, ZoneIn), alive and whole, never tak
 within 30 s and gets up beside its player. Duty Support's members are still spawned again
 (`party_bot::get_up_beside`), as retail's were. Test: `a_player_npc_goes_back_at_a_wipe_without_leaving`
 ([Testing](testing.md)).
+
+**Where, and the entrance circle** (2026-11-20, Bob's mark in Castrum Meridianum: "the player NPCS are standing in
+the air not to mention they do not respect the interior lock of the starting ring barrier"). Every bot went back to
+one spot 2.5 yalms behind the player, at the circle's edge there, and coming into the duty they stood behind the
+player too; then they walked out through the circle (its barrier was a gimmick the director hadn't touched, which a
+bot passes after `WALL_PATIENCE`) and stood outside it. Retail's Duty Support members came in 1.0 to 2.0 yalms from
+the player in their diamond, inside the circle (captures 6320ae56, deea324c, 9ba7d981). Now:
+
+* each bot goes to **its corner of the diamond** at once, facing the player's way, on the floor there, as it comes
+  into a zone with them (`place_in_the_diamond`) and at a wipe or getting up by itself (`formation_spot_now`, from
+  `PartyBot::diamond`, which `update_party` keeps); the formation faces the player's way from then;
+* the **entrance circle's barrier holds everyone in** while it shows: at the duty's creation and when it's shown
+  again after a wipe it's sealed (`Instance::seal_gimmick`: no way past, as for players), and it goes when the duty
+  commences or goes on (`mod.rs`, `wipe.rs`).
+
+Tests: `player_npcs_go_back_to_their_places_in_the_diamond`, `the_circle_holds_everyone_in_while_it_shows`.

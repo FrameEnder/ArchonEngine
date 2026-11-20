@@ -143,6 +143,13 @@ pub struct RotationAction {
     /// at 6 to 8 % from 25 s (the two that lived 42 and 45 s never used it.)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub not_before: Option<f32>,
+    /// On one of those it's fighting, at random (its enmity list), instead of its target: a ground area aimed where
+    /// they stand as it begins. Castrum Meridianum's BNpcBase 14572 and its 29176 (a 2.7 s cast on a spot), nine uses
+    /// in five retail runs, each on the spot a member of the party stood on (0.0 to 0.1 yalms off), the tank's or
+    /// another's, 0.8 to 8.9 yalms from the caster (Bob's Chronofoil captures af05916c, 9ba7d981, 50e72631, 6320ae56
+    /// and deea324c; Bob's mark of 2026-11-20: they should be "cannon bombardment", not at a set place.)
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub at_random_foe: bool,
     /// Where the numbers came from (ignored by the server.)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,

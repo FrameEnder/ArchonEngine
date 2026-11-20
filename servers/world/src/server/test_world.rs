@@ -231,6 +231,7 @@ impl TestWorld {
                 look_kind: BotLook::Player,
                 duty_filled: true,
                 boss_spot: None,
+                diamond: None,
             },
         );
         actor_id

@@ -4,6 +4,8 @@
 
 use std::time::Duration;
 
+use glam::Vec3A;
+
 use kawari::{
     common::{CharacterMode, HandlerType, ObjectId, WarpType},
     ipc::zone::{
@@ -201,6 +203,45 @@ fn a_player_npc_goes_back_at_a_wipe_without_leaving() {
     assert!(world.instance.party_bots[&bot].dead_since.is_none());
     // The enemy is untouched by this (the wipe's own reset sends it home.)
     assert!(world.instance.find_actor(enemy).is_some());
+}
+
+/// Bob's mark of 2026-11-20 in Castrum Meridianum, "the player NPCS are standing in the air not to mention they do not
+/// respect the interior lock of the starting ring barrier": at the wipe every bot went back to one spot behind the
+/// player, at the circle's edge, and walked out through it. Each goes to its corner of the diamond round the player
+/// (retail's Duty Support members came back in theirs, inside the circle), facing their way.
+#[test]
+fn player_npcs_go_back_to_their_places_in_the_diamond() {
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 4.0, 306.0]);
+    let tank = world.player_npc(BOT, player, [3.0, 4.0, 250.0]);
+    let other = world.player_npc(BOT + 1, player, [9.0, 4.0, 250.0]);
+    // Their corners as `update_party` worked them out: the tank 2.0 ahead, the other 1.0 ahead and 1.72 aside.
+    world.instance.party_bots.get_mut(&tank).unwrap().diamond = Some((2.0, 0.0));
+    world.instance.party_bots.get_mut(&other).unwrap().diamond = Some((1.0, 1.72));
+    let facing = world.instance.find_actor(player).unwrap().rotation();
+
+    party_bot::back_to_the_start(&world.network.clone(), &mut world.instance, tank, player);
+    party_bot::back_to_the_start(&world.network.clone(), &mut world.instance, other, player);
+
+    let at = |id| world.instance.find_actor(id).unwrap().position().0;
+    let (sin, cos) = facing.sin_cos();
+    let tank_at = at(tank);
+    assert!(
+        (tank_at.x - 2.0 * sin).abs() < 0.01 && (tank_at.z - (306.0 + 2.0 * cos)).abs() < 0.01,
+        "{tank_at}"
+    );
+    let other_at = at(other);
+    assert!(
+        (other_at.x - (sin + 1.72 * cos)).abs() < 0.01
+            && (other_at.z - (306.0 + cos - 1.72 * sin)).abs() < 0.01,
+        "{other_at}"
+    );
+    // Within 2.3 yalms of the player, not on one spot.
+    for spot in [tank_at, other_at] {
+        assert!(Vec3A::new(spot.x, 0.0, spot.z - 306.0).length() < 2.3);
+    }
+    assert!(tank_at.distance(other_at) > 1.0);
+    assert_eq!(world.instance.find_actor(tank).unwrap().rotation(), facing);
 }
 
 /// Bundle 20261110-182408, "isgebind's aoes are showing in the middle rather than their intended targeted areas":
