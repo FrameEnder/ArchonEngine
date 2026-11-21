@@ -245,7 +245,8 @@ end
 -- duty's after it falls); `talker` = { name, pull, at = { { seconds, text }... }, ms, until_fn }: its talks, at its
 -- pull and so many seconds into its fight; `waves` = { action, after, list }: each of its casts of `action` brings
 -- the next wave of `list` `after` seconds later (gone with its fall or a wipe); `ready()` whether it can be pulled
--- yet; `last`: its fall ends the duty's fights. Hooks: `on_pull(director)`, `on_cast[action](director, x, y, z)` (or
+-- yet; `pulled_by` = { layouts }: one of them after someone pulls it too; `arena` its room's range; `last`: its fall
+-- ends the duty's fights. Hooks: `on_pull(director)`, `on_cast[action](director, x, y, z)` (or
 -- `on_cast(director, action, x, y, z)`), `on_death(director)`, `on_wipe(director)`, `on_recommence(director)`.
 function Dungeon:boss(boss)
     table.insert(self.bosses, boss)
@@ -349,6 +350,14 @@ function Dungeon:pulled(boss)
     if it == nil then
         return false
     end
+    -- One of `pulled_by` after someone pulls it too (Brayflox's first boss with its three adds.)
+    local by = false
+    for _, other in ipairs(boss.pulled_by or {}) do
+        local them = self.info[other]
+        if them ~= nil and them.target ~= nil then
+            by = true
+        end
+    end
     local health = self.health[layout]
     if self.resetting[layout] then
         if it.target == nil and (health == nil or health >= 100) then
@@ -356,7 +365,7 @@ function Dungeon:pulled(boss)
         end
         return false
     end
-    return it.target ~= nil or (health ~= nil and health < 100)
+    return by or it.target ~= nil or (health ~= nil and health < 100)
 end
 
 function Dungeon:pull(director, boss)
@@ -527,8 +536,9 @@ function Dungeon:fell(director, boss)
     end
     self.done["fell" .. boss.id] = true
     self.fight = boss.last and "over" or nil
+    -- What was due in its fight goes (`after`); the clock's (`inSeconds`) stays: what a duty set off on it runs on
+    -- after a boss falls (Brayflox's goblin's lines, the dragon flying off.)
     self.later = {}
-    self.timed = {}
     self:dropHelpers(director, boss)
     self:dropWaves(director, boss)
     if boss.after_bgm then

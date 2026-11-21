@@ -388,6 +388,10 @@ class World:
         self.shift = 0.0  # a rehearsal's: retail's clock is this far behind the script's
         self.spawned: set[int] = set()  # the layouts the script has brought out
         self.rehearsing: tuple | None = None  # a rehearsal's second go: the boss's layout and its life
+        # A rehearsal's wipe until its second go: every NPC is home, whole and after nobody, as the server sends them
+        # (`wipe.rs`); without it a boss beside the one rehearsed went on as retail's was then, hurt and fighting, and
+        # a script that waits for its boss to be home before a new pull (content/lib/Dungeon.lua) never saw it.
+        self.home_until: float | None = None
 
     def follow_calls(self) -> None:
         for t, name, args in self.stage.calls[self.seen_calls:]:
@@ -446,6 +450,18 @@ class World:
             out[layout] = (life, then)
         return out
 
+    def tick_home(self, t: float) -> None:
+        """An update while everyone is home after a wipe: each NPC there, whole and after nobody, and nothing else."""
+        stage, lua = self.stage, self.stage.lua
+        health, info = {}, {}
+        for layout, (life, then) in self.present(t).items():
+            health[layout] = 100
+            x, y, z = _position_then(life["pos"], life.get("spawn") or then)
+            info[layout] = lua.table_from({"hp": life["max_hp"], "max_hp": life["max_hp"], "x": x, "y": y, "z": z,
+                                           "id": layout})
+        stage.call("onUpdate", lua.table_from(health), 100, lua.table_from(info))
+        self.follow_calls()
+
     def tick(self, t: float) -> None:
         """One half second: deaths and casts retail had by now, then `onUpdate`."""
         stage, lua = self.stage, self.stage.lua
@@ -480,13 +496,16 @@ class World:
             # Held between its points (one a percent): an NPC's health moves only when it's hit, and a boss not yet
             # pulled is whole (a script may wait for that: the Howling Eye's new Garuda after a wipe.)
             pct = _health_then(life["hp"], then) if life["hp"] else 100.0
+            home = self.home_until is not None and t < self.home_until
+            if home:
+                pct = 100.0
             # In whole percent, as the server gives it (`health_points * 100 / max_health_points`): a script's "at
             # 40 %" is 40.0-40.99 there (the Howling Eye's Garuda vanished at 40.2-40.4 %.)
             health[layout] = int(pct)
             x, y, z = _position_then(life["pos"], then)
             entry = {"hp": _points(pct, life["max_hp"]), "max_hp": life["max_hp"], "x": x, "y": y, "z": z,
                      "id": layout}
-            if life["pulled"] is not None and then >= life["pulled"]:
+            if life["pulled"] is not None and then >= life["pulled"] and not home:
                 entry["target"] = "player"
                 entry["target_id"] = 1
             info[layout] = lua.table_from(entry)
@@ -807,12 +826,20 @@ def rehearse_wipes(fixture: dict, name: str = "") -> SimResult:
             if layout in world.life:
                 world.rehearsing = (layout, world.life[layout])
                 world.offset[layout] = world.shift
+            world.home_until = again
             stage.clock = middle + 3.0
             stage.call("onPartyWipe")
             world.follow_calls()
             stage.clock = middle + 10.0
             stage.call("onDutyRecommence")
             world.follow_calls()
+            # The updates up to the second go, everyone home (`home_until`): a boss is seen whole and after nobody.
+            # Only the script's own updates: retail's casts and deaths of then were had already.
+            t = middle + 10.5
+            while t < again:
+                stage.clock = t
+                world.tick_home(t)
+                t = round(t + TICK, 2)
             world.casts_heard = {cast for cast in world.casts_heard if cast[0] < lead}
             driver.bars = [list(bar) for bar in fixture.get("bars", []) if lead <= bar[0] < middle]
             before = len(stage.calls)

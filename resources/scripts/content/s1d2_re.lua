@@ -13,6 +13,10 @@
 -- dragon are gone. A door after it opens by hand, and the last boss's cutscene plays as the party comes up to its
 -- terrace.
 
+-- Written with the dungeon framework (content/lib/Dungeon.lua, loaded first): its four bosses' rooms, pulls, falls
+-- and wipes, the ambushes and the terrace as steps, and its clock in seconds (`inSeconds`) are the framework's; the
+-- key, the doors, the goblins, the waves, the second boss's add, the dragon and the puddles are its own.
+
 -- The director's variables (DirectorVars; retail's sequence was 1 throughout): data 0 the key held, data 2 and 3 the
 -- party's progress (1 the key, 2 the first boss, 4 the second, 8 the door after the third; data 3 alone gets 16 as the
 -- last boss falls): 1, 0, 1, 1 at the key; 0, 0, 1, 1 through the pond's door; then 3, 3; 7, 7; 15, 15; 15, 31 (both
@@ -295,30 +299,25 @@ LINE_FINAL_AFTER = 32.4
 -- onUpdate comes every logic tick (500 ms): the script's own clock, for what depends on how the fight goes.
 TICK = 0.5
 
+DUNGEON = Dungeon.new()
+D = DUNGEON
+
 -- How far the party has got
-clock = 0
-later = {}
 has_key = false
 key_given = false
 progress = 0
 cleared = 0
 with_party_npcs = false
-boss1_pulled = false
 boss1_pulled_at = nil
 boss1_waves = 0
-boss1_dead = false
 runner_target_dead = false
 ledge_calls = false
 ambushed = {}
 ambush_left = {}
 ambush_cleared = false
-boss2_pulled = false
 boss2_add_came = false
-boss2_dead = false
 boss2_add_dead = false
 boss2_room_open = false
-boss3_pulled = false
-boss3_dead = false
 dragon_came = false
 dragon_came_at = nil
 dragon_actor = nil
@@ -343,7 +342,7 @@ function contains(list, id)
 end
 
 function after(seconds, fn)
-    table.insert(later, { at = clock + seconds, fn = fn })
+    D:inSeconds(seconds, fn)
 end
 
 function sendVars(director)
@@ -352,25 +351,8 @@ function sendVars(director)
     director:set_data(VAR_CLEARED, progress | cleared)
 end
 
-function pulled(info, id)
-    return info ~= nil and info[id] ~= nil and info[id].target ~= nil
-end
-
--- Every player in the instance ("player1", "player2"...; "player" when there's only the one key.)
-function players(info)
-    local list = {}
-    if info == nil then
-        return list
-    end
-    local index = 1
-    while info["player" .. index] ~= nil do
-        table.insert(list, info["player" .. index])
-        index = index + 1
-    end
-    if #list == 0 and info.player ~= nil then
-        table.insert(list, info.player)
-    end
-    return list
+function dead(layout)
+    return D.dead[layout] == true
 end
 
 -- Whether a position is inside one of EVENT_RANGES' boxes (turned into the box's own frame.)
@@ -382,26 +364,169 @@ function inRange(position, id)
     return math.abs(lx) <= range.sx and math.abs(dy) <= range.sy and math.abs(lz) <= range.sz
 end
 
+-- ---- What the party's steps set off ----
+
+for index, ambush in ipairs(AMBUSHES) do
+    D:step({ name = "ambush" .. index, ready = function() return dead(BNPC_BOSS1) end,
+        where = function(m) return m.player and inRange(m, ambush.range) end,
+        run = function(d) springAmbush(d, index) end })
+end
+D:step({ name = "terrace", ready = function() return not final_started and progress & PROGRESS_DOOR ~= 0 end,
+    where = function(m) return m.player and inRange(m, FINAL_RANGE) end,
+    run = function(d) startFinal(d) end })
+
+-- ---- The bosses ----
+
+D:boss({ id = 1, layout = BNPC_BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = PLACE_BOSS1, triggers = { ADD_425 },
+    bgm = BGM_BATTLE, after_bgm = 0,
+    -- Its adds after someone pull it too, once the key has brought them.
+    pulled_by = { ADD_425 },
+    on_pull = function(director)
+        boss1_pulled_at = D.clock
+        boss1_waves = 0
+        director:update_shortcut(SHORTCUT_BOSS1)
+    end,
+    -- Its room opens (the boss room's), and the way on; the goblin and an enemy ahead; the second boss later.
+    on_death = function(director)
+        progress = progress | PROGRESS_BOSS1
+        sendVars(director)
+        director:log_message(LOG_OPENED, { LOG_BOSS1_WAY_ON })
+        director:hide_eobj(EOBJ_BOSS1_WAY_ON)
+        director:map_effect(MAP_EFFECT_BOSS1, MAP_EFFECT_OPEN)
+        director:spawn_treasure(COFFER_BOSS1)
+        director:spawn_bnpc(BNPC_AFTER_BOSS1)
+        director:spawn_bnpc(BNPC_GOBLIN_RUNNER)
+        director:set_hate(BNPC_GOBLIN_RUNNER, BNPC_AFTER_BOSS1, 300)
+        for _, delay in ipairs(YELL_RUNNER_GO_AFTER) do
+            director:delay(delay)
+            director:yell(BNPC_GOBLIN_RUNNER, YELL_RUNNER_GO)
+        end
+        director:delay(BOSS2_COMES_AFTER)
+        director:spawn_bnpc(BNPC_BOSS2)
+        director:delay(0)
+        director:party_npc_yell("tank", LINE_BOSS1, LINE_BOSS1_AFTER)
+        if not ledge_calls then
+            ledge_calls = true
+            after(YELL_HELP_FIRST, ledgeCall)
+        end
+    end })
+
+D:boss({ id = 2, layout = BNPC_BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = PLACE_BOSS2,
+    bgm = BGM_BATTLE,
+    on_pull = function(director)
+        director:update_shortcut(SHORTCUT_BOSS2)
+    end,
+    on_death = function(director)
+        if not boss2_add_came then
+            -- Burst down before its add came: there's no one else to wait for.
+            boss2_add_dead = true
+            director:leave_boss_room(BNPC_BOSS2_ADD)
+        end
+        if boss2_add_dead then
+            openBoss2Room(director)
+        end
+    end,
+    on_wipe = function(director)
+        if boss2_add_came and not boss2_add_dead then
+            boss2_add_came = false
+            director:despawn_bnpc(BNPC_BOSS2_ADD)
+            director:despawn_bnpc(BNPC_GOBLIN_FIGHTER)
+        end
+    end })
+
+D:boss({ id = 3, layout = BNPC_BOSS3, wall = BOSS3_WALL, line = BOSS3_LINE, place = PLACE_BOSS3,
+    bgm = BGM_BATTLE,
+    on_pull = function(director)
+        director:update_shortcut(SHORTCUT_BOSS3)
+    end,
+    on_cast = {
+        [ACTION_EFFLUVIUM] = function(director, x, y, z)
+            director:delay(BLOB_AFTER)
+            local blob = director:spawn_bnpc(BNPC_BOSS3_BLOB, x, y, z, 0.0)
+            director:set_hate(blob, nil, 300) -- the player
+            table.insert(called, blob)
+            director:delay(0)
+        end,
+    },
+    on_death = function(director)
+        if not dragon_came then
+            -- Burst down before the dragon came: there's no one else to wait for.
+            dragon_gone = true
+            director:leave_boss_room(BNPC_DRAGON)
+        end
+        if dragon_gone then
+            openBoss3Room(director)
+        end
+    end,
+    on_wipe = function(director)
+        if dragon_came then
+            dragon_came = false
+            dragon_came_at = nil
+            dragon_actor = nil
+            dragon_leaving = false
+            director:despawn_bnpc(BNPC_DRAGON)
+        end
+    end })
+
+D:boss({ id = 4, layout = BNPC_FINAL, wall = FINAL_WALL, line = FINAL_LINE, place = PLACE_FINAL, arena = FINAL_ARENA,
+    comes_later = true, last = true, bgm = false,
+    on_cast = {
+        [ACTION_TOXIC_VOMIT] = function(director)
+            vomits = vomits + 1
+            local marked
+            if vomits == 1 then
+                marked = { 0, SET_A[1], SET_A[2], SET_A[3] }
+            elseif vomits % 2 == 0 then
+                pair_first = math.random(2) == 1 and SET_A or SET_B
+                marked = { 0, pair_first[1], pair_first[2], pair_first[3] }
+            else
+                local other = pair_first == SET_A and SET_B or SET_A
+                marked = { other[1], other[2], other[3] }
+            end
+            puddles(director, marked)
+        end,
+    },
+    on_death = function(director)
+        cleared = CLEARED_FINAL
+        sendVars(director)
+        for _, spot in pairs(helpers) do
+            director:despawn_bnpc(spot.mark)
+            director:despawn_bnpc(spot.burst)
+        end
+        helpers = {}
+        director:spawn_treasure(COFFER_FINAL)
+        director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
+        director:complete_duty()
+        if with_party_npcs then
+            director:delay(AFTER_CLEAR_NPCS_AFTER)
+            for _, id in ipairs(AFTER_CLEAR_NPCS) do
+                director:spawn_bnpc(id)
+            end
+        end
+        director:delay(AFTER_CLEAR_GOBLINS_AFTER)
+        for _, id in ipairs(AFTER_CLEAR_GOBLINS) do
+            director:spawn_bnpc(id)
+        end
+        director:delay(0)
+    end,
+    on_wipe = function()
+        vomits = 0
+        pair_first = nil
+    end })
+
+-- ---- What the server calls ----
+
 function onSetup(director)
     director:set_sequence(1)
     sendVars(director)
 
-    director:boss_room(BNPC_BOSS1, BOSS1_WALL, BOSS1_LINE, PLACE_BOSS1, { ADD_425 })
+    D:setup(director)
     -- The second boss's add and the dragon hold their rooms with their bosses: each room opens when both have gone.
-    director:boss_room(BNPC_BOSS2, BOSS2_WALL, BOSS2_LINE, PLACE_BOSS2)
     director:boss_room(BNPC_BOSS2_ADD, BOSS2_WALL, BOSS2_LINE, PLACE_BOSS2)
-    director:boss_room(BNPC_BOSS3, BOSS3_WALL, BOSS3_LINE, PLACE_BOSS3)
     director:boss_room(BNPC_DRAGON, BOSS3_WALL, BOSS3_LINE, PLACE_BOSS3)
-    -- The walls stand open until a pull (retail: spawned in state 7); the doors and the rooms' lines stand closed
-    -- (state 0), so nobody walks through them before they open, bots and enemies included.
-    for _, wall in ipairs({ BOSS1_WALL, BOSS2_WALL, BOSS3_WALL, FINAL_WALL }) do
-        director:hide_eobj(wall)
-    end
+    -- The doors stand closed (state 0), so nobody walks through them before they open, bots and enemies included.
     for _, door in ipairs(DOORS) do
         director:show_eobj(door)
-    end
-    for _, line in ipairs({ BOSS1_LINE, BOSS2_LINE, BOSS3_LINE, FINAL_LINE }) do
-        director:show_eobj(line)
     end
 
     for coffer, openings in pairs(LOOT) do
@@ -439,56 +564,17 @@ function onContentNpc(director, actor_id, id, npc, results)
     end
 end
 
-function onUpdate(director, health, player_health, info)
-    clock = clock + TICK
-    local due = {}
-    local rest = {}
-    for _, task in ipairs(later) do
-        if task.at <= clock then
-            table.insert(due, task)
-        else
-            table.insert(rest, task)
-        end
-    end
-    later = rest
-    for _, task in ipairs(due) do
-        task.fn(director)
-    end
-
-    if info ~= nil and info.party1 ~= nil then
+-- After the pulls: the first boss's waves, the second's add, the third's dragon.
+local function between(director)
+    local health = D.health
+    if D.info.party1 ~= nil then
         with_party_npcs = true
     end
-
-    if not boss1_pulled and (pulled(info, BNPC_BOSS1) or (key_given and pulled(info, ADD_425))) then
-        boss1_pulled = true
-        boss1_pulled_at = clock
-        director:set_bgm(BGM_BATTLE)
-        director:update_shortcut(SHORTCUT_BOSS1)
-    end
-    if boss1_pulled and not boss1_dead
-        and clock - boss1_pulled_at >= BOSS1_FIRST_WAVE + boss1_waves * BOSS1_WAVE_EVERY then
+    if D.fight == 1 and D.clock - boss1_pulled_at >= BOSS1_FIRST_WAVE + boss1_waves * BOSS1_WAVE_EVERY then
         sendWave(director, BOSS1_WAVE_SPOTS[boss1_waves % #BOSS1_WAVE_SPOTS + 1])
         boss1_waves = boss1_waves + 1
     end
-
-    for _, player in ipairs(players(info)) do
-        for index, ambush in ipairs(AMBUSHES) do
-            if boss1_dead and not ambushed[index] and inRange(player, ambush.range) then
-                springAmbush(director, index)
-            end
-        end
-        if not final_started and progress & PROGRESS_DOOR ~= 0 and inRange(player, FINAL_RANGE) then
-            startFinal(director)
-        end
-    end
-
-    if not boss2_pulled and pulled(info, BNPC_BOSS2) then
-        boss2_pulled = true
-        director:set_bgm(BGM_BATTLE)
-        director:update_shortcut(SHORTCUT_BOSS2)
-    end
-    if boss2_pulled and not boss2_add_came and not boss2_dead and health ~= nil and health[BNPC_BOSS2] ~= nil
-        and health[BNPC_BOSS2] < BOSS2_ADD_BELOW then
+    if D.fight == 2 and not boss2_add_came and health[BNPC_BOSS2] ~= nil and health[BNPC_BOSS2] < BOSS2_ADD_BELOW then
         boss2_add_came = true
         director:spawn_bnpc(BNPC_BOSS2_ADD)
         director:spawn_bnpc(BNPC_GOBLIN_FIGHTER)
@@ -498,22 +584,19 @@ function onUpdate(director, health, player_health, info)
             d:yell(BNPC_GOBLIN_FIGHTER, YELL_FIGHTER_COMES)
         end)
     end
-
-    if not boss3_pulled and pulled(info, BNPC_BOSS3) then
-        boss3_pulled = true
-        director:set_bgm(BGM_BATTLE)
-        director:update_shortcut(SHORTCUT_BOSS3)
-    end
-    if boss3_pulled and not dragon_came and not boss3_dead and health ~= nil and health[BNPC_BOSS3] ~= nil
-        and health[BNPC_BOSS3] < DRAGON_BELOW then
+    if D.fight == 3 and not dragon_came and health[BNPC_BOSS3] ~= nil and health[BNPC_BOSS3] < DRAGON_BELOW then
         bringDragon(director)
     end
     if dragon_came and not dragon_leaving and not dragon_gone then
-        local worn = health ~= nil and health[BNPC_DRAGON] ~= nil and health[BNPC_DRAGON] < DRAGON_LEAVES_BELOW
-        if worn or clock - dragon_came_at >= DRAGON_STAYS_AT_MOST then
+        local worn = health[BNPC_DRAGON] ~= nil and health[BNPC_DRAGON] < DRAGON_LEAVES_BELOW
+        if worn or D.clock - dragon_came_at >= DRAGON_STAYS_AT_MOST then
             dragonLeaves(director)
         end
     end
+end
+
+function onUpdate(director, health, player_health, info)
+    D:update(director, health, player_health, info, between)
 end
 
 -- Three adds, after the line, going for the party: the wave's spots, one of retail's mixes of kinds.
@@ -551,7 +634,7 @@ function cheer(director, goblin, delay)
 end
 
 function ledgeCall(director)
-    if boss2_pulled then
+    if D.fight == 2 or dead(BNPC_BOSS2) then
         return
     end
     director:yell(BNPC_GOBLIN_LEDGE, YELL_HELP)
@@ -560,7 +643,7 @@ end
 
 function bringDragon(director)
     dragon_came = true
-    dragon_came_at = clock
+    dragon_came_at = D.clock
     dragon_actor = director:spawn_bnpc(BNPC_DRAGON)
     director:appear_bnpc(BNPC_DRAGON, 0, DRAGON_APPEARS_AFTER)
     director:delay(DRAGON_APPEARS_AFTER)
@@ -596,7 +679,7 @@ end
 function dragonGone(director)
     dragon_gone = true
     director:leave_boss_room(BNPC_DRAGON)
-    if boss3_dead then
+    if dead(BNPC_BOSS3) then
         openBoss3Room(director)
     end
 end
@@ -636,15 +719,9 @@ function openBoss3Room(director)
     director:party_npc_yell("healer", LINE_BOSS3)
 end
 
--- The bosses' and their adds' actions the director answers.
+-- The goblin's lines with its own actions; the bosses' are theirs (`D:cast`.)
 function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
-    if layout_id == BNPC_BOSS3 and action_id == ACTION_EFFLUVIUM then
-        director:delay(BLOB_AFTER)
-        local blob = director:spawn_bnpc(BNPC_BOSS3_BLOB, x, y, z, 0.0)
-        director:set_hate(blob, nil, 300) -- the player
-        table.insert(called, blob)
-        director:delay(0)
-    elseif layout_id == BNPC_GOBLIN_FIGHTER and action_id == ACTION_BRAVADO then
+    if layout_id == BNPC_GOBLIN_FIGHTER and action_id == ACTION_BRAVADO then
         director:yell(BNPC_GOBLIN_FIGHTER, YELL_BRAVADO)
         director:delay(YELL_BRAVADO_AFTER_DELAY)
         director:yell(BNPC_GOBLIN_FIGHTER, YELL_BRAVADO_AFTER)
@@ -654,19 +731,8 @@ function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
         director:delay(YELL_BANG_TOSS_AFTER_DELAY)
         director:yell(BNPC_GOBLIN_FIGHTER, YELL_BANG_TOSS_AFTER)
         director:delay(0)
-    elseif layout_id == BNPC_FINAL and action_id == ACTION_TOXIC_VOMIT then
-        vomits = vomits + 1
-        local marked
-        if vomits == 1 then
-            marked = { 0, SET_A[1], SET_A[2], SET_A[3] }
-        elseif vomits % 2 == 0 then
-            pair_first = math.random(2) == 1 and SET_A or SET_B
-            marked = { 0, pair_first[1], pair_first[2], pair_first[3] }
-        else
-            local other = pair_first == SET_A and SET_B or SET_A
-            marked = { other[1], other[2], other[3] }
-        end
-        puddles(director, marked)
+    else
+        D:cast(director, layout_id, action_id, actor_id, x, y, z)
     end
 end
 
@@ -692,85 +758,19 @@ function puddles(director, marked)
 end
 
 function onActorDeath(director, bnpc_id, position)
-    if bnpc_id == BNPC_BOSS1 then
-        -- Its room opens (the boss room's), and the way on; the goblin and an enemy ahead; the second boss later.
-        boss1_dead = true
-        progress = progress | PROGRESS_BOSS1
-        sendVars(director)
-        director:set_bgm(0)
-        director:log_message(LOG_OPENED, { LOG_BOSS1_WAY_ON })
-        director:hide_eobj(EOBJ_BOSS1_WAY_ON)
-        director:map_effect(MAP_EFFECT_BOSS1, MAP_EFFECT_OPEN)
-        director:spawn_treasure(COFFER_BOSS1)
-        director:spawn_bnpc(BNPC_AFTER_BOSS1)
-        director:spawn_bnpc(BNPC_GOBLIN_RUNNER)
-        director:set_hate(BNPC_GOBLIN_RUNNER, BNPC_AFTER_BOSS1, 300)
-        for _, delay in ipairs(YELL_RUNNER_GO_AFTER) do
-            director:delay(delay)
-            director:yell(BNPC_GOBLIN_RUNNER, YELL_RUNNER_GO)
-        end
-        director:delay(BOSS2_COMES_AFTER)
-        director:spawn_bnpc(BNPC_BOSS2)
-        director:delay(0)
-        director:party_npc_yell("tank", LINE_BOSS1, LINE_BOSS1_AFTER)
-        if not ledge_calls then
-            ledge_calls = true
-            after(YELL_HELP_FIRST, ledgeCall)
-        end
-    elseif bnpc_id == BNPC_AFTER_BOSS1 and not runner_target_dead then
+    D:died(director, bnpc_id)
+    if bnpc_id == BNPC_AFTER_BOSS1 and not runner_target_dead then
         runner_target_dead = true
         director:spawn_treasure(COFFER_AFTER_BOSS1)
         cheer(director, BNPC_GOBLIN_RUNNER, YELL_CHEER_AFTER)
     elseif bnpc_id == BNPC_BOSS2_ADD then
         boss2_add_dead = true
         director:restart_timeline(BNPC_BOSS2, BOSS2_ADD_GONE)
-        if boss2_dead then
+        if dead(BNPC_BOSS2) then
             openBoss2Room(director)
-        end
-    elseif bnpc_id == BNPC_BOSS2 then
-        boss2_dead = true
-        if not boss2_add_came then
-            -- Burst down before its add came: there's no one else to wait for.
-            boss2_add_dead = true
-            director:leave_boss_room(BNPC_BOSS2_ADD)
-        end
-        if boss2_add_dead then
-            openBoss2Room(director)
-        end
-    elseif bnpc_id == BNPC_BOSS3 then
-        boss3_dead = true
-        if not dragon_came then
-            -- Burst down before the dragon came: there's no one else to wait for.
-            dragon_gone = true
-            director:leave_boss_room(BNPC_DRAGON)
-        end
-        if dragon_gone then
-            openBoss3Room(director)
         end
     elseif bnpc_id == BNPC_DRAGON and not dragon_gone then
         dragonGone(director)
-    elseif bnpc_id == BNPC_FINAL then
-        cleared = CLEARED_FINAL
-        sendVars(director)
-        for _, spot in pairs(helpers) do
-            director:despawn_bnpc(spot.mark)
-            director:despawn_bnpc(spot.burst)
-        end
-        helpers = {}
-        director:spawn_treasure(COFFER_FINAL)
-        director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
-        director:complete_duty()
-        if with_party_npcs then
-            director:delay(AFTER_CLEAR_NPCS_AFTER)
-            for _, id in ipairs(AFTER_CLEAR_NPCS) do
-                director:spawn_bnpc(id)
-            end
-        end
-        director:delay(AFTER_CLEAR_GOBLINS_AFTER)
-        for _, id in ipairs(AFTER_CLEAR_GOBLINS) do
-            director:spawn_bnpc(id)
-        end
-        director:delay(0)
     else
         for index, ambush in ipairs(AMBUSHES) do
             if ambush_left[index] ~= nil and ambush_left[index] > 0 and contains(ambush.enemies, bnpc_id) then
@@ -797,33 +797,7 @@ function onPartyWipe(director)
         director:despawn_bnpc(actor)
     end
     called = {}
-    if not boss1_dead then
-        boss1_pulled = false
-        boss1_pulled_at = nil
-        boss1_waves = 0
-    end
-    if not boss2_dead then
-        boss2_pulled = false
-        if boss2_add_came and not boss2_add_dead then
-            boss2_add_came = false
-            director:despawn_bnpc(BNPC_BOSS2_ADD)
-            director:despawn_bnpc(BNPC_GOBLIN_FIGHTER)
-        end
-    end
-    if not boss3_dead then
-        boss3_pulled = false
-        if dragon_came then
-            dragon_came = false
-            dragon_came_at = nil
-            dragon_actor = nil
-            dragon_leaving = false
-            director:despawn_bnpc(BNPC_DRAGON)
-        end
-    end
-    if cleared ~= CLEARED_FINAL then
-        vomits = 0
-        pair_first = nil
-    end
+    D:wipe(director)
 end
 
 -- The last boss's terrace: its cutscene, the boss and its helpers (held: they act when the director says).

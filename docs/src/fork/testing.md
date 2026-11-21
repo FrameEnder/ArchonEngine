@@ -103,6 +103,10 @@ Then two checks:
   Every *kind* of thing the script told the director the first time must come again (not each call: a random choice
   or helpers kept across attempts differ in the particulars). A flag `onPartyWipe` doesn't reset shows as a kind that
   never comes again. Lines and shortcuts said once a duty are left out (`ONCE`; a fixture's `once` adds its own.)
+  Between the wipe and the second go (since 2026-11-21) the script has its updates with every NPC home, whole and
+  after nobody, as the server sends them (`World.tick_home`, `home_until`): without them a boss beside the one
+  rehearsed went on hurt and fighting as retail's was then, and a script that waits for its boss to be home before
+  a new pull (`content/lib/Dungeon.lua`) never pulled it (Brayflox's second boss's add, 2026-11-21).
 
 **What's written down** (`duties/known.json`, by fixture): the problems a run has now. `duty-sim` passes when each
 run has exactly those: a new one fails, and so does one that no longer happens until it's taken off the list
