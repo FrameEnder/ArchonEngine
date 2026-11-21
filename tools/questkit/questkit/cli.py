@@ -785,6 +785,18 @@ def _triggers(args) -> int:
     return 0
 
 
+def _rates(args) -> int:
+    from . import rotation_rates
+
+    rates = rotation_rates.compare()
+    if args.fix:
+        for change in rotation_rates.fix(rates, when=args.when):
+            print(change)
+        rates = rotation_rates.compare()
+    print(rotation_rates.report(rates, everything=args.all))
+    return 0 if not any(rate.problems for rate in rates) else 1
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="questkit", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -865,6 +877,14 @@ def main(argv=None) -> int:
     p.add_argument("runs", nargs="+", help="run exports (questkit chronofoil <capture> --battle <visit> --out …)")
     p.add_argument("--boss", type=int, required=True, help="the boss's BNpcBase")
     p.set_defaults(run=_triggers)
+
+    p = commands.add_parser("rates", help="how often enemies' rotations would cast each action against how often "
+                                          "retail's did, in every duty fixture")
+    p.add_argument("--all", action="store_true", help="every entry, not only those that differ")
+    p.add_argument("--fix", action="store_true", help="give each that differs retail's `every`, `not_before` and "
+                                                     "`chance` in its timeline")
+    p.add_argument("--when", default="", help="the date to note in the comments --fix writes")
+    p.set_defaults(run=_rates)
 
     p = commands.add_parser("chronofoil", help="what's in Chronofoil captures (retail sessions): zones, duties, fights")
     p.add_argument("captures", nargs="*",

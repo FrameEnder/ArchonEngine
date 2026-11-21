@@ -15,12 +15,14 @@
             {
                 "action": 498,
                 "every": 30.0,
-                "comment": "1 use (it caught no one): 30 s a guess"
+                "not_before": 6.4,
+                "comment": "1 use (it caught no one): 30 s a guess. Retail (questkit rates, 2026-11-21: 2 casts by 2 of the duty fixtures' NPCs): first 6.4 s after the pull (median; earliest 6.1 s), `every` kept (retail's: 31 s, never twice by one: the longest any of them fought). Before, the rotation would have cast it 3 times at most over lives retail's cast it 2."
             },
             {
                 "action": 1010,
                 "every": 30.0,
-                "comment": "1 use, 61 on the tank: 30 s a guess"
+                "not_before": 19.2,
+                "comment": "1 use, 61 on the tank: 30 s a guess. Retail (questkit rates, 2026-11-21: 2 casts by 2 of the duty fixtures' NPCs): first 19.2 s after the pull (median; earliest 18.4 s), `every` kept (retail's: 31 s, never twice by one: the longest any of them fought). Before, the rotation would have cast it 3 times at most over lives retail's cast it 2."
             }
         ]
     },

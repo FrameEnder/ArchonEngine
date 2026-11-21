@@ -12,12 +12,14 @@
             {
                 "action": 399,
                 "every": 27.8,
-                "comment": "4 uses, every 27.8 s, never hitting anyone"
+                "not_before": 17.0,
+                "comment": "4 uses, every 27.8 s, never hitting anyone. Retail (questkit rates, 2026-11-21: 3 casts by 3 of the duty fixtures' NPCs): first 17 s after the pull (median; earliest 16.1 s), `every` kept (retail's: 24 s, never twice by one: the longest any of them fought). Before, the rotation would have cast it 4 times at most over lives retail's cast it 3."
             },
             {
                 "action": 400,
                 "every": 60.0,
-                "comment": "once in three runs, on itself: status 53 (50) for 15 s"
+                "not_before": 22.6,
+                "comment": "once in three runs, on itself: status 53 (50) for 15 s. Retail (questkit rates, 2026-11-21: 1 casts by 1 of the duty fixtures' NPCs): first 22.6 s after the pull (median; earliest 22.6 s), `every` kept (retail's: 24 s, never twice by one: the longest any of them fought). Before, the rotation would have cast it 4 times at most over lives retail's cast it 1."
             }
         ]
     },

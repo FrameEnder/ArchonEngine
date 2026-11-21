@@ -1252,6 +1252,20 @@ player or another member, not always its target), 0.8 to 8.9 yalms from the cast
 `at_random_foe`, `not_before` 43, `every` 600 ([Combat](combat.md)). The map effects 2 and 3 west of x = 208 (the
 scenery's) came as retail's did. The first stretch's Player NPCs: [Party bots](party-bots.md#at-a-wipe-2026-11-10).
 
+**The Imperial casters' area attacks** (2026-11-21, Bob's run on `259c65d`: "far too common, not even attached to the
+enemy, the enemies aren't waiting to cast their area of effect action before moving"). Three things, all against the
+five retail runs (`questkit rates`, [Combat](combat.md)). *How often*: the drafted timelines had no `every` for an
+attack retail's NPCs used once or twice a fight, so it came every free turn (14570's 29171: 29 casts in 240 s by each
+caster on the server, 1 to 2 by each in retail's, from 14 to 46 s in). Each now has retail's `every` and `not_before`,
+and `chance` where only some of a pack cast it: 14569's 29173 (24.6 s, 0.67), 14570's 29171 (35 s, once), 14571's
+29172 (37.7 s, 0.57), 14573's 29174 (28.5 s, then 97.3 s), 14577's 29175 (24.4 s, 0.47), the first boss's soldiers'
+28777 (14539 at 28.3 s, 14540 at 30.2 s). 14578, 14663 and 14664 take one turn every 17.2 to 17.4 s for their two
+(29181 or 29182; 29183 or 29184, 43 to 18): `slot`, first at 11.5, 16.4 and 15.8 s. *Where*: 29174 is placed on the
+caster's own spot in every retail cast, and Kawari had aimed it at its target, 3 to 4 yalms off
+(`ground_at_caster`). *Moving*: a cast began on the tick the caster took a step, so the client walked it into its
+cast bar; it now begins the next tick, standing. The same holds for the Praetorium's 14557, 14558, 14559, 14560,
+14562, 14563 and 14565. Not checked in game.
+
 **The fifth run** (Bob's deea324c, visit 0.1, 2026-11-19: a White Mage of 2657 HP, "ran it very poorly … dragging
 out a terrible play … so you could see how much damage a healer takes"; 2096 s, the bosses alive 245, 149 and 239 s,
 one fall at the last) fits the script as it stood (`15-deea324c`: 163 events). What the long fights showed:

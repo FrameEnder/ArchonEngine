@@ -364,6 +364,38 @@ fn someone_just_raised_takes_no_damage_until_they_act() {
     );
 }
 
+/// Bob's run of Castrum Meridianum, 2026-11-21: "the area of effect data … not even attached to the enemy". Retail
+/// placed 29174 (BNpcBase 14573's 2.7 s cast, named to no one) on the caster's own spot in all five of its retail runs;
+/// Kawari aimed it at the caster's target, 3 to 4 yalms off. An area retail placed on the ground at the caster is cast
+/// there (`ground_at_caster`); one placed where its target stood (Cape Westwind's helpers' 28865) still goes there.
+#[test]
+fn an_area_retail_put_on_its_caster_is_cast_there() {
+    use crate::server::npc_behavior::{cast_spot, retail_ground_at_caster};
+    let caster = Vec3A::new(55.8, 75.2, -49.8);
+    let target = Vec3A::new(52.2, 74.8, -51.5);
+    assert_eq!(retail_cast_aim(29174, Some(7)), CastAim::Ground);
+    assert!(retail_ground_at_caster(29174));
+    assert_eq!(cast_spot(29174, caster, target), caster);
+    // Retail's other ground areas of the same duty went where someone stood (29182, 29184): as before.
+    assert!(!retail_ground_at_caster(29182));
+    assert_eq!(cast_spot(29182, caster, target), target);
+    assert_eq!(cast_spot(28865, caster, target), target);
+    // And the same run: "the enemies aren't waiting to cast their area of effect action before moving". A cast
+    // chosen on a tick the NPC took a step waits for the next (it stands then); an instant action doesn't wait.
+    assert!(!crate::server::npc_behavior::begins_now(true, 2700));
+    assert!(crate::server::npc_behavior::begins_now(false, 2700));
+    assert!(crate::server::npc_behavior::begins_now(true, 0));
+    // Its ActorCast names no one and gives the caster's spot (`cast_aim`.)
+    assert_eq!(
+        cast_aim(
+            CastAim::Ground,
+            ObjectId(7),
+            cast_spot(29174, caster, target)
+        ),
+        (ObjectId::default(), kawari::common::Position(caster))
+    );
+}
+
 /// Bundle 20261111-072219, "some of the enemies didn't have their AOEs correctly set" (quest battle 86): Kawari aimed
 /// every cast at the enemy's target, where retail's NPCs cast 866 on themselves (437 of 437 casts) and 1070 and 1304 at
 /// no one. Each action's aim is retail's (`resources/data/cast_aims.json`); one not seen goes by its CastType.

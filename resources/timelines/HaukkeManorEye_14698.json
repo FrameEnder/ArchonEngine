@@ -17,12 +17,14 @@
             {
                 "action": 29709,
                 "every": 30.7,
-                "comment": "5 uses, every 30.7 s: a gaze (missed every time)"
+                "not_before": 5.7,
+                "comment": "5 uses, every 30.7 s: a gaze (missed every time). Retail (questkit rates, 2026-11-21: 2 casts by 2 of the duty fixtures' NPCs): first 5.7 s after the pull (median; earliest 5.4 s), `every` kept (retail's: 32 s, never twice by one: the longest any of them fought). Before, the rotation would have cast it 3 times at most over lives retail's cast it 2."
             },
             {
                 "action": 970,
                 "every": 6.2,
-                "comment": "23 uses beside 32 auto-attacks: about every other swing"
+                "not_before": 10.9,
+                "comment": "23 uses beside 32 auto-attacks: about every other swing. Retail (questkit rates, 2026-11-21: 8 casts by 2 of the duty fixtures' NPCs): first 10.9 s after the pull (median; earliest 10.6 s), `every` kept (retail's: 3.1 s, the median of 6 times between one's uses). Before, the rotation would have cast it 9 times at most over lives retail's cast it 8."
             }
         ]
     },

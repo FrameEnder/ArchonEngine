@@ -113,6 +113,10 @@ def _area_words(area: dict) -> str:
     return words + (" (Boss Mod's guess)" if area.get("unverified") else "")
 
 
+# A drafted rotation entry gets `not_before` when retail's first use came at least this far into the NPC's fight.
+NOT_BEFORE_FROM = 5.0
+
+
 def _median(values: list) -> float:
     return statistics.median(values) if values else 0.0
 
@@ -130,12 +134,17 @@ def capture_facts(ledgers, content_finder_condition: int) -> dict:
         cast = Cast()
         inside = False
         last: dict[tuple, float] = {}
+        # Each NPC's first and latest action (its fight, for an action's first use and how long it went without one.)
+        began: dict[int, float] = {}
+        latest: dict[int, float] = {}
         for event in events:
             cast.see(event)
             kind = event["e"]
             if kind == "zone":
                 inside = event["content"] == content_finder_condition
                 last.clear()
+                began.clear()
+                latest.clear()
                 if inside:
                     territory = event["territory"]
                     runs.append(capture.id[:8])
@@ -157,7 +166,10 @@ def capture_facts(ledgers, content_finder_condition: int) -> dict:
                     continue
                 action = bases[source["base"]]["actions"].setdefault(event["action"], {
                     "uses": 0, "casts": Counter(), "gaps": [], "players": [], "npcs": [], "most_hit": 0,
-                    "spots": Counter()})
+                    "spots": Counter(), "firsts": [], "users": set()})
+                if kind == "effect":
+                    began.setdefault(event["a"], event["t"])
+                    latest[event["a"]] = event["t"]
                 if kind == "cast":
                     action["casts"][event["time"]] += 1
                     # Where it was cast from (a helper's spot is where the director puts the attack.)
@@ -167,6 +179,9 @@ def capture_facts(ledgers, content_finder_condition: int) -> dict:
                     continue
                 action["uses"] += 1
                 key = (event["a"], event["action"])
+                if key not in last:
+                    action["firsts"].append(event["t"] - began[event["a"]])
+                    action["users"].add(event["a"])
                 if key in last and event["t"] - last[key] < 120:
                     action["gaps"].append(event["t"] - last[key])
                 last[key] = event["t"]
@@ -186,6 +201,14 @@ def capture_facts(ledgers, content_finder_condition: int) -> dict:
                 fact["cast"] = action["casts"].most_common(1)[0][0]
             if len(action["gaps"]) >= 2:
                 fact["every"] = round(_median(action["gaps"]), 1)
+            elif action["uses"] <= len(action["users"]):
+                # Never twice by one: once a fight, as far as the captures saw (the longest any NPC of the base fought.)
+                # Without it, a drafted rotation used it every turn the NPC was free (Castrum Meridianum's 29171,
+                # retail's once or twice a fight, came 29 times in 240 s: Bob's run of 2026-11-21.)
+                fact["every"] = 120.0
+            if action["firsts"] and _median(action["firsts"]) >= NOT_BEFORE_FROM:
+                # Its first use after the NPC's first action (median), well into the fight: `not_before`.
+                fact["not_before"] = round(_median(action["firsts"]), 1)
             if action["spots"]:
                 fact["spots"] = [list(spot) for spot, _ in action["spots"].most_common(8)]
                 fact["spot_count"] = len(action["spots"])
@@ -212,6 +235,9 @@ def _timeline(actions: dict, auto: int | None, comment: str) -> dict:
         if "every" in fact:
             entry["every"] = fact["every"]
             gaps.append(fact["every"])
+        # A first use well into the fight (retail's Imperial casters' area attacks came 14 to 46 s in.)
+        if "not_before" in fact:
+            entry["not_before"] = fact["not_before"]
         entry["comment"] = f"{fact['uses']} uses" + (f"; {fact['cast']:g} s cast" if fact.get("cast") else "") + (
             "" if dealt else "; no damage") + (f"; hit {fact['most_hit']} at once" if fact["most_hit"] > 1 else "")
         rotation.append(entry)

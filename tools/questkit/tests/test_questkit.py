@@ -1590,6 +1590,35 @@ class DropinTest(unittest.TestCase):
         self.assertEqual((spawn["flags"], spawn["max_links"], spawn["link_range"]), (2, 4, 20))
 
 
+class RotationRates(unittest.TestCase):
+    """Bob's run of Castrum Meridianum, 2026-11-21: "the area of effect data it's far too common". Drafted rotations
+    left a rare action without `every`, so it came every free turn: each enemy's rotation is held to how often retail's
+    cast the same action in the duty fixtures (`questkit rates`)."""
+
+    def test_most_uses_follow_the_rotation_rules(self):
+        from questkit import rotation_rates as rates
+
+        self.assertEqual(rates.most_uses({"action": 1, "every": 17.0, "not_before": 11.0}, 3.0, 50.0), 3)
+        self.assertEqual(rates.most_uses({"action": 1, "every": 17.0, "not_before": 11.0}, 3.0, 10.0), 0)
+        # No `every`: a turn every other `pace`.
+        self.assertEqual(rates.most_uses({"action": 1}, 3.0, 60.0), 11)
+
+    def test_a_slot_is_counted_once(self):
+        from questkit import rotation_rates as rates
+
+        rotation = {"actions": [{"action": 1}, {"action": 2, "slot": "a"}, {"action": 3, "slot": "a"}]}
+        self.assertEqual([(name, [e["action"] for e in entries]) for name, entries in rates.groups(rotation)],
+                         [("1", [1]), ("slot a", [2, 3])])
+
+    def test_every_enemy_casts_as_often_as_retails(self):
+        from questkit import rotation_rates as rates
+
+        found = rates.compare()
+        self.assertTrue(any(rate.timeline.startswith("CastrumMeridianumEnemy_14570") for rate in found))
+        problems = [rate for rate in found if rate.problems]
+        self.assertEqual(problems, [], rates.report(problems))
+
+
 class Triggers(unittest.TestCase):
     """Bob, 2026-11-20: events in boss fights are usually set off by the boss's health, "check for this behavior more
     often". `questkit triggers` puts each event's seconds from the pull beside the boss's health across runs."""
@@ -2717,7 +2746,7 @@ public class MadeUp(ModuleInit init) : BossModule(init, new(10, -20), new ArenaB
                    "p": [10.0, 0.0, -20.0], "r": 0.0}]
         events += [hit(10.0 + 20 * k, 1, 5001, 900 + k) for k in range(4)]
         events += [hit(11.0, 2, 5002, 700), hit(12.0, 3, 870, 40), hit(15.0, 3, 870, 44), hit(18.0, 3, 870, 48),
-                   hit(13.0, 1, 5999, 100), {"e": "zone", "t": 200.0, "territory": 1, "content": 0}, hit(201.0, 1, 5001, 5)]
+                   hit(13.0, 1, 5999, 100), hit(30.0, 3, 6001, 10), {"e": "zone", "t": 200.0, "territory": 1, "content": 0}, hit(201.0, 1, 5001, 5)]
         with tempfile.TemporaryDirectory() as folder:
             public = self.public(Path(folder))
         captured = duty_sources.capture_facts([(Made, events)], 77)
@@ -2736,7 +2765,13 @@ public class MadeUp(ModuleInit init) : BossModule(init, new(10, -20), new ArenaB
         self.assertIn("not in Boss Mod's module: 5999", readme)
         # The add fought: its own timeline, from the captures alone (the helper has none.)
         add = json.loads(files["Duty77Enemy_555.json"])
-        self.assertEqual((add["autoattack_action_id"], add["recorded_amounts"]), (870, {"870": {"players": 44}}))
+        self.assertEqual((add["autoattack_action_id"], add["recorded_amounts"]["870"]), (870, {"players": 44}))
+        # Its area attack, once 18 s into its fight (as Castrum Meridianum's casters' were, once or twice a fight from
+        # 14 to 46 s in): once a fight and not before then, not every turn it's free (Bob's run of 2026-11-21.)
+        self.assertEqual(add["rotation"]["actions"][0],
+                         {"action": 6001, "every": 120.0, "not_before": 18.0, "comment": "1 uses"})
+        self.assertEqual(boss["actions"][5999]["every"], 120.0)
+        self.assertNotIn("not_before", boss["actions"][5999])
         self.assertNotIn("Duty77Enemy_9020.json", files)
 
     def test_audit_lists_what_a_timeline_never_mentions(self):

@@ -150,6 +150,20 @@ pub struct RotationAction {
     /// and deea324c; Bob's mark of 2026-11-20: they should be "cannon bombardment", not at a set place.)
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub at_random_foe: bool,
+    /// Entries with the same `slot` are one turn between them: it comes every `every` (counted from the last use of
+    /// any of them), and one of them is used then, at random by `weight`. Castrum Meridianum's BNpcBase 14578, 14663
+    /// and 14664 cast 29181 or 29182 (29183 or 29184) every 17.2 s, which of the two at random (all five retail runs,
+    /// `questkit rates`): with an `every` of its own each, both came, twice as often as retail's.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub slot: Option<String>,
+    /// How likely this entry of its `slot` is to be the one used (1 when not given.)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weight: Option<f32>,
+    /// How likely it is to be used each time it comes due (0 to 1): when not, it waits `every` again as if it had been.
+    /// Castrum Meridianum's packs of three 14577 cast 29175 once by one of the three in most runs (7 of 15 lives in
+    /// five retail runs, `questkit rates`), not once by each.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chance: Option<f32>,
     /// Where the numbers came from (ignored by the server.)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,

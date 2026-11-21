@@ -61,6 +61,9 @@ pub struct RotationState {
     weaved: bool,
     /// How many abilities since the last GCD action (party bots' rotation scripts weave up to two.)
     weaves: u8,
+    /// When an entry with a `chance` last came due and wasn't used (it waits `every` again from then.) `choose` only
+    /// looks, so this is the one thing it notes.
+    passed: std::cell::RefCell<HashMap<u32, Instant>>,
 }
 
 /// What the NPC's situation is when it's choosing.
@@ -98,6 +101,20 @@ impl Situation {
             None => Some(self.target),
         }
     }
+}
+
+/// One of `members` by their `weight` (1 when not given), `roll` from 0 to 1.
+pub fn pick_by_weight(members: &[&RotationAction], roll: f32) -> Option<u32> {
+    let weight = |entry: &RotationAction| entry.weight.unwrap_or(1.0).max(0.0);
+    let total: f32 = members.iter().map(|entry| weight(entry)).sum();
+    let mut left = roll * total;
+    for entry in members {
+        left -= weight(entry);
+        if left < 0.0 {
+            return Some(entry.action);
+        }
+    }
+    members.last().map(|entry| entry.action)
 }
 
 impl RotationState {
@@ -151,9 +168,22 @@ impl RotationState {
                     .every
                     .or((!action.gcd || action.recast > rotation.pace).then_some(action.recast))
             };
+            // Counted from the last use of it, or of any entry of its `slot`, or the last time it came due and its
+            // `chance` passed it by.
+            let last = rotation
+                .actions
+                .iter()
+                .filter(|other| {
+                    other.action == entry.action
+                        || (entry.slot.is_some() && other.slot == entry.slot)
+                })
+                .filter_map(|other| self.used.get(&other.action))
+                .chain(self.passed.borrow().get(&entry.action))
+                .max()
+                .copied();
             if let Some(cooldown) = cooldown
-                && self.used.get(&entry.action).is_some_and(|at| {
-                    now.duration_since(*at) < Duration::from_secs_f32(cooldown.max(0.0))
+                && last.is_some_and(|at| {
+                    now.duration_since(at) < Duration::from_secs_f32(cooldown.max(0.0))
                 })
             {
                 continue;
@@ -198,6 +228,23 @@ impl RotationState {
                 .is_some_and(|below| situation.self_hp >= below)
             {
                 continue;
+            }
+            if let Some(chance) = entry.chance
+                && fastrand::f32() >= chance
+            {
+                self.passed.borrow_mut().insert(entry.action, now);
+                continue;
+            }
+            // One of its slot's, at random by weight (those with someone to go on.)
+            if entry.slot.is_some() {
+                let members: Vec<&RotationAction> = rotation
+                    .actions
+                    .iter()
+                    .filter(|other| {
+                        other.slot == entry.slot && situation.target_for(other).is_some()
+                    })
+                    .collect();
+                return Some(pick_by_weight(&members, fastrand::f32()).unwrap_or(entry.action));
             }
             return Some(entry.action);
         }
@@ -707,6 +754,132 @@ mod tests {
             Some(TRUE_THRUST)
         );
     }
+    #[test]
+    fn a_slot_is_one_turn_for_its_entries() {
+        // Castrum Meridianum's 14578: 29181 or 29182 every 17.2 s, one of them each time (retail's five runs), between
+        // its weaponskills. Two entries with an `every` of their own came twice as often.
+        let rotation = Rotation {
+            pace: 3.0,
+            actions: vec![
+                RotationAction {
+                    action: LEG_SWEEP,
+                    every: Some(17.0),
+                    slot: Some("area".to_string()),
+                    ..Default::default()
+                },
+                RotationAction {
+                    action: LIFE_SURGE,
+                    every: Some(17.0),
+                    slot: Some("area".to_string()),
+                    weight: Some(3.0),
+                    ..Default::default()
+                },
+                RotationAction {
+                    action: TRUE_THRUST,
+                    ..Default::default()
+                },
+            ],
+        };
+        let used = simulate(&rotation, 69);
+        let slot: Vec<f32> = used
+            .iter()
+            .filter(|(_, action)| *action != TRUE_THRUST)
+            .map(|(at, _)| *at)
+            .collect();
+        // A turn every 17 s from the first weave, never two in one.
+        assert_eq!(slot.len(), 4, "{used:?}");
+        assert!(slot.windows(2).all(|pair| pair[1] - pair[0] >= 17.0));
+        // By weight: 1 to 3.
+        let only = |action| RotationAction {
+            action,
+            weight: Some(if action == LIFE_SURGE { 3.0 } else { 1.0 }),
+            ..Default::default()
+        };
+        let (sweep, surge) = (only(LEG_SWEEP), only(LIFE_SURGE));
+        assert_eq!(pick_by_weight(&[&sweep, &surge], 0.2), Some(LEG_SWEEP));
+        assert_eq!(pick_by_weight(&[&sweep, &surge], 0.3), Some(LIFE_SURGE));
+        assert_eq!(pick_by_weight(&[&sweep, &surge], 0.99), Some(LIFE_SURGE));
+    }
+
+    #[test]
+    fn a_chance_passed_by_waits_its_every_again() {
+        // Castrum Meridianum's 14577 and 29175: about half of them cast it once in a fight. When the roll passes it by,
+        // it waits `every` as if it had been used.
+        let never = Rotation {
+            pace: 3.0,
+            actions: vec![
+                RotationAction {
+                    action: LEG_SWEEP,
+                    every: Some(50.0),
+                    chance: Some(0.0),
+                    ..Default::default()
+                },
+                RotationAction {
+                    action: TRUE_THRUST,
+                    ..Default::default()
+                },
+            ],
+        };
+        assert!(
+            simulate(&never, 120)
+                .iter()
+                .all(|(_, action)| *action == TRUE_THRUST)
+        );
+        let always = Rotation {
+            actions: vec![
+                RotationAction {
+                    chance: Some(1.0),
+                    ..never.actions[0].clone()
+                },
+                never.actions[1].clone(),
+            ],
+            ..never
+        };
+        let sweeps = simulate(&always, 120)
+            .iter()
+            .filter(|(_, action)| *action == LEG_SWEEP)
+            .count();
+        assert_eq!(sweeps, 3);
+        // Passed by now, it isn't due again for `every`.
+        let state = RotationState::default();
+        let start = Instant::now();
+        let situation = |now| Situation {
+            now,
+            target: ObjectId(1),
+            target_hp: 100.0,
+            self_hp: 100.0,
+            allies: HashMap::new(),
+            side: Vec::new(),
+            random_foe: None,
+        };
+        let passed = Rotation {
+            pace: 3.0,
+            actions: vec![never.actions[0].clone()],
+        };
+        assert_eq!(
+            state.choose(&passed, &situation(start), &mut mechanics),
+            None
+        );
+        let mut certain = passed.clone();
+        certain.actions[0].chance = Some(1.0);
+        assert_eq!(
+            state.choose(
+                &certain,
+                &situation(start + Duration::from_secs(30)),
+                &mut mechanics
+            ),
+            None
+        );
+        assert_eq!(
+            state.choose(
+                &certain,
+                &situation(start + Duration::from_secs(51)),
+                &mut mechanics
+            ),
+            Some(LEG_SWEEP)
+        );
+    }
+
     #[test]
     fn a_bombardment_goes_on_one_of_those_it_fights() {
         // Castrum Meridianum's BNpcBase 14572 and its 29176: once, 43.3 to 46.4 s into its fight, on the spot one of

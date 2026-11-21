@@ -20,7 +20,8 @@
             {
                 "action": 860,
                 "every": 26.7,
-                "comment": "8 uses, every 26.7 s: a drain"
+                "not_before": 16.0,
+                "comment": "8 uses, every 26.7 s: a drain. Retail (questkit rates, 2026-11-21: 3 casts by 2 of the duty fixtures' NPCs): first 16 s after the pull (median; earliest 15.2 s), `every` kept (retail's: 26.6 s, the median of 1 times between one's uses). Before, the rotation would have cast it 4 times at most over lives retail's cast it 3."
             },
             {
                 "action": 341,

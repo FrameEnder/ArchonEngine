@@ -1804,6 +1804,13 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Combat
 
+* Enemies' area attacks by retail's numbers (2026-11-21, `questkit rates`; untested in game). What the numbers can't
+  say: whether a `chance` (some of a pack cast it, not all) is a roll as Kawari has it or something else retail picks
+  by (who's nearest, who's fighting whom); `not_before` is the median first use (retail's spread 14 to 46 s for 29171),
+  so every caster of a kind begins at the same second where retail's didn't; an action a fixture never saw used twice by
+  one NPC is once a fight (`every` the longest any fought). A rotation's cast now waits a tick when its NPC took a step,
+  party bots' rotation spells too (they stop to cast, as players do; their heals go another way and don't wait); a bot
+  that never stopped walking would never cast them (not seen). Quest-battle timelines aren't in duty fixtures, so `rates` doesn't check them.
 * Passive monsters (no HOSTILE character flag) are on the monsters' side again, by battalion (2026-11-04, untested in
   game): a player's single-target hits on one give enmity, so it fights back and its kill is credited (quests,
   Hunting Log, EXP). Kills of passive monsters from 2026-11-01 to then weren't counted anywhere and aren't made up.

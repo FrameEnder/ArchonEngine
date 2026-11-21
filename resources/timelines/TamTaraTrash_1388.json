@@ -16,7 +16,8 @@
             {
                 "action": 720,
                 "every": 10.6,
-                "comment": "42 uses"
+                "not_before": 8.6,
+                "comment": "42 uses. Retail (questkit rates, 2026-11-21: 32 casts by 10 of the duty fixtures' NPCs): first 8.6 s after the pull (median; earliest 5.2 s), `every` kept (retail's: 10.6 s, the median of 22 times between one's uses). Before, the rotation would have cast it 38 times at most over lives retail's cast it 32."
             }
         ]
     },

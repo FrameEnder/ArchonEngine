@@ -447,6 +447,13 @@ pub(crate) fn face_for_cast(
     );
 }
 
+/// Whether an NPC's chosen rotation action (`cast_time` in ms) begins this tick: not a cast on a tick it took a step
+/// (the step's ActorMove went out with it and the client walked it into its cast bar), but the next, standing, as
+/// retail's casters had stopped first. Instant ones go at once.
+pub(crate) fn begins_now(stepped: bool, cast_time: u32) -> bool {
+    !stepped || cast_time == 0
+}
+
 /// Whether an NPC stays where it is this tick: held by its director or an action's lock (`busy_bnpc`, `root_bnpc`,
 /// `action::stand_through_lock`) or a status, or in a cast (`cast`: its action, when its bar ends, and the NPC's
 /// auto-attack, whose swing holds no one) and `KEEP_CAST_FACING` after it. Both passes ask: the one that moves it,
@@ -1018,10 +1025,13 @@ pub fn npc_behavior(
             // before, a Brass Blade at Scorpion Crossing that had reached its post (off the navmesh) still looked
             // 0.63 yalms off it, planned the last step again from the mesh's edge, and walked edge, post, edge every
             // half second, facing the same way, forever (Bob's bundle of 2026-10-25.)
+            // Whether it took a step this tick (not only turned): a cast waits for the next (`stepped`, below.)
+            let mut stepped = false;
             for msg in &actor_moves {
                 if let (_, FromServer::ActorMove(msg_id, pos, rotation, ..)) = msg
                     && *id == *msg_id
                 {
+                    stepped |= flat_distance(spawn.common.position.0, pos.0) >= MIN_STEP;
                     spawn.common.position = *pos;
                     spawn.common.rotation = *rotation;
                 }
@@ -1821,12 +1831,25 @@ pub fn npc_behavior(
                             (action_id, target)
                         }),
                 };
-                if let Some((action_id, target)) = chosen {
+                // A cast doesn't begin on the tick it took a step: the step's ActorMove goes out with it and the
+                // client walks it half a second into the cast bar. Retail's casters had stopped: the last step before
+                // a cast came at least 0.09 s before it and none with it (every cast of 29171, 29173, 29174, 29181 and
+                // 29182 by Castrum Meridianum's 14569, 14570, 14573, 14578 and 14663 in Bob's captures 50e72631
+                // and 9ba7d981; Bob's run of 2026-11-21: "the enemies aren't waiting to cast their area of effect
+                // action before moving"). It begins the next tick, standing.
+                if let Some((action_id, target)) = chosen
+                    && let action_mechanics = mechanics(action_id)
+                    && begins_now(
+                        stepped,
+                        game_data
+                            .get_casttime(action_id)
+                            .map_or(0, |(_, cast_time)| cast_time),
+                    )
+                {
                     let target_id = ObjectTypeId {
                         object_id: target,
                         ..spawn.common.target_id
                     };
-                    let action_mechanics = mechanics(action_id);
                     rotation_state.record(
                         rotation,
                         action_id,
@@ -2020,6 +2043,19 @@ pub fn npc_behavior(
     }
 
     for (id, request, cast_time) in new_action_requests {
+        // An area retail placed on the caster's own spot is aimed there, wherever its target stands (`cast_spot`.)
+        if let Some(NetworkedActor::Npc {
+            cast: Some(cast),
+            spawn,
+            ..
+        }) = instance.find_actor_mut(id)
+        {
+            cast.target_position = cast_spot(
+                request.action_id,
+                spawn.common.position.0,
+                cast.target_position,
+            );
+        }
         queue_leap(
             instance,
             id,
@@ -2766,6 +2802,40 @@ pub fn retail_cast_aim(action: u32, cast_type: Option<u8>) -> CastAim {
     })
 }
 
+/// Whether retail placed `action`, an area on the ground (`CastAim::Ground`), on its caster's own spot every time
+/// rather than where its target stood (`resources/data/cast_aims.json`, `ground_at_caster`: 35 actions, every cast of
+/// them in Bob's 71 Chronofoil captures within 0.5 yalms of the caster). Castrum Meridianum's 29174 (BNpcBase 14573, a
+/// 2.7 s cast) was aimed at the caster's target, its circle drawn 3 to 4 yalms off the caster (Bob's run of
+/// 2026-11-21: "not even attached to the enemy").
+pub fn retail_ground_at_caster(action: u32) -> bool {
+    static AT_CASTER: std::sync::OnceLock<std::collections::HashSet<u32>> =
+        std::sync::OnceLock::new();
+    AT_CASTER
+        .get_or_init(|| {
+            let value: serde_json::Value =
+                serde_json::from_str(include_str!("../../../../resources/data/cast_aims.json"))
+                    .unwrap_or_default();
+            value
+                .get("ground_at_caster")
+                .and_then(|ids| ids.as_array())
+                .into_iter()
+                .flatten()
+                .filter_map(|id| Some(id.as_u64()? as u32))
+                .collect()
+        })
+        .contains(&action)
+}
+
+/// Where an NPC's cast of `action` is aimed as it begins: its target's spot, or, for an area retail placed on the
+/// caster's own spot (`retail_ground_at_caster`), where the caster stands.
+pub fn cast_spot(action: u32, caster: Vec3A, target: Vec3A) -> Vec3A {
+    if retail_ground_at_caster(action) {
+        caster
+    } else {
+        target
+    }
+}
+
 /// ActorCast's omen delay for `action` (`resources/data/cast_aims.json`, `omen_delay`): how many tenths of a second
 /// into the cast the client draws its marker. Retail's was the same every time for an action and 0 for nearly all;
 /// Cape Westwind's helpers' 28869 has 55 with its 7.7 s cast, so its circles show for the last 2.2 s only, where
@@ -2825,10 +2895,14 @@ pub fn npc_use_action(
         ..Default::default()
     };
 
-    let target_position = instance
-        .find_actor(target_id)
-        .map(|actor| actor.position().0)
-        .unwrap_or(position.0);
+    let target_position = cast_spot(
+        action_id,
+        position.0,
+        instance
+            .find_actor(target_id)
+            .map(|actor| actor.position().0)
+            .unwrap_or(position.0),
+    );
     if let Some(NetworkedActor::Npc { cast, .. }) = instance.find_actor_mut(actor_id) {
         *cast = Some(NpcCast {
             until: Instant::now() + Duration::from_secs_f32(cast_time),
