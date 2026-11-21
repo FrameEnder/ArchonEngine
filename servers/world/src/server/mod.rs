@@ -452,6 +452,17 @@ impl WorldServer {
                 ..Default::default()
             };
 
+            // Fork: the shared dungeon framework (packs, steps, boss rooms, wipes: content/lib/Dungeon.lua) comes
+            // first, so the duty's script can describe its way through with it.
+            let library = get_config()
+                .filesystem
+                .locate_script_file("content/lib/Dungeon.lua");
+            if let Ok(file) = std::fs::read(&library)
+                && let Err(err) = lua.0.load(file).set_name("@".to_string() + &library).exec()
+            {
+                tracing::warn!("Syntax error in {library}: {err:?}");
+            }
+
             let result = std::fs::read(&file_name);
             if let Err(err) = result {
                 tracing::warn!(

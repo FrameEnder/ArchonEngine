@@ -1211,6 +1211,87 @@ class OutlineTest(unittest.TestCase):
         self.assertIn('"change", "sequence 3"', text)
 
 
+class DungeonFrameworkTest(unittest.TestCase):
+    """content/lib/Dungeon.lua, run in Lua: a pack whose fall opens the way, a step, a boss room and a wipe."""
+
+    BOSS, ADD, PACK1, PACK2 = 301, 302, 401, 402
+
+    def setUp(self):
+        try:
+            from lupa import LuaRuntime
+        except ImportError:
+            self.skipTest("lupa isn't installed")
+        from questkit import repo
+        self.lua = LuaRuntime(unpack_returned_tuples=True)
+        self.lua.execute((repo.SCRIPTS / "content" / "lib" / "Dungeon.lua").read_text())
+        self.calls = []
+
+        def log(name, *args):
+            self.calls.append((name, [dict(a.items()) if hasattr(a, "items") else a for a in args]))
+        self.lua.globals().LOG = log
+        self.director = self.lua.eval("""setmetatable({}, { __index = function(_, name)
+            return function(_, ...) LOG(name, ...) end
+        end })""")
+        self.lua.execute("""
+            D = Dungeon.new()
+            D:pack({ layouts = { 401, 402 }, effects = { { 1, 2, 1 } }, spawns = { 301, 302 } })
+            D:step({ name = "room", where = function(m) return Dungeon.within(m, { x = 0, z = 0 }, 20) end,
+                run = function(d) d:objective(0, 1) end })
+            D:boss({ id = 1, layout = 301, wall = 9001, line = 9002, place = 7, middle = { x = 0, y = 0, z = 0 },
+                room = { members = { 301, 302 }, radius = 24 }, helpers = { layout = 0, count = 2 },
+                talker = { name = 5, pull = 100, at = { { 2.0, 101 } } },
+                waves = { action = 50, after = 1.0, list = { { 501, 502 } } },
+                on_death = function(d) d:objective(1, 2) end })
+        """)
+        self.d = self.lua.globals().D
+
+    def update(self, info, health=None, n=1):
+        for _ in range(n):
+            self.d.update(self.d, self.director, self.lua.table_from(health or {}), 100,
+                          self.lua.table_from({k: self.lua.table_from(v) for k, v in info.items()}))
+
+    def names(self):
+        return [name for name, _ in self.calls]
+
+    def test_a_duty_goes_its_way(self):
+        d, director = self.d, self.director
+        d.setup(d, director)
+        self.assertIn(("boss_room", [301, 9001, 9002, 7, {}]), self.calls)
+        self.assertIn("keep_in_room", self.names())
+        self.assertIn(("hide_eobj", [9001]), self.calls)
+        self.assertIn(("show_eobj", [9002]), self.calls)
+        # The pack falls: its map effect, and its boss comes.
+        d.died(d, director, self.PACK1)
+        self.assertNotIn("map_effect", self.names())
+        d.died(d, director, self.PACK2)
+        self.assertIn(("map_effect", [1, 2, 1]), self.calls)
+        self.assertIn(("spawn_bnpc", [301]), self.calls)
+        # Someone in the room: the step, once.
+        self.update({"player": {"x": 5, "z": 5, "id": 1}, 301: {"x": 0, "z": 0}}, n=2)
+        self.assertEqual(self.names().count("objective"), 1)
+        # Pulled: its talk, then its timed one; a wave with its cast.
+        self.update({"player": {"x": 5, "z": 5, "id": 1}, 301: {"x": 0, "z": 0, "target": 1}}, {301: 90})
+        self.assertEqual(d.fight, 1)
+        self.assertIn(("battle_talk", [301, 5, 100, 0, 6000]), self.calls)
+        d.cast(d, director, self.BOSS, 50, 0, 0, 0, 0)
+        self.update({"player": {"x": 5, "z": 5, "id": 1}, 301: {"x": 0, "z": 0, "target": 1}}, {301: 90}, n=4)
+        self.assertIn(("spawn_bnpc", [501]), self.calls)
+        self.assertIn(("battle_talk", [301, 5, 101, 0, 6000]), self.calls)
+        # A wipe: the wave goes, and it isn't pulled again till it's home and whole.
+        d.wipe(d, director)
+        self.assertIn(("despawn_bnpc", [501]), self.calls)
+        self.assertIsNone(d.fight)
+        self.update({"player": {"x": 5, "z": 5, "id": 1}, 301: {"x": 0, "z": 0, "target": 1}}, {301: 60})
+        self.assertIsNone(d.fight)
+        self.update({"player": {"x": 30, "z": 30, "id": 1}, 301: {"x": 0, "z": 0}}, {301: 100})
+        self.update({"player": {"x": 5, "z": 5, "id": 1}, 301: {"x": 0, "z": 0, "target": 1}}, {301: 99})
+        self.assertEqual(d.fight, 1)
+        # Its fall: the fight over, its helpers gone, its own end.
+        d.died(d, director, self.BOSS)
+        self.assertIsNone(d.fight)
+        self.assertIn(("objective", [1, 2]), self.calls)
+
+
 class BattleFrameworkTest(unittest.TestCase):
     """content/lib/Battle.lua's roles, run in Lua: a tank, two DPS and a support against a boss and two adds."""
 

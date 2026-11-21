@@ -27,6 +27,29 @@ Every duty script in this table is checked against AutoDuty's route for its terr
 difference (see `known-issues.md`). Brayflox's Longstop and the Stone Vigil joined the table that day; they were
 scripted already.
 
+## The dungeon framework
+
+`resources/scripts/content/lib/Dungeon.lua` (2026-11-21, Bob: "is there anything in all the dungeons that can be
+scripted into a reusable while individually adjustable format"): what every duty is made of, run the same way in
+each, so a fix found in one is in all. The server loads it before a duty's script (`server/mod.rs`), as it loads
+`Battle.lua` before a quest battle's, and `questkit duty-sim` does too. A script makes `DUNGEON = Dungeon.new()` and
+gives its duty's facts:
+
+| Piece | What it does |
+| --- | --- |
+| `pack({ layouts, effects, spawns, come_out, on_fall })` | Once every one of `layouts` is dead: its map effects ({ index, timeline, state }), `spawns` spawned (or come out of hiding with `come_out`), `on_fall(director)`. |
+| `step({ name, ready, where, run })` | Somewhere the party's steps set something off, once: when `ready()` (if given) and anyone passes `where(member)`, `run(director)`; looked at in order every update. |
+| `boss({ id, layout, wall, line, place, middle, room, helpers, bgm, after_bgm, talker, waves, ready, last, comes_later, on_pull, on_cast, on_death, on_wipe, on_recommence })` | A boss and its room: `director:boss_room` at setup (`comes_later`: `bringBoss` brings it, with `spawn_boss`), the wall hidden and the line shown until a pull, `room` = { members, radius } kept to it (`director:keep_in_room`), its hidden `helpers` = { layout, count } brought and held (`helperAt`, `helpersCast`), pulled when hurt or after someone (never again after a wipe till it's home, whole and with no target), its music, `talker` = { name, pull, at = { { seconds, text } }, ms, still }: its talks at the pull and into its fight, `waves` = { action, after, list }: each cast of `action` brings the next wave `after` seconds on, gone with its fall or a wipe; `last`: its fall ends the fights. |
+| `update(director, health, player_health, info, between)` | Every update: the party, the steps, the pulls, then the script's `between(director)`, then what's due (`after`). |
+| `cast`, `died`, `wipe`, `recommence`, `setup`, `bringStartingHelpers` | What the server's calls do with it: a boss's waves and `on_cast`; packs and a boss's fall (helpers and waves gone, music, `on_death`); a wipe (every boss resetting, the fight forgotten, its waves gone, `on_wipe`). |
+| `after(seconds, fn)`, `once(name)`, `anyone(test)`, `Dungeon.within`, `allDead`, `countDead`, `comeOut` | The helpers every script had its own copy of. |
+
+What only one duty does stays in its script, in the hooks or around the calls. **Converted**: Castrum Meridianum
+(`w1d4_re.lua`, 2026-11-21: its packs, nine steps and three bosses; the device, the ambush, the six and two and the
+last boss's last part in its own hooks). Its five retail runs play exactly as before (`duty-sim 15 -v`, every event
+and timing the same). The other fourteen duty scripts are still written by hand; each is converted on its own, kept
+passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
+
 ## The duty's beginning: everyone waits for the openings
 
 Retail begins a duty for everyone at once (DutyCommence to every player together) once each has finished its opening;

@@ -1804,6 +1804,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Combat
 
+* The dungeon framework (`content/lib/Dungeon.lua`, 2026-11-21): only Castrum Meridianum's script uses it so far; the
+  other fourteen duties keep their own copies of packs, steps, boss rooms and wipes (and so miss fixes made in the
+  framework, such as a boss not re-pulled until it's home after a wipe) until each is converted.
+
 * Launchers (2026-11-21, untested in game): only those in `resources/data/launchers.json` (Castrum Meridianum's four)
   go on; another duty's unseen spot-raining NPCs stand idle until they're listed. What sets one going in retail (the
   party's nearness, 12 yalms from its spots, is read from the five runs; a range in the layout may be what it really

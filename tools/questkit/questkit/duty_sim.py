@@ -321,6 +321,8 @@ class Stage:
         self.lua.execute((repo.SCRIPTS / "Global.lua").read_text(encoding="utf-8"))
         self.lua.execute("setmetatable(_G, nil)")
         self.lua.execute((repo.SCRIPTS / "content" / "lib" / "Battle.lua").read_text(encoding="utf-8"))
+        # The dungeon framework, as the server loads it before every duty's script.
+        self.lua.execute((repo.SCRIPTS / "content" / "lib" / "Dungeon.lua").read_text(encoding="utf-8"))
         self.director = self.lua.eval("""setmetatable({}, { __index = function(_, name)
             return function(_, ...) return LOG(name, ...) end
         end })""")
