@@ -1065,6 +1065,10 @@ pub fn execute_action(
     // Which way an NPC faced as it began casting this: its hit goes out that way (it turned back to its target in the
     // tick the cast ended, and Kottos' Catapult swung the tank's way, Bob's bundle of 2026-10-26.)
     let npc_cast_rotation: Option<f32>;
+    // Which way to the action's target, if it's another actor here: a single-target action goes out facing it, as
+    // every retail one does (Bob, 2026-11-21: "enemies and allies don't always follow the policy of facing the target
+    // of their attack unless their doing AOE's".)
+    let facing_target: Option<f32>;
     // Other players caught in an enemy's area attack, with what it does to each of them.
     let mut area_bystanders: Vec<(ObjectId, Vec<TargetEffect>)> = Vec::new();
     {
@@ -1102,6 +1106,10 @@ pub fn execute_action(
         }
 
         common_spawn = actor.get_common_spawn().clone();
+        facing_target = (request.target.object_id != from_actor_id)
+            .then(|| instance.find_actor(request.target.object_id))
+            .flatten()
+            .and_then(|target| facing_towards(common_spawn.position.0, target.position().0));
         // Its own cast record, or the request's facing (an NPC's request carries the way it faced as the cast began)
         // when another action's record took its place as the cast ended: Heavy Swing, due the tick Rive went off,
         // sent Rive towards 1771 though its omen pointed at the player (The Lominsan Way, Bob's bundle 20261104-190047.)
@@ -2295,6 +2303,10 @@ pub fn execute_action(
                     .package()
                     .unwrap()
                 } else {
+                    // At its target (an area attack keeps the way it was aimed, above.)
+                    let single_target_rotation = facing_target
+                        .or(npc_cast_rotation)
+                        .unwrap_or(common_spawn.rotation);
                     let (targets, effects) = match shown.first() {
                         Some((target, effects)) => (vec![*target], effects.clone()),
                         None => (vec![request.target], Vec::new()),
@@ -2304,7 +2316,7 @@ pub fn execute_action(
                         targets,
                         action_id: request.action_id,
                         animation_lock,
-                        rotation: npc_cast_rotation.unwrap_or(common_spawn.rotation),
+                        rotation: single_target_rotation,
                         spell_id: action_animation_id,
                         animation_variation,
                         source_sequence: request.sequence,
@@ -2349,6 +2361,14 @@ pub fn execute_action(
                     FromServer::PacketSegment(ipc, from_actor_id),
                     DestinationNetwork::ZoneClients,
                 );
+                // An NPC or a party bot stays turned to whom it struck (a player's own client turns them.)
+                if !use_aoe_packet
+                    && let Some(rotation) = facing_target
+                    && let Some(NetworkedActor::Npc { spawn, .. }) =
+                        instance.find_actor_mut(from_actor_id)
+                {
+                    spawn.common.rotation = rotation;
+                }
                 // What it shouts with it, in the same instant (`Timeline::shouts`.)
                 if let Some(line) = npc_shout(instance, from_actor_id, request.action_id) {
                     network.send_ac_in_range_inclusive_instance(
@@ -4227,6 +4247,12 @@ pub fn plays_as_player(instance: &Instance, actor: ObjectId) -> bool {
 /// on them (see `EffectsBuilder::gaze`). Rotation 0 faces +Z, as everywhere else.
 /// An NPC's cast record, if it's still the one for this action: another action begun the tick the cast went off (a
 /// timeline point due then) replaces it before the cast's own action runs.
+/// Which way `from` faces looking at `to` (FFXIV's rotation: 0 towards +Z), unless they're on the same spot.
+pub(crate) fn facing_towards(from: glam::Vec3A, to: glam::Vec3A) -> Option<f32> {
+    let (x, z) = (to.x - from.x, to.z - from.z);
+    (x * x + z * z > 1e-6).then(|| f32::atan2(x, z))
+}
+
 /// Counts an NPC's use of `action_id` and gives the line it shouts with it, if any (`Timeline::shouts`.)
 pub(crate) fn npc_shout(instance: &mut Instance, npc: ObjectId, action_id: u32) -> Option<u32> {
     let Some(NetworkedActor::Npc {

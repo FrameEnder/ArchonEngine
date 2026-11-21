@@ -900,6 +900,38 @@ fn an_npc_shouts_with_its_actions_as_retail_s_did() {
     assert_eq!(npc_shout(&mut world.instance, pugilist, 53), None);
 }
 
+/// Bob, 2026-11-21: "enemies and allies don't always follow the policy of facing the target of their attack unless
+/// their doing AOE's". A single-target action goes out turned to its target, whichever way its user faced, and an NPC
+/// or party bot stays turned to it.
+#[test]
+fn an_attack_faces_its_target() {
+    use crate::server::action::facing_towards;
+    use std::f32::consts::{FRAC_PI_2, PI};
+    let at = glam::Vec3A::new(10.0, 0.0, 10.0);
+    assert_eq!(
+        facing_towards(at, glam::Vec3A::new(10.0, 0.0, 15.0)),
+        Some(0.0)
+    );
+    assert_eq!(
+        facing_towards(at, glam::Vec3A::new(15.0, 2.0, 10.0)),
+        Some(FRAC_PI_2)
+    );
+    assert_eq!(
+        facing_towards(at, glam::Vec3A::new(5.0, 0.0, 10.0)),
+        Some(-FRAC_PI_2)
+    );
+    assert!(
+        (facing_towards(at, glam::Vec3A::new(10.0, 0.0, 5.0))
+            .unwrap()
+            .abs()
+            - PI)
+            .abs()
+            < 1e-6
+    );
+    // On the same spot (height aside): no way to face.
+    assert_eq!(facing_towards(at, glam::Vec3A::new(10.0, 3.0, 10.0)), None);
+}
+
 /// Known issues, Brayflox's Longstop and others: retail's duty director set its event 0x40000007 `[0, 1]` 300 s and
 /// `[1, 1]` 900 s after DutyCommence in every run that lasted that long (65 and 20 in Bob's Chronofoil captures); Kawari
 /// never sent either. Each goes once.

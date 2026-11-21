@@ -515,6 +515,44 @@ const TRODDEN_WITHIN: f32 = 1.5;
 /// The trail's nearest step to a bot this far off at most is where it joins it.
 const TRAIL_JOIN: f32 = 4.0;
 
+/// How much higher than the ground its player walked on nearby a bot may stand before it's put down on that ground,
+/// and how near (across) a step of theirs counts.
+const OVER_THE_PLAYERS_GROUND: f32 = 0.5;
+const PLAYERS_GROUND_WITHIN: f32 = 1.5;
+
+/// `at`, on the ground its player walked on there when the zone's collision has it standing higher (by more than
+/// `OVER_THE_PLAYERS_GROUND`) and has a floor at the player's height too: the player's client is the truth of which
+/// floor is the ground. Castrum Meridianum's road has something about a yalm over it in places, which a bot's step
+/// (up to `climb`, on a slope) took it onto, and it walked on a yalm up in the air where the player walked on the
+/// road (Bob, 2026-11-21: "Thalvath Mos is standing in the air everyone else isn't … walking in the road"; the
+/// server had him 0.75 to 1.0 over the others and the player there.)
+fn on_the_players_ground(collision: Option<&Collision>, trail: &[Vec3A], at: Vec3A) -> Vec3A {
+    let Some(collision) = collision else {
+        return at;
+    };
+    let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
+    let Some(step) = trail
+        .iter()
+        .rev()
+        .filter(|step| flat(**step, at) <= PLAYERS_GROUND_WITHIN)
+        .min_by(|a, b| flat(**a, at).total_cmp(&flat(**b, at)))
+    else {
+        return at;
+    };
+    if at.y - step.y <= OVER_THE_PLAYERS_GROUND {
+        return at;
+    }
+    match collision.floor(
+        at.x,
+        at.z,
+        step.y + OVER_THE_PLAYERS_GROUND,
+        step.y - OVER_THE_PLAYERS_GROUND,
+    ) {
+        Some(y) => Vec3A::new(at.x, y, at.z),
+        None => at,
+    }
+}
+
 /// A path for a bot at `here` after its player the way they walked (`trail`, oldest first) to `spot`: from the step
 /// nearest it (within `TRAIL_JOIN`) on through the later ones, then to the spot. None when it isn't near their way.
 fn along_the_trail(
@@ -4122,6 +4160,12 @@ fn update_party(
                     let (moved, blocked) =
                         run_along(navmesh, collision.as_deref(), here, &mut path, walled_for);
                     walled.push((*bot_id, blocked.then(|| bot.walled_since.unwrap_or(now))));
+                    let moved = moved.map(|(at, facing)| {
+                        (
+                            on_the_players_ground(collision.as_deref(), &trail, at),
+                            facing,
+                        )
+                    });
                     if let Some((at, facing)) = moved {
                         spawn.common.position = Position(at);
                         spawn.common.rotation = facing;
@@ -4291,6 +4335,7 @@ fn update_party(
                 );
             }
             walled.push((*bot_id, blocked.then(|| bot.walled_since.unwrap_or(now))));
+            let at = on_the_players_ground(collision.as_deref(), &trail, at);
             if flat(at, here) >= 0.05 {
                 spawn.common.position = Position(at);
                 spawn.common.rotation = facing;
@@ -5127,6 +5172,43 @@ mod tests {
             ..light_party
         };
         assert_eq!(roles_left(two_melee, ROLE_RANGED), [1, 1, 1, 0]);
+    }
+
+    #[test]
+    fn a_bot_walks_on_the_ground_its_player_walked_on() {
+        // Bob, 2026-11-21, Castrum Meridianum's road: "Thalvath Mos is standing in the air everyone else isn't" (the
+        // server had him 0.75 to 1.0 over the road the player walked on, on something over it.)
+        let quad = |v: &mut Vec<[f32; 3]>, t: &mut Vec<[u32; 3]>, y: f32| {
+            let i = v.len() as u32;
+            v.extend([
+                [-10.0, y, -10.0],
+                [10.0, y, -10.0],
+                [10.0, y, 10.0],
+                [-10.0, y, 10.0],
+            ]);
+            t.extend([[i, i + 1, i + 2], [i, i + 2, i + 3]]);
+        };
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        quad(&mut v, &mut t, 88.0); // the road
+        quad(&mut v, &mut t, 88.8); // something a little over it
+        let count = t.len();
+        let collision = Collision::build(v, t, vec![0; count], vec![0; count], 0.75, 0.4, 55.0);
+        let trail = vec![Vec3A::new(0.0, 88.0, 0.0), Vec3A::new(1.0, 88.0, 0.0)];
+        // On the thing over the road, by where the player walked: down on the road.
+        let lifted = Vec3A::new(1.5, 88.8, 0.5);
+        assert_eq!(
+            on_the_players_ground(Some(&collision), &trail, lifted),
+            Vec3A::new(1.5, 88.0, 0.5)
+        );
+        // On the road already, or far from where they walked, or no collision: as it is.
+        let on_road = Vec3A::new(1.5, 88.0, 0.5);
+        assert_eq!(
+            on_the_players_ground(Some(&collision), &trail, on_road),
+            on_road
+        );
+        let away = Vec3A::new(6.0, 88.8, 6.0);
+        assert_eq!(on_the_players_ground(Some(&collision), &trail, away), away);
+        assert_eq!(on_the_players_ground(None, &trail, lifted), lifted);
     }
 
     #[test]

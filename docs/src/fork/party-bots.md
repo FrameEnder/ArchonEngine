@@ -662,6 +662,15 @@ its way out of combat (past `WALL_PATIENCE`), or with no navmesh path to its spo
 walked (within 1.5 yalms of a step) it goes on through what the collision has there; a gimmick the director put up
 still stops it. Test `a_bot_held_up_follows_the_way_its_player_walked`.
 
+**On the ground their player walked on** (2026-11-21, Bob's screenshot on `a8d58e5`: "Thalvath Mos is standing in
+the air everyone else isn't … walking in the road"). The server had that bot 0.75 to 1.0 yalms over the road the
+player and the other bots walked: Castrum Meridianum's collision has something about a yalm over the road there,
+and a step on the slope (up to `climb`) took him onto it, where he walked on. A bot's step now ends on the ground its
+player walked on nearby when the collision has it standing more than 0.5 yalms over it and has a floor at the
+player's height too (`on_the_players_ground`, from `Instance::footsteps`: the player's client is the truth of which
+floor is the ground). Test `a_bot_walks_on_the_ground_its_player_walked_on`. What the surface over the road is isn't
+known (no collision file here); where no player walked it can still happen.
+
 "Standing in the air" itself was the floor (Bob, the same day: "literally standing in the air about 1 yalm … a fix you
 made for Cape Westwind's boss"): since 2026-11-18 anyone with a second surface less than 2 yalms over the floor they
 stood on was put on that surface (`collision::settle`'s `HEADROOM`); now only someone between the two goes up, not
