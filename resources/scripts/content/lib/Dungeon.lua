@@ -245,9 +245,11 @@ end
 -- duty's after it falls); `talker` = { name, pull, at = { { seconds, text }... }, ms, until_fn }: its talks, at its
 -- pull and so many seconds into its fight; `waves` = { action, after, list }: each of its casts of `action` brings
 -- the next wave of `list` `after` seconds later (gone with its fall or a wipe); `ready()` whether it can be pulled
--- yet; `pulled_by` = { layouts }: one of them after someone pulls it too; `arena` its room's range; `last`: its fall
--- ends the duty's fights. Hooks: `on_pull(director)`, `on_cast[action](director, x, y, z)` (or
--- `on_cast(director, action, x, y, z)`), `on_death(director)`, `on_wipe(director)`, `on_recommence(director)`.
+-- yet; `group` = { layouts }: several that are the boss together (pulled with any, fallen with the last; `layout`
+-- the first of them); `pulled_by` = { layouts }: one of them after someone pulls it too; `arena` its room's range;
+-- `last`: its fall ends the duty's fights. Hooks: `on_pull(director)`, `on_cast[action](director, x, y, z)` (or
+-- `on_cast(director, action, x, y, z)`), `on_death(director, layout, position)` (the one that fell last, and where),
+-- `on_wipe(director)`, `on_recommence(director)`.
 function Dungeon:boss(boss)
     table.insert(self.bosses, boss)
     self.helpers_of[boss.id] = {}
@@ -267,6 +269,11 @@ function Dungeon:bossByLayout(layout)
     for _, boss in ipairs(self.bosses) do
         if boss.layout == layout then
             return boss
+        end
+        for _, member in ipairs(boss.group or {}) do
+            if member == layout then
+                return boss
+            end
         end
     end
     return nil
@@ -347,12 +354,26 @@ end
 function Dungeon:pulled(boss)
     local layout = boss.layout
     local it = self.info and self.info[layout]
+    if it == nil and boss.group then
+        -- A group's first may have fallen: whichever of it is there.
+        for _, member in ipairs(boss.group) do
+            it = it or (self.info and self.info[member])
+        end
+    end
     if it == nil then
         return false
     end
-    -- One of `pulled_by` after someone pulls it too (Brayflox's first boss with its three adds.)
+    -- One of `pulled_by` (or of its `group`) after someone pulls it too (Brayflox's first boss with its three adds,
+    -- Haukke Manor's pair.)
     local by = false
+    local others = {}
     for _, other in ipairs(boss.pulled_by or {}) do
+        table.insert(others, other)
+    end
+    for _, other in ipairs(boss.group or {}) do
+        table.insert(others, other)
+    end
+    for _, other in ipairs(others) do
         local them = self.info[other]
         if them ~= nil and them.target ~= nil then
             by = true
@@ -408,7 +429,9 @@ end
 function Dungeon:setup(director)
     for _, boss in ipairs(self.bosses) do
         if not boss.comes_later then
-            director:boss_room(boss.layout, boss.wall, boss.line, boss.place, boss.triggers or {}, boss.arena)
+            for _, layout in ipairs(boss.group or { boss.layout }) do
+                director:boss_room(layout, boss.wall, boss.line, boss.place, boss.triggers or {}, boss.arena)
+            end
         end
         self:setUpRoom(director, boss)
     end
@@ -479,7 +502,8 @@ function Dungeon:update(director, health, player_health, info, between)
         self:checkSteps(director)
         if self.fight == nil then
             for _, boss in ipairs(self.bosses) do
-                if not self.dead[boss.layout] and (boss.ready == nil or boss.ready()) and self:pulled(boss) then
+                local fallen = boss.group and self:allDead(boss.group) or (not boss.group and self.dead[boss.layout])
+                if not fallen and (boss.ready == nil or boss.ready()) and self:pulled(boss) then
                     self:pull(director, boss)
                     break
                 end
@@ -519,18 +543,23 @@ function Dungeon:cast(director, layout_id, action_id, actor_id, x, y, z)
     end
 end
 
-function Dungeon:died(director, layout_id)
+function Dungeon:died(director, layout_id, position)
     self.dead[layout_id] = true
     self:checkPacks(director)
     local boss = self:bossByLayout(layout_id)
     if boss == nil then
         return
     end
-    self:fell(director, boss)
+    -- A group falls with the last of it.
+    if boss.group and not self:allDead(boss.group) then
+        return
+    end
+    self:fell(director, boss, layout_id, position)
 end
 
--- A boss's fight is over: by its death (`died`), or as a script says (one that ends at 1 HP.) Once only.
-function Dungeon:fell(director, boss)
+-- A boss's fight is over: by its death (`died`: the last of its group, and where it fell, go to `on_death`), or as a
+-- script says (one that ends at 1 HP.) Once only.
+function Dungeon:fell(director, boss, layout_id, position)
     if self.fight == "over" or self.done["fell" .. boss.id] then
         return
     end
@@ -545,7 +574,7 @@ function Dungeon:fell(director, boss)
         director:set_bgm(boss.after_bgm)
     end
     if boss.on_death then
-        boss.on_death(director)
+        boss.on_death(director, layout_id, position)
     end
 end
 

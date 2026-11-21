@@ -10,6 +10,10 @@
 -- the start; the cellar's door brings the pair out; the pair's key opens the stairs up, and the eye before the last
 -- room's door, worn down, flies to the door and opens it: the room's cutscene, and the last boss with its two adds.
 
+-- Written with the dungeon framework (content/lib/Dungeon.lua, loaded first): the first boss, the pair (a group) and
+-- the last boss, their rooms, pulls, falls and wipes are the framework's; the keys, doors, the eye at the door and the
+-- last boss's eye and leaps are its own.
+
 -- The director's variables (DirectorVars; retail's sequence was 1 throughout): data 0 counts the keys held, data 1 the
 -- other keys found (1 the first boss's, 4 the cellar's, 2 the pair's.)
 VAR_KEYS = 0
@@ -171,17 +175,14 @@ LINE_PAIR = 14347
 LINE_FINAL = 14349
 LINE_FINAL_AFTER = 12.6
 
+DUNGEON = Dungeon.new()
+D = DUNGEON
+
 -- How far the party has got
 keys = 0
 found = 0
-boss1_pulled = false
-boss1_dead = false
-final_dead = false
-pair_pulled = false
-pair_left = 2
 eye_fled = false
 final_started = false
-final_pulled = false
 -- The last fight: how many of each answered action the boss has used, where the eye is by a wall, the eye's actor.
 void_calls = 0
 teleports = 0
@@ -202,17 +203,116 @@ function sendVars(director)
     director:set_data(VAR_FOUND, found)
 end
 
+function flat_distance(a, b)
+    return math.sqrt((a.x - b.x) ^ 2 + (a.z - b.z) ^ 2)
+end
+
+-- The pair, in the order the director knows them.
+PAIR_LAYOUTS = {}
+for id, _ in pairs(PAIR) do
+    table.insert(PAIR_LAYOUTS, id)
+end
+
+-- ---- The bosses ----
+
+D:boss({ id = 1, layout = BNPC_BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = PLACE_BOSS1,
+    bgm = BGM_BATTLE, after_bgm = 0,
+    on_pull = function(director)
+        director:update_shortcut(SHORTCUT_BOSS1)
+        director:party_npc_yell("tank", LINE_BOSS1)
+    end,
+    -- Its arena opens (the boss room's), and the way on; it drops its key where it fell.
+    on_death = function(director, _, position)
+        local where = { x = position.x, y = position.y, z = position.z }
+        director:log_message(LOG_DROPPED, { NAME_BOSS1, ITEM_BOSS1_KEY })
+        director:hide_eobj(EOBJ_BOSS1_WAY_ON)
+        director:spawn_eobj(EOBJ_BOSS1_KEY, where, EOBJ_BOSS1_KEY_ARGS)
+        for _, coffer in ipairs(BOSS1_COFFERS) do
+            director:spawn_treasure(coffer)
+        end
+    end })
+
+D:boss({ id = 2, layout = PAIR_LAYOUTS[1], group = PAIR_LAYOUTS, wall = PAIR_WALL, line = PAIR_LINE,
+    place = PLACE_PAIR, bgm = BGM_BATTLE, after_bgm = 0,
+    on_pull = function(director)
+        director:update_shortcut(SHORTCUT_PAIR)
+    end,
+    -- The last of them drops their key (the room opens: the boss rooms'), and the way up appears.
+    on_death = function(director, layout, position)
+        local where = { x = position.x, y = position.y, z = position.z }
+        director:log_message(LOG_DROPPED, { PAIR[layout], ITEM_PAIR_KEY })
+        director:show_eobj(EOBJ_WAY_UP)
+        director:spawn_eobj(EOBJ_PAIR_KEY, where, EOBJ_PAIR_KEY_ARGS)
+        for _, coffer in ipairs(PAIR_COFFERS) do
+            director:spawn_treasure(coffer)
+        end
+        director:party_npc_yell("ranged", LINE_PAIR)
+    end })
+
+D:boss({ id = 3, layout = BNPC_FINAL, wall = FINAL_WALL, line = FINAL_LINE, place = PLACE_FINAL,
+    comes_later = true, eobjs_at_setup = false, last = true, bgm = false,
+    -- Its actions the director plays out (see the top of the file.)
+    on_cast = {
+        [ACTION_VOID_CALL] = function(director)
+            void_calls = void_calls + 1
+            if void_calls == 2 then
+                director:delay(ADD2_COMES_AFTER)
+                director:spawn_bnpc(BNPC_FINAL_ADD2)
+                director:appear_bnpc(BNPC_FINAL_ADD2, ADD2_APPEARS, ADD2_APPEARS_AFTER)
+                director:set_hate(BNPC_FINAL_ADD2, nil, 300) -- the player
+                director:delay(0)
+                return
+            end
+            -- The first, then every other one from the fourth: by the middle; the third, fifth...: by a wall.
+            local spot = EYE_MIDDLE
+            local gaze_after = EYE_GAZE_AFTER_MIDDLE
+            if void_calls >= 3 and void_calls % 2 == 1 then
+                eye_wall = EYE_WALLS[math.random(#EYE_WALLS)]
+                spot = eye_wall
+                gaze_after = EYE_GAZE_AFTER_WALL
+            end
+            director:delay(EYE_PUT_AFTER)
+            director:warp_bnpc(BNPC_FINAL_ADD, spot.x, spot.y, spot.z, spot.rotation)
+            director:play_action_timeline(BNPC_FINAL_ADD, EYE_RISES)
+            if final_eye ~= nil then
+                director:delay(gaze_after)
+                director:actor_use_action(final_eye, ACTION_GAZE)
+                director:delay(gaze_after + EYE_SINKS_AFTER_GAZE)
+                director:play_action_timeline(BNPC_FINAL_ADD, EYE_SINKS)
+            end
+            director:delay(0)
+        end,
+        [ACTION_TELEPORT] = function(director)
+            teleports = teleports + 1
+            if teleports == 1 then
+                return
+            end
+            if teleports % 2 == 0 and eye_wall ~= nil then
+                director:delay(LEAP_BESIDE_AFTER)
+                director:jump_bnpc(BNPC_FINAL, BOSS_BESIDE_EYE_X, eye_wall.y, eye_wall.z)
+                director:root_bnpc(BNPC_FINAL, STAYS_BESIDE)
+            else
+                director:delay(LEAP_HOME_AFTER)
+                director:jump_bnpc(BNPC_FINAL, BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z)
+            end
+            director:delay(0)
+        end,
+    },
+    on_death = function(director)
+        director:despawn_bnpc(BNPC_FINAL_ADD)
+        director:spawn_treasure(FINAL_COFFER)
+        director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
+        director:complete_duty()
+    end })
+
+-- ---- What the server calls ----
+
 function onSetup(director)
     director:set_sequence(1)
     sendVars(director)
 
-    director:boss_room(BNPC_BOSS1, BOSS1_WALL, BOSS1_LINE, PLACE_BOSS1)
-    for id, _ in pairs(PAIR) do
-        director:boss_room(id, PAIR_WALL, PAIR_LINE, PLACE_PAIR)
-    end
-    -- The walls stand open until a pull (retail: spawned in state 7); the way up isn't there yet.
-    director:hide_eobj(BOSS1_WALL)
-    director:hide_eobj(PAIR_WALL)
+    D:setup(director)
+    -- The way up isn't there yet.
     director:hide_eobj(EOBJ_WAY_UP)
     director:hide_eobj(EOBJ_OPEN_DOOR)
     -- The doors standing closed (the keys' and the bosses'), the way on past the first boss and the last room's door:
@@ -237,41 +337,16 @@ function onSetup(director)
     director:party_npc_yell("healer", LINE_START_HEALER, LINE_START_HEALER_AFTER)
 end
 
-function pulled(info, id)
-    return info ~= nil and info[id] ~= nil and info[id].target ~= nil
-end
-
-function flat_distance(a, b)
-    return math.sqrt((a.x - b.x) ^ 2 + (a.z - b.z) ^ 2)
-end
-
-function onUpdate(director, health, player_health, info)
-    if not boss1_pulled and pulled(info, BNPC_BOSS1) then
-        boss1_pulled = true
-        director:set_bgm(BGM_BATTLE)
-        director:update_shortcut(SHORTCUT_BOSS1)
-        director:party_npc_yell("tank", LINE_BOSS1)
-    end
-
-    if not pair_pulled then
-        for id, _ in pairs(PAIR) do
-            if pulled(info, id) then
-                pair_pulled = true
-                director:set_bgm(BGM_BATTLE)
-                director:update_shortcut(SHORTCUT_PAIR)
-                break
-            end
-        end
-    end
-
-    -- The eye, worn down, flies to the last room's door, and opens it as it gets there.
-    if not eye_fled and health ~= nil and health[BNPC_DOOR_EYE] ~= nil and health[BNPC_DOOR_EYE] < DOOR_EYE_FLEES_BELOW then
+-- After the pulls: the eye, worn down, flies to the last room's door, and opens it as it gets there.
+local function between(director)
+    local health, info = D.health, D.info
+    if not eye_fled and health[BNPC_DOOR_EYE] ~= nil and health[BNPC_DOOR_EYE] < DOOR_EYE_FLEES_BELOW then
         eye_fled = true
         director:set_invulnerable(BNPC_DOOR_EYE, true)
         director:set_notice(BNPC_DOOR_EYE, false)
         director:retreat_bnpc(BNPC_DOOR_EYE, DOOR_EYE_GOES_TO.x, DOOR_EYE_GOES_TO.y, DOOR_EYE_GOES_TO.z)
     end
-    local eye = info ~= nil and info[BNPC_DOOR_EYE] or nil
+    local eye = info[BNPC_DOOR_EYE]
     if eye_fled and not final_started and eye ~= nil
         and flat_distance(eye, DOOR_EYE_GOES_TO) <= DOOR_EYE_THERE then
         director:hold_bnpc(BNPC_DOOR_EYE)
@@ -283,97 +358,21 @@ function onUpdate(director, health, player_health, info)
         director:despawn_bnpc(BNPC_DOOR_EYE)
         director:delay(0)
     end
-
-    if final_started and not final_pulled and pulled(info, BNPC_FINAL) then
-        final_pulled = true
-    end
 end
 
--- The last boss's actions the director plays out (see the top of the file.)
+function onUpdate(director, health, player_health, info)
+    D:update(director, health, player_health, info, between)
+end
+
 function onActorCast(director, layout_id, action_id, actor_id)
-    if layout_id ~= BNPC_FINAL then
-        return
-    end
-    if action_id == ACTION_VOID_CALL then
-        void_calls = void_calls + 1
-        if void_calls == 2 then
-            director:delay(ADD2_COMES_AFTER)
-            director:spawn_bnpc(BNPC_FINAL_ADD2)
-            director:appear_bnpc(BNPC_FINAL_ADD2, ADD2_APPEARS, ADD2_APPEARS_AFTER)
-            director:set_hate(BNPC_FINAL_ADD2, nil, 300) -- the player
-            director:delay(0)
-            return
-        end
-        -- The first, then every other one from the fourth: by the middle; the third, fifth...: by a wall.
-        local spot = EYE_MIDDLE
-        local gaze_after = EYE_GAZE_AFTER_MIDDLE
-        if void_calls >= 3 and void_calls % 2 == 1 then
-            eye_wall = EYE_WALLS[math.random(#EYE_WALLS)]
-            spot = eye_wall
-            gaze_after = EYE_GAZE_AFTER_WALL
-        end
-        director:delay(EYE_PUT_AFTER)
-        director:warp_bnpc(BNPC_FINAL_ADD, spot.x, spot.y, spot.z, spot.rotation)
-        director:play_action_timeline(BNPC_FINAL_ADD, EYE_RISES)
-        if final_eye ~= nil then
-            director:delay(gaze_after)
-            director:actor_use_action(final_eye, ACTION_GAZE)
-            director:delay(gaze_after + EYE_SINKS_AFTER_GAZE)
-            director:play_action_timeline(BNPC_FINAL_ADD, EYE_SINKS)
-        end
-        director:delay(0)
-    elseif action_id == ACTION_TELEPORT then
-        teleports = teleports + 1
-        if teleports == 1 then
-            return
-        end
-        if teleports % 2 == 0 and eye_wall ~= nil then
-            director:delay(LEAP_BESIDE_AFTER)
-            director:jump_bnpc(BNPC_FINAL, BOSS_BESIDE_EYE_X, eye_wall.y, eye_wall.z)
-            director:root_bnpc(BNPC_FINAL, STAYS_BESIDE)
-        else
-            director:delay(LEAP_HOME_AFTER)
-            director:jump_bnpc(BNPC_FINAL, BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z)
-        end
-        director:delay(0)
-    end
+    D:cast(director, layout_id, action_id, actor_id)
 end
 
 function onActorDeath(director, bnpc_id, position)
-    local where = { x = position.x, y = position.y, z = position.z }
-
-    if bnpc_id == BNPC_BOSS1 then
-        boss1_dead = true
-        -- Its arena opens (the boss room's), and the way on; it drops its key where it fell.
-        director:set_bgm(0)
-        director:log_message(LOG_DROPPED, { NAME_BOSS1, ITEM_BOSS1_KEY })
-        director:hide_eobj(EOBJ_BOSS1_WAY_ON)
-        director:spawn_eobj(EOBJ_BOSS1_KEY, where, EOBJ_BOSS1_KEY_ARGS)
-        for _, coffer in ipairs(BOSS1_COFFERS) do
-            director:spawn_treasure(coffer)
-        end
-    elseif PAIR[bnpc_id] ~= nil then
-        pair_left = pair_left - 1
-        if pair_left == 0 then
-            -- The last of them drops their key (the room opens: the boss rooms'), and the way up appears.
-            director:set_bgm(0)
-            director:log_message(LOG_DROPPED, { PAIR[bnpc_id], ITEM_PAIR_KEY })
-            director:show_eobj(EOBJ_WAY_UP)
-            director:spawn_eobj(EOBJ_PAIR_KEY, where, EOBJ_PAIR_KEY_ARGS)
-            for _, coffer in ipairs(PAIR_COFFERS) do
-                director:spawn_treasure(coffer)
-            end
-            director:party_npc_yell("ranged", LINE_PAIR)
-        end
-    elseif bnpc_id == BNPC_DOOR_EYE and not final_started then
+    D:died(director, bnpc_id, position)
+    if bnpc_id == BNPC_DOOR_EYE and not final_started then
         -- Killed before it fled (it never was on retail): the door opens all the same.
         startFinal(director)
-    elseif bnpc_id == BNPC_FINAL then
-        final_dead = true
-        director:despawn_bnpc(BNPC_FINAL_ADD)
-        director:spawn_treasure(FINAL_COFFER)
-        director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
-        director:complete_duty()
     end
 end
 
@@ -448,17 +447,14 @@ function onEventActionCast(director, actor_id, target)
     sendVars(director)
 end
 
--- The eye at the last room's door: the door opens, its cutscene, and the last boss and its first add are there.
 -- Everyone back at the start (a wipe; the server sends the enemies home whole): what's kept of a fight under way
--- goes, so the next pull is a first pull again. The first boss's and the pair's music starts with it; the last
--- boss's Void Calls and teleports are counted from the start, and the add its second call brought is taken away to
--- come again. Not seen on retail (no wipe here in Bob's captures); found by `questkit duty-sim`'s rehearsed wipes
+-- goes, so the next pull is a first pull again (the framework's: the music, and no boss pulled till it's home); the
+-- last boss's Void Calls and teleports are counted from the start, and the add its second call brought is taken away
+-- to come again. Not seen on retail (no wipe here in Bob's captures); found by `questkit duty-sim`'s rehearsed wipes
 -- (2026-11-10: the music and the add never came again.)
 function onPartyWipe(director)
-    boss1_pulled = boss1_dead
-    pair_pulled = pair_left == 0
-    if not final_dead then
-        final_pulled = false
+    D:wipe(director)
+    if not D.dead[BNPC_FINAL] then
         if void_calls >= 2 then
             director:despawn_bnpc(BNPC_FINAL_ADD2)
         end
@@ -468,6 +464,7 @@ function onPartyWipe(director)
     end
 end
 
+-- The eye at the last room's door: the door opens, its cutscene, and the last boss and its first add are there.
 function startFinal(director)
     if final_started then
         return

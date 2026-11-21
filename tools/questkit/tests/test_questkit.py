@@ -1291,6 +1291,27 @@ class DungeonFrameworkTest(unittest.TestCase):
         self.assertIsNone(d.fight)
         self.assertIn(("objective", [1, 2]), self.calls)
 
+    def test_a_group_is_one_boss(self):
+        # Haukke Manor's pair: pulled with either, fallen with the last (and where it fell), pulled again after a wipe
+        # by the one still standing.
+        d, director = self.d, self.director
+        self.lua.execute("""
+            fell = nil
+            D:boss({ id = 2, layout = 601, group = { 601, 602 }, wall = 9003, line = 9004, place = 8,
+                on_death = function(_, layout, position) fell = { layout, position.x } end })
+        """)
+        self.update({"player": {"x": 1, "z": 1, "id": 1}, 602: {"x": 0, "z": 0, "target": 1}, 601: {"x": 0, "z": 0}})
+        self.assertEqual(d.fight, 2)
+        d.died(d, director, 601, self.lua.table_from({"x": 3, "y": 0, "z": 0}))
+        self.assertEqual(d.fight, 2)
+        d.wipe(d, director)
+        self.update({"player": {"x": 1, "z": 1, "id": 1}, 602: {"x": 0, "z": 0}})
+        self.update({"player": {"x": 1, "z": 1, "id": 1}, 602: {"x": 0, "z": 0, "target": 1}}, {602: 90})
+        self.assertEqual(d.fight, 2)
+        d.died(d, director, 602, self.lua.table_from({"x": 5, "y": 0, "z": 0}))
+        self.assertIsNone(d.fight)
+        self.assertEqual(list(self.lua.globals().fell.values()), [602, 5])
+
     def test_every_player_is_of_the_party(self):
         # A Duty Finder run's other players set things off too ("player" is one of "player1", "player2"...), and
         # the clock in seconds runs what's due at an update's start.
