@@ -63,6 +63,9 @@
 -- statuses 3009 to 3012 do (sent and given as retail did: 3009 to 3011 on the boss from the first). After a wipe the fight its party fell in begins again
 -- (retail's wasn't seen.)
 
+-- Written with the dungeon framework (content/lib/Dungeon.lua, loaded first): its two bosses, their pulls, the
+-- helpers and the clock tables (`Dungeon:schedule`) are the framework's; the fights' own steps are below.
+
 -- Which way players face as they come in (retail's, facing the boss in the west.)
 ENTRANCE_ROTATION = -1.5708
 
@@ -85,12 +88,12 @@ STYLE_ALLY = 6
 STYLE_LAST = 7
 
 FLOOR_1 = -400.0
-MIDDLE_1 = { x = -772.0, z = -600.0 }
+MIDDLE_1 = { x = -772.0, y = -400.0, z = -600.0 }
 BOSS_1_SPOT = { x = -784.0, z = -600.0, rotation = 1.5708 }
 -- (Both arenas are 20 yalms round; whoever is further than this from the middle isn't in the fight.)
 ARENA_REACH = 30.0
 FLOOR_2 = -185.66
-MIDDLE_2 = { x = -704.0, z = 480.0 }
+MIDDLE_2 = { x = -704.0, y = -185.66, z = 480.0 }
 BOSS_2_START = { x = -713.0, z = 480.0, rotation = 1.5708 }
 -- Where retail put the player after the cutscene (the party's members stood a yalm or two west of there.)
 SECOND_ARENA = { x = -689.55, y = -185.73, z = 480.35, rotation = -1.5708 }
@@ -367,13 +370,13 @@ LINE_STOPPED_HEALER = 14408
 LINE_LAST_TANK = 14409
 LINE_LAST_RANGED = 13980
 
-ticks = 0
-updating = false
-later = {}
+DUNGEON = Dungeon.new()
+D = DUNGEON
+
 part = "first-wait"
 attempts_of = "first"
+-- The helpers of the fight under way (the framework hands them out: `D.helpers`.)
 helpers = {}
-next_helper = 0
 boss_1 = nil
 boss_2 = nil
 three = {}
@@ -384,38 +387,12 @@ rows = 0
 last_edge = nil
 last_set = nil
 cutscene_may_come = false
-party = {}
 boss_at = nil
 boss_health = nil
 boss_target = nil
 fan_facing = nil
 rounds_begun = false
 last_three = nil
-
--- Runs fn so many seconds from now (an update is half a second; a call made outside onUpdate waits for the next.)
-function after(seconds, fn)
-    local updates = math.max(1, math.floor(seconds * 2 + 0.5))
-    if not updating then
-        updates = updates + 1
-    end
-    table.insert(later, { at = ticks + updates, fn = fn })
-end
-
-function runLater(director)
-    local due, waiting = {}, {}
-    for _, entry in ipairs(later) do
-        if entry.at <= ticks then
-            table.insert(due, entry)
-        else
-            table.insert(waiting, entry)
-        end
-    end
-    later = waiting
-    table.sort(due, function(a, b) return a.at < b.at end)
-    for _, entry in ipairs(due) do
-        entry.fn(director)
-    end
-end
 
 function floor()
     return (attempts_of == "first") and FLOOR_1 or FLOOR_2
@@ -425,15 +402,23 @@ function middle()
     return (attempts_of == "first") and MIDDLE_1 or MIDDLE_2
 end
 
+-- The party in the arena: the player and their party's members (not one left behind or yet to arrive.)
+D.in_the_party = function(actor)
+    local at = middle()
+    local dx, dz = actor.x - at.x, actor.z - at.z
+    return dx * dx + dz * dz <= ARENA_REACH * ARENA_REACH
+end
+
 function bringHelpers(director)
     local at = middle()
     helpers = {}
-    next_helper = 0
     for i = 1, HELPER_COUNT do
         -- (The simulator's spawns return nothing: the layout ID stands in there.)
         helpers[i] = director:spawn_bnpc(HELPER, at.x, floor(), at.z, 0.0) or HELPER
         director:hold_bnpc(helpers[i])
     end
+    D.helpers = helpers
+    D.next_helper = 0
 end
 
 function bringFirst(director)
@@ -463,7 +448,7 @@ function bringSecond(director)
 end
 
 function reset()
-    later = {}
+    D.later = {}
     four = {}
     corners = {}
     rounds = 0
@@ -475,30 +460,13 @@ function reset()
     rounds_begun = false
 end
 
-function onSetup(director)
-    director:set_sequence(1)
-    reset()
-    bringFirst(director)
-end
-
--- The next helper in turn, put at a spot.
+-- The next helper in turn, put at a spot on the arena's floor.
 function helperAt(director, x, z, facing)
-    if #helpers == 0 then
-        return nil
-    end
-    next_helper = next_helper % #helpers + 1
-    local helper = helpers[next_helper]
-    director:warp_bnpc(helper, x, floor(), z, facing or 0.0)
-    return helper
+    return D:helperAt(director, x, floor(), z, facing)
 end
 
 function helpersCast(director, action, spots)
-    for _, spot in ipairs(spots) do
-        local helper = helperAt(director, spot[1], spot[2], spot[3])
-        if helper ~= nil then
-            director:actor_use_action(helper, action)
-        end
-    end
+    D:helpersCast(director, action, spots, floor())
 end
 
 function stopHelpers(director)
@@ -508,15 +476,15 @@ function stopHelpers(director)
 end
 
 function someoneOfTheParty()
-    if #party == 0 then
+    if #D.party == 0 then
         return nil
     end
-    return party[math.random(#party)]
+    return D.party[math.random(#D.party)]
 end
 
 -- The helpers' 28988 on each of the party as the boss's 28987 begins (no cast.)
 function markParty(director)
-    for _, member in ipairs(party) do
+    for _, member in ipairs(D.party) do
         local helper = helperAt(director, MIDDLE_1.x, MIDDLE_1.z)
         if helper ~= nil then
             director:actor_use_action(helper, 28988, member.id)
@@ -530,14 +498,14 @@ function shieldParty(director)
     if helper == nil then
         return
     end
-    director:actor_use_action(helper, ACTION_PARTY_SHIELD, party[1] and party[1].id or nil)
+    director:actor_use_action(helper, ACTION_PARTY_SHIELD, D.party[1] and D.party[1].id or nil)
     director:actor_use_action(helper, ACTION_HELPER_SHIELD)
 end
 
 function lastShield(director)
     local helper = helperAt(director, MIDDLE_2.x, MIDDLE_2.z)
     if helper ~= nil then
-        director:actor_use_action(helper, ACTION_PARTY_LAST, party[1] and party[1].id or nil)
+        director:actor_use_action(helper, ACTION_PARTY_LAST, D.party[1] and D.party[1].id or nil)
     end
     director:party_npc_yell("tank", LINE_LAST_TANK, 0.7)
     director:party_npc_yell("ranged", LINE_LAST_RANGED, 0.9)
@@ -599,7 +567,7 @@ function lineFromBoss(director, action)
     local at = boss_at or MIDDLE_2
     if action == 29008 or fan_facing == nil then
         local whom = nil
-        for _, member in ipairs(party) do
+        for _, member in ipairs(D.party) do
             if member.id == boss_target then
                 whom = member
             end
@@ -621,12 +589,7 @@ end
 
 -- A helper's cast on each of the party (29012), where they stand.
 function onEveryone(director, action)
-    for _, member in ipairs(party) do
-        local helper = helperAt(director, member.x, member.z)
-        if helper ~= nil then
-            director:actor_use_action(helper, action, member.id)
-        end
-    end
+    D:helpersOnEach(director, action, floor())
 end
 
 -- A helper's cast on one of them (29014.)
@@ -643,7 +606,7 @@ end
 
 function fourSides(director)
     helpersCast(director, 29021, SPOTS_29021)
-    after(1.9, function(d)
+    D:after(1.9, function(d)
         for index = 0, 3 do
             d:map_effect(index, 2, 4)
         end
@@ -656,9 +619,9 @@ function bringCorners(director)
     for i, spot in ipairs(SPOTS_CORNER) do
         local id = director:spawn_bnpc(CORNER, spot[1], FLOOR_2, spot[2], 0.0) or CORNER
         director:hold_bnpc(id)
-        corners[i] = { id = id, x = spot[1], z = spot[2], off_at = ticks + CORNER_SETS_OFF * 2, gone = false }
+        corners[i] = { id = id, x = spot[1], z = spot[2], off_at = D.ticks + CORNER_SETS_OFF * 2, gone = false }
     end
-    after(CORNER_SETS_OFF, function(d)
+    D:after(CORNER_SETS_OFF, function(d)
         for _, corner in ipairs(corners) do
             if not corner.gone then
                 d:move_bnpc(corner.id, MIDDLE_2.x, FLOOR_2, MIDDLE_2.z, 0.0, CORNER_WALK)
@@ -671,12 +634,12 @@ end
 function watchCorners(director)
     for _, corner in ipairs(corners) do
         if not corner.gone then
-            local walked = math.max(0, (ticks - corner.off_at) * 0.5) * CORNER_SPEED
+            local walked = math.max(0, (D.ticks - corner.off_at) * 0.5) * CORNER_SPEED
             local dx, dz = MIDDLE_2.x - corner.x, MIDDLE_2.z - corner.z
             local whole = math.sqrt(dx * dx + dz * dz)
             local share = math.min(1.0, walked / whole)
             local x, z = corner.x + dx * share, corner.z + dz * share
-            for _, member in ipairs(party) do
+            for _, member in ipairs(D.party) do
                 local mx, mz = member.x - x, member.z - z
                 if not corner.gone and mx * mx + mz * mz <= CORNER_REACH * CORNER_REACH then
                     corner.gone = true
@@ -732,7 +695,7 @@ function bringRows(director)
         director:hold_bnpc(ten[i])
     end
     for n, at in ipairs(ROWS_LEAP) do
-        after(at, function(d)
+        D:after(at, function(d)
             local spots = kinds[n] and rowSpots(kinds[n]) or nil
             for i, one in ipairs(ten) do
                 d:actor_use_action(one, ACTION_ROW_LEAP)
@@ -742,14 +705,14 @@ function bringRows(director)
             end
         end)
         if kinds[n] ~= nil then
-            after(at + ROWS_CAST_AFTER_LEAP, function(d)
+            D:after(at + ROWS_CAST_AFTER_LEAP, function(d)
                 for _, one in ipairs(ten) do
                     d:actor_use_action(one, ACTION_ROW_CAST)
                 end
             end)
         end
     end
-    after(ROWS_GONE, function(d)
+    D:after(ROWS_GONE, function(d)
         for _, one in ipairs(ten) do
             d:despawn_bnpc(one)
         end
@@ -777,10 +740,11 @@ function askLastPart(director)
             director:actor_use_action(boss_2, ACTION_STILL_ABOVE)
         end
         last_part_asks = last_part_asks + 1
-        after(STILL_ABOVE_EVERY, askLastPart)
+        D:after(STILL_ABOVE_EVERY, askLastPart)
     end
 end
 
+-- One row of a clock table (see FIRST.)
 function step(director, row)
     local what = row[2]
     local boss = (attempts_of == "first") and BOSS_1 or BOSS_2
@@ -823,31 +787,9 @@ function step(director, row)
     end
 end
 
--- A table's rows on the clock from now, while the fight is in `during` (one of the parts) or any of `also`.
+-- A table's rows on the clock from now, while the fight is in `during` (one of the parts) or `also`.
 function schedule(director, rows_of, during, also)
-    for _, row in ipairs(rows_of) do
-        local run = function(d)
-            if part == during or part == also then
-                step(d, row)
-            end
-        end
-        if row[1] < 0.25 then
-            run(director)
-        else
-            after(row[1], run)
-        end
-    end
-end
-
-function pullFirst(director)
-    part = "first"
-    director:party_npc_yell("ranged", LINE_PULL)
-    schedule(director, FIRST, "first")
-    after(ROUND_FIRST, function(d)
-        if part == "first" then
-            rounds_begun = true
-        end
-    end)
+    D:schedule(director, rows_of, function() return part == during or part == also end, step)
 end
 
 -- Once the rounds of 28982 have begun: the chain as soon as its health is below the line, whatever the round is at.
@@ -859,11 +801,6 @@ function chainOrNot(director)
     end
 end
 
-function pullSecond(director)
-    part = "second"
-    schedule(director, SECOND, "second")
-end
-
 -- Everything of a fight gone.
 function clear(director)
     director:despawn_bnpc(FOUR)
@@ -873,120 +810,75 @@ function clear(director)
         director:despawn_bnpc(helper)
     end
     helpers = {}
+    D.helpers = {}
     for _, layout in ipairs({ THREE_A, THREE_B, THREE_C }) do
         director:despawn_bnpc(layout)
     end
     three = {}
 end
 
-function cutscene(director)
-    part = "cutscene"
-    later = {}
-    director:restart_timeline(BOSS_1, PART_CUTSCENE)
-    stopHelpers(director)
-    clear(director)
-    director:despawn_bnpc(BOSS_1)
-    boss_1 = nil
-    director:set_weather(WEATHER_OWN, WEATHER_FADE, true)
-    director:play_cutscene(CUTSCENE_MIDDLE, CUTSCENE_MIDDLE_PARAMS)
-end
+-- ---- The two bosses ----
 
-function onSceneFinished(director, scene)
-    if part ~= "cutscene" then
-        return
-    end
-    reset()
-    part = "between"
-    director:warp_players(SECOND_ARENA.x, SECOND_ARENA.y, SECOND_ARENA.z, SECOND_ARENA.rotation)
-    -- A wipe from here on sends everyone back to this arena, not the duty's entrance (retail's wasn't seen.)
-    director:set_start(SECOND_ARENA.x, SECOND_ARENA.y, SECOND_ARENA.z, SECOND_ARENA.rotation)
-    -- The second boss and its helpers came 3.9 and 1.9 s after the cutscene's end in the runs, as the player was in.
-    after(SECOND_COMES_AFTER, bringSecond)
-end
-
-function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
-    if layout_id == BOSS_1 and action_id == ACTION_ROUND and part == "first" then
-        rounds = rounds + 1
-        local nth = (rounds - 1) % 3 + 1
-        if nth == 3 then
-            helpersCast(director, ACTION_ROUND_HELPER, SPOTS_28983_EIGHT)
-        else
-            local pick = math.random(#SPOTS_28983_THREE)
-            if nth == 2 and pick == last_three then
-                pick = pick % #SPOTS_28983_THREE + 1
+D:boss({ id = 1, layout = BOSS_1, middle = MIDDLE_1, comes_later = true, eobjs_at_setup = false, bgm = false,
+    ready = function() return part == "first-wait" end,
+    on_pull = function(director)
+        part = "first"
+        D.helpers = helpers
+        director:party_npc_yell("ranged", LINE_PULL)
+        schedule(director, FIRST, "first")
+        D:after(ROUND_FIRST, function(d)
+            if part == "first" then
+                rounds_begun = true
             end
-            last_three = pick
-            helpersCast(director, ACTION_ROUND_HELPER, SPOTS_28983_THREE[pick])
-        end
-        if nth == 1 then
-            -- Base 14591 shows itself, casts and hides; once shown it hides again even if the chain has begun since
-            -- (Bob's run of 2026-11-18, 6320ae56: the chain's talk 20.6 s into a round, 14591 hidden 0.4 s after it).
-            -- A round the chain overtakes before it shows has none of the three (50e72631.)
-            after(ROUND[1][1], function(d)
-                if part == "first" then
-                    step(d, ROUND[1])
-                    after(ROUND[3][1] - ROUND[1][1], function(d2)
-                        if part == "first" or part == "chain" then
-                            step(d2, ROUND[3])
-                        end
-                    end)
+        end)
+    end,
+    on_cast = {
+        [ACTION_ROUND] = function(director)
+            if part ~= "first" then
+                return
+            end
+            rounds = rounds + 1
+            local nth = (rounds - 1) % 3 + 1
+            if nth == 3 then
+                helpersCast(director, ACTION_ROUND_HELPER, SPOTS_28983_EIGHT)
+            else
+                local pick = math.random(#SPOTS_28983_THREE)
+                if nth == 2 and pick == last_three then
+                    pick = pick % #SPOTS_28983_THREE + 1
                 end
-            end)
-            schedule(director, { ROUND[2] }, "first")
-        end
-    end
-end
-
-function onUpdate(director, health, player_health, info)
-    ticks = ticks + 1
-    updating = true
-    watch(director, health, info)
-    runLater(director)
-    updating = false
-end
-
-function watch(director, health, info)
-    if info == nil then
-        return
-    end
-    -- The party in the arena: the player and their party's members (not one left behind or yet to arrive.)
-    party = {}
-    local at = middle()
-    for key, actor in pairs(info) do
-        if key == "player" or (type(key) == "string" and key:sub(1, 5) == "party") then
-            local dx, dz = actor.x - at.x, actor.z - at.z
-            if dx * dx + dz * dz <= ARENA_REACH * ARENA_REACH then
-                table.insert(party, { x = actor.x, z = actor.z, id = actor.id })
+                last_three = pick
+                helpersCast(director, ACTION_ROUND_HELPER, SPOTS_28983_THREE[pick])
             end
-        end
-    end
-    local boss = (attempts_of == "first") and BOSS_1 or BOSS_2
-    local him = info[boss]
-    boss_health = health[boss]
-    if him == nil then
-        return
-    end
-    boss_at = { x = him.x, z = him.z }
-    boss_target = him.target_id or him.target
-    local pulled = him.target ~= nil or (boss_health ~= nil and boss_health < 100)
-    if part == "first-wait" and pulled then
-        pullFirst(director)
-    elseif part == "second-wait" and pulled then
-        pullSecond(director)
-    end
-    chainOrNot(director)
-    if part == "chain" and cutscene_may_come and boss_health ~= nil and boss_health < CUTSCENE_AT then
-        cutscene(director)
-    end
-    if part == "second" or part == "last" then
-        watchCorners(director)
-    end
-end
+            if nth == 1 then
+                -- Base 14591 shows itself, casts and hides; once shown it hides again even if the chain has begun
+                -- since (Bob's run of 2026-11-18, 6320ae56: the chain's talk 20.6 s into a round, 14591 hidden 0.4 s
+                -- after it). A round the chain overtakes before it shows has none of the three (50e72631.)
+                D:after(ROUND[1][1], function(d)
+                    if part == "first" then
+                        step(d, ROUND[1])
+                        D:after(ROUND[3][1] - ROUND[1][1], function(d2)
+                            if part == "first" or part == "chain" then
+                                step(d2, ROUND[3])
+                            end
+                        end)
+                    end
+                end)
+                schedule(director, { ROUND[2] }, "first")
+            end
+        end,
+    } })
 
-function onActorDeath(director, layout_id, position)
-    if layout_id == BOSS_2 and part ~= "over" then
+D:boss({ id = 2, layout = BOSS_2, middle = MIDDLE_2, comes_later = true, eobjs_at_setup = false, bgm = false,
+    last = true,
+    ready = function() return part == "second-wait" end,
+    on_pull = function(director)
+        part = "second"
+        D.helpers = helpers
+        schedule(director, SECOND, "second")
+    end,
+    -- Its health at 0: its cast stopped, the closing cutscene, the duty complete.
+    on_death = function(director)
         part = "over"
-        later = {}
         if boss_2 ~= nil then
             director:bnpc_control(BOSS_2, CONTROL_STOP_CAST, { CAST_STOPPED_DEAD, 1, ACTION_LAST, 1 })
         end
@@ -1000,6 +892,72 @@ function onActorDeath(director, layout_id, position)
         director:delay(1.0)
         director:play_action_timeline(BOSS_2, 73)
         director:delay(0)
+    end })
+
+-- Below the line in the chain: the first fight is over, the cutscene between them.
+function cutscene(director)
+    part = "cutscene"
+    D:fell(director, D:bossById(1))
+    director:restart_timeline(BOSS_1, PART_CUTSCENE)
+    stopHelpers(director)
+    clear(director)
+    director:despawn_bnpc(BOSS_1)
+    boss_1 = nil
+    director:set_weather(WEATHER_OWN, WEATHER_FADE, true)
+    director:play_cutscene(CUTSCENE_MIDDLE, CUTSCENE_MIDDLE_PARAMS)
+end
+
+-- ---- What the server calls ----
+
+function onSetup(director)
+    director:set_sequence(1)
+    reset()
+    bringFirst(director)
+end
+
+function onSceneFinished(director, scene)
+    if part ~= "cutscene" then
+        return
+    end
+    reset()
+    part = "between"
+    director:warp_players(SECOND_ARENA.x, SECOND_ARENA.y, SECOND_ARENA.z, SECOND_ARENA.rotation)
+    -- A wipe from here on sends everyone back to this arena, not the duty's entrance (retail's wasn't seen.)
+    director:set_start(SECOND_ARENA.x, SECOND_ARENA.y, SECOND_ARENA.z, SECOND_ARENA.rotation)
+    -- The second boss and its helpers came 3.9 and 1.9 s after the cutscene's end in the runs, as the player was in.
+    D:after(SECOND_COMES_AFTER, bringSecond)
+end
+
+function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
+    D:cast(director, layout_id, action_id, actor_id, x, y, z)
+end
+
+-- After the pulls: where the boss is and whom it's after, the chain, the cutscene, the four of the second fight.
+local function between(director)
+    local boss = (attempts_of == "first") and BOSS_1 or BOSS_2
+    local him = D.info[boss]
+    boss_health = D.health[boss]
+    if him == nil then
+        return
+    end
+    boss_at = { x = him.x, z = him.z }
+    boss_target = him.target_id or him.target
+    chainOrNot(director)
+    if part == "chain" and cutscene_may_come and boss_health ~= nil and boss_health < CUTSCENE_AT then
+        cutscene(director)
+    end
+    if part == "second" or part == "last" then
+        watchCorners(director)
+    end
+end
+
+function onUpdate(director, health, player_health, info)
+    D:update(director, health, player_health, info, between)
+end
+
+function onActorDeath(director, layout_id, position)
+    if layout_id == BOSS_2 and part ~= "over" then
+        D:died(director, layout_id)
     end
 end
 
@@ -1008,6 +966,7 @@ function onPartyWipe(director)
     if part == "over" or part == "cutscene" or part == "between" then
         return
     end
+    D:wipe(director)
     stopHelpers(director)
     clear(director)
     director:set_weather(WEATHER_OWN, WEATHER_FADE, true)

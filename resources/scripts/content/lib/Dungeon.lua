@@ -90,6 +90,24 @@ function Dungeon:runLater(director)
     end
 end
 
+-- A clock table's rows ({ seconds, ... }) at their times from now, each run as `run(director, row)` if `still()` holds
+-- then (a row under a quarter second at once): a trial's fight that keeps to one clock from its pull (the Porta
+-- Decumana's two, to 0.3 s in every run.)
+function Dungeon:schedule(director, rows, still, run)
+    for _, row in ipairs(rows) do
+        local go = function(d)
+            if still() then
+                run(d, row)
+            end
+        end
+        if row[1] < 0.25 then
+            go(director)
+        else
+            self:after(row[1], go)
+        end
+    end
+end
+
 -- True the first time it's asked for `name`, never again.
 function Dungeon:once(name)
     if self.done[name] then
@@ -393,9 +411,11 @@ function Dungeon:update(director, health, player_health, info, between)
         self.info = info
         self.party = {}
         for key, actor in pairs(info) do
-            -- (Someone with no place yet, at the origin, isn't anywhere.)
+            -- (Someone with no place yet, at the origin, isn't anywhere; `in_the_party(actor)`, if a script gives it,
+            -- says who else isn't: the Porta Decumana's, whoever is out of the arena.)
             if (key == "player" or (type(key) == "string" and key:sub(1, 5) == "party"))
-                and not (actor.x == 0 and actor.z == 0) then
+                and not (actor.x == 0 and actor.z == 0)
+                and (self.in_the_party == nil or self.in_the_party(actor)) then
                 table.insert(self.party, { x = actor.x, y = actor.y or 0, z = actor.z, id = actor.id,
                                            player = key:sub(1, 6) == "player" })
             end

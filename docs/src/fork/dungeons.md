@@ -43,6 +43,8 @@ gives its duty's facts:
 | `update(director, health, player_health, info, between)` | Every update: the party, the steps, the pulls, then the script's `between(director)`, then what's due (`after`). |
 | `fell(director, boss)` | A boss's fight over without its death (one held at 1 HP: the Praetorium's last), once; `died` calls it. |
 | `helpersOnEach(director, action, y)` | A helper's cast on each of the party, aimed at them. |
+| `schedule(director, rows, still, run)` | A clock table's rows ({ seconds, ... }) at their times, each `run(director, row)` if `still()` holds then: a fight that keeps to one clock from its pull (the Porta Decumana's.) |
+| `in_the_party(actor)` | Set by a script: who of the player and their members counts as the party (the Porta Decumana's: those in the arena.) |
 | `cast`, `died`, `wipe`, `recommence`, `setup`, `bringStartingHelpers` | What the server's calls do with it: a boss's waves and `on_cast`; packs and a boss's fall (helpers and waves gone, music, `on_death`); a wipe (every boss resetting, the fight forgotten, its waves gone, `on_wipe`). |
 | `after(seconds, fn)`, `once(name)`, `anyone(test)`, `Dungeon.within`, `allDead`, `countDead`, `comeOut` | The helpers every script had its own copy of. |
 
@@ -58,8 +60,11 @@ script, in the hooks or around the calls. **Converted**, each playing its retail
   the ride's walkers, the objects, the last boss's swords, blades, rows and second part (ended at 1 HP: `fell`) in
   its own; four runs (the known problem it had stays). Its bosses now aren't pulled again after a wipe till they're
   home and whole, as Castrum Meridianum's.
+* The Porta Decumana (`w1d5_battle.lua`, 2026-11-21): a trial, two bosses on one clock each; their pulls, helpers
+  and clock tables are the framework's (`schedule`), the tables' rows, the chain, the cutscene between (`fell`), the
+  rows and corners and the last part its own; four runs.
 
-The other thirteen duty scripts are still written by hand; each is converted on its own, kept
+The other twelve duty scripts are still written by hand; each is converted on its own, kept
 passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
 
 ## The duty's beginning: everyone waits for the openings

@@ -1804,8 +1804,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Combat
 
-* The dungeon framework (`content/lib/Dungeon.lua`, 2026-11-21): only Castrum Meridianum's and the Praetorium's scripts use it so
-  far; the other thirteen duties keep their own copies of packs, steps, boss rooms and wipes (and so miss fixes made in the
+* The dungeon framework (`content/lib/Dungeon.lua`, 2026-11-21): Castrum Meridianum's, the Praetorium's and the Porta Decumana's
+  scripts use it so far; the other twelve duties keep their own copies of packs, steps, boss rooms and wipes (and so miss fixes made in the
   framework, such as a boss not re-pulled until it's home after a wipe) until each is converted.
 
 * Launchers (2026-11-21, untested in game): only those in `resources/data/launchers.json` (Castrum Meridianum's four)
