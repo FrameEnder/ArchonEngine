@@ -1256,7 +1256,7 @@ class DungeonFrameworkTest(unittest.TestCase):
     def test_a_duty_goes_its_way(self):
         d, director = self.d, self.director
         d.setup(d, director)
-        self.assertIn(("boss_room", [301, 9001, 9002, 7, {}]), self.calls)
+        self.assertIn(("boss_room", [301, 9001, 9002, 7, {}, None]), self.calls)
         self.assertIn("keep_in_room", self.names())
         self.assertIn(("hide_eobj", [9001]), self.calls)
         self.assertIn(("show_eobj", [9002]), self.calls)
@@ -1290,6 +1290,17 @@ class DungeonFrameworkTest(unittest.TestCase):
         d.died(d, director, self.BOSS)
         self.assertIsNone(d.fight)
         self.assertIn(("objective", [1, 2]), self.calls)
+
+    def test_every_player_is_of_the_party(self):
+        # A Duty Finder run's other players set things off too ("player" is one of "player1", "player2"...), and
+        # the clock in seconds runs what's due at an update's start.
+        d = self.d
+        self.lua.execute("fired = {} D:inSeconds(1.0, function(_, health, info) fired[#fired + 1] = D.clock end)")
+        self.update({"player": {"x": 1, "z": 1, "id": 1}, "player1": {"x": 1, "z": 1, "id": 1},
+                     "player2": {"x": 50, "z": 50, "id": 2}, "party1": {"x": 3, "z": 3, "id": 9}}, n=2)
+        party = sorted((m.id, m.player) for m in d.party.values())
+        self.assertEqual(party, [(1, True), (2, True), (9, False)])
+        self.assertEqual(list(self.lua.globals().fired.values()), [1.0])
 
 
 class BattleFrameworkTest(unittest.TestCase):

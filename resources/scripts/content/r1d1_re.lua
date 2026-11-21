@@ -16,6 +16,10 @@
 -- Sheets of Ice), by role, every time (`director:party_spots`, `director:party_positions`; dodge.rs): the spots below
 -- are theirs.
 
+-- Written with the dungeon framework (content/lib/Dungeon.lua, loaded first): its rooms, pulls, falls, wipes and
+-- the ranges the party sets off are declared below; its own clock in seconds is the framework's (`inSeconds`), and
+-- the bosses' moves are its own.
+
 -- Rooms: the bosses, their walls and lines (EObj IDs), PlaceNames (logs 2012-2014), and the floors the party keeps to
 -- while dodging (MapRanges of layer LVD_Maprange_01 of planmap.lgb, Bob's dump of 2026-11-07: unturned boxes round each
 -- room; the walls close them anyway).
@@ -288,67 +292,34 @@ LINE_BOSS2 = 14375
 LINE_BOSS3_ROOM = 14376
 LINE_BOSS3_ROOM_NO_TANK = 14377
 
--- onUpdate comes every logic tick (500 ms): the script's own clock.
+-- onUpdate comes every logic tick (500 ms).
 TICK = 0.5
 
-clock = 0
-later = {}
-boss1_pulled = false
-boss1_pulled_at = nil
-boss1_dead = false
+DUNGEON = Dungeon.new()
+D = DUNGEON
+
 swinges = 0
 swinge_spot = nil
-boss2_pulled = false
-boss2_dead = false
 typhoons = 0
 whirlwinds = {}
 whirlwind_helpers = {}
-boss2_line = false
-start_line = false
 door_open = false
 boss3_started = false
-boss3_line = false
-boss3_pulled = false
-boss3_dead = false
+boss1_pulled_at = nil
 boss3_helpers = {}
 -- The last boss's state: its next move (`step`), whether it's flying, and which flights it has made.
 isgebind = nil
-dragons_breathed = {}
-ice_broken = {}
 
 function after(seconds, fn)
-    table.insert(later, { at = clock + seconds, fn = fn })
+    D:inSeconds(seconds, fn)
 end
 
-function pulled(info, id)
-    return info ~= nil and info[id] ~= nil and info[id].target ~= nil
-end
-
--- Every player in the instance ("player1", "player2"...; "player" when there's only the one key.)
-function players(info)
+-- Every player in the instance (the party's players.)
+function players()
     local list = {}
-    if info == nil then
-        return list
-    end
-    local index = 1
-    while info["player" .. index] ~= nil do
-        table.insert(list, info["player" .. index])
-        index = index + 1
-    end
-    if #list == 0 and info.player ~= nil then
-        table.insert(list, info.player)
-    end
-    return list
-end
-
--- The players and the party's NPCs (Duty Support members, bots), living.
-function party(info)
-    local list = players(info)
-    if info ~= nil then
-        for index = 1, 8 do
-            if info["party" .. index] ~= nil then
-                table.insert(list, info["party" .. index])
-            end
+    for _, member in ipairs(D.party) do
+        if member.player then
+            table.insert(list, member)
         end
     end
     return list
@@ -376,10 +347,10 @@ function anyoneIn(list, id)
         local key = who.id or who
         local seen = seen_at[key]
         if seen == nil then
-            seen = { clock = clock, now = { x = who.x, y = who.y, z = who.z } }
+            seen = { clock = D.clock, now = { x = who.x, y = who.y, z = who.z } }
             seen_at[key] = seen
-        elseif seen.clock ~= clock then
-            seen.before, seen.now, seen.clock = seen.now, { x = who.x, y = who.y, z = who.z }, clock
+        elseif seen.clock ~= D.clock then
+            seen.before, seen.now, seen.clock = seen.now, { x = who.x, y = who.y, z = who.z }, D.clock
         end
         local before = seen.before
         if before ~= nil and math.abs(before.x - who.x) + math.abs(before.z - who.z) < 10 then
@@ -410,20 +381,132 @@ function facing(from, to)
     return math.atan(to.x - from.x, to.z - from.z)
 end
 
+local function always()
+    return true
+end
+
+-- ---- What the party sets off ----
+
+-- The start's line, as a player sets off: one of the members', its own; the Thaumaturge's (in every party recorded)
+-- when that one isn't here.
+D:step({ name = "start_line",
+    where = function(m)
+        return m.player and math.abs(m.x - ENTRANCE.x) + math.abs(m.z - ENTRANCE.z) >= LINE_START_FROM
+    end,
+    run = function(d)
+        local first = LINES_START[math.random(#LINES_START)]
+        d:party_npc_yell(first[1], first[2], 0, "ranged", LINE_START)
+    end })
+for _, dragon in ipairs(DRAGONS) do
+    D:step({ name = "dragon" .. dragon.layout, where = always,
+        ready = function() return anyoneIn(players(), dragon.range) end,
+        run = function(d) breathe(d, D.info, dragon.layout) end })
+end
+for index, ice in ipairs(ICE) do
+    D:step({ name = "ice" .. index, where = always,
+        ready = function() return anyoneIn(players(), ice.range) end,
+        run = function(d) breakIce(d, ice) end })
+end
+D:step({ name = "boss2_line", where = always,
+    ready = function() return anyoneIn(D.party, 9394127) end,
+    run = function(d) d:party_npc_yell("healer", LINE_BOSS2_ROOM) end })
+D:step({ name = "last_room", where = always,
+    ready = function() return door_open and anyoneIn(players(), LAST_ROOM_RANGE) end,
+    run = function(d) startLastRoom(d) end })
+D:step({ name = "boss3_line", where = always,
+    ready = function() return boss3_started and anyoneIn(D.party, 9394128) end,
+    run = function(d) d:party_npc_yell("tank", LINE_BOSS3_ROOM, 0, "melee", LINE_BOSS3_ROOM_NO_TANK) end })
+
+-- ---- The bosses ----
+
+D:boss({ id = 1, layout = BNPC_BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = PLACE_BOSS1, arena = BOSS1_ARENA,
+    bgm = BGM_BATTLE, after_bgm = 0,
+    on_pull = function(director)
+        boss1_pulled_at = D.clock
+        swinges = 0
+        director:update_shortcut(SHORTCUT_BOSS1)
+    end,
+    on_death = function(director)
+        director:hide_eobj(EOBJ_BOSS1_WAY_ON)
+        director:objective(0, 1)
+        for _, coffer in ipairs(COFFERS_BOSS1) do
+            director:spawn_treasure(coffer)
+        end
+        director:party_npc_yell("tank", LINE_BOSS1, 0, "ranged", LINE_BOSS1_NO_TANK)
+    end })
+
+D:boss({ id = 2, layout = BNPC_BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = PLACE_BOSS2, arena = BOSS2_ARENA,
+    bgm = BGM_BATTLE, after_bgm = 0,
+    on_pull = function(director)
+        director:update_shortcut(SHORTCUT_BOSS2)
+    end,
+    on_cast = {
+        [ACTION_TYPHOON] = function(director)
+            bringWhirlwindHelpers(director)
+            typhoons = typhoons + 1
+            local pairs_now = typhoons == 1 and FIRST_TYPHOONS[math.random(#FIRST_TYPHOONS)]
+                or TYPHOONS[math.random(#TYPHOONS)]
+            after(WHIRLWINDS_AFTER, function(d)
+                if not D.dead[BNPC_BOSS2] then
+                    typhoon(d, pairs_now)
+                end
+            end)
+        end,
+    },
+    on_death = function(director)
+        for _, whirlwind in ipairs(whirlwinds) do
+            director:despawn_bnpc(whirlwind)
+        end
+        whirlwinds = {}
+        for _, helper in ipairs(whirlwind_helpers) do
+            director:despawn_bnpc(helper)
+        end
+        whirlwind_helpers = {}
+        director:party_positions(nil)
+        director:hide_eobj(EOBJ_BOSS2_WAY_ON)
+        director:objective(1, 2)
+        for _, coffer in ipairs(COFFERS_BOSS2) do
+            director:spawn_treasure(coffer)
+        end
+        director:party_npc_yell("ranged", LINE_BOSS2)
+    end })
+
+D:boss({ id = 3, layout = BNPC_BOSS3, wall = BOSS3_WALL, line = BOSS3_LINE, place = PLACE_BOSS3, arena = BOSS3_ARENA,
+    comes_later = true, last = true, bgm = false,
+    ready = function() return boss3_started end,
+    on_pull = function(director)
+        director:update_shortcut(SHORTCUT_BOSS3)
+        isgebind = {
+            flights = 0,
+            second = false,
+            flying = false,
+            next = D.clock + FIRST_ROUND_AFTER,
+            step = 1,
+            first = true,
+            new_round = false,
+        }
+    end,
+    on_death = function(director)
+        isgebind = nil
+        director:party_positions(nil)
+        for _, helper in ipairs(boss3_helpers) do
+            director:despawn_bnpc(helper)
+        end
+        boss3_helpers = {}
+        director:objective(2)
+        director:spawn_treasure(COFFER_CLEAR)
+        director:play_cutscene(CUTSCENE_CLEAR, CUTSCENE_CLEAR_PARAMS)
+        director:complete_duty()
+    end })
+
+-- ---- What the server calls ----
+
 function onSetup(director)
     director:set_sequence(1)
-
-    director:boss_room(BNPC_BOSS1, BOSS1_WALL, BOSS1_LINE, PLACE_BOSS1, {}, BOSS1_ARENA)
-    director:boss_room(BNPC_BOSS2, BOSS2_WALL, BOSS2_LINE, PLACE_BOSS2, {}, BOSS2_ARENA)
-    -- The walls stand open until a pull; the ways on and the rooms' lines stand closed.
-    for _, wall in ipairs({ BOSS1_WALL, BOSS2_WALL, BOSS3_WALL }) do
-        director:hide_eobj(wall)
-    end
+    D:setup(director)
+    -- The ways on stand closed.
     for _, door in ipairs({ EOBJ_BOSS1_WAY_ON, EOBJ_BOSS2_WAY_ON, EOBJ_LAST_DOOR }) do
         director:show_eobj(door)
-    end
-    for _, line in ipairs({ BOSS1_LINE, BOSS2_LINE, BOSS3_LINE }) do
-        director:show_eobj(line)
     end
 
     for coffer, openings in pairs(LOOT) do
@@ -439,107 +522,21 @@ function onSetup(director)
     for _, dive in ipairs(CAUTERIZE) do
         director:party_spots(ACTION_CAUTERIZE, dive.x, dive.z, dive.party)
     end
-
 end
 
 function onCommence(director)
 end
 
-function onUpdate(director, health, player_health, info)
-    clock = clock + TICK
-    local due = {}
-    local rest = {}
-    for _, task in ipairs(later) do
-        if task.at <= clock then
-            table.insert(due, task)
-        else
-            table.insert(rest, task)
-        end
-    end
-    later = rest
-    for _, task in ipairs(due) do
-        task.fn(director, health, info)
-    end
-
-    local everyone = players(info)
-    local all = party(info)
-
-    -- The start's line, as a player sets off: one of the members', its own; the Thaumaturge's (in every party
-    -- recorded) when that one isn't here.
-    if not start_line then
-        for _, who in ipairs(everyone) do
-            if math.abs(who.x - ENTRANCE.x) + math.abs(who.z - ENTRANCE.z) >= LINE_START_FROM then
-                start_line = true
-                local first = LINES_START[math.random(#LINES_START)]
-                director:party_npc_yell(first[1], first[2], 0, "ranged", LINE_START)
-                break
-            end
-        end
-    end
-
-    for _, dragon in ipairs(DRAGONS) do
-        if not dragons_breathed[dragon.layout] and anyoneIn(everyone, dragon.range) then
-            dragons_breathed[dragon.layout] = true
-            breathe(director, info, dragon.layout)
-        end
-    end
-    for index, ice in ipairs(ICE) do
-        if not ice_broken[index] and anyoneIn(everyone, ice.range) then
-            ice_broken[index] = true
-            breakIce(director, ice)
-        end
-    end
-
-    -- The first boss.
-    if not boss1_pulled and pulled(info, BNPC_BOSS1) then
-        boss1_pulled = true
-        boss1_pulled_at = clock
-        swinges = 0
-        director:set_bgm(BGM_BATTLE)
-        director:update_shortcut(SHORTCUT_BOSS1)
-    end
-    if boss1_pulled and not boss1_dead and info[BNPC_BOSS1] ~= nil
-        and clock - boss1_pulled_at >= SWINGE_FIRST - SWINGE_RUN + swinges * SWINGE_EVERY then
+-- After the pulls: the first boss's Swinges and the last boss's moves, on the clock.
+local function between(director)
+    local info, health = D.info, D.health
+    if D.fight == 1 and info[BNPC_BOSS1] ~= nil
+        and D.clock - boss1_pulled_at >= SWINGE_FIRST - SWINGE_RUN + swinges * SWINGE_EVERY then
         swinges = swinges + 1
         swinge(director, health, info)
     end
-
-    -- The second boss.
-    if not boss2_line and anyoneIn(all, 9394127) then
-        boss2_line = true
-        director:party_npc_yell("healer", LINE_BOSS2_ROOM)
-    end
-    if not boss2_pulled and pulled(info, BNPC_BOSS2) then
-        boss2_pulled = true
-        director:set_bgm(BGM_BATTLE)
-        director:update_shortcut(SHORTCUT_BOSS2)
-    end
-
-    -- The last room.
-    if door_open and not boss3_started and anyoneIn(everyone, LAST_ROOM_RANGE) then
-        startLastRoom(director)
-    end
-    if boss3_started and not boss3_line and anyoneIn(all, 9394128) then
-        boss3_line = true
-        director:party_npc_yell("tank", LINE_BOSS3_ROOM, 0, "melee", LINE_BOSS3_ROOM_NO_TANK)
-    end
-    if boss3_started and not boss3_pulled and not boss3_dead and pulled(info, BNPC_BOSS3) then
-        boss3_pulled = true
-        director:update_shortcut(SHORTCUT_BOSS3)
-        isgebind = {
-            flights = 0,
-            second = false,
-            flying = false,
-            next = clock + FIRST_ROUND_AFTER,
-            step = 1,
-            first = true,
-            new_round = false,
-        }
-    end
-    if isgebind ~= nil and not boss3_dead and not isgebind.flying then
-        local boss = info ~= nil and info[BNPC_BOSS3] or nil
-        local hp = health ~= nil and health[BNPC_BOSS3] or 100
-        if clock >= isgebind.next then
+    if isgebind ~= nil and not D.dead[BNPC_BOSS3] and not isgebind.flying then
+        if D.clock >= isgebind.next then
             -- When this move was due, not the tick that found it (half a second apart at the most): the next ones
             -- count from it, or every round came a little later than retail's (0.8 s a flight over the seven pulls
             -- of 2026-11-17.)
@@ -547,6 +544,10 @@ function onUpdate(director, health, player_health, info)
             isgebindStep(director, health, info)
         end
     end
+end
+
+function onUpdate(director, health, player_health, info)
+    D:update(director, health, player_health, info, between)
 end
 
 -- A perched dragon breathes down the hall.
@@ -626,19 +627,8 @@ function intoTheRoom(spot, target)
     return middle + off
 end
 
--- The bosses' actions the director answers.
 function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
-    if layout_id == BNPC_BOSS2 and action_id == ACTION_TYPHOON then
-        bringWhirlwindHelpers(director)
-        typhoons = typhoons + 1
-        local pairs_now = typhoons == 1 and FIRST_TYPHOONS[math.random(#FIRST_TYPHOONS)]
-            or TYPHOONS[math.random(#TYPHOONS)]
-        after(WHIRLWINDS_AFTER, function(d)
-            if not boss2_dead then
-                typhoon(d, pairs_now)
-            end
-        end)
-    end
+    D:cast(director, layout_id, action_id, actor_id, x, y, z)
 end
 
 -- The second boss's helpers, one for each lane's whirlwind (held: they act as the director says), by the boss at
@@ -748,7 +738,7 @@ function isgebindStep(director, health, info)
         state.look = true
         state.next = state.round_at + LOOK_AFTER
     elseif state.step == 3 then
-        local all = party(info)
+        local all = D.party
         local victim = all[math.random(math.max(#all, 1))]
         director:actor_use_action(boss.id, ACTION_SHEET, victim ~= nil and victim.id or nil)
         state.step = 4
@@ -833,7 +823,7 @@ function fly(director, sheets, boss_id)
     director:delay(landed_at)
     director:set_targetable(BNPC_BOSS3, true)
     director:delay(0)
-    local took_off = state.at or clock
+    local took_off = state.at or D.clock
     after(landed_at, function()
         if isgebind ~= nil then
             isgebind.flying = false
@@ -845,7 +835,7 @@ end
 
 -- Four helpers each cast a Sheet of Ice at one of the party, where they stand (the first four helpers, then the others.)
 function sheetsOfIce(director, info, from)
-    local all = party(info)
+    local all = D.party
     for index, who in ipairs(all) do
         local helper = boss3_helpers[from + index]
         if helper ~= nil and index <= 4 then
@@ -879,63 +869,22 @@ function bringHelpers(director)
 end
 
 function onActorDeath(director, bnpc_id, position)
-    if bnpc_id == BNPC_BOSS1 then
-        boss1_dead = true
-        director:set_bgm(0)
-        director:hide_eobj(EOBJ_BOSS1_WAY_ON)
-        director:objective(0, 1)
-        for _, coffer in ipairs(COFFERS_BOSS1) do
-            director:spawn_treasure(coffer)
-        end
-        director:party_npc_yell("tank", LINE_BOSS1, 0, "ranged", LINE_BOSS1_NO_TANK)
-    elseif bnpc_id == BNPC_BOSS2 then
-        boss2_dead = true
-        for _, whirlwind in ipairs(whirlwinds) do
-            director:despawn_bnpc(whirlwind)
-        end
-        whirlwinds = {}
-        for _, helper in ipairs(whirlwind_helpers) do
-            director:despawn_bnpc(helper)
-        end
-        whirlwind_helpers = {}
-        director:party_positions(nil)
-        director:set_bgm(0)
-        director:hide_eobj(EOBJ_BOSS2_WAY_ON)
-        director:objective(1, 2)
-        for _, coffer in ipairs(COFFERS_BOSS2) do
-            director:spawn_treasure(coffer)
-        end
-        director:party_npc_yell("ranged", LINE_BOSS2)
-    elseif bnpc_id == BNPC_BOSS3 then
-        boss3_dead = true
-        isgebind = nil
-        director:party_positions(nil)
-        for _, helper in ipairs(boss3_helpers) do
-            director:despawn_bnpc(helper)
-        end
-        boss3_helpers = {}
-        director:objective(2)
-        director:spawn_treasure(COFFER_CLEAR)
-        director:play_cutscene(CUTSCENE_CLEAR, CUTSCENE_CLEAR_PARAMS)
-        director:complete_duty()
-    end
+    D:died(director, bnpc_id)
 end
 
--- Everyone back at the start: the fight's own state goes (the bosses reset as ever); the last boss comes back to its
--- room at once if the party had reached it (retail: as they were sent back, 1.9 s, both times).
+-- Everyone back at the start: the fight's own state goes (the bosses reset as ever, the framework's: none pulled again
+-- till it's home and whole); the last boss comes back to its room at once if the party had reached it (retail: as
+-- they were sent back, 1.9 s, both times).
 function onPartyWipe(director)
-    later = {}
+    D:wipe(director)
     swinges = 0
-    boss1_pulled = boss1_dead
-    boss2_pulled = boss2_dead
     for _, whirlwind in ipairs(whirlwinds) do
         director:despawn_bnpc(whirlwind)
     end
     whirlwinds = {}
     director:party_positions(nil)
-    if boss3_started and not boss3_dead then
+    if boss3_started and not D.dead[BNPC_BOSS3] then
         director:despawn_bnpc(BNPC_BOSS3)
-        boss3_pulled = false
         isgebind = nil
         director:spawn_boss(BNPC_BOSS3, BOSS3_WALL, BOSS3_LINE, PLACE_BOSS3, BOSS3_ARENA)
         bringHelpers(director)
@@ -952,14 +901,14 @@ end
 
 function isGimmickFunctional(id)
     if id == EOBJ_LAST_DOOR then
-        return boss2_dead
+        return D.dead[BNPC_BOSS2] == true
     end
     return true
 end
 
 function onEventActionCast(director, actor_id, target)
     director:finish_gimmick(actor_id)
-    if target == EOBJ_LAST_DOOR and boss2_dead and not door_open then
+    if target == EOBJ_LAST_DOOR and D.dead[BNPC_BOSS2] and not door_open then
         door_open = true
         director:hide_eobj(EOBJ_LAST_DOOR)
     end

@@ -43,13 +43,16 @@ gives its duty's facts:
 | `update(director, health, player_health, info, between)` | Every update: the party, the steps, the pulls, then the script's `between(director)`, then what's due (`after`). |
 | `fell(director, boss)` | A boss's fight over without its death (one held at 1 HP: the Praetorium's last), once; `died` calls it. |
 | `helpersOnEach(director, action, y)` | A helper's cast on each of the party, aimed at them. |
+| `inSeconds(seconds, fn)` | The duty's clock in seconds (`D.clock`, half a second an update): fn(director, health, info) once it's that far on, at the update's start (`after` counts updates and runs at its end); for a duty that keeps its own clock (the Stone Vigil's.) |
 | `schedule(director, rows, still, run)` | A clock table's rows ({ seconds, ... }) at their times, each `run(director, row)` if `still()` holds then: a fight that keeps to one clock from its pull (the Porta Decumana's.) |
 | `in_the_party(actor)` | Set by a script: who of the player and their members counts as the party (the Porta Decumana's: those in the arena.) |
 | `cast`, `died`, `wipe`, `recommence`, `setup`, `bringStartingHelpers` | What the server's calls do with it: a boss's waves and `on_cast`; packs and a boss's fall (helpers and waves gone, music, `on_death`); a wipe (every boss resetting, the fight forgotten, its waves gone, `on_wipe`). |
 | `after(seconds, fn)`, `once(name)`, `anyone(test)`, `Dungeon.within`, `allDead`, `countDead`, `comeOut` | The helpers every script had its own copy of. |
 
-A boss with `eobjs_at_setup = false` leaves its wall and line to `spawn_boss` as it comes (the Praetorium's). The
-party's members carry `x`, `y`, `z`, `id` and `player` (the player, not a bot.) What only one duty does stays in its
+A boss with `eobjs_at_setup = false` leaves its wall and line to `spawn_boss` as it comes (the Praetorium's); `arena`
+is its room's range (`boss_room`'s and `spawn_boss`'s last.) The party is every player ("player1", "player2"...,
+"player" alone when that's all there is: before 2026-11-21 only "player", so a Duty Finder run's other players set
+nothing off) and the party's NPCs, each with `x`, `y`, `z`, `id` and `player` (a player, not a bot.) What only one duty does stays in its
 script, in the hooks or around the calls. **Converted**, each playing its retail runs exactly as before (`duty-sim N
 -v`, every event and timing the same):
 
@@ -63,8 +66,12 @@ script, in the hooks or around the calls. **Converted**, each playing its retail
 * The Porta Decumana (`w1d5_battle.lua`, 2026-11-21): a trial, two bosses on one clock each; their pulls, helpers
   and clock tables are the framework's (`schedule`), the tables' rows, the chain, the cutscene between (`fell`), the
   rows and corners and the last part its own; four runs.
+* The Stone Vigil (`r1d1_re.lua`, 2026-11-21): three bosses with their arenas, the perched dragons, ice walls, lines
+  and last room as steps (their ranges and the halfway check its own), its clock in seconds (`inSeconds`), the
+  Swinges, whirlwinds and the last boss's rounds and flights its own; fourteen runs. Its bosses are now pulled when
+  hurt as well as when after someone, and after a wipe wait till they're home and whole.
 
-The other twelve duty scripts are still written by hand; each is converted on its own, kept
+The other eleven duty scripts are still written by hand; each is converted on its own, kept
 passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
 
 ## The duty's beginning: everyone waits for the openings

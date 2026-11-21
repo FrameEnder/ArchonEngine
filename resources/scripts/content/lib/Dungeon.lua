@@ -60,6 +60,9 @@ function Dungeon.new()
     self.next_helper = 0
     self.health = {}
     self.info = nil
+    -- The duty's own clock in seconds (half a second an update), and what's due on it (`inSeconds`.)
+    self.clock = 0
+    self.timed = {}
     return self
 end
 
@@ -105,6 +108,28 @@ function Dungeon:schedule(director, rows, still, run)
         else
             self:after(row[1], go)
         end
+    end
+end
+
+-- Runs fn(director, health, info) once the clock is `seconds` on, at the start of an update (before the party, the
+-- steps and the pulls are looked at), with that update's numbers: for a duty that keeps its own clock in seconds (the
+-- Stone Vigil's dives and Swinges). `after` counts updates and runs at an update's end.
+function Dungeon:inSeconds(seconds, fn)
+    table.insert(self.timed, { at = self.clock + seconds, fn = fn })
+end
+
+function Dungeon:runTimed(director, health, info)
+    local due, rest = {}, {}
+    for _, task in ipairs(self.timed) do
+        if task.at <= self.clock then
+            table.insert(due, task)
+        else
+            table.insert(rest, task)
+        end
+    end
+    self.timed = rest
+    for _, task in ipairs(due) do
+        task.fn(director, health, info)
     end
 end
 
@@ -310,7 +335,7 @@ end
 
 -- The last boss and its room, when it comes later than the start (a cutscene, a wipe.)
 function Dungeon:bringBoss(director, boss)
-    director:spawn_boss(boss.layout, boss.wall, boss.line, boss.place)
+    director:spawn_boss(boss.layout, boss.wall, boss.line, boss.place, boss.arena)
     self:bringHelpers(director, boss)
 end
 
@@ -374,7 +399,7 @@ end
 function Dungeon:setup(director)
     for _, boss in ipairs(self.bosses) do
         if not boss.comes_later then
-            director:boss_room(boss.layout, boss.wall, boss.line, boss.place, boss.triggers or {})
+            director:boss_room(boss.layout, boss.wall, boss.line, boss.place, boss.triggers or {}, boss.arena)
         end
         self:setUpRoom(director, boss)
     end
@@ -401,21 +426,43 @@ function Dungeon:bringStartingHelpers(director)
     end
 end
 
--- Every update: the party, the steps, the pulls; then `between(director)` (the script's own, if given), then what's
--- due.
+-- Every player of the instance ("player1", "player2"...; "player" alone when that's all there is), then the party's
+-- NPCs ("party1"...): before 2026-11-21 only "player", one of them, so a Duty Finder run's other players set nothing
+-- off (the Stone Vigil's ranges took them all.)
+local function members(info)
+    local keys = {}
+    local index = 1
+    while info["player" .. index] ~= nil do
+        table.insert(keys, "player" .. index)
+        index = index + 1
+    end
+    if #keys == 0 and info.player ~= nil then
+        table.insert(keys, "player")
+    end
+    for key, _ in pairs(info) do
+        if type(key) == "string" and key:sub(1, 5) == "party" then
+            table.insert(keys, key)
+        end
+    end
+    return keys
+end
+
+-- Every update: the clock's due (`inSeconds`), the party, the steps, the pulls; then `between(director)` (the
+-- script's own, if given), then what's due (`after`).
 function Dungeon:update(director, health, player_health, info, between)
     self.ticks = self.ticks + 1
+    self.clock = self.clock + 1 / Dungeon.UPDATES_PER_SECOND
     self.updating = true
     self.health = health or {}
+    self:runTimed(director, health, info)
     if info ~= nil then
         self.info = info
         self.party = {}
-        for key, actor in pairs(info) do
+        for _, key in ipairs(members(info)) do
+            local actor = info[key]
             -- (Someone with no place yet, at the origin, isn't anywhere; `in_the_party(actor)`, if a script gives it,
             -- says who else isn't: the Porta Decumana's, whoever is out of the arena.)
-            if (key == "player" or (type(key) == "string" and key:sub(1, 5) == "party"))
-                and not (actor.x == 0 and actor.z == 0)
-                and (self.in_the_party == nil or self.in_the_party(actor)) then
+            if not (actor.x == 0 and actor.z == 0) and (self.in_the_party == nil or self.in_the_party(actor)) then
                 table.insert(self.party, { x = actor.x, y = actor.y or 0, z = actor.z, id = actor.id,
                                            player = key:sub(1, 6) == "player" })
             end
@@ -481,6 +528,7 @@ function Dungeon:fell(director, boss)
     self.done["fell" .. boss.id] = true
     self.fight = boss.last and "over" or nil
     self.later = {}
+    self.timed = {}
     self:dropHelpers(director, boss)
     self:dropWaves(director, boss)
     if boss.after_bgm then
@@ -503,6 +551,7 @@ function Dungeon:wipe(director)
     local was = self:bossById(self.fight)
     self.fight = nil
     self.later = {}
+    self.timed = {}
     self.helpers = {}
     if was then
         self:dropWaves(director, was)
