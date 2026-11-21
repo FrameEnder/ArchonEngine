@@ -548,7 +548,16 @@ fn on_the_players_ground(collision: Option<&Collision>, trail: &[Vec3A], at: Vec
         step.y + OVER_THE_PLAYERS_GROUND,
         step.y - OVER_THE_PLAYERS_GROUND,
     ) {
-        Some(y) => Vec3A::new(at.x, y, at.z),
+        Some(y) => {
+            // Which surface it was on, for the bundles: what the collision has there that the client doesn't.
+            let over = collision.floor_material(at.x, at.z, at.y + 0.1, at.y - 0.1);
+            tracing::info!(
+                "Party bot at {at}: {:.2} over the ground its player walked on; put down on it ({y:.2}). It was on a surface of material {:#x}",
+                at.y - step.y,
+                over.map(|(_, material)| material).unwrap_or(0)
+            );
+            Vec3A::new(at.x, y, at.z)
+        }
         None => at,
     }
 }

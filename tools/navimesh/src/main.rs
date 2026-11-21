@@ -249,7 +249,9 @@ fn main() {
         (((value - origin) / tile_cell_size).floor() as i32).clamp(0, count - 1)
     };
     let mut tile_triangles: Vec<Vec<i32>> = vec![Vec::new(); (tile_width * tile_height) as usize];
-    for (tri, owner) in geometry.triangles.iter().zip(&geometry.owners) {
+    // And each of those triangles' collision material (`walkable_material`.)
+    let mut tile_materials: Vec<Vec<u64>> = vec![Vec::new(); (tile_width * tile_height) as usize];
+    for (index, (tri, owner)) in geometry.triangles.iter().zip(&geometry.owners).enumerate() {
         // Gimmicks come and go: the navmesh goes through them (the collision stops walkers while they stand.)
         if *owner != 0 {
             continue;
@@ -267,6 +269,8 @@ fn main() {
                 ..=tile_of(hi[0] + border, min_x, tile_width)
             {
                 tile_triangles[(z * tile_width + x) as usize].extend(tri.iter().map(|i| *i as i32));
+                tile_materials[(z * tile_width + x) as usize]
+                    .push(geometry.materials.get(index).copied().unwrap_or(0));
             }
         }
     }
@@ -321,6 +325,15 @@ fn main() {
                     ntris,
                     tri_area_ids.as_mut_ptr(),
                 );
+                // Never ground where the material says so (invisible walls, holes: as vnavmesh reads them.)
+                for (area, material) in tri_area_ids
+                    .iter_mut()
+                    .zip(&tile_materials[(z * tile_width + x) as usize])
+                {
+                    if !kawari_world::collision::walkable_material(*material) {
+                        *area = 0;
+                    }
+                }
                 assert!(rcRasterizeTriangles(
                     context,
                     vertices,

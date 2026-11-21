@@ -49,6 +49,17 @@ const VERSION_BESIDE_32_BIT_NAVMESH: u32 = 5;
 const VERSION_WITH_DOORS_SHUT: u32 = 4;
 /// The version before the simple shapes, still read (the same layout.)
 const VERSION_WITHOUT_SHAPES: u32 = 3;
+/// Whether a triangle of this collision material can be stood on, as vnavmesh (the plugin Questionable walks the
+/// player with, which builds its navmesh from the client's own collision) reads the material bits: 0x2000000 is never
+/// walked on ("holes in arenas"), and 0x11 in the low five bits is the invisible walls round every zone, some of them
+/// flat (`SceneExtractor.ExtractMaterialFlags`, github.com/awgil/ffxiv_navmesh). Kawari stood on both until
+/// 2026-11-21 (Bob: a Player NPC walking a yalm over Castrum Meridianum's road, "why is using the navmesh like the
+/// monsters, and questionable the plugin can do so hard of a workaround".) They're still walls. A material of 0
+/// (unknown, a version 2 file) is walkable.
+pub fn walkable_material(material: u64) -> bool {
+    material & 0x200_0000 == 0 && material & 0x1F != 0x11
+}
+
 /// The version before materials, still read (without them.)
 const VERSION_WITHOUT_MATERIALS: u32 = 2;
 
@@ -241,9 +252,11 @@ impl Collision {
         self.floors = self
             .triangles
             .iter()
-            .map(|tri| {
+            .enumerate()
+            .map(|(index, tri)| {
                 let n = normal(&self.vertices, tri).normalize_or_zero();
                 n.y.abs() >= self.floor_cos
+                    && walkable_material(self.materials.get(index).copied().unwrap_or(0))
             })
             .collect::<Vec<_>>()
             .into();
@@ -1060,6 +1073,33 @@ mod tests {
             f32::INFINITY,
         );
         assert!(!walk.blocked && walk.at.y == 63.9, "{walk:?}");
+    }
+
+    #[test]
+    fn invisible_walls_and_holes_are_never_floors() {
+        // vnavmesh's reading of the material bits: 0x2000000 (holes in arenas) and 0x11 in the low five bits (the
+        // invisible walls round every zone) are never walked on; 0x10 alone (flowers in Il Mheg) is ordinary ground.
+        assert!(!walkable_material(0x200_0000));
+        assert!(!walkable_material(0x11));
+        assert!(!walkable_material(0x3211));
+        assert!(walkable_material(0x10));
+        assert!(walkable_material(0x3005));
+        assert!(walkable_material(0));
+        // A road, and an invisible flat over it: the road's the floor.
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        floor_quad(&mut v, &mut t, -10.0, -10.0, 10.0, 10.0, 88.0);
+        let road = t.len();
+        floor_quad(&mut v, &mut t, -10.0, -10.0, 10.0, 10.0, 88.7);
+        let mut materials = vec![0x3005; road];
+        materials.resize(t.len(), 0x11);
+        let c = Collision::build(v, t, Vec::new(), materials, 0.75, 0.4, 55.0);
+        assert_eq!(c.floor(0.0, 0.0, 90.0, 80.0), Some(88.0));
+        let walk = c.walk(
+            Vec3A::new(0.0, 88.3, 0.0),
+            Vec3A::new(5.0, 88.3, 0.0),
+            f32::INFINITY,
+        );
+        assert_eq!(walk.at.y, 88.0, "{walk:?}");
     }
 
     #[test]

@@ -671,6 +671,18 @@ player's height too (`on_the_players_ground`, from `Instance::footsteps`: the pl
 floor is the ground). Test `a_bot_walks_on_the_ground_its_player_walked_on`. What the surface over the road is isn't
 known (no collision file here); where no player walked it can still happen.
 
+**Same navigation as the enemies; what was missing was the material bits** (Bob, 2026-11-21: "why is using the
+navmesh like the monsters, and questionable the plugin can do so hard of a workaround … something is wrong with the
+playerNPC implementation of navigation"). Player NPCs and enemies go the same way: a path on the navmesh, each step on
+the zone's collision (`npc_behavior.rs` and `walk_like_a_player`); Castrum Meridianum's enemies just never walk the
+road. What Questionable walks with, vnavmesh, reads each collision triangle's material: 0x2000000 ("holes in arenas")
+and 0x11 in the low five bits (the invisible walls round every zone, some flat) are never ground. Kawari kept the
+materials (since 2026-10-30) but stood on both. Now `collision::walkable_material` says which: such a triangle is
+still a wall, never a floor, for every walker; and `kawari-navimesh` makes no navmesh ground of it (for zones built
+from now on). Whether the surface over Castrum Meridianum's road is one of them isn't known without the collision
+file: a bot put down by `on_the_players_ground` logs that surface's material, so the next run says. Test
+`invisible_walls_and_holes_are_never_floors`.
+
 "Standing in the air" itself was the floor (Bob, the same day: "literally standing in the air about 1 yalm … a fix you
 made for Cape Westwind's boss"): since 2026-11-18 anyone with a second surface less than 2 yalms over the floor they
 stood on was put on that surface (`collision::settle`'s `HEADROOM`); now only someone between the two goes up, not
