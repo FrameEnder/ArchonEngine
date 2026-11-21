@@ -37,17 +37,29 @@ gives its duty's facts:
 
 | Piece | What it does |
 | --- | --- |
-| `pack({ layouts, effects, spawns, come_out, on_fall })` | Once every one of `layouts` is dead: its map effects ({ index, timeline, state }), `spawns` spawned (or come out of hiding with `come_out`), `on_fall(director)`. |
+| `pack({ name, layouts, ready, effects, spawns, come_out, on_fall })` | Once every one of `layouts` is dead (and `ready()`): its map effects ({ index, timeline, state }), `spawns` spawned (or come out of hiding with `come_out`), `on_fall(director)`; `done[name]` after (`pack1`... if unnamed). |
 | `step({ name, ready, where, run })` | Somewhere the party's steps set something off, once: when `ready()` (if given) and anyone passes `where(member)`, `run(director)`; looked at in order every update. |
 | `boss({ id, layout, wall, line, place, middle, room, helpers, bgm, after_bgm, talker, waves, ready, last, comes_later, on_pull, on_cast, on_death, on_wipe, on_recommence })` | A boss and its room: `director:boss_room` at setup (`comes_later`: `bringBoss` brings it, with `spawn_boss`), the wall hidden and the line shown until a pull, `room` = { members, radius } kept to it (`director:keep_in_room`), its hidden `helpers` = { layout, count } brought and held (`helperAt`, `helpersCast`), pulled when hurt or after someone (never again after a wipe till it's home, whole and with no target), its music, `talker` = { name, pull, at = { { seconds, text } }, ms, still }: its talks at the pull and into its fight, `waves` = { action, after, list }: each cast of `action` brings the next wave `after` seconds on, gone with its fall or a wipe; `last`: its fall ends the fights. |
 | `update(director, health, player_health, info, between)` | Every update: the party, the steps, the pulls, then the script's `between(director)`, then what's due (`after`). |
+| `fell(director, boss)` | A boss's fight over without its death (one held at 1 HP: the Praetorium's last), once; `died` calls it. |
+| `helpersOnEach(director, action, y)` | A helper's cast on each of the party, aimed at them. |
 | `cast`, `died`, `wipe`, `recommence`, `setup`, `bringStartingHelpers` | What the server's calls do with it: a boss's waves and `on_cast`; packs and a boss's fall (helpers and waves gone, music, `on_death`); a wipe (every boss resetting, the fight forgotten, its waves gone, `on_wipe`). |
 | `after(seconds, fn)`, `once(name)`, `anyone(test)`, `Dungeon.within`, `allDead`, `countDead`, `comeOut` | The helpers every script had its own copy of. |
 
-What only one duty does stays in its script, in the hooks or around the calls. **Converted**: Castrum Meridianum
-(`w1d4_re.lua`, 2026-11-21: its packs, nine steps and three bosses; the device, the ambush, the six and two and the
-last boss's last part in its own hooks). Its five retail runs play exactly as before (`duty-sim 15 -v`, every event
-and timing the same). The other fourteen duty scripts are still written by hand; each is converted on its own, kept
+A boss with `eobjs_at_setup = false` leaves its wall and line to `spawn_boss` as it comes (the Praetorium's). The
+party's members carry `x`, `y`, `z`, `id` and `player` (the player, not a bot.) What only one duty does stays in its
+script, in the hooks or around the calls. **Converted**, each playing its retail runs exactly as before (`duty-sim N
+-v`, every event and timing the same):
+
+* Castrum Meridianum (`w1d4_re.lua`, 2026-11-21): its packs, nine steps and three bosses; the device, the ambush, the
+  six and two and the last boss's last part in its own hooks; five runs.
+* The Praetorium (`w1d5_re.lua`, 2026-11-21): four packs (the lift's four, five and ten, the ride's last five), eight
+  steps (the lifts' floors, the way below and the walkers' three), its three bosses, all brought after a cutscene;
+  the ride's walkers, the objects, the last boss's swords, blades, rows and second part (ended at 1 HP: `fell`) in
+  its own; four runs (the known problem it had stays). Its bosses now aren't pulled again after a wipe till they're
+  home and whole, as Castrum Meridianum's.
+
+The other thirteen duty scripts are still written by hand; each is converted on its own, kept
 passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
 
 ## The duty's beginning: everyone waits for the openings

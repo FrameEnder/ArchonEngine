@@ -144,18 +144,20 @@ end
 
 -- ---- Packs ----
 
--- A pack whose fall opens the way: once every one of `layouts` is dead, its map effects ({ index, timeline, state })
--- play, `spawns` are spawned (`come_out`: they come out of hiding instead), and `on_fall(director)` runs.
+-- A pack whose fall opens the way: once every one of `layouts` is dead (and `ready()`, if given), its map effects
+-- ({ index, timeline, state }) play, `spawns` are spawned (`come_out`: they come out of hiding instead), and
+-- `on_fall(director)` runs. `name` is what `done` calls it (`pack1`, `pack2`... if not given.)
 function Dungeon:pack(pack)
     table.insert(self.packs, pack)
     pack.index = #self.packs
+    pack.name = pack.name or ("pack" .. pack.index)
     return pack
 end
 
 function Dungeon:checkPacks(director)
     for _, pack in ipairs(self.packs) do
-        if not self.done["pack" .. pack.index] and self:allDead(pack.layouts) then
-            self:once("pack" .. pack.index)
+        if not self.done[pack.name] and (pack.ready == nil or pack.ready()) and self:allDead(pack.layouts) then
+            self:once(pack.name)
             for _, effect in ipairs(pack.effects or {}) do
                 director:map_effect(effect[1], effect[2], effect[3])
             end
@@ -270,6 +272,16 @@ function Dungeon:helpersCast(director, action, spots, y)
     end
 end
 
+-- A helper's cast on each of the party, from where they stand (aimed at them.)
+function Dungeon:helpersOnEach(director, action, y)
+    for _, member in ipairs(self.party) do
+        local helper = self:helperAt(director, member.x, y, member.z)
+        if helper ~= nil then
+            director:actor_use_action(helper, action, member.id)
+        end
+    end
+end
+
 -- Its room comes as the boss does: the wall open, the line shown, its helpers held, its NPCs kept to it.
 function Dungeon:setUpRoom(director, boss)
     if boss.room then
@@ -348,14 +360,15 @@ function Dungeon:setup(director)
         end
         self:setUpRoom(director, boss)
     end
-    -- The walls stand open until a pull; the rooms' lines wait.
+    -- The walls stand open until a pull; the rooms' lines wait (`eobjs_at_setup = false`: its room's are left to
+    -- `spawn_boss` as it comes.)
     for _, boss in ipairs(self.bosses) do
-        if boss.wall then
+        if boss.wall and boss.eobjs_at_setup ~= false then
             director:hide_eobj(boss.wall)
         end
     end
     for _, boss in ipairs(self.bosses) do
-        if boss.line then
+        if boss.line and boss.eobjs_at_setup ~= false then
             director:show_eobj(boss.line)
         end
     end
@@ -383,7 +396,8 @@ function Dungeon:update(director, health, player_health, info, between)
             -- (Someone with no place yet, at the origin, isn't anywhere.)
             if (key == "player" or (type(key) == "string" and key:sub(1, 5) == "party"))
                 and not (actor.x == 0 and actor.z == 0) then
-                table.insert(self.party, { x = actor.x, z = actor.z, id = actor.id })
+                table.insert(self.party, { x = actor.x, y = actor.y or 0, z = actor.z, id = actor.id,
+                                           player = key:sub(1, 6) == "player" })
             end
         end
         self:checkSteps(director)
@@ -436,6 +450,15 @@ function Dungeon:died(director, layout_id)
     if boss == nil then
         return
     end
+    self:fell(director, boss)
+end
+
+-- A boss's fight is over: by its death (`died`), or as a script says (one that ends at 1 HP.) Once only.
+function Dungeon:fell(director, boss)
+    if self.fight == "over" or self.done["fell" .. boss.id] then
+        return
+    end
+    self.done["fell" .. boss.id] = true
     self.fight = boss.last and "over" or nil
     self.later = {}
     self:dropHelpers(director, boss)

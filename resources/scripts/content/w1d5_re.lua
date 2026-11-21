@@ -55,6 +55,9 @@
 -- the last boss (sent as retail did); the ten of BNpcBase 6358 that showed for a moment along the way (left out);
 -- BNpcBase 14567 by the entrance (it stands there); coffers (none in a Duty Support run).
 
+-- Written with the dungeon framework (content/lib/Dungeon.lua, loaded first): its packs, steps and bosses are
+-- declared below, and what only this duty does is in their hooks.
+
 GUIDE = 9168666
 NAME_GUIDE = 1486
 TALK_MS = 6000
@@ -213,16 +216,9 @@ GAUGE_FROM = 7.5
 GAUGE_SECONDS = 80
 GAUGE_FULL_SECONDS = 9.0 -- n is 1000 nine seconds in: 111 a second
 
-ticks = 0
-updating = false
-later = {}
-dead = {}
-done = {}
-helpers_of = { {}, {}, {} }
-helpers = {}
-next_helper = 0
-party = {}
-fight = nil -- 1, 2 or 3 while that boss is fought
+DUNGEON = Dungeon.new()
+D = DUNGEON
+
 crosses = 0
 adds = 0
 part2 = false
@@ -239,37 +235,9 @@ blades = {}
 phantoms = {}
 gone = {}
 
--- Runs fn so many seconds from now (an update is half a second; a call made outside onUpdate waits for the next.)
-function after(seconds, fn)
-    local updates = math.max(1, math.floor(seconds * 2 + 0.5))
-    if not updating then
-        updates = updates + 1
-    end
-    table.insert(later, { at = ticks + updates, fn = fn })
-end
-
-function runLater(director)
-    local due, waiting = {}, {}
-    for _, entry in ipairs(later) do
-        if entry.at <= ticks then
-            table.insert(due, entry)
-        else
-            table.insert(waiting, entry)
-        end
-    end
-    later = waiting
-    table.sort(due, function(a, b) return a.at < b.at end)
-    for _, entry in ipairs(due) do
-        entry.fn(director)
-    end
-end
-
-function once(name)
-    if done[name] then
-        return false
-    end
-    done[name] = true
-    return true
+local within = Dungeon.within
+local function done(name)
+    return function() return D.done[name] == true end
 end
 
 function talk(director, text)
@@ -281,105 +249,14 @@ function cutscene(director, id, params)
     director:play_cutscene(id, params)
 end
 
-function onSetup(director)
-    director:set_sequence(1)
-    for _, object in ipairs({ EOBJ_LIFT1, EOBJ_HANGAR, EOBJ_ARMOUR, EOBJ_LAST, EOBJ_AFTER_LAST, EOBJ_EXIT }) do
-        director:hide_eobj(object)
-    end
-end
-
-function onCommence(director)
-end
-
-function bringHelpers(director, which, layout, count, at)
-    helpers_of[which] = {}
-    for i = 1, count do
-        -- (The simulator's spawns return nothing: the layout ID stands in there.)
-        helpers_of[which][i] = director:spawn_bnpc(layout, at.x, at.y, at.z, 0.0) or layout
-        director:hold_bnpc(helpers_of[which][i])
-    end
-end
-
-function useHelpers(which)
-    helpers = helpers_of[which]
-    next_helper = 0
-end
-
-function dropHelpers(director, which)
-    for _, helper in ipairs(helpers_of[which]) do
-        director:despawn_bnpc(helper)
-    end
-    helpers_of[which] = {}
-    helpers = {}
-end
-
--- The next helper in turn, put at a spot.
-function helperAt(director, x, y, z, facing)
-    if #helpers == 0 then
-        return nil
-    end
-    next_helper = next_helper % #helpers + 1
-    local helper = helpers[next_helper]
-    director:warp_bnpc(helper, x, y, z, facing or 0.0)
-    return helper
-end
-
-function helpersCast(director, action, spots, y)
-    for _, spot in ipairs(spots) do
-        local helper = helperAt(director, spot[1], y, spot[2], spot[3])
-        if helper ~= nil then
-            director:actor_use_action(helper, action)
-        end
-    end
-end
-
--- A helper's cast on each of the party, from where they stand.
-function helpersOnEach(director, action, y)
-    for _, member in ipairs(party) do
-        local helper = helperAt(director, member.x, y, member.z)
-        if helper ~= nil then
-            director:actor_use_action(helper, action, member.id)
-        end
-    end
-end
-
-function anyone(test)
-    for _, member in ipairs(party) do
-        if test(member) then
-            return true
-        end
-    end
-    return false
-end
-
-function within(member, at, yalms)
-    local dx, dz = member.x - at.x, member.z - at.z
-    return dx * dx + dz * dz <= yalms * yalms
-end
-
-function allDead(layouts)
-    for _, layout in ipairs(layouts) do
-        if not dead[layout] then
-            return false
-        end
-    end
-    return true
-end
-
-function comeOut(director, layouts)
-    for _, layout in ipairs(layouts) do
-        director:spawn_bnpc(layout)
-    end
-end
-
 -- Whoever of the party has this actor ID (the one at an object), or the first of it.
 function whoIs(actor_id)
-    for _, member in ipairs(party) do
+    for _, member in ipairs(D.party) do
         if member.id == actor_id then
             return member
         end
     end
-    return party[1]
+    return D.party[1]
 end
 
 function sendTo(director, to)
@@ -387,114 +264,194 @@ function sendTo(director, to)
     director:set_start(to.x, to.y, to.z, to.rotation)
 end
 
--- What the party's steps set off.
-function theWay(director)
-    if not done.start and anyone(function(m) return m.y > 175 and m.x > WHERE_START_X end) then
-        once("start")
-        talk(director, 32920)
-    end
-    if done.five_dead and not done.effect_4
-        and anyone(function(m) return m.y > 140 and m.y < 170 and m.z < WHERE_EFFECT_4.z and m.x > WHERE_EFFECT_4.x end) then
-        once("effect_4")
-        director:map_effect(4, 2, 1)
-    end
-    if done.lift2 and not done.boss1_room
-        and anyone(function(m) return m.y > 60 and m.y < 90 and m.x < WHERE_BOSS1_X end) then
-        once("boss1_room")
-        director:objective(0, 1)
-        cutscene(director, CUTSCENE_BOSS1, CUTSCENE_BOSS1_PARAMS)
-        after(BOSS1_AFTER_CUTSCENE, function(d)
-            d:spawn_boss(BOSS1, BOSS1_WALL, BOSS1_LINE, PLACE_BOSS1)
-            bringHelpers(d, 1, HELPER_BOSS1, HELPERS_BOSS1, BOSS1_MIDDLE)
-        end)
-    end
-    if done.effect_5 and not done.below
-        and anyone(function(m)
-            return m.y > 50 and m.y < 72 and m.x > WHERE_BELOW.x and m.z < WHERE_BELOW.z_south and m.z > WHERE_BELOW.z_north
-        end) then
-        once("below")
-        sendTo(director, BELOW_TO)
+-- ---- The packs whose fall opens the way ----
+
+D:pack({ name = "four_dead", layouts = FOUR, spawns = FIVE,
+    on_fall = function(d)
+        talk(d, 32921)
+        d:show_eobj(EOBJ_LIFT1)
+    end })
+D:pack({ name = "five_dead", layouts = FIVE, ready = done("four_dead"), effects = { { 2, 2, 1 } }, spawns = TEN })
+D:pack({ name = "ten_dead", layouts = TEN, ready = done("five_dead"), effects = { { 3, 2, 1 } } })
+D:pack({ name = "effect_5", layouts = LAST_FIVE, ready = function() return D.dead[BOSS1] == true end,
+    effects = { { 5, 2, 1 } } })
+
+-- ---- What the party's steps set off ----
+
+-- A player, not a member: Connor's party's tank was past each of these before he set it off.
+local function riding()
+    return D.done.below and not D.done.ride_over
+end
+
+D:step({ name = "start",
+    where = function(m) return m.y > 175 and m.x > WHERE_START_X end,
+    run = function(d) talk(d, 32920) end })
+D:step({ name = "effect_4", ready = done("five_dead"),
+    where = function(m) return m.y > 140 and m.y < 170 and m.z < WHERE_EFFECT_4.z and m.x > WHERE_EFFECT_4.x end,
+    run = function(d) d:map_effect(4, 2, 1) end })
+D:step({ name = "boss1_room", ready = done("lift2"),
+    where = function(m) return m.y > 60 and m.y < 90 and m.x < WHERE_BOSS1_X end,
+    run = function(d)
+        d:objective(0, 1)
+        cutscene(d, CUTSCENE_BOSS1, CUTSCENE_BOSS1_PARAMS)
+        D:after(BOSS1_AFTER_CUTSCENE, function(d2) D:bringBoss(d2, D:bossById(1)) end)
+    end })
+D:step({ name = "below", ready = done("effect_5"),
+    where = function(m)
+        return m.y > 50 and m.y < 72 and m.x > WHERE_BELOW.x and m.z < WHERE_BELOW.z_south and m.z > WHERE_BELOW.z_north
+    end,
+    run = function(d)
+        sendTo(d, BELOW_TO)
         -- (There as the party is: 1.5 s after the fade begins.)
-        after(1.5, function(d) comeOut(d, BELOW) end)
-    end
-    if done.below and not done.ride_over then
-        -- A player, not a member: Connor's party's tank was past each of these before he set it off.
-        local function west_of(x)
-            return anyone(function(m) return m.player and m.y < -90 and m.x < x end)
-        end
-        if not done.effect_8
-            and anyone(function(m) return m.player and m.y < -90 and m.x < 95 and m.z < WHERE_EFFECT_8_Z end) then
-            once("effect_8")
-            director:map_effect(8, 2, 1)
-            director:spawn_bnpc(WALKERS[1])
-        end
-        if not done.effect_9 and allDead(BELOW_THREE) and west_of(WHERE_EFFECT_9_X) then
-            once("effect_9")
-            director:map_effect(9, 2, 1)
-            director:spawn_bnpc(WALKERS[2])
-        end
-        if done.effect_9 and not done.effect_10 and allDead(BELOW) and west_of(WHERE_EFFECT_10_X) then
-            once("effect_10")
-            director:map_effect(10, 2, 1)
-            director:spawn_bnpc(WALKERS[3])
-        end
-    end
-    if done.ride_over and not done.boss2_room and anyone(function(m) return m.y < -90 and m.x < WHERE_BOSS2_X end) then
-        once("boss2_room")
-        director:objective(2, 3)
-        cutscene(director, CUTSCENE_BOSS2, CUTSCENE_BOSS2_PARAMS)
-        after(BOSS2_AFTER_CUTSCENE, function(d)
-            d:spawn_boss(BOSS2, BOSS2_WALL, BOSS2_LINE, PLACE_BOSS2)
-            bringHelpers(d, 2, HELPER_BOSS2, HELPERS_BOSS2, BOSS2_MIDDLE)
-        end)
-    end
-end
-
-function pull1(director)
-    fight = 1
-    crosses = 0
-    after(1.0, function(d)
-        if fight == 1 then
-            d:show_eobj(BOSS1_BEHIND)
-        end
-    end)
-    local function away(at)
-        after(at + AWAY_FOR, function(d)
-            if fight == 1 then
-                d:jump_bnpc(BOSS1, BOSS1_MIDDLE.x, BOSS1_MIDDLE.y, BOSS1_MIDDLE.z, 1.571)
+        D:after(1.5, function(d2)
+            for _, layout in ipairs(BELOW) do
+                d2:spawn_bnpc(layout)
             end
         end)
-    end
-    for _, at in ipairs(BOSS1_AWAY_ONCE) do
-        away(at)
-    end
-    for round = 0, ROUNDS - 1 do
-        for _, at in ipairs(BOSS1_AWAY_ROUND) do
-            away(at + round * BOSS1_AWAY_EVERY)
-        end
-    end
-    useHelpers(1)
-end
+    end })
+D:step({ name = "effect_8", ready = riding,
+    where = function(m) return m.player and m.y < -90 and m.x < 95 and m.z < WHERE_EFFECT_8_Z end,
+    run = function(d)
+        d:map_effect(8, 2, 1)
+        d:spawn_bnpc(WALKERS[1])
+    end })
+D:step({ name = "effect_9", ready = function() return riding() and D:allDead(BELOW_THREE) end,
+    where = function(m) return m.player and m.y < -90 and m.x < WHERE_EFFECT_9_X end,
+    run = function(d)
+        d:map_effect(9, 2, 1)
+        d:spawn_bnpc(WALKERS[2])
+    end })
+D:step({ name = "effect_10", ready = function() return riding() and D.done.effect_9 and D:allDead(BELOW) end,
+    where = function(m) return m.player and m.y < -90 and m.x < WHERE_EFFECT_10_X end,
+    run = function(d)
+        d:map_effect(10, 2, 1)
+        d:spawn_bnpc(WALKERS[3])
+    end })
+D:step({ name = "boss2_room", ready = done("ride_over"),
+    where = function(m) return m.y < -90 and m.x < WHERE_BOSS2_X end,
+    run = function(d)
+        d:objective(2, 3)
+        cutscene(d, CUTSCENE_BOSS2, CUTSCENE_BOSS2_PARAMS)
+        D:after(BOSS2_AFTER_CUTSCENE, function(d2) D:bringBoss(d2, D:bossById(2)) end)
+    end })
 
-function pull2(director)
-    fight = 2
-    adds = 0
-    for index, row in ipairs(BOSS2_TALKS) do
-        after(row[1], function(d)
-            if fight == 2 then
-                d:battle_talk(BOSS2, NAME_BOSS2, row[2], 0, TALK_MS)
-                if index == 1 then
-                    d:map_effect(0, 2, 1)
+-- ---- The first boss ----
+
+D:boss({ id = 1, layout = BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = PLACE_BOSS1, middle = BOSS1_MIDDLE,
+    comes_later = true, eobjs_at_setup = false, bgm = false, after_bgm = BGM_AFTER_BOSS1,
+    helpers = { layout = HELPER_BOSS1, count = HELPERS_BOSS1 },
+    ready = done("boss1_room"),
+    on_pull = function(director)
+        crosses = 0
+        D:after(1.0, function(d)
+            if D.fight == 1 then
+                d:show_eobj(BOSS1_BEHIND)
+            end
+        end)
+        local function away(at)
+            D:after(at + AWAY_FOR, function(d)
+                if D.fight == 1 then
+                    d:jump_bnpc(BOSS1, BOSS1_MIDDLE.x, BOSS1_MIDDLE.y, BOSS1_MIDDLE.z, 1.571)
                 end
+            end)
+        end
+        for _, at in ipairs(BOSS1_AWAY_ONCE) do
+            away(at)
+        end
+        for round = 0, ROUNDS - 1 do
+            for _, at in ipairs(BOSS1_AWAY_ROUND) do
+                away(at + round * BOSS1_AWAY_EVERY)
             end
-        end)
-    end
-    useHelpers(2)
-end
+        end
+    end,
+    on_cast = {
+        [28468] = function(director)
+            crosses = crosses + 1
+            -- A cross the first time (all five runs); the second, a cross twice and turned twice.
+            local set = 1
+            if crosses > 1 then
+                set = math.random(2)
+            end
+            for _, action in ipairs({ { 28469, SPOTS_28469 }, { 28470, SPOTS_28470 } }) do
+                local spots = {}
+                for _, spot in ipairs(action[2][set]) do
+                    table.insert(spots, { BOSS1_MIDDLE.x + spot[1], BOSS1_MIDDLE.z + spot[2], -3.142 })
+                end
+                D:helpersCast(director, action[1], spots, BOSS1_MIDDLE.y)
+            end
+        end,
+        [28471] = function(director)
+            D:after(AFTER_28471, function(d)
+                if D.fight == 1 then
+                    D:helpersOnEach(d, 28472, BOSS1_MIDDLE.y)
+                end
+            end)
+        end,
+    },
+    on_death = function(d)
+        d:objective(1, 2)
+        d:hide_eobj(BOSS1_AHEAD)
+        d:show_eobj(EOBJ_HANGAR)
+        d:show_eobj(EOBJ_ARMOUR)
+        for _, layout in ipairs(AHEAD) do
+            d:spawn_bnpc(layout)
+        end
+        for _, layout in ipairs(RIDE) do
+            d:spawn_bnpc(layout)
+        end
+        D:after(1.0, function(d2) talk(d2, 32916) end)
+    end })
+
+-- ---- The second boss ----
+
+D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = PLACE_BOSS2, middle = BOSS2_MIDDLE,
+    comes_later = true, eobjs_at_setup = false, bgm = false,
+    helpers = { layout = HELPER_BOSS2, count = HELPERS_BOSS2 },
+    ready = done("boss2_room"),
+    on_pull = function(director)
+        adds = 0
+        for index, row in ipairs(BOSS2_TALKS) do
+            D:after(row[1], function(d)
+                if D.fight == 2 then
+                    d:battle_talk(BOSS2, NAME_BOSS2, row[2], 0, TALK_MS)
+                    if index == 1 then
+                        d:map_effect(0, 2, 1)
+                    end
+                end
+            end)
+        end
+    end,
+    on_cast = {
+        -- 0.9 s after each 28479 lands one of BNpcBase 14452 comes (north, then south.)
+        [28479] = function(director)
+            adds = adds + 1
+            local at = BOSS2_ADD_AT[(adds - 1) % #BOSS2_ADD_AT + 1]
+            D:after(BOSS2_ADD_AFTER, function(d)
+                if D.fight == 2 then
+                    d:spawn_bnpc(BOSS2_ADD, at[1], at[2], at[3], 0.0)
+                end
+            end)
+        end,
+    },
+    on_death = function(d)
+        d:objective(3, 4)
+        d:map_effect(0, 8, 4)
+        d:map_effect(15, 1, 4)
+        d:hide_eobj(BOSS2_AHEAD)
+        d:show_eobj(EOBJ_LAST)
+        d:despawn_bnpc(BOSS2_ADD)
+        cutscene(d, CUTSCENE_AFTER_BOSS2, CUTSCENE_AFTER_BOSS2_PARAMS)
+    end,
+    on_wipe = function(d)
+        d:despawn_bnpc(BOSS2_ADD)
+        D.done.talk_32903 = nil
+    end })
+
+-- ---- The last boss ----
 
 -- The way the last boss faces as it stands in the middle: at the first of the party.
 function facingFromMiddle()
-    local member = party[1]
+    local member = D.party[1]
     if member == nil then
         return 1.571
     end
@@ -502,7 +459,7 @@ function facingFromMiddle()
 end
 
 function toTheMiddle(director)
-    if fight == 3 and not part2 then
+    if D.fight == 3 and not part2 then
         director:jump_bnpc(BOSS3, BOSS3_MIDDLE.x, BOSS3_MIDDLE.y, BOSS3_MIDDLE.z, facingFromMiddle())
     end
 end
@@ -510,7 +467,7 @@ end
 -- With the last boss's 28486: a helper's 29779 in the middle and, 3.1 s on, three 14456s' 28487 across it.
 function slash(director)
     local facing = facingFromMiddle()
-    helpersCast(director, 29779, { { BOSS3_MIDDLE.x, BOSS3_MIDDLE.z, facing } }, BOSS3_MIDDLE.y)
+    D:helpersCast(director, 29779, { { BOSS3_MIDDLE.x, BOSS3_MIDDLE.z, facing } }, BOSS3_MIDDLE.y)
     local spots = {}
     for _, z in ipairs(SLASH_Z) do
         table.insert(spots, { BOSS3_MIDDLE.x, BOSS3_MIDDLE.z + z, facing })
@@ -520,8 +477,8 @@ end
 
 -- BNpcBase 14456s come to the spots, cast so many seconds from now, and go.
 function bladesCast(cast_after, action, spots)
-    after(math.max(0.0, cast_after - BLADE_BEFORE), function(d)
-        if fight ~= 3 then
+    D:after(math.max(0.0, cast_after - BLADE_BEFORE), function(d)
+        if D.fight ~= 3 then
             return
         end
         local mine = {}
@@ -530,14 +487,14 @@ function bladesCast(cast_after, action, spots)
             d:hold_bnpc(mine[index])
             table.insert(blades, mine[index])
         end
-        after(BLADE_BEFORE, function(d2)
-            if fight == 3 then
+        D:after(BLADE_BEFORE, function(d2)
+            if D.fight == 3 then
                 for _, blade in ipairs(mine) do
                     d2:actor_use_action(blade, action)
                 end
             end
         end)
-        after(BLADE_BEFORE + BLADE_GONE_AFTER, function(d2)
+        D:after(BLADE_BEFORE + BLADE_GONE_AFTER, function(d2)
             for _, blade in ipairs(mine) do
                 d2:despawn_bnpc(blade)
             end
@@ -552,15 +509,15 @@ function swordsCome(director, cast_after)
         director:warp_bnpc(sword, SWORDS_X, BOSS3_MIDDLE.y, places[index], SWORDS_FACING)
         director:actor_use_action(sword, 28485)
     end
-    after(SWORDS_SHOW, function(d)
-        if fight == 3 then
+    D:after(SWORDS_SHOW, function(d)
+        if D.fight == 3 then
             for _, sword in ipairs(swords) do
                 d:actor_use_action(sword, 28486)
             end
         end
     end)
-    after(SWORDS_TIMELINE, function(d)
-        if fight == 3 then
+    D:after(SWORDS_TIMELINE, function(d)
+        if D.fight == 3 then
             for _, sword in ipairs(swords) do
                 d:play_action_timeline(sword, 7737)
             end
@@ -577,9 +534,9 @@ end
 function rows(director, first_after, reversed)
     for index = 1, #ROWS do
         local row = ROWS[reversed and (#ROWS + 1 - index) or index]
-        after(first_after + (index - 1) * ROWS_APART, function(d)
-            if fight == 3 then
-                helpersCast(d, 29052, row, BOSS3_MIDDLE.y)
+        D:after(first_after + (index - 1) * ROWS_APART, function(d)
+            if D.fight == 3 then
+                D:helpersCast(d, 29052, row, BOSS3_MIDDLE.y)
             end
         end)
     end
@@ -587,7 +544,7 @@ end
 
 -- The last boss's second part: it leaves, four of BNpcBase 14455 fight in its place, and it comes back.
 function secondPart(director)
-    if fight ~= 3 or part2 or part2_over then
+    if D.fight ~= 3 or part2 or part2_over then
         return
     end
     part2 = true
@@ -595,8 +552,8 @@ function secondPart(director)
     director:restart_timeline(BOSS3, PART_SECOND)
     director:battle_talk(BOSS3, NAME_BOSS3, PART_SECOND, 0, 3000)
     local function at(seconds, fn)
-        after(seconds, function(d)
-            if fight == 3 and part2 and not part2_ending then
+        D:after(seconds, function(d)
+            if D.fight == 3 and part2 and not part2_ending then
                 fn(d)
             end
         end)
@@ -650,9 +607,9 @@ function secondPart(director)
     end)
     at(PART2_SPREAD, function(d)
         if phantomsUse(d, 28491, 2.7, false) then
-            after(AFTER_28491, function(d2)
-                if fight == 3 then
-                    helpersOnEach(d2, 28492, BOSS3_MIDDLE.y)
+            D:after(AFTER_28491, function(d2)
+                if D.fight == 3 then
+                    D:helpersOnEach(d2, 28492, BOSS3_MIDDLE.y)
                 end
             end)
         end
@@ -671,8 +628,8 @@ end
 function secondPartEnds(director)
     part2_ending = true
     local function at(seconds, fn)
-        after(seconds, function(d)
-            if fight == 3 and part2 then
+        D:after(seconds, function(d)
+            if D.fight == 3 and part2 then
                 fn(d)
             end
         end)
@@ -706,7 +663,7 @@ function phantomsUse(director, action, cast, on_each)
     local any = false
     for index, phantom in ipairs(phantoms) do
         if not gone[phantom] then
-            local member = party[(index - 1) % math.max(1, #party) + 1]
+            local member = D.party[(index - 1) % math.max(1, #D.party) + 1]
             if not on_each then
                 director:actor_use_action(phantom, action)
                 any = true
@@ -716,7 +673,7 @@ function phantomsUse(director, action, cast, on_each)
             end
         end
     end
-    phantoms_free_at = ticks + math.floor((cast + PHANTOM_LOCK) * 2 + 0.5)
+    phantoms_free_at = D.ticks + math.floor((cast + PHANTOM_LOCK) * 2 + 0.5)
     return any
 end
 
@@ -728,66 +685,34 @@ function lastBossHealth(director, info)
         if it ~= nil and it.hp <= 1 then
             floored[phantom] = true
         end
-        if floored[phantom] and not gone[phantom] and ticks >= phantoms_free_at then
+        if floored[phantom] and not gone[phantom] and D.ticks >= phantoms_free_at then
             gone[phantom] = true
             director:set_targetable(phantom, false)
             director:hold_bnpc(phantom)
             director:play_action_timeline(phantom, 7737)
-            after(1.5, function(d) d:despawn_bnpc(phantom) end)
+            D:after(1.5, function(d) d:despawn_bnpc(phantom) end)
         end
     end
     local boss = info[BOSS3]
     if boss ~= nil and boss.hp <= 1 and (not part2 or part2_over) then
-        lastBossDown(director)
+        D:fell(director, D:bossById(3))
     end
 end
 
-function lastBossDown(director)
-    fight = "over"
-    later = {}
+function dropLastBossOwn(director)
     for _, group in ipairs({ swords, blades, phantoms }) do
         for _, actor in ipairs(group) do
             director:despawn_bnpc(actor)
         end
     end
     swords, blades, phantoms = {}, {}, {}
-    dropHelpers(director, 3)
-    director:show_eobj(EOBJ_EXIT)
-    cutscene(director, CUTSCENE_END, CUTSCENE_END_PARAMS)
-    director:complete_duty()
-    director:despawn_bnpc(BOSS3)
-end
-
-function pull3(director)
-    fight = 3
-    part2 = false
-    part2_over = false
-    part2_ending = false
-    director:battle_talk(BOSS3, NAME_BOSS3, 32904, 0, TALK_MS)
-    for _, row in ipairs(BOSS3_TALKS) do
-        after(row[1], function(d)
-            if fight == 3 and not part2 then
-                d:battle_talk(BOSS3, NAME_BOSS3, row[2], 0, TALK_MS)
-            end
-        end)
-    end
-    for _, at in ipairs(BOSS3_AWAY) do
-        after(at + AWAY_FOR, toTheMiddle)
-    end
-    after(BOSS3_SLASH_AT, function(d)
-        if fight == 3 and not part2 then
-            slash(d)
-        end
-    end)
-    after(PART2_AT, secondPart)
-    useHelpers(3)
 end
 
 function bringLastBoss(director)
     director:spawn_bnpc(BOSS3)
     -- It doesn't fall: at 1 HP the duty is done (its health was 1 as the director said so in every run.)
     director:set_health_floor(BOSS3, 1)
-    bringHelpers(director, 3, HELPER_BOSS3, HELPERS_BOSS3, BOSS3_MIDDLE)
+    D:bringHelpers(director, D:bossById(3))
     -- Its four of BNpcBase 14455 and five of 14454 are there with it (retail spawned them as it came), waiting:
     -- they can't be targeted until their time.
     swords, blades, phantoms, gone, floored = {}, {}, {}, {}, {}
@@ -805,177 +730,124 @@ function bringLastBoss(director)
     end
 end
 
-function dropLastBoss(director)
-    director:despawn_bnpc(BOSS3)
-    dropHelpers(director, 3)
-    for _, group in ipairs({ swords, blades, phantoms }) do
-        for _, actor in ipairs(group) do
-            director:despawn_bnpc(actor)
+D:boss({ id = 3, layout = BOSS3, middle = BOSS3_MIDDLE, comes_later = true, eobjs_at_setup = false, bgm = false,
+    last = true,
+    helpers = { layout = HELPER_BOSS3, count = HELPERS_BOSS3 },
+    ready = done("last_room"),
+    talker = { name = NAME_BOSS3, pull = 32904, at = BOSS3_TALKS, ms = TALK_MS,
+               still = function() return not part2 end },
+    on_pull = function(director)
+        part2 = false
+        part2_over = false
+        part2_ending = false
+        for _, at in ipairs(BOSS3_AWAY) do
+            D:after(at + AWAY_FOR, toTheMiddle)
         end
-    end
-    swords, blades, phantoms = {}, {}, {}
-end
-
-function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
-    if layout_id == BOSS1 and fight == 1 then
-        if action_id == 28468 then
-            crosses = crosses + 1
-            -- A cross the first time (all five runs); the second, a cross twice and turned twice.
-            local set = 1
-            if crosses > 1 then
-                set = math.random(2)
+        D:after(BOSS3_SLASH_AT, function(d)
+            if D.fight == 3 and not part2 then
+                slash(d)
             end
-            for _, action in ipairs({ { 28469, SPOTS_28469 }, { 28470, SPOTS_28470 } }) do
-                local spots = {}
-                for _, spot in ipairs(action[2][set]) do
-                    table.insert(spots, { BOSS1_MIDDLE.x + spot[1], BOSS1_MIDDLE.z + spot[2], -3.142 })
-                end
-                helpersCast(director, action[1], spots, BOSS1_MIDDLE.y)
-            end
-        elseif action_id == 28471 then
-            after(AFTER_28471, function(d)
-                if fight == 1 then
-                    helpersOnEach(d, 28472, BOSS1_MIDDLE.y)
-                end
-            end)
+        end)
+        D:after(PART2_AT, secondPart)
+    end,
+    on_cast = function(director, action_id)
+        if part2 then
+            return
         end
-    elseif layout_id == BOSS2 and fight == 2 then
-        if action_id == 28479 then
-            adds = adds + 1
-            local at = BOSS2_ADD_AT[(adds - 1) % #BOSS2_ADD_AT + 1]
-            after(BOSS2_ADD_AFTER, function(d)
-                if fight == 2 then
-                    d:spawn_bnpc(BOSS2_ADD, at[1], at[2], at[3], 0.0)
-                end
-            end)
-        end
-    elseif layout_id == BOSS3 and fight == 3 and not part2 then
         if action_id == 28484 then
-            after(SWORDS_AFTER_28484, function(d)
-                if fight == 3 then
+            D:after(SWORDS_AFTER_28484, function(d)
+                if D.fight == 3 then
                     swordsCome(d, SWORDS_CAST)
                 end
             end)
         elseif action_id == 29051 then
             rows(director, ROWS_AFTER_29051, math.random(2) == 1)
         elseif action_id == 28491 then
-            after(AFTER_28491, function(d)
-                if fight == 3 then
-                    helpersOnEach(d, 28492, BOSS3_MIDDLE.y)
+            D:after(AFTER_28491, function(d)
+                if D.fight == 3 then
+                    D:helpersOnEach(d, 28492, BOSS3_MIDDLE.y)
                 end
             end)
         end
+    end,
+    -- At 1 HP (`lastBossHealth`) or its death: the duty is done.
+    on_death = function(d)
+        dropLastBossOwn(d)
+        d:show_eobj(EOBJ_EXIT)
+        cutscene(d, CUTSCENE_END, CUTSCENE_END_PARAMS)
+        d:complete_duty()
+        d:despawn_bnpc(BOSS3)
+    end,
+    -- Everything of its fight goes, and comes back as the party does.
+    on_wipe = function(d)
+        part2 = false
+        d:despawn_bnpc(BOSS3)
+        D:dropHelpers(d, D:bossById(3))
+        dropLastBossOwn(d)
+        last_boss_due = true
+    end,
+    on_recommence = function(d)
+        if last_boss_due then
+            last_boss_due = false
+            bringLastBoss(d)
+        end
+    end })
+
+-- ---- What the server calls ----
+
+function onSetup(director)
+    director:set_sequence(1)
+    for _, object in ipairs({ EOBJ_LIFT1, EOBJ_HANGAR, EOBJ_ARMOUR, EOBJ_LAST, EOBJ_AFTER_LAST, EOBJ_EXIT }) do
+        director:hide_eobj(object)
+    end
+    D:setup(director)
+end
+
+function onCommence(director)
+end
+
+function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
+    D:cast(director, layout_id, action_id, actor_id, x, y, z)
+end
+
+local function between(director)
+    if D.fight == 3 then
+        lastBossHealth(director, D.info)
+    end
+    if D.fight == 2 and not D.done.talk_32903 and D.health[BOSS2] ~= nil and D.health[BOSS2] < BOSS2_TALK_BELOW then
+        D:once("talk_32903")
+        director:battle_talk(BOSS2, NAME_BOSS2, 32903, 0, 3000)
     end
 end
 
 function onUpdate(director, health, player_health, info)
-    ticks = ticks + 1
-    updating = true
-    if info ~= nil then
-        party = {}
-        for key, actor in pairs(info) do
-            -- (Someone with no place yet, at the origin, isn't anywhere.)
-            if (key == "player" or (type(key) == "string" and key:sub(1, 5) == "party"))
-                and not (actor.x == 0 and actor.z == 0) then
-                table.insert(party, { x = actor.x, y = actor.y or 0, z = actor.z, id = actor.id,
-                                      player = key:sub(1, 6) == "player" })
-            end
-        end
-        theWay(director)
-        local function pulled(layout)
-            local it = info[layout]
-            return it ~= nil and (it.target ~= nil or (health[layout] ~= nil and health[layout] < 100))
-        end
-        if fight == nil then
-            if done.boss1_room and not dead[BOSS1] and pulled(BOSS1) then
-                pull1(director)
-            elseif done.boss2_room and not dead[BOSS2] and pulled(BOSS2) then
-                pull2(director)
-            elseif done.last_room and not dead[BOSS3] and pulled(BOSS3) then
-                pull3(director)
-            end
-        end
-        if fight == 3 then
-            lastBossHealth(director, info)
-        end
-        if fight == 2 and not done.talk_32903 and health[BOSS2] ~= nil and health[BOSS2] < BOSS2_TALK_BELOW then
-            once("talk_32903")
-            director:battle_talk(BOSS2, NAME_BOSS2, 32903, 0, 3000)
-        end
-    end
-    runLater(director)
-    updating = false
+    D:update(director, health, player_health, info, between)
 end
 
 function onActorDeath(director, layout_id, position)
-    dead[layout_id] = true
-    if not done.four_dead and allDead(FOUR) then
-        once("four_dead")
-        talk(director, 32921)
-        director:show_eobj(EOBJ_LIFT1)
-        comeOut(director, FIVE)
-    end
-    if done.four_dead and not done.five_dead and allDead(FIVE) then
-        once("five_dead")
-        director:map_effect(2, 2, 1)
-        comeOut(director, TEN)
-    end
-    if done.five_dead and not done.ten_dead and allDead(TEN) then
-        once("ten_dead")
-        director:map_effect(3, 2, 1)
-    end
-    if layout_id == BOSS1 then
-        fight = nil
-        director:set_bgm(BGM_AFTER_BOSS1)
-        director:objective(1, 2)
-        director:hide_eobj(BOSS1_AHEAD)
-        director:show_eobj(EOBJ_HANGAR)
-        director:show_eobj(EOBJ_ARMOUR)
-        comeOut(director, AHEAD)
-        comeOut(director, RIDE)
-        dropHelpers(director, 1)
-        after(1.0, function(d) talk(d, 32916) end)
-    end
-    if dead[BOSS1] and not done.effect_5 and allDead(LAST_FIVE) then
-        once("effect_5")
-        director:map_effect(5, 2, 1)
-    end
+    D:died(director, layout_id)
     if layout_id == WALKERS[1] then
         director:map_effect(12, 1, 1)
     elseif layout_id == WALKERS[2] then
         director:map_effect(13, 1, 1)
     elseif layout_id == WALKERS[3] then
         director:map_effect(11, 2, 1)
-        after(0.6, function(d) d:spawn_bnpc(WALKERS[4]) end)
+        D:after(0.6, function(d) d:spawn_bnpc(WALKERS[4]) end)
     elseif layout_id == WALKERS[4] then
         director:map_effect(14, 1, 1)
         director:map_effect(18, 2, 1)
         director:spawn_bnpc(WALKER_LAST)
     elseif layout_id == WALKER_LAST then
-        once("ride_ended")
+        D:once("ride_ended")
         director:map_effect(6, 1, 4)
         cutscene(director, CUTSCENE_RIDE, CUTSCENE_RIDE_PARAMS)
         -- The mount goes 1.6 s into the cutscene (SetMode 1 and ActorControl 930 on retail.)
-        after(1.6, function(d)
-            for _, member in ipairs(party) do
+        D:after(1.6, function(d)
+            for _, member in ipairs(D.party) do
                 d:mount_player(member.id, 0)
             end
         end)
-        after(2.0, function(d) d:map_effect(7, 4, 4) end)
-    end
-    if layout_id == BOSS2 then
-        fight = nil
-        director:objective(3, 4)
-        director:map_effect(0, 8, 4)
-        director:map_effect(15, 1, 4)
-        director:hide_eobj(BOSS2_AHEAD)
-        director:show_eobj(EOBJ_LAST)
-        dropHelpers(director, 2)
-        director:despawn_bnpc(BOSS2_ADD)
-        cutscene(director, CUTSCENE_AFTER_BOSS2, CUTSCENE_AFTER_BOSS2_PARAMS)
-    end
-    if layout_id == BOSS3 and fight == 3 then
-        lastBossDown(director)
+        D:after(2.0, function(d) d:map_effect(7, 4, 4) end)
     end
 end
 
@@ -983,12 +855,12 @@ function onSceneFinished(director, scene)
     local ended = playing
     playing = nil
     if ended == CUTSCENE_RIDE then
-        once("ride_over")
+        D:once("ride_over")
     elseif ended == CUTSCENE_BOSS3 then
         sendTo(director, BOSS3_TO)
         -- The boss and its own are there 1.7 to 3.9 s after the cutscene ends (as the party arrives.)
-        after(1.5, function(d)
-            once("last_room")
+        D:after(1.5, function(d)
+            D:once("last_room")
             bringLastBoss(d)
         end)
     elseif ended == CUTSCENE_END then
@@ -996,31 +868,14 @@ function onSceneFinished(director, scene)
     end
 end
 
--- Everyone down: the fight they fell in is forgotten (the first two bosses' rooms reset themselves); the last boss
--- and everything of its fight goes, and comes back as the party does.
+-- Everyone down: the fight they fell in is forgotten (the framework's: no boss pulled again till it's home and whole);
+-- the last boss and everything of its fight goes, and comes back as the party does.
 function onPartyWipe(director)
-    if fight == "over" then
-        return
-    end
-    local was = fight
-    fight = nil
-    later = {}
-    helpers = {}
-    if was == 2 then
-        director:despawn_bnpc(BOSS2_ADD)
-        done.talk_32903 = nil
-    elseif was == 3 then
-        part2 = false
-        dropLastBoss(director)
-        last_boss_due = true
-    end
+    D:wipe(director)
 end
 
 function onDutyRecommence(director)
-    if last_boss_due then
-        last_boss_due = false
-        bringLastBoss(director)
-    end
+    D:recommence(director)
 end
 
 -- The lifts and the other objects: each works from its own floor once the way to it is open.
@@ -1030,15 +885,15 @@ function objectWorks(id, member)
         return y == nil or (y > low and y < high)
     end
     if id == EOBJ_LIFT1 then
-        return done.four_dead == true and floor(175, 200)
+        return D.done.four_dead == true and floor(175, 200)
     elseif id == EOBJ_LIFT2 then
-        return done.ten_dead == true and floor(145, 170)
+        return D.done.ten_dead == true and floor(145, 170)
     elseif id == EOBJ_HANGAR then
-        return dead[BOSS1] == true and floor(60, 90)
+        return D.dead[BOSS1] == true and floor(60, 90)
     elseif id == EOBJ_ARMOUR then
-        return dead[BOSS1] == true and not done.ride_ended and floor(95, 110)
+        return D.dead[BOSS1] == true and not D.done.ride_ended and floor(95, 110)
     elseif id == EOBJ_LAST then
-        return dead[BOSS2] == true and not done.object_last and floor(-120, -90)
+        return D.dead[BOSS2] == true and not D.done.object_last and floor(-120, -90)
     end
     return false
 end
@@ -1062,22 +917,22 @@ function onEventActionCast(director, actor_id, target)
     end
     if target == EOBJ_LIFT1 then
         sendTo(director, LIFT1_TO)
-        if once("lift1") then
-            after(4.6, function(d) d:map_effect(1, 2, 1) end)
+        if D:once("lift1") then
+            D:after(4.6, function(d) d:map_effect(1, 2, 1) end)
         end
     elseif target == EOBJ_LIFT2 then
-        once("lift2")
+        D:once("lift2")
         sendTo(director, LIFT2_TO)
     elseif target == EOBJ_HANGAR then
         sendTo(director, HANGAR_TO)
-        if once("hangar") then
-            after(5.7, function(d) talk(d, 32917) end)
-            after(12.7, function(d) talk(d, 32918) end)
+        if D:once("hangar") then
+            D:after(5.7, function(d) talk(d, 32917) end)
+            D:after(12.7, function(d) talk(d, 32918) end)
         end
     elseif target == EOBJ_ARMOUR then
         director:mount_player(actor_id, MOUNT_ARMOUR)
     elseif target == EOBJ_LAST then
-        once("object_last")
+        D:once("object_last")
         director:objective(4, 5)
         director:map_effect(16, 4096, 8192)
         director:hide_eobj(EOBJ_LAST)
