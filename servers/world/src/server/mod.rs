@@ -491,6 +491,16 @@ impl WorldServer {
                 let layout_id = object.layout_id;
                 instance.seal_gimmick(layout_id);
             }
+            // Fork: the barriers its director takes down with a map effect stand until then, for everyone
+            // (`map_effect_barriers`: Castrum Meridianum's way into its first boss's room.)
+            let map_effects = game_data.get_map_effects(instance.content_id as u32);
+            for layout_id in crate::map_effect_barriers::barriers(instance.zone.id)
+                .iter()
+                .filter_map(|(index, _)| map_effects.as_ref()?.get(*index as usize).copied())
+                .filter(|layout_id| *layout_id > 0)
+            {
+                instance.seal_gimmick(layout_id as u32);
+            }
         } else {
             tracing::warn!(
                 "No director created for TerritoryIntendedUse {}! If this is unexpected, please report it.",

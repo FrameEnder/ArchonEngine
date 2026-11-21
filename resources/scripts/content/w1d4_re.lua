@@ -173,6 +173,8 @@ PACKS = {
 ENTRANCE = { x = 247.7, z = -95.0 }
 WHERE_START_FROM = 8.0 -- yalms from the entrance: talks 33506 and, 7.0 s on, 33507
 WHERE_EFFECTS_2_3_X = 208.0 -- west of this: map effects 2 and 3 (timeline 2, state 2)
+ROOM_BOSS1 = { BOSS1, 9169252, 9169255, 9169256, 9169257 }
+ROOM_BOSS1_RADIUS = 24.0 -- its line's distance from the middle
 WHERE_BOSS1 = 26.0 -- yalms from the first boss's middle (its line is 24 out): objective 0
 WHERE_TALK_33510_Z = 230.0 -- south of this after the device: talk 33510
 WHERE_EFFECTS_8_9_X = -36.0 -- west of this then: map effects 8 and 9
@@ -274,6 +276,11 @@ function onSetup(director)
     director:set_sequence(1)
     director:boss_room(BOSS1, BOSS1_WALL, BOSS1_LINE, PLACE_BOSS1, {})
     director:boss_room(BOSS2, BOSS2_WALL, BOSS2_LINE, PLACE_BOSS2, {})
+    -- The first boss and its four keep to their room: they notice only whoever comes in, are pulled together, and
+    -- don't follow anyone out (retail's five, all five runs: pulled within 2.1 s of each other as the player came 7
+    -- to 11 yalms inside the line, none more than 10.7 yalms from the middle; Bob's mark of 2026-11-21: "enemies are
+    -- not suppose to leave the wall barrier".)
+    director:keep_in_room(ROOM_BOSS1, BOSS1_MIDDLE.x, BOSS1_MIDDLE.y, BOSS1_MIDDLE.z, ROOM_BOSS1_RADIUS)
     -- The walls stand open until a pull; the rooms' lines, the device and the way out wait.
     for _, wall in ipairs({ BOSS1_WALL, BOSS2_WALL, BOSS3_WALL }) do
         director:hide_eobj(wall)

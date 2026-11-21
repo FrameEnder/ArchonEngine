@@ -5,6 +5,9 @@ use std::{
 };
 
 use glam::{Affine3A, Vec3A};
+use icarus::ContentDirectorManagedSG::ContentDirectorManagedSGSheet;
+use icarus::ContentFinderCondition::ContentFinderConditionSheet;
+use icarus::InstanceContent::InstanceContentSheet;
 use icarus::RecastNavimesh::RecastNavimeshSheet;
 use icarus::TerritoryType::TerritoryTypeSheet;
 use kawari::config::get_config;
@@ -128,6 +131,12 @@ fn main() {
                 }
             }
         }
+    }
+    // The barriers its director takes down with a map effect (`kawari_world::map_effect_barriers`): SharedGroups no
+    // event object owns, gimmicks by their own layout ID. Built in, Castrum Meridianum's way into its first boss's room
+    // stayed in the collision and the navmesh after it opened (Bob's marks of 2026-11-20 and 21.)
+    for layout_id in map_effect_barriers(&mut resolver, zone_id, row.ContentFinderCondition) {
+        bound.insert(layout_id, layout_id);
     }
     // Which layers are this territory's (its LVB layer set), as the world server spawns from and the client shows:
     // only those are built from (FrameEnder fork, 2026-11-14). With every layer of the level, each territory had the
@@ -758,6 +767,54 @@ fn walk_node(node: &Node, transform: &Affine3A, owner: u32, geometry: &mut Geome
     for child in &node.children {
         walk_node(child, transform, owner, geometry);
     }
+}
+
+/// The layout IDs of the SharedGroups `zone_id`'s director takes down with a map effect: the duty's
+/// ContentDirectorManagedSG at each index `map_effect_barriers.json` lists (the list DirectorSetupMapEffects follows.)
+fn map_effect_barriers(
+    resolver: &mut ResourceResolver,
+    zone_id: u16,
+    content_finder_condition: u16,
+) -> Vec<u32> {
+    let barriers = kawari_world::map_effect_barriers::barriers(zone_id);
+    if barriers.is_empty() || content_finder_condition == 0 {
+        return Vec::new();
+    }
+    let Some(condition) = ContentFinderConditionSheet::read_from(resolver, Language::None)
+        .ok()
+        .and_then(|sheet| sheet.row(content_finder_condition as u32))
+    else {
+        return Vec::new();
+    };
+    // ContentLinkType 1: an InstanceContent.
+    if condition.ContentLinkType != 1 {
+        return Vec::new();
+    }
+    let Some(managed) = InstanceContentSheet::read_from(resolver, Language::None)
+        .ok()
+        .and_then(|sheet| sheet.row(condition.Content as u32))
+        .map(|row| row.ContentDirectorManagedSG as u32)
+    else {
+        return Vec::new();
+    };
+    let Ok(sheet) = ContentDirectorManagedSGSheet::read_from(resolver, Language::None) else {
+        return Vec::new();
+    };
+    let Some((_, rows)) = sheet.into_iter().find(|(id, _)| *id == managed) else {
+        return Vec::new();
+    };
+    let layouts: Vec<i32> = rows.iter().map(|(_, row)| row.LayoutId).collect();
+    let found: Vec<u32> = barriers
+        .iter()
+        .filter_map(|(index, _)| layouts.get(*index as usize).copied())
+        .filter(|layout| *layout > 0)
+        .map(|layout| layout as u32)
+        .collect();
+    tracing::info!(
+        "Map effect barriers {:?}: SharedGroups {found:?} are gimmicks",
+        barriers.iter().map(|(index, _)| *index).collect::<Vec<_>>()
+    );
+    found
 }
 
 fn add_plate(

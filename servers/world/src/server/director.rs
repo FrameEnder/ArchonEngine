@@ -386,6 +386,12 @@ pub enum LuaDirectorTask {
         layout_id: u32,
         notices: bool,
     },
+    /// BNpcs (layout IDs) that keep to a boss room, a circle round `middle` (`Room`, `director:keep_in_room`.)
+    KeepInRoom {
+        layouts: Vec<u32>,
+        middle: glam::Vec3A,
+        radius: f32,
+    },
     /// How close (in yalms) a BNpc gets to its target before attacking: melee (3) or a caster's range (15.)
     SetAttackRange {
         layout_id: u32,
@@ -1432,6 +1438,19 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
+        // `director:keep_in_room({ layouts }, x, y, z, radius)`: they notice only whoever is in the circle, are pulled
+        // together, and don't step out of it (`Room`.)
+        methods.add_method_mut(
+            "keep_in_room",
+            |_, this, (layouts, x, y, z, radius): (Vec<u32>, f32, f32, f32, f32)| {
+                this.tasks.push(LuaDirectorTask::KeepInRoom {
+                    layouts,
+                    middle: glam::Vec3A::new(x, y, z),
+                    radius,
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut(
             "set_attack_range",
             |_, this, (layout_id, yalms): (u32, f32)| {
@@ -1840,6 +1859,32 @@ fn role_spots(table: mlua::Table) -> mlua::Result<crate::server::dodge::RoleSpot
     }
     spots.sort_by(|a, b| a.0.cmp(&b.0));
     Ok(crate::server::dodge::RoleSpots(spots))
+}
+
+/// A map effect that takes down one of the duty's barriers (`map_effect_barriers`): its SharedGroup, at that index of
+/// the duty's ContentDirectorManagedSG, goes from this instance's collision, as the client takes it away for players.
+fn take_down_barrier(
+    game_data: &Arc<Mutex<GameData>>,
+    instance: &mut Instance,
+    index: u32,
+    timeline: u32,
+    state: u32,
+) {
+    if !crate::map_effect_barriers::takes_down(instance.zone.id, index, timeline, state) {
+        return;
+    }
+    let layout_id = game_data
+        .lock()
+        .get_map_effects(instance.content_id as u32)
+        .and_then(|ids| ids.get(index as usize).copied())
+        .filter(|layout_id| *layout_id > 0);
+    match layout_id {
+        Some(layout_id) => {
+            tracing::info!("Map effect {index} takes down its barrier (SharedGroup {layout_id})");
+            instance.set_gimmick_gone(layout_id as u32, true);
+        }
+        None => tracing::warn!("Map effect {index}'s barrier has no SharedGroup in this duty"),
+    }
 }
 
 /// A boss room's arena (`DirectorBoss::arena`) the zone has no range for keeps nobody in: said once, as it's set.
@@ -3677,6 +3722,21 @@ pub fn director_tick(
                     instance.unaware_npcs.insert(*layout_id);
                 }
             }
+            LuaDirectorTask::KeepInRoom {
+                layouts,
+                middle,
+                radius,
+            } => {
+                let members: std::collections::HashSet<u32> = layouts.iter().copied().collect();
+                instance
+                    .rooms
+                    .retain(|room| room.members.is_disjoint(&members));
+                instance.rooms.push(crate::server::instance::Room {
+                    middle: *middle,
+                    radius: *radius,
+                    members,
+                });
+            }
             LuaDirectorTask::SetAttackRange { layout_id, yalms } => {
                 let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
                     tracing::warn!("Failed to find bnpc {layout_id} for SetAttackRange!");
@@ -3897,6 +3957,7 @@ pub fn director_tick(
                 timeline_id,
                 state,
             } => {
+                take_down_barrier(&game_data, instance, *index, *timeline_id, *state as u32);
                 let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::DirectorMapEffect {
                     handler_id: director_id,
                     state: *state,
@@ -3928,6 +3989,7 @@ pub fn director_tick(
                     tracing::warn!("No map effect for layout {layout_id} in this duty!");
                     continue;
                 };
+                take_down_barrier(&game_data, instance, index, *timeline_id, *state as u32);
                 let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::DirectorMapEffect {
                     handler_id: director_id,
                     state: *state,

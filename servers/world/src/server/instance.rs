@@ -252,6 +252,8 @@ pub struct Instance {
     /// Aggressive BNpcs (by layout ID) a director has told not to notice anyone who comes close: they fight only when
     /// hit or sent after someone (`director:set_notice`; Victory in Peril's boss through its cutscene.)
     pub unaware_npcs: std::collections::HashSet<u32>,
+    /// Boss rooms whose NPCs keep to them (`director:keep_in_room`, `Room`.)
+    pub rooms: Vec<Room>,
     /// Open-world NPCs and whom they couldn't get to, until when they leave them alone (`npc_behavior`.)
     pub unreachable: HashMap<(ObjectId, ObjectId), std::time::Instant>,
     /// NPCs a wall has stopped, and for how many behaviour ticks in a row (`npc_behavior`, `NPC_WALL_PATIENCE_TICKS`.)
@@ -449,8 +451,8 @@ impl Instance {
                 // A navmesh made before the collision was written with it: made again (both), keeping this one
                 // until then. NPCs keep to the navmesh's floor meanwhile.
                 // One made before the collision had the layouts' simple shapes (version 4) or left open doors open
-                // (version 5), or beside a navmesh with 32-bit polygon references (version 6: that navmesh isn't read):
-                // made again too.
+                // (version 5), or beside a navmesh with 32-bit polygon references (version 6: that navmesh isn't read),
+                // or with a duty's map effect barriers built in (version 7, `map_effect_barriers`): made again too.
                 let older = instance
                     .collision
                     .as_ref()
@@ -1242,5 +1244,39 @@ mod tests {
         // A duty not recorded still goes by the EObj IDs.
         instance.zone.id = 9999;
         assert_eq!(instance.find_entrance_circle(), Some(ObjectId(1)));
+    }
+}
+
+/// A boss room whose NPCs (by layout ID) keep to it (`director:keep_in_room`): they notice only whoever is inside,
+/// are pulled together, and never step out after anyone. Castrum Meridianum's Black Eft and its four were pulled
+/// within 2.1 s of each other in all five retail runs, as the player came 7 to 11 yalms inside the room's line (24
+/// yalms out), and none went more than 10.7 yalms from the room's middle; Kawari's four noticed the party at the
+/// room's door, 11 s before their boss, and walked out after it (Bob's mark of 2026-11-21: "enemies are not suppose
+/// to leave the wall barrier").
+#[derive(Debug, Clone, PartialEq)]
+pub struct Room {
+    pub middle: glam::Vec3A,
+    pub radius: f32,
+    pub members: HashSet<u32>,
+}
+
+/// How far inside its room's edge a member's chase stops (yalms): the edge itself is the wall.
+pub const ROOM_MARGIN: f32 = 1.0;
+
+impl Room {
+    /// Whether `at` is inside the room (across the ground.)
+    pub fn holds(&self, at: glam::Vec3A) -> bool {
+        glam::Vec3A::new(at.x - self.middle.x, 0.0, at.z - self.middle.z).length() <= self.radius
+    }
+
+    /// `goal`, or where the room's edge (less `ROOM_MARGIN`) is on the way to it from the middle.
+    pub fn keep_inside(&self, goal: glam::Vec3A) -> glam::Vec3A {
+        let offset = glam::Vec3A::new(goal.x - self.middle.x, 0.0, goal.z - self.middle.z);
+        let limit = (self.radius - ROOM_MARGIN).max(0.0);
+        if offset.length() <= limit {
+            return goal;
+        }
+        let inside = self.middle + offset.normalize_or_zero() * limit;
+        glam::Vec3A::new(inside.x, goal.y, inside.z)
     }
 }

@@ -662,6 +662,9 @@ its way out of combat (past `WALL_PATIENCE`), or with no navmesh path to its spo
 walked (within 1.5 yalms of a step) it goes on through what the collision has there; a gimmick the director put up
 still stops it. Test `a_bot_held_up_follows_the_way_its_player_walked`.
 
+Since 2026-11-21 that barrier is a gimmick that goes with its map effect ([Quest battles](quest-battles.md):
+`map_effect_at`), so the bots' navmesh path goes through it once it's down; the footsteps stay for what isn't listed.
+
 **On the ground their player walked on** (2026-11-21, Bob's screenshot on `a8d58e5`: "Thalvath Mos is standing in
 the air everyone else isn't … walking in the road"). The server had that bot 0.75 to 1.0 yalms over the road the
 player and the other bots walked: Castrum Meridianum's collision has something about a yalm over the road there,

@@ -364,6 +364,35 @@ fn someone_just_raised_takes_no_damage_until_they_act() {
     );
 }
 
+/// Bob's mark in Castrum Meridianum, 2026-11-21: "enemies are not suppose to leave the wall barrier and allies are
+/// still struggling to enter the black efts boss arena". The first boss's four noticed the party at the room's door,
+/// 11 s before their boss, and walked out after it; retail's five were pulled together as the player came in, and none
+/// went more than 10.7 yalms from the middle. A room's NPC notices only whoever is inside, and a chase stops short of
+/// its edge (`Room`); the way in is a map effect's barrier, gone when map effect 1 takes it down.
+#[test]
+fn a_boss_rooms_enemies_keep_to_it() {
+    use crate::server::instance::{ROOM_MARGIN, Room};
+    let room = Room {
+        middle: Vec3A::new(11.8, 70.2, -38.6),
+        radius: 24.0,
+        members: [9060841, 9169252].into_iter().collect(),
+    };
+    // The party at the door (where Kawari's four went after them) isn't in it; 7 yalms inside the line is.
+    let door = Vec3A::new(34.7, 71.7, -46.4);
+    assert!(!room.holds(door));
+    assert!(room.holds(Vec3A::new(27.0, 71.0, -44.0)));
+    // After someone at the door, a member goes no further than a yalm inside the edge, on the way there.
+    let goal = room.keep_inside(door);
+    let out = Vec3A::new(goal.x - 11.8, 0.0, goal.z + 38.6).length();
+    assert!((out - (24.0 - ROOM_MARGIN)).abs() < 0.01, "{goal:?}");
+    assert_eq!(goal.y, door.y);
+    // Someone inside: there.
+    let inside = Vec3A::new(20.0, 70.5, -40.0);
+    assert_eq!(room.keep_inside(inside), inside);
+    // The way in comes down with map effect 1 (timeline 2, state 1), as the five before the room fall.
+    assert!(crate::map_effect_barriers::takes_down(1043, 1, 2, 1));
+}
+
 /// Bob's run of Castrum Meridianum, 2026-11-21: "the area of effect data … not even attached to the enemy". Retail
 /// placed 29174 (BNpcBase 14573's 2.7 s cast, named to no one) on the caster's own spot in all five of its retail runs;
 /// Kawari aimed it at the caster's target, 3 to 4 yalms off. An area retail placed on the ground at the caster is cast

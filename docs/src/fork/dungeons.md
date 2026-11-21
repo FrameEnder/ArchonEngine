@@ -1252,6 +1252,18 @@ player or another member, not always its target), 0.8 to 8.9 yalms from the cast
 `at_random_foe`, `not_before` 43, `every` 600 ([Combat](combat.md)). The map effects 2 and 3 west of x = 208 (the
 scenery's) came as retail's did. The first stretch's Player NPCs: [Party bots](party-bots.md#at-a-wipe-2026-11-10).
 
+**The Black Eft's room** (2026-11-21, Bob's mark on `b4a981b`: "enemies are not suppose to leave the wall barrier
+and allies are still struggling to enter the black efts boss arena"). Read through the harness: the boss's four
+noticed the party at the room's door, 11 s before the boss was pulled, and walked out through the way in after
+them; the Player NPCs stopped at it, and were outside when the room's wall went up. Two causes. The way in is a
+barrier map effect 1 takes down as the five before the room fall, and no event object owns it, so it had been built
+into the collision and navmesh for good: the bots held at it, and the enemies "walked on through" it after their
+patience. It's now a gimmick (`map_effect_barriers.json`: 0, 1, 5 and 6 with timeline 2, state 1), sealed until the
+map effect, gone after: the same for everyone, the navmesh's paths through it. And retail's five were pulled within
+2.1 s of each other as the player came 7 to 11 yalms inside the room's line (24 yalms from the middle), none going
+more than 10.7 yalms out, in all five runs: `director:keep_in_room` (only whoever is inside is noticed, the rest
+pulled with the first, nobody followed out), called for the five in `onSetup`. Not checked in game.
+
 **The Imperial casters' area attacks** (2026-11-21, Bob's run on `259c65d`: "far too common, not even attached to the
 enemy, the enemies aren't waiting to cast their area of effect action before moving"). Three things, all against the
 five retail runs (`questkit rates`, [Combat](combat.md)). *How often*: the drafted timelines had no `every` for an

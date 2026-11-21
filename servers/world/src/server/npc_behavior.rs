@@ -968,6 +968,31 @@ pub fn npc_behavior(
 
     // Who sees whom, on the collision as it is this tick (`in_sight`.)
     let sight = instance.collision.clone();
+    // Boss rooms whose NPCs keep to them (`Room`), and whom each room's fight is with: a member's target, for the
+    // others to be pulled with it.
+    let rooms = instance.rooms.clone();
+    let room_of = |layout_id: u32| {
+        rooms
+            .iter()
+            .position(|room| layout_id != 0 && room.members.contains(&layout_id))
+    };
+    let room_targets: HashMap<usize, ObjectId> = instance
+        .actors
+        .values()
+        .filter_map(|actor| match actor {
+            NetworkedActor::Npc { spawn, state, .. }
+                if *state == NpcState::Hate
+                    && spawn.common.health_points > 0
+                    && spawn.common.target_id.object_id.is_valid() =>
+            {
+                Some((
+                    room_of(spawn.common.layout_id)?,
+                    spawn.common.target_id.object_id,
+                ))
+            }
+            _ => None,
+        })
+        .collect();
     // mut pass
     for (id, actor) in &mut instance.actors {
         // A director's helper does only what it's told: it neither moves, notices, fights nor follows a timeline
@@ -1194,8 +1219,19 @@ pub fn npc_behavior(
                 let mut game_data = game_data.lock();
                 let possible_enemies =
                     game_data.get_battalion_enemies(spawn.common.battalion as u32);
+                let room = room_of(spawn.common.layout_id);
+                // Pulled with the rest of its room: their target is its own (`Room`.)
+                let pulled_with = room.and_then(|room| room_targets.get(&room).copied());
 
                 for (target_id, position, battalion) in &enemies {
+                    if pulled_with.is_some_and(|with| with != *target_id) {
+                        continue;
+                    }
+                    let joins = pulled_with == Some(*target_id);
+                    // A room's NPC notices only whoever is inside it (`Room::holds`.)
+                    if !joins && room.is_some_and(|room| !rooms[room].holds(position.0)) {
+                        continue;
+                    }
                     if !possible_enemies[*battalion as usize] || untargetable.contains(target_id) {
                         continue;
                     }
@@ -1215,8 +1251,9 @@ pub fn npc_behavior(
                     // Vigil's 1466 behind the second boss's way on (2001879, shut until the boss falls) noticed the party
                     // through it and pulled them away from the boss to a door they couldn't pass (Bob's bundles
                     // 20261107-214952 and 20261107-221820); on retail it waited until the door opened.
-                    if can_notice(spawn.common.position.0, spawn.common.rotation, position.0)
-                        && in_sight(sight.as_deref(), spawn.common.position.0, position.0)
+                    if joins
+                        || can_notice(spawn.common.position.0, spawn.common.rotation, position.0)
+                            && in_sight(sight.as_deref(), spawn.common.position.0, position.0)
                     {
                         enmity.entry(*target_id).or_insert(1);
                         *autoattack_timing = 0;
@@ -1397,6 +1434,11 @@ pub fn npc_behavior(
                             target_pos
                         };
                         let goal = strayed_to.unwrap_or(chase_to);
+                        // A room's NPC goes no further than its room's edge after anyone (`Room::keep_inside`.)
+                        let goal = match room_of(spawn.common.layout_id) {
+                            Some(room) => rooms[room].keep_inside(goal),
+                            None => goal,
+                        };
                         let gap = if following_owner {
                             f32::INFINITY
                         } else {

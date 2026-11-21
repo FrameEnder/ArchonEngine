@@ -836,12 +836,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * **Layer filter keys after A Realm Reborn** (2026-11-19): Connor's capture af05916c, read whole with `--layers`, names
   keys the table hasn't: the Waking Sands' 96535 and 96536 (after 1191, 1192 and 3878) and the Rising Stones' (351:
   96654 to 100185, after 3878 to 1448). Not in `layer_keys.json` yet (the test would fail); 2.x's story isn't played.
-* **Barriers a map effect opens stay in the collision and navmesh** (Bob, 2026-11-20, Castrum Meridianum: "the player
-  NPCs had a hard time passing the wall barrier", then "couldn't path through" it): the way into the first boss's room
-  at (36.0, 72.0, -46.2), which map effect 1 opens. No event object owns it, so `kawari-navimesh` builds it in and
-  nothing takes it out; which of the layout's shared groups a map effect index moves isn't known here (no layout).
-  Bots now follow their player's footsteps through it ([Party bots](party-bots.md)); enemies chasing through it wait
-  their patience (2 s) as before.
+* **Map effects' barriers** (2026-11-21, untested in game): only those in `resources/data/map_effect_barriers.json`
+  are gimmicks (Castrum Meridianum's 0, 1, 5 and 6, from its script's packs); another duty's barrier a map effect
+  takes down is still built into its collision and navmesh until it's listed. Which [timeline, state] puts one back
+  (none seen: Castrum Meridianum's stay down) isn't known. Every zone's navmesh and collision are made again on its
+  first entry (collision version 7). The Black Eft's room is kept by `keep_in_room` (a circle of 24 yalms, its line's
+  distance); the second and last bosses' rooms aren't (no complaint, their adds not measured).
 * **The Scenario Guide's click opens no map** for A Hero in Need (1037, not yet taken) from the Waking Sands (Bob's
   mark of 2026-11-19; M opens the map). Everything the server sends for it is retail's and the click sends nothing,
   so the client is refusing for a reason of its own, not found yet: Kawari Probe 0.7.2's Stuck window records the

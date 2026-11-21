@@ -71,6 +71,7 @@ pub mod collision;
 pub mod entrance_facing;
 pub mod event_item_effects;
 pub mod layer_filters;
+pub mod map_effect_barriers;
 mod navmesh;
 pub mod quest_side_talks;
 pub mod quest_travel;

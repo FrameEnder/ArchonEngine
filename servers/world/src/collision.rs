@@ -41,7 +41,10 @@ use glam::Vec3A;
 
 /// The file's first bytes, and the layout's version.
 const MAGIC: &[u8; 4] = b"KCOL";
-const VERSION: u32 = 6;
+const VERSION: u32 = 7;
+/// The version before the map effects' barriers were gimmicks (`map_effect_barriers`), still read (the same layout):
+/// made again, so a duty's barriers leave its navmesh and can leave its collision.
+const VERSION_BARRIERS_BUILT_IN: u32 = 6;
 /// The version beside a navmesh with 32-bit polygon references, still read (the same layout): the navmesh beside it
 /// isn't (`Navmesh`'s `KNV64`), so both are made again.
 const VERSION_BESIDE_32_BIT_NAVMESH: u32 = 5;
@@ -319,6 +322,7 @@ impl Collision {
         let version = r.u32()?;
         if ![
             VERSION,
+            VERSION_BARRIERS_BUILT_IN,
             VERSION_BESIDE_32_BIT_NAVMESH,
             VERSION_WITH_DOORS_SHUT,
             VERSION_WITHOUT_SHAPES,
