@@ -13,6 +13,9 @@
 -- (259), who calls two adds (260) at 75 and 30 %, sheds its tail (266, an add) at 55 % and drops eggs (572) that burst
 -- where its 698 was aimed.
 
+-- Written with the dungeon framework (content/lib/Dungeon.lua, loaded first): the webs are its packs, the rooms'
+-- crossings its steps, the three bosses its; the adds, the tail and the eggs are the script's own.
+
 -- The webs: the map effect each is (shown burning away with timeline 2) and the pack whose last death burns it; two
 -- leave a room's boss targetable (retail: ActorControl 54 with the map effect.) Retail, both runs: each map effect as
 -- the pack's last member's health reached 0, whoever it was.
@@ -149,11 +152,11 @@ PARTY_NPC_LINE_ROOM1 = 14336
 PARTY_NPC_LINE_FINAL = 14337
 PARTY_NPC_LINE_FINAL_AFTER = 10.6
 
+DUNGEON = Dungeon.new()
+D = DUNGEON
+
 -- How far the party has got
 webs_burnt = {}
-dead = {}
-rooms_entered = {}
-rooms_pulled = {}
 room_adds_called = {}
 final_started = false
 final_adds_called = 0
@@ -169,21 +172,91 @@ function distance(a, b)
     return math.sqrt(dx * dx + dy * dy + dz * dz)
 end
 
--- Whether any player has come within `room.reach` of its boss.
-function crossed(info, room)
-    for key, actor in pairs(info) do
-        if type(key) == "string" and key:match("^player%d+$") and distance(actor, room.boss_at) <= room.reach then
-            return true
-        end
-    end
-    return false
+-- ---- The webs: each burns away as the last of its pack falls ----
+
+for _, web in ipairs(WEBS) do
+    D:pack({ name = "web" .. web.index, layouts = web.pack, effects = { { web.index, MAP_EFFECT_BURNT } },
+        on_fall = function(director)
+            webs_burnt[web.index] = true
+            if web.boss ~= nil then
+                director:set_targetable(web.boss, true)
+            end
+        end })
 end
+
+-- ---- Crossing into the rooms (a player within `reach` of its boss) ----
+
+for index, room in ipairs(ROOMS) do
+    D:step({ name = "room" .. index, ready = function() return webs_burnt[room.web] == true end,
+        where = function(m) return m.player and distance(m, room.boss_at) <= room.reach end,
+        run = function(director)
+            director:objective(room.entered, room.entered + 1)
+            if index == 1 then
+                director:party_npc_yell("healer", PARTY_NPC_LINE_ROOM1)
+            end
+        end })
+end
+-- The last room: its cutscene, then its boss.
+D:step({ name = "final", ready = function() return webs_burnt[5] == true end,
+    where = function(m) return m.player and distance(m, FINAL.boss_at) <= FINAL.reach end,
+    run = function(director)
+        final_started = true
+        director:objective(FINAL.entered, FINAL.entered + 1)
+        director:play_cutscene(CUTSCENE_FINAL)
+        director:set_weather(WEATHER_FINAL, WEATHER_FINAL_FADE, true)
+        director:party_npc_yell("tank", PARTY_NPC_LINE_FINAL, PARTY_NPC_LINE_FINAL_AFTER)
+        director:delay(FINAL_BOSS_AFTER)
+        director:spawn_boss(FINAL.boss, FINAL.wall, FINAL.line, FINAL.place)
+        director:delay(0)
+    end })
+
+-- ---- The bosses ----
+
+for index, room in ipairs(ROOMS) do
+    D:boss({ id = index, layout = room.boss, wall = room.wall, line = room.line, place = room.place,
+        eobjs_at_setup = false, bgm = BGM_BATTLE, after_bgm = 0,
+        -- Its walls go (the boss room's), the way on opens and its coffers appear.
+        on_death = function(director)
+            director:hide_eobj(room.barrier)
+            director:objective(room.cleared, room.cleared + 1)
+            for _, coffer in ipairs(room.coffers) do
+                director:spawn_treasure(coffer)
+            end
+        end })
+end
+
+D:boss({ id = 3, layout = FINAL.boss, wall = FINAL.wall, line = FINAL.line, place = FINAL.place,
+    comes_later = true, eobjs_at_setup = false, last = true, bgm = false,
+    -- Its 698 aimed at someone: an egg lands where they stood, bursts, and dies.
+    on_cast = {
+        [ACTION_EGG_THROWN] = function(director, x, y, z)
+            if x == nil then
+                return
+            end
+            director:delay(EGG_LANDS_AFTER)
+            local egg = director:spawn_bnpc(BNPC_EGG, x, y, z, 0)
+            director:hold_bnpc(egg)
+            director:delay(EGG_LANDS_AFTER + EGG_BURSTS_AFTER)
+            director:actor_use_action(egg, ACTION_EGG, egg)
+            director:delay(EGG_LANDS_AFTER + EGG_BURSTS_AFTER + EGG_DIES_AFTER)
+            director:kill_bnpc(egg)
+        end,
+    },
+    on_death = function(director)
+        director:objective(FINAL.cleared, nil)
+        director:complete_duty()
+        director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
+        director:set_weather(WEATHER_AFTER, WEATHER_AFTER_FADE, false)
+        director:spawn_treasure(FINAL_COFFER)
+    end })
+
+-- ---- What the server calls ----
 
 function onSetup(director)
     director:set_sequence(1)
 
+    D:setup(director)
     for _, room in ipairs(ROOMS) do
-        director:boss_room(room.boss, room.wall, room.line, room.place)
         -- The walls stand open until a pull (retail: spawned in state 7)
         director:hide_eobj(room.wall)
     end
@@ -202,34 +275,10 @@ function onSetup(director)
     director:party_npc_yell("tank", PARTY_NPC_LINE_START, PARTY_NPC_LINE_START_AFTER)
 end
 
-function burnWeb(director, web)
-    webs_burnt[web.index] = true
-    director:map_effect(web.index, MAP_EFFECT_BURNT)
-    if web.boss ~= nil then
-        director:set_targetable(web.boss, true)
-    end
-end
-
-function onUpdate(director, health, player_health, info)
-    if info == nil then
-        return
-    end
-
+-- After the pulls: the rooms' adds, the last boss's adds and tail.
+local function between(director)
+    local health, info = D.health, D.info
     for index, room in ipairs(ROOMS) do
-        -- Crossing into the room
-        if not rooms_entered[index] and webs_burnt[room.web] and crossed(info, room) then
-            rooms_entered[index] = true
-            director:objective(room.entered, room.entered + 1)
-            if index == 1 then
-                director:party_npc_yell("healer", PARTY_NPC_LINE_ROOM1)
-            end
-        end
-        -- Its boss going for someone: the battle music (the seal is the boss room's)
-        if not rooms_pulled[index] and info[room.boss] ~= nil and info[room.boss].target ~= nil then
-            rooms_pulled[index] = true
-            director:set_bgm(BGM_BATTLE)
-        end
-        -- Its adds
         if room.adds ~= nil and not room_adds_called[index] and health[room.boss] ~= nil
             and health[room.boss] <= room.adds_at then
             room_adds_called[index] = true
@@ -239,18 +288,6 @@ function onUpdate(director, health, player_health, info)
                 table.insert(called, add)
             end
         end
-    end
-
-    -- Crossing into the last room: its cutscene, then its boss
-    if not final_started and webs_burnt[5] and crossed(info, FINAL) then
-        final_started = true
-        director:objective(FINAL.entered, FINAL.entered + 1)
-        director:play_cutscene(CUTSCENE_FINAL)
-        director:set_weather(WEATHER_FINAL, WEATHER_FINAL_FADE, true)
-        director:party_npc_yell("tank", PARTY_NPC_LINE_FINAL, PARTY_NPC_LINE_FINAL_AFTER)
-        director:delay(FINAL_BOSS_AFTER)
-        director:spawn_boss(FINAL.boss, FINAL.wall, FINAL.line, FINAL.place)
-        return
     end
 
     local boss = health[FINAL.boss]
@@ -281,6 +318,10 @@ function onUpdate(director, health, player_health, info)
     end
 end
 
+function onUpdate(director, health, player_health, info)
+    D:update(director, health, player_health, info, between)
+end
+
 -- The boss's 702: the tail comes off with the first.
 function useTail(director, boss)
     tail_next_at = os.time() + TAIL_AGAIN_EVERY
@@ -297,80 +338,37 @@ function useTail(director, boss)
     end
 end
 
--- The boss's 698 aimed at someone: an egg lands where they stood, bursts, and dies.
 function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
-    if layout_id ~= FINAL.boss or action_id ~= ACTION_EGG_THROWN or x == nil then
-        return
-    end
-    director:delay(EGG_LANDS_AFTER)
-    local egg = director:spawn_bnpc(BNPC_EGG, x, y, z, 0)
-    director:hold_bnpc(egg)
-    director:delay(EGG_LANDS_AFTER + EGG_BURSTS_AFTER)
-    director:actor_use_action(egg, ACTION_EGG, egg)
-    director:delay(EGG_LANDS_AFTER + EGG_BURSTS_AFTER + EGG_DIES_AFTER)
-    director:kill_bnpc(egg)
+    D:cast(director, layout_id, action_id, actor_id, x, y, z)
 end
 
 function onActorDeath(director, layout_id, position)
-    dead[layout_id] = (dead[layout_id] or 0) + 1
-
-    for _, web in ipairs(WEBS) do
-        if not webs_burnt[web.index] then
-            local standing = false
-            for _, id in ipairs(web.pack) do
-                if dead[id] == nil then
-                    standing = true
-                end
-            end
-            if not standing then
-                burnWeb(director, web)
-            end
-        end
-    end
-
-    for index, room in ipairs(ROOMS) do
-        if layout_id == room.boss then
-            -- Its walls go (the boss room's), the music stops, the way on opens and its coffers appear
-            director:set_bgm(0)
-            director:hide_eobj(room.barrier)
-            director:objective(room.cleared, room.cleared + 1)
-            for _, coffer in ipairs(room.coffers) do
-                director:spawn_treasure(coffer)
-            end
-        end
-    end
-
+    D:died(director, layout_id, position)
     if layout_id == BNPC_TAIL then
         tail_alive = false
         director:bnpc_control(FINAL.boss, 20, { 64 })
         director:bnpc_control(FINAL.boss, 30, { 0, 2, tail_actor, 1 })
         director:bnpc_control(FINAL.boss, 31, { 0, 0, 0, 0 })
-    elseif layout_id == FINAL.boss then
-        director:objective(FINAL.cleared, nil)
-        director:complete_duty()
-        director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
-        director:set_weather(WEATHER_AFTER, WEATHER_AFTER_FADE, false)
-        director:spawn_treasure(FINAL_COFFER)
     end
 end
 
 -- Everyone back at the start (a wipe; the server sends the enemies home whole): what a fight under way had called is
 -- taken away (its adds, the last boss's tail) and what's kept of it forgotten, so the next pull is a first pull again
--- (the music, the adds as the boss's health falls from full, the tail at half.) Not seen on retail (no wipe here in
--- Bob's captures; whether the last boss shows its tail again isn't known, so its model is left as it was); found by
--- `questkit duty-sim`'s rehearsed wipes (2026-11-10.)
+-- (the framework's: the music, no boss pulled till it's home; the adds as the boss's health falls from full, the tail
+-- at half.) Not seen on retail (no wipe here in Bob's captures; whether the last boss shows its tail again isn't
+-- known, so its model is left as it was); found by `questkit duty-sim`'s rehearsed wipes (2026-11-10.)
 function onPartyWipe(director)
     for _, actor in ipairs(called) do
         director:despawn_bnpc(actor)
     end
     called = {}
+    D:wipe(director)
     for index, room in ipairs(ROOMS) do
-        if dead[room.boss] == nil then
-            rooms_pulled[index] = false
+        if not D.dead[room.boss] then
             room_adds_called[index] = false
         end
     end
-    if dead[FINAL.boss] == nil then
+    if not D.dead[FINAL.boss] then
         final_adds_called = 0
         tail_started = false
         tail_actor = nil

@@ -78,8 +78,11 @@ script, in the hooks or around the calls. **Converted**, each playing its retail
 * Haukke Manor (`f1d2_re.lua`, 2026-11-21): the first boss, the pair (a `group`) and the last boss; the keys and
   doors, the eye that flies to the last room's door and the last boss's eye and leaps its own; two runs. Its bosses
   now wait till they're home and whole after a wipe.
+* The Thousand Maws of Toto-Rak (`f1r1_re.lua`, 2026-11-21): the six webs as packs, the three rooms' crossings as
+  steps, the two rooms' bosses and the last; the adds, the tail and the eggs its own; two runs. Its bosses are now
+  pulled when hurt too, and after a wipe wait till they're home and whole.
 
-The other nine duty scripts are still written by hand; each is converted on its own, kept
+The other eight duty scripts are still written by hand; each is converted on its own, kept
 passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
 
 ## The duty's beginning: everyone waits for the openings
