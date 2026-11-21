@@ -209,6 +209,9 @@ def capture_facts(ledgers, content_finder_condition: int) -> dict:
             if action["firsts"] and _median(action["firsts"]) >= NOT_BEFORE_FROM:
                 # Its first use after the NPC's first action (median), well into the fight: `not_before`.
                 fact["not_before"] = round(_median(action["firsts"]), 1)
+                # And each one's own, which a drafted rotation draws from (`first_uses`: every NPC of a kind beginning
+                # at one second wasn't retail's; Bob, 2026-11-21.)
+                fact["first_uses"] = sorted(round(first, 1) for first in action["firsts"])
             if action["spots"]:
                 fact["spots"] = [list(spot) for spot, _ in action["spots"].most_common(8)]
                 fact["spot_count"] = len(action["spots"])
@@ -236,8 +239,8 @@ def _timeline(actions: dict, auto: int | None, comment: str) -> dict:
             entry["every"] = fact["every"]
             gaps.append(fact["every"])
         # A first use well into the fight (retail's Imperial casters' area attacks came 14 to 46 s in.)
-        if "not_before" in fact:
-            entry["not_before"] = fact["not_before"]
+        if "first_uses" in fact:
+            entry["first_uses"] = fact["first_uses"]
         entry["comment"] = f"{fact['uses']} uses" + (f"; {fact['cast']:g} s cast" if fact.get("cast") else "") + (
             "" if dealt else "; no damage") + (f"; hit {fact['most_hit']} at once" if fact["most_hit"] > 1 else "")
         rotation.append(entry)

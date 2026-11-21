@@ -1603,6 +1603,17 @@ class RotationRates(unittest.TestCase):
         # No `every`: a turn every other `pace`.
         self.assertEqual(rates.most_uses({"action": 1}, 3.0, 60.0), 11)
 
+    def test_first_uses_leave_out_the_far_late(self):
+        from questkit import rotation_rates as rates
+
+        # The Praetorium's 14562 in Bob's 6320ae56: 94 to 117 s where the others were 7 to 35 s in.
+        firsts = [12.3, 12.8, 13.0, 14.0, 22.9, 34.5, 94.1, 94.2, 117.3]
+        self.assertEqual(rates.usual(firsts), [12.3, 12.8, 13.0, 14.0, 22.9, 34.5])
+        self.assertEqual(rates.usual([14.0, 26.0, 42.8]), [14.0, 26.0, 42.8])
+        # The rotation's soonest is the earliest it can draw.
+        self.assertEqual(rates.waits({"action": 1, "first_uses": [26.0, 14.0]}), 14.0)
+        self.assertEqual(rates.waits({"action": 1, "not_before": 43.0}), 43.0)
+
     def test_a_slot_is_counted_once(self):
         from questkit import rotation_rates as rates
 
@@ -2769,7 +2780,7 @@ public class MadeUp(ModuleInit init) : BossModule(init, new(10, -20), new ArenaB
         # Its area attack, once 18 s into its fight (as Castrum Meridianum's casters' were, once or twice a fight from
         # 14 to 46 s in): once a fight and not before then, not every turn it's free (Bob's run of 2026-11-21.)
         self.assertEqual(add["rotation"]["actions"][0],
-                         {"action": 6001, "every": 120.0, "not_before": 18.0, "comment": "1 uses"})
+                         {"action": 6001, "every": 120.0, "first_uses": [18.0], "comment": "1 uses"})
         self.assertEqual(boss["actions"][5999]["every"], 120.0)
         self.assertNotIn("not_before", boss["actions"][5999])
         self.assertNotIn("Duty77Enemy_9020.json", files)

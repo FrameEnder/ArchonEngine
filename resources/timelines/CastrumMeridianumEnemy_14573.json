@@ -19,8 +19,38 @@
             {
                 "action": 29174,
                 "every": 97.3,
-                "not_before": 28.5,
-                "comment": "12 uses; 2.7 s cast. Retail (questkit rates, 2026-11-21: 30 casts by 29 of the duty fixtures' NPCs): first 28.5 s after the pull (median; earliest 11.3 s), `every` 97.3 s (the median of 1 times between one's uses). Before, the rotation would have cast it 147 times at most over lives retail's cast it 30."
+                "first_uses": [
+                    11.3,
+                    14.7,
+                    15.8,
+                    16.5,
+                    16.9,
+                    17.4,
+                    17.7,
+                    18.1,
+                    18.4,
+                    21.9,
+                    23.6,
+                    23.9,
+                    25.1,
+                    27.8,
+                    28.5,
+                    30.4,
+                    31.5,
+                    31.8,
+                    33.0,
+                    33.0,
+                    35.2,
+                    35.3,
+                    35.7,
+                    37.3,
+                    37.6,
+                    42.6,
+                    43.9,
+                    45.6,
+                    77.7
+                ],
+                "comment": "12 uses; 2.7 s cast. Retail (questkit rates, 2026-11-21: 30 casts by 29 of the duty fixtures' NPCs): first 11.3 to 77.7 s after the pull (median 28.5; `first_uses`: each NPC draws one of retail's each fight), `every` 97.3 s (the median of 1 times between one's uses). Before, the rotation would have cast it 147 times at most over lives retail's cast it 30."
             }
         ]
     }

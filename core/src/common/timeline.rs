@@ -150,6 +150,13 @@ pub struct RotationAction {
     /// and deea324c; Bob's mark of 2026-11-20: they should be "cannon bombardment", not at a set place.)
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub at_random_foe: bool,
+    /// Retail's first uses of it after the pull, in seconds (one per NPC that used it): each fight the NPC takes one of
+    /// them at random as its `not_before`, so those of a kind don't all begin at the same second. Castrum Meridianum's
+    /// 14570 first cast 29171 at 14.0, 16.2, 26.0, 33.4, 36.6, 37.6, 40.1 and 42.8 s in five retail runs (`questkit
+    /// rates`); with one `not_before` (35, the median) every 14570 began it at 35 s (Bob, 2026-11-21: "can you have
+    /// every caster of a kind vary like retail does").
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub first_uses: Vec<f32>,
     /// Entries with the same `slot` are one turn between them: it comes every `every` (counted from the last use of
     /// any of them), and one of them is used then, at random by `weight`. Castrum Meridianum's BNpcBase 14578, 14663
     /// and 14664 cast 29181 or 29182 (29183 or 29184) every 17.2 s, which of the two at random (all five retail runs,

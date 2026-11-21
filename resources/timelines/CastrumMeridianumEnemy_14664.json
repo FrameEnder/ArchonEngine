@@ -30,14 +30,46 @@
                 "slot": "area",
                 "weight": 2.4,
                 "every": 17.4,
-                "not_before": 15.8,
-                "comment": "19 uses; 2.7 s cast; hit 3 at once. `weight` 2.4: 43 of its slot's 61 casts in five retail runs were 29183, 18 were 29184 (questkit rates, 2026-11-21). Retail (questkit rates, 2026-11-21: 61 casts by 15 of the duty fixtures' NPCs): first 15.8 s after the pull (median; earliest 12.3 s), `every` 17.4 s (the median of 46 times between one's uses). Before, the rotation would have cast it 207 times at most over lives retail's cast it 61."
+                "first_uses": [
+                    12.3,
+                    12.7,
+                    14.1,
+                    14.7,
+                    14.9,
+                    15.0,
+                    15.5,
+                    15.8,
+                    15.8,
+                    16.8,
+                    17.0,
+                    17.3,
+                    17.6,
+                    17.6,
+                    19.2
+                ],
+                "comment": "19 uses; 2.7 s cast; hit 3 at once. `weight` 2.4: 43 of its slot's 61 casts in five retail runs were 29183, 18 were 29184 (questkit rates, 2026-11-21). Retail (questkit rates, 2026-11-21: 61 casts by 15 of the duty fixtures' NPCs): first 12.3 to 19.2 s after the pull (median 15.8; `first_uses`: each NPC draws one of retail's each fight), `every` 17.4 s (the median of 46 times between one's uses). Before, the rotation would have cast it 207 times at most over lives retail's cast it 61."
             },
             {
                 "action": 29184,
                 "slot": "area",
                 "every": 17.4,
-                "not_before": 15.8,
+                "first_uses": [
+                    12.3,
+                    12.7,
+                    14.1,
+                    14.7,
+                    14.9,
+                    15.0,
+                    15.5,
+                    15.8,
+                    15.8,
+                    16.8,
+                    17.0,
+                    17.3,
+                    17.6,
+                    17.6,
+                    19.2
+                ],
                 "comment": "7 uses; 2.7 s cast"
             }
         ]

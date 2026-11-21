@@ -24,8 +24,26 @@
             {
                 "action": 902,
                 "every": 13.2,
-                "not_before": 6.4,
-                "comment": "23 uses in 303 s out, three pulls: one every 13.2 s (Chronofoil captures 1cefedf4 0.1 and 341808b0 0.2: three pulls, 303 s fighting). Retail (questkit rates, 2026-11-21: 130 casts by 17 of the duty fixtures' NPCs): first 6.4 s after the pull (median; earliest 6.4 s), `every` kept (retail's: 11 s, the median of 113 times between one's uses). Before, the rotation would have cast it 138 times at most over lives retail's cast it 130."
+                "first_uses": [
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4,
+                    6.4
+                ],
+                "comment": "23 uses in 303 s out, three pulls: one every 13.2 s (Chronofoil captures 1cefedf4 0.1 and 341808b0 0.2: three pulls, 303 s fighting). Retail (questkit rates, 2026-11-21: 130 casts by 17 of the duty fixtures' NPCs): first 6.4 to 6.4 s after the pull (median 6.4; `first_uses`: each NPC draws one of retail's each fight), `every` kept (retail's: 11 s, the median of 113 times between one's uses). Before, the rotation would have cast it 138 times at most over lives retail's cast it 130."
             },
             {
                 "action": 901,

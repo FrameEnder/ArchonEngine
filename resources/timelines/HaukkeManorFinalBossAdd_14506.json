@@ -13,8 +13,10 @@
                 "action": 28641,
                 "on_ally": 14504,
                 "every": 20.0,
-                "not_before": 18.0,
-                "comment": "2 uses on the boss: status 151 (how often is a guess). Retail (questkit rates, 2026-11-21: 1 casts by 1 of the duty fixtures' NPCs): first 18 s after the pull (median; earliest 18 s), `every` kept (retail's: 26 s, never twice by one: the longest any of them fought). Before, the rotation would have cast it 3 times at most over lives retail's cast it 1."
+                "first_uses": [
+                    18.0
+                ],
+                "comment": "2 uses on the boss: status 151 (how often is a guess). Retail (questkit rates, 2026-11-21: 1 casts by 1 of the duty fixtures' NPCs): first 18 to 18 s after the pull (median 18; `first_uses`: each NPC draws one of retail's each fight), `every` kept (retail's: 26 s, never twice by one: the longest any of them fought). Before, the rotation would have cast it 3 times at most over lives retail's cast it 1."
             },
             {
                 "action": 28642,

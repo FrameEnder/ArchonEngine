@@ -16,8 +16,13 @@
             {
                 "action": 29776,
                 "every": 20.0,
-                "not_before": 13.3,
-                "comment": "18 uses, every 41.7 s, on up to two: status 66 for 6 s. Retail (questkit rates, 2026-11-21: 4 casts by 4 of the duty fixtures' NPCs): first 13.3 s after the pull (median; earliest 12.9 s), `every` 20 s (never twice by one: the longest any of them fought). Before, the rotation would have cast it 14 times at most over lives retail's cast it 4."
+                "first_uses": [
+                    12.9,
+                    13.0,
+                    13.6,
+                    14.0
+                ],
+                "comment": "18 uses, every 41.7 s, on up to two: status 66 for 6 s. Retail (questkit rates, 2026-11-21: 4 casts by 4 of the duty fixtures' NPCs): first 12.9 to 14 s after the pull (median 13.3; `first_uses`: each NPC draws one of retail's each fight), `every` 20 s (never twice by one: the longest any of them fought). Before, the rotation would have cast it 14 times at most over lives retail's cast it 4."
             },
             {
                 "action": 488,

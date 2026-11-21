@@ -19,8 +19,12 @@
             {
                 "action": 345,
                 "every": 20.8,
-                "not_before": 17.2,
-                "comment": "5 uses, every 20.8 s: a 2.2 s cast, status 18 for 15 s on its target (TotoRakTrash_00345). Retail (questkit rates, 2026-11-21: 5 casts by 4 of the duty fixtures' NPCs): first 17.2 s after the pull (median; earliest 16.5 s), `every` kept (retail's: 20.7 s, the median of 1 times between one's uses). Before, the rotation would have cast it 10 times at most over lives retail's cast it 5."
+                "first_uses": [
+                    16.5,
+                    17.1,
+                    17.3
+                ],
+                "comment": "5 uses, every 20.8 s: a 2.2 s cast, status 18 for 15 s on its target (TotoRakTrash_00345). Retail (questkit rates, 2026-11-21: 5 casts by 4 of the duty fixtures' NPCs): first 16.5 to 17.3 s after the pull (median 17.1; `first_uses`: each NPC draws one of retail's each fight), `every` kept (retail's: 20.7 s, the median of 1 times between one's uses). Before, the rotation would have cast it 10 times at most over lives retail's cast it 5."
             },
             {
                 "action": 344,

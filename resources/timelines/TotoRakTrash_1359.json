@@ -15,9 +15,12 @@
             {
                 "action": 346,
                 "every": 20.8,
-                "not_before": 16.5,
+                "first_uses": [
+                    16.2,
+                    16.5
+                ],
                 "chance": 0.6,
-                "comment": "5 uses, every 20.8 s: a 2.2 s cast that reached nobody (TotoRakTrash_00346). Retail (questkit rates, 2026-11-21: 5 casts by 3 of the duty fixtures' NPCs): first 16.5 s after the pull (median; earliest 16.2 s), `every` 20.8 s (the median of 2 times between one's uses); used by 3 of the 5 that fought past then (`chance` 0.6). Before, the rotation would have cast it 16 times at most over lives retail's cast it 5."
+                "comment": "5 uses, every 20.8 s: a 2.2 s cast that reached nobody (TotoRakTrash_00346). Retail (questkit rates, 2026-11-21: 5 casts by 3 of the duty fixtures' NPCs): first 16.2 to 16.5 s after the pull (median 16.3; `first_uses`: each NPC draws one of retail's each fight), `every` 20.8 s (the median of 2 times between one's uses); used by 3 of the 5 that fought past then (`chance` 0.6). Before, the rotation would have cast it 16 times at most over lives retail's cast it 5."
             },
             {
                 "action": 344,

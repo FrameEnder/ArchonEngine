@@ -38,6 +38,8 @@ TOO_MANY_OVER = 3
 # `chance` is given when fewer than this share of the lives that fought long enough used it, and there were this many.
 CHANCE_BELOW = 0.8
 CHANCE_LIVES = 4
+# A first use past this many times the median of its kind's is left out of `first_uses` (`usual`.)
+LATE_AFTER = 3.0
 # A rotation's first use may come this much before retail's first (seconds): the pull is read to about a second.
 EARLY_SLACK = 5.0
 
@@ -65,9 +67,17 @@ def timelines_by_base() -> dict[int, Path]:
     return found
 
 
+def waits(entry: dict) -> float:
+    """The soonest an entry comes in a fight: the earliest of its `first_uses` (one is drawn each fight), or its
+    `not_before`."""
+    if entry.get("first_uses"):
+        return min(entry["first_uses"])
+    return entry.get("not_before", 0.0) or 0.0
+
+
 def most_uses(entry: dict, pace: float, seconds: float) -> int:
     """The most times a rotation entry is used in a fight of `seconds` (rotation.rs's rules, see the module's text)."""
-    start = entry.get("not_before", 0.0) or 0.0
+    start = waits(entry)
     if seconds < start:
         return 0
     every = entry.get("every")
@@ -141,7 +151,7 @@ def compare(fixtures: list[Path] | None = None) -> list[Rate]:
             would = most_uses(entry, rotation.get("pace", 3.0), seconds) * entry.get("chance", 1.0)
             rate.rotation_uses += would
             if would:
-                first = entry.get("not_before", 0.0) or 0.0
+                first = waits(entry)
                 rate.rotation_first = first if rate.rotation_first is None else min(rate.rotation_first, first)
     out = []
     for _, rate in sorted(rates.items()):
@@ -178,8 +188,11 @@ def retail_numbers(base: int, actions: list[int], fixtures: list[Path] | None = 
         gaps += [b - a for a, b in zip(mine, mine[1:])]
     if not firsts:
         return {}
-    numbers = {"uses": len(firsts) + len(gaps), "lives": len(firsts),
-               "not_before": round(median(firsts), 1), "earliest": round(min(firsts), 1)}
+    uses, users = len(firsts) + len(gaps), len(firsts)
+    firsts = usual(firsts)
+    numbers = {"uses": uses, "lives": users,
+               "not_before": round(median(firsts), 1), "earliest": round(min(firsts), 1),
+               "latest": round(max(firsts), 1), "first_uses": sorted(round(first, 1) for first in firsts)}
     if gaps:
         numbers["every"] = round(median(gaps), 1)
         numbers["from"] = f"the median of {len(gaps)} times between one's uses"
@@ -187,10 +200,21 @@ def retail_numbers(base: int, actions: list[int], fixtures: list[Path] | None = 
         numbers["every"] = float(math.ceil(max(spans)))
         numbers["from"] = "never twice by one: the longest any of them fought"
     lived = sum(1 for span in spans if span >= numbers["not_before"])
-    if lived >= CHANCE_LIVES and len(firsts) / lived < CHANCE_BELOW:
-        numbers["chance"] = round(len(firsts) / lived, 2)
+    if lived >= CHANCE_LIVES and users / lived < CHANCE_BELOW:
+        numbers["chance"] = round(users / lived, 2)
         numbers["lived"] = lived
     return numbers
+
+
+def usual(firsts: list[float]) -> list[float]:
+    """First uses without the far-late ones (past LATE_AFTER times the median, with three or more): an NPC that had
+    someone targeted long before it fought. The Praetorium's 14562, 14563 and 14560 in Bob's run 6320ae56 first cast
+    29180, 29175 and 29174 94 to 128 s after their pull where the others did 7 to 45 s in; drawn, one such would make
+    an NPC hold its attack a minute and a half."""
+    if len(firsts) < 3:
+        return firsts
+    middle = median(firsts)
+    return [first for first in firsts if first <= LATE_AFTER * middle]
 
 
 def fix(rates: list[Rate], fixtures: list[Path] | None = None, when: str = "") -> list[str]:
@@ -216,15 +240,19 @@ def fix(rates: list[Rate], fixtures: list[Path] | None = None, when: str = "") -
                 kept = not (too_many or "every" not in entry)
                 if not kept:
                     entry["every"] = numbers["every"]
-                entry["not_before"] = numbers["not_before"]
+                # Each NPC draws one of retail's own first uses each fight (`first_uses`), so those of a kind
+                # don't all begin at one second (Bob, 2026-11-21: "have every caster of a kind vary like retail").
+                entry.pop("not_before", None)
+                entry["first_uses"] = numbers["first_uses"]
                 if "chance" in numbers:
                     entry["chance"] = numbers["chance"]
                 if entry["action"] == rate.actions[0]:
                     chance = (f"; used by {numbers['lives']} of the {numbers['lived']} that fought past then "
                               f"(`chance` {numbers['chance']:g})" if "chance" in numbers else "")
                     note = (f"Retail (questkit rates{', ' + when if when else ''}: {numbers['uses']} casts by "
-                            f"{numbers['lives']} of the duty fixtures' NPCs): first {numbers['not_before']:g} s after "
-                            f"the pull (median; earliest {numbers['earliest']:g} s), "
+                            f"{numbers['lives']} of the duty fixtures' NPCs): first {numbers['earliest']:g} to "
+                            f"{numbers['latest']:g} s after the pull (median {numbers['not_before']:g}; `first_uses`: "
+                            f"each NPC draws one of retail's each fight), "
                             + (f"`every` kept (retail's: {numbers['every']:g} s, {numbers['from']})" if kept else
                                f"`every` {numbers['every']:g} s ({numbers['from']})")
                             + f"{chance}. Before, the rotation would have cast it {rate.rotation_uses:g} "
@@ -233,8 +261,8 @@ def fix(rates: list[Rate], fixtures: list[Path] | None = None, when: str = "") -
                 if "comment" in entry:
                     # The comment last, as the files keep it.
                     entry["comment"] = entry.pop("comment")
-                changed.append(f"{name}: {entry['action']}: every {entry['every']:g}, not_before "
-                               f"{numbers['not_before']:g}" + (f", chance {numbers['chance']:g}"
+                changed.append(f"{name}: {entry['action']}: every {entry['every']:g}, first "
+                               f"{numbers['earliest']:g}-{numbers['latest']:g}" + (f", chance {numbers['chance']:g}"
                                                                  if "chance" in numbers else ""))
         indent = 4 if text.startswith("{\n    ") else 2
         path.write_text(json.dumps(timeline, indent=indent, ensure_ascii=False) + "\n")

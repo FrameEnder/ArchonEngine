@@ -466,7 +466,8 @@ rotation entry's most uses over a fight of L seconds are 1 + (L − `not_before`
 with no `every`, a turn every other `pace`; a `slot` counts once, and a `chance` scales it. It flags an entry the
 rotation would cast more than twice retail's count (and three more), or begin more than 5 s before retail's earliest.
 `--fix` writes retail's numbers into the flagged entries: `every` as the median time between one NPC's uses (never twice
-by one: the longest any of them fought), `not_before` as the median first use after the pull, `chance` when fewer than
+by one: the longest any of them fought), `first_uses` as retail's own first uses after the pull (each NPC draws one each fight; ones past three times the
+median left out), `chance` when fewer than
 80 % of four or more lives that fought past that used it at all, and a comment with the counts. A `slot` (one of two
 actions each turn) it doesn't find on its own: set it, then `--fix` gives the slot its numbers. The test suite holds every
 timeline to it (`RotationRates`), so a drafted rotation that casts a rare action every free turn fails.
@@ -476,7 +477,7 @@ the Imperial casters' area attacks, once or twice a fight in retail's, came ever
 Meridianum's 29171, 29 casts in 240 s by each caster; Bob's run of 2026-11-21: "far too common"). The first run found 45
 entries in 39 timelines (Castrum Meridianum, the Praetorium, and older ones of Sastasha's to the Stone Vigil's that
 began their area attacks at once where retail's waited 5 to 45 s); all were given retail's numbers. Drafts now give a
-once-seen action `every` 120 and an action first used 5 s or more into the NPC's fight `not_before`
+once-seen action `every` 120 and an action first used 5 s or more into the NPC's fight its `first_uses`
 (`duty_sources.capture_facts`).
 
 ## battle-sim

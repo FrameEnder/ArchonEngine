@@ -1256,11 +1256,12 @@ scenery's) came as retail's did. The first stretch's Player NPCs: [Party bots](p
 enemy, the enemies aren't waiting to cast their area of effect action before moving"). Three things, all against the
 five retail runs (`questkit rates`, [Combat](combat.md)). *How often*: the drafted timelines had no `every` for an
 attack retail's NPCs used once or twice a fight, so it came every free turn (14570's 29171: 29 casts in 240 s by each
-caster on the server, 1 to 2 by each in retail's, from 14 to 46 s in). Each now has retail's `every` and `not_before`,
-and `chance` where only some of a pack cast it: 14569's 29173 (24.6 s, 0.67), 14570's 29171 (35 s, once), 14571's
-29172 (37.7 s, 0.57), 14573's 29174 (28.5 s, then 97.3 s), 14577's 29175 (24.4 s, 0.47), the first boss's soldiers'
-28777 (14539 at 28.3 s, 14540 at 30.2 s). 14578, 14663 and 14664 take one turn every 17.2 to 17.4 s for their two
-(29181 or 29182; 29183 or 29184, 43 to 18): `slot`, first at 11.5, 16.4 and 15.8 s. *Where*: 29174 is placed on the
+caster on the server, 1 to 2 by each in retail's, from 14 to 46 s in). Each now has retail's `every`, retail's own first-use times (`first_uses`: each caster draws one each fight, so a
+pack doesn't all cast at once), and `chance` where only some of a pack cast it: 14569's 29173 (13.4 to 44.6 s in,
+0.67), 14570's 29171 (14 to 42.8 s, once), 14571's 29172 (11.2 to 88.4 s, 0.57), 14573's 29174 (11.3 to 77.7 s,
+then 97.3 s on), 14577's 29175 (16.6 to 30.8 s, 0.47), the first boss's soldiers' 28777 (14539 25.3 to 29.7 s,
+14540 22.3 to 31.7 s). 14578, 14663 and 14664 take one turn every 17.2 to 17.4 s for their two (29181 or 29182;
+29183 or 29184, 43 to 18): `slot`, first at 10.1 to 14.9, 13.2 to 19.8 and 12.3 to 19.2 s. *Where*: 29174 is placed on the
 caster's own spot in every retail cast, and Kawari had aimed it at its target, 3 to 4 yalms off
 (`ground_at_caster`). *Moving*: a cast began on the tick the caster took a step, so the client walked it into its
 cast bar; it now begins the next tick, standing. The same holds for the Praetorium's 14557, 14558, 14559, 14560,

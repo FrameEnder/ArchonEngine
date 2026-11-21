@@ -64,6 +64,8 @@ pub struct RotationState {
     /// When an entry with a `chance` last came due and wasn't used (it waits `every` again from then.) `choose` only
     /// looks, so this is the one thing it notes.
     passed: std::cell::RefCell<HashMap<u32, Instant>>,
+    /// Each entry's `not_before` for this fight, drawn from its `first_uses` (by its action, or its slot's first.)
+    drawn: std::cell::RefCell<HashMap<u32, f32>>,
 }
 
 /// What the NPC's situation is when it's choosing.
@@ -212,7 +214,7 @@ impl RotationState {
                     continue;
                 }
             }
-            if entry.not_before.is_some_and(|seconds| {
+            if self.wait_for(rotation, entry).is_some_and(|seconds| {
                 self.fight_age(now) < Duration::from_secs_f32(seconds.max(0.0))
             }) {
                 continue;
@@ -249,6 +251,31 @@ impl RotationState {
             return Some(entry.action);
         }
         None
+    }
+
+    /// How far into its fight `entry` waits: one of its `first_uses`, drawn once a fight (the same for its slot), or
+    /// its `not_before`.
+    pub fn wait_for(&self, rotation: &Rotation, entry: &RotationAction) -> Option<f32> {
+        if entry.first_uses.is_empty() {
+            return entry.not_before;
+        }
+        let key = entry
+            .slot
+            .as_ref()
+            .and_then(|slot| {
+                rotation
+                    .actions
+                    .iter()
+                    .find(|other| other.slot.as_ref() == Some(slot))
+            })
+            .map_or(entry.action, |first| first.action);
+        Some(
+            *self
+                .drawn
+                .borrow_mut()
+                .entry(key)
+                .or_insert_with(|| fastrand::choice(&entry.first_uses).copied().unwrap_or(0.0)),
+        )
     }
 
     /// How old its fight is: the time since the first action of it, nothing before that.
@@ -306,6 +333,8 @@ impl RotationState {
             .is_none_or(|latest| now.duration_since(latest) >= FIGHT_OVER_AFTER)
         {
             self.began = Some(now);
+            // A new fight: each `first_uses` is drawn again.
+            self.drawn.borrow_mut().clear();
         }
         self.latest = Some(now);
         self.used.insert(action, now);
@@ -799,6 +828,72 @@ mod tests {
         assert_eq!(pick_by_weight(&[&sweep, &surge], 0.2), Some(LEG_SWEEP));
         assert_eq!(pick_by_weight(&[&sweep, &surge], 0.3), Some(LIFE_SURGE));
         assert_eq!(pick_by_weight(&[&sweep, &surge], 0.99), Some(LIFE_SURGE));
+    }
+
+    #[test]
+    fn first_uses_vary_from_npc_to_npc_and_fight_to_fight() {
+        // Castrum Meridianum's 14570 first cast 29171 anywhere from 14 to 43 s in (five retail runs); each NPC draws
+        // one of retail's times each fight, not all the same second.
+        let rotation = Rotation {
+            pace: 3.0,
+            actions: vec![
+                RotationAction {
+                    action: LEG_SWEEP,
+                    every: Some(73.0),
+                    first_uses: vec![14.0, 26.0, 40.0],
+                    ..Default::default()
+                },
+                RotationAction {
+                    action: TRUE_THRUST,
+                    ..Default::default()
+                },
+            ],
+        };
+        let mut firsts = std::collections::BTreeSet::new();
+        for _ in 0..40 {
+            let first = simulate(&rotation, 60)
+                .iter()
+                .find(|(_, action)| *action == LEG_SWEEP)
+                .map(|(at, _)| *at)
+                .unwrap();
+            // Its first weave once the drawn time has come (the fight counts from its first action at 0.)
+            assert!(
+                [14.0, 26.0, 40.0]
+                    .iter()
+                    .any(|t| first >= *t && first < t + 3.5),
+                "{first}"
+            );
+            firsts.insert(first as u32);
+        }
+        assert!(
+            firsts.len() > 1,
+            "every NPC began at the same second: {firsts:?}"
+        );
+        // The same NPC keeps its draw through the fight, and a slot shares one.
+        let state = RotationState::default();
+        let slotted = RotationAction {
+            slot: Some("area".to_string()),
+            ..rotation.actions[0].clone()
+        };
+        let other = RotationAction {
+            action: LIFE_SURGE,
+            ..slotted.clone()
+        };
+        let both = Rotation {
+            pace: 3.0,
+            actions: vec![slotted.clone(), other.clone()],
+        };
+        let drawn = state.wait_for(&both, &slotted);
+        for _ in 0..10 {
+            assert_eq!(state.wait_for(&both, &slotted), drawn);
+            assert_eq!(state.wait_for(&both, &other), drawn);
+        }
+        // Without `first_uses`, its `not_before`.
+        let plain = RotationAction {
+            not_before: Some(43.0),
+            ..Default::default()
+        };
+        assert_eq!(state.wait_for(&both, &plain), Some(43.0));
     }
 
     #[test]
