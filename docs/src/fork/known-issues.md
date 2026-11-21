@@ -1804,6 +1804,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Combat
 
+* Launchers (2026-11-21, untested in game): only those in `resources/data/launchers.json` (Castrum Meridianum's four)
+  go on; another duty's unseen spot-raining NPCs stand idle until they're listed. What sets one going in retail (the
+  party's nearness, 12 yalms from its spots, is read from the five runs; a range in the layout may be what it really
+  is) isn't known, and a launcher's next spot is any of retail's but the last, not retail's own order.
+
 * Enemies' area attacks by retail's numbers (2026-11-21, `questkit rates`; untested in game). What the numbers can't
   say: whether a `chance` (some of a pack cast it, not all) is a roll as Kawari has it or something else retail picks
   by (who's nearest, who's fighting whom); each NPC draws its first use from retail's own (`first_uses`), but not by

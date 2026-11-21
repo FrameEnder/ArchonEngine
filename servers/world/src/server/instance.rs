@@ -305,6 +305,8 @@ pub struct Instance {
     /// Where an NPC's action at no one is aimed, by NPC and action (`director:aim_action`): the spot its landing
     /// names, where the client plays it to (a leap's landing: Cape Westwind's boss's 28872.)
     pub action_aims: HashMap<(ObjectId, u32), glam::Vec3A>,
+    /// Each launcher's turn (by layout ID) while its party is near (`launcher`.)
+    pub launchers: HashMap<u32, crate::server::launcher::LauncherState>,
     pub later_director_tasks: Vec<(std::time::Instant, crate::server::director::LuaDirectorTask)>,
     /// The fight here is over (a quest battle won, `npc_behavior::end_fight`): NPCs don't take anyone on again, whatever
     /// hits or heals them.

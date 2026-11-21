@@ -89,6 +89,7 @@ mod instance;
 mod job_gauge;
 mod keybound;
 mod keybound_mechanics;
+mod launcher;
 pub(crate) use keybound::DUTY as KEYBOUND_DUTY;
 pub(crate) use keybound::{
     ITEM_COFFER as KEYBOUND_COFFER, ITEM_MGC as KEYBOUND_MGC, LOG_COFFER as KEYBOUND_LOG_COFFER,
@@ -922,6 +923,8 @@ fn server_logic_tick(
             loot::tick(&mut network.lock(), instance);
             // BNpcs a director spawned hidden come into view.
             director::update_appearances(&mut network.lock(), instance, std::time::Instant::now());
+            // Unseen launchers rain their attack on their spots while the party is near (`launcher`.)
+            launcher::tick(&network, &game_data, instance);
             let mut haters = HashMap::new();
             npc_behavior::npc_behavior(network.clone(), game_data.clone(), instance, &mut haters);
 

@@ -1252,6 +1252,16 @@ player or another member, not always its target), 0.8 to 8.9 yalms from the cast
 `at_random_foe`, `not_before` 43, `every` 600 ([Combat](combat.md)). The map effects 2 and 3 west of x = 208 (the
 scenery's) came as retail's did. The first stretch's Player NPCs: [Party bots](party-bots.md#at-a-wipe-2026-11-10).
 
+**The fire on the road** (2026-11-21, Bob's mark on `738fd72` at (-30.59, 64.90, 235.51): "no random AOE fall in this
+area like in retail"). Past the first boss, four unseen launchers (BNpcBase 6358: 44 HP, battalion 4, no HOSTILE
+flag; layouts 9089359, 9089363, 9089367, 9089374, one stretch of road each) rain 29154, a 2.7 s area, on a few fixed
+spots while the party is near: every 4.9 or 5.9 s (117 and 100 of the times between casts in the five retail runs),
+never twice running on the same spot (219 of 220), each beginning within 3 s of the player's coming within 12 yalms
+of its spots and going on while someone was; retail put the launcher on the spot (its position updates, 0.2 s before
+each cast) and it cast on itself, catching the party 4 at a time. Kawari spawned them and they stood idle. Now
+`launcher.rs` with `resources/data/launchers.json` (each launcher's action, times, nearness and retail's 11 to 27
+spots). Not checked in game.
+
 **The Black Eft's room** (2026-11-21, Bob's mark on `b4a981b`: "enemies are not suppose to leave the wall barrier
 and allies are still struggling to enter the black efts boss arena"). Read through the harness: the boss's four
 noticed the party at the room's door, 11 s before the boss was pulled, and walked out through the way in after
