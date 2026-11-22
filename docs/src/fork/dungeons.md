@@ -116,8 +116,18 @@ script, in the hooks or around the calls. **Converted**, each playing its retail
   she falls. She's now pulled when hurt too, and after a wipe the new Garuda isn't pulled till she's whole and after
   nobody.
 
-The other two duty scripts are still written by hand; each is converted on its own, kept
-passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
+Every dungeon's and trial's script is on it (2026-11-21); a new one is written on it from the start. Test
+`DungeonFrameworkTest` (`test_questkit.py`), and the scripts' own tests for what `duty-sim` can't play
+(`FrameworkScriptTest`'s: Copperbell, the Navel, the Howling Eye).
+
+Two duty scripts aren't dungeons or trials, and the framework isn't for them (Bob, 2026-11-21: "Those should be treated
+differently"):
+
+* Keybound Brawler (`w1en.lua`): a seasonal event (the FFVII Gold Saucer typing game). The game is the server's own
+  (`servers/world/src/server/keybound.rs`, events.md); the script only has to exist.
+* A Merchant's Tale (`m6d1.lua`): upstream's (the Kawari team's), a variant dungeon's beginnings: an NPC, and the
+  route vote at the fountain. Bob hasn't played it and there's no retail capture of it, so there's nothing to check it
+  against; it stays as upstream has it.
 
 ## The duty's beginning: everyone waits for the openings
 
