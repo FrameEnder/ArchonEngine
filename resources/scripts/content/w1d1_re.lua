@@ -10,6 +10,10 @@
 -- doors lie about or are dropped by the gigas (BNpcBase 1400). Past each door a boss appears at once, sealing its
 -- arena as it goes for someone; past the last door, coming down into the last hall plays the last boss's cutscene and
 -- brings it.
+--
+-- On the dungeon framework (`content/lib/Dungeon.lua`, docs/src/fork/dungeons.md) since 2026-11-21: its three bosses
+-- with their helpers and casts, the two ambushes and the last hall as steps; the charges, rocks, items and doors, the
+-- first pack's and the gigas' drops and the party's lines are its own.
 
 -- The director's variables (DirectorVars; retail's sequence was 1 throughout): data 1 is how far the party got (1 past
 -- the first door, 3 the second, 7 the third), 2 whether it holds a charge, 3 how many of the doors' items it holds.
@@ -194,22 +198,15 @@ charges_set = {}
 blasted = {}
 doors_set = {}
 doors_open = {}
-bosses_pulled = {}
-bosses_dead = {}
-ambushed = {}
 first_pack_left = 3
-final_started = false
--- Things to do later: { at = os.time(), fn = function(director) }
-later = {}
+
+DUNGEON = Dungeon.new()
+D = DUNGEON
 
 -- DirectorVars' data is 0-based (the first byte after the flag and branch): data 1 is `set_data(0, ...)`. Sent one
 -- higher, the Duty Information window counted nothing (Bob's bundle of 2026-10-25: the charge went to the items' byte.)
 function setData(director, index, value)
     director:set_data(index - 1, value)
-end
-
-function after(seconds, fn)
-    table.insert(later, { at = os.time() + seconds, fn = fn })
 end
 
 function onSetup(director)
@@ -218,6 +215,7 @@ function onSetup(director)
     for _, layout in ipairs(HIDDEN_AT_START) do
         director:hide_eobj(layout)
     end
+    D:setup(director)
     for _, boss in ipairs(BOSSES) do
         director:hide_eobj(boss.wall)
     end
@@ -233,15 +231,6 @@ function onSetup(director)
     end
 
     director:party_npc_yell("ranged", LINE_START, LINE_START_AFTER)
-end
-
-function bossIndex(layout_id)
-    for index, boss in ipairs(BOSSES) do
-        if boss.bnpc == layout_id then
-            return index
-        end
-    end
-    return nil
 end
 
 -- Kottos (the first boss)'s leaps, as retail played them in all three runs (Bob's Chronofoil captures of 2026-10-25):
@@ -266,7 +255,6 @@ KOTTOS_JUMPS = { 9.1, 11.2, 13.3 }
 KOTTOS_SLAM = 28549
 KOTTOS_SLAMS = { 10.1, 12.2 }
 KOTTOS_BUSY = 14.2 -- until its timeline's 28546 (14.3 s after 28543)
-kottos_helpers = {}
 
 function kottosSpot(name, y)
     local m, o = KOTTOS_MIDDLE, KOTTOS_SPOT_OFFSET
@@ -286,7 +274,8 @@ function kottosLeaps(director, kottos)
     local last = (first == "north") and "south" or "north"
     local order = { first, middle, last }
     -- The helpers in the order retail used them: the last spawned first.
-    local helpers = { kottos_helpers[3], kottos_helpers[2], kottos_helpers[1] }
+    local mine = D.helpers_of[1]
+    local helpers = { mine[3], mine[2], mine[1] }
     for i, name in ipairs(order) do
         local spot = kottosSpot(name, KOTTOS_HELPER_Y)
         director:warp_bnpc(helpers[i], spot.x, spot.y, spot.z, 0)
@@ -325,6 +314,7 @@ BOSS2_LINE = 28465
 BOSS2_MIDDLE = { x = 27.0, y = -37.958, z = 114.0 }
 BOSS2_Y = -37.98 -- where the helpers landed
 BOSS2_FIRST_SCALE = 16
+BOSS2_HELPERS = 6
 BOSS2_DIAGONALS = {
     { { x = 14.27, z = 126.73, r = -0.785 }, { x = 39.72, z = 101.24, r = 2.356 } },
     { { x = 39.72, z = 126.73, r = 0.785 }, { x = 14.27, z = 101.24, r = -2.356 } },
@@ -335,7 +325,6 @@ BOSS2_LINES = {
     { { x = 26.99, z = 131.98, r = 0.0 }, { x = 26.99, z = 119.98, r = 0.0 },
       { x = 26.99, z = 107.99, r = 3.142 }, { x = 26.99, z = 95.99, r = 3.142 } }, -- a column
 }
-boss2_helpers = {}
 boss2_rounds = 0
 
 function boss2Lines(director)
@@ -350,19 +339,20 @@ function boss2Lines(director)
     local m = BOSS2_MIDDLE
     director:delay(4.0)
     director:set_model_scale(BOSS2, BOSS2_FIRST_SCALE + boss2_rounds - 1)
-    for i, helper in ipairs(boss2_helpers) do
+    local helpers = D.helpers_of[2]
+    for i, helper in ipairs(helpers) do
         director:warp_bnpc(helper, m.x, m.y, m.z, spots[i].r)
     end
     director:delay(4.1)
-    for _, helper in ipairs(boss2_helpers) do
+    for _, helper in ipairs(helpers) do
         director:actor_use_action(helper, BOSS2_TURN)
     end
     director:delay(4.7)
-    for i, helper in ipairs(boss2_helpers) do
+    for i, helper in ipairs(helpers) do
         director:jump_bnpc(helper, spots[i].x, BOSS2_Y, spots[i].z, spots[i].r)
     end
     director:delay(8.7)
-    for _, helper in ipairs(boss2_helpers) do
+    for _, helper in ipairs(helpers) do
         director:actor_use_action(helper, BOSS2_LINE)
     end
     director:delay(0)
@@ -385,7 +375,6 @@ BOSS3_OUTER = 14.0
 BOSS3_INNER = 7.0
 BOSS3_LINE_AFTER = 3.0
 BOSS3_SETTLE_AFTER = 7.1
-boss3_helpers = {}
 
 function boss3Spot(degrees, distance)
     local angle = math.rad(degrees)
@@ -404,11 +393,12 @@ function boss3Lines(director)
     end
     local m = BOSS3_MIDDLE
     director:move_bnpc(BOSS3, m.x, m.y, m.z, 0)
-    for i, helper in ipairs(boss3_helpers) do
+    local helpers = D.helpers_of[3]
+    for i, helper in ipairs(helpers) do
         director:warp_bnpc(helper, spots[i].x, BOSS3_HELPER_Y, spots[i].z, spots[i].r)
     end
     director:delay(BOSS3_LINE_AFTER)
-    for _, helper in ipairs(boss3_helpers) do
+    for _, helper in ipairs(helpers) do
         director:actor_use_action(helper, BOSS3_LINE)
     end
     director:delay(BOSS3_SETTLE_AFTER)
@@ -416,108 +406,107 @@ function boss3Lines(director)
     director:delay(0)
 end
 
-function spawnHelpers(director, layout, count)
-    local helpers = {}
-    for i = 1, count do
-        helpers[i] = director:spawn_bnpc(layout)
-        director:hold_bnpc(helpers[i])
-    end
-    return helpers
-end
-
--- The helpers go with their boss: retail let Kottos' and the last boss's go (ActorControl 417 with no one) the moment
--- it fell; the second boss's simply went.
-function dismissHelpers(director, helpers, release)
-    for _, helper in ipairs(helpers) do
-        if release then
-            director:release_bnpc(helper)
+-- The bosses (`D`): each brought by the script as it comes (the first two past their doors, the last by the last
+-- hall) with its hidden helpers, held (`helpers`); the first two have the battle music, the second its line as it's
+-- pulled. The helpers go with their boss: retail let Kottos' and the last boss's go (ActorControl 417 with no one,
+-- `release`) the moment it fell; the second boss's simply went. As each falls (spawn_boss opens the arena: wall and
+-- line hidden, log 2014) the music stops, a second line goes and the coffers appear. A wipe on the second boss: it's
+-- its first size again (its growing isn't seen reset on retail: no wipe on it in Bob's captures.)
+function bossDeath(index)
+    return function(director)
+        local boss = BOSSES[index]
+        if boss.other_line ~= nil then
+            director:hide_eobj(boss.other_line)
         end
-        director:despawn_bnpc(helper)
+        for _, coffer in ipairs(BOSS_COFFERS[index]) do
+            director:spawn_treasure(coffer)
+        end
+        for _, layout in ipairs(AFTER_BOSS[index] or {}) do
+            director:show_eobj(layout)
+        end
+        if index == 3 then
+            director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
+            director:complete_duty()
+        end
     end
 end
 
-function onActorCast(director, layout_id, action_id, actor_id)
-    if layout_id == KOTTOS and action_id == KOTTOS_LEAP and #kottos_helpers == 3 then
-        kottosLeaps(director, actor_id)
-    elseif layout_id == BOSS2 and action_id == BOSS2_GROW and #boss2_helpers == 6 then
-        boss2Lines(director)
-    elseif layout_id == BOSS3 and action_id == BOSS3_PULL and #boss3_helpers == 5 then
-        boss3Lines(director)
+for index, boss in ipairs(BOSSES) do
+    boss.fight = D:boss({ id = index, layout = boss.bnpc, wall = boss.wall, line = boss.line, place = boss.place,
+        comes_later = true, eobjs_at_setup = false, bgm = boss.music and BGM_BATTLE or false,
+        after_bgm = boss.music and 0 or nil, last = index == 3, on_death = bossDeath(index) })
+end
+BOSSES[1].fight.middle = { x = KOTTOS_MIDDLE.x, y = KOTTOS_HELPER_Y, z = KOTTOS_MIDDLE.z }
+BOSSES[1].fight.helpers = { layout = KOTTOS_HELPER, count = 3, release = true }
+-- (Each round only with its helpers there: the simulator brings the bosses without them.)
+function helpersThere(index, count)
+    return #(D.helpers_of[index] or {}) == count
+end
+BOSSES[1].fight.on_cast = { [KOTTOS_LEAP] = function(d, x, y, z, actor_id)
+    if helpersThere(1, 3) then
+        kottosLeaps(d, actor_id)
     end
+end }
+BOSSES[2].fight.middle = BOSS2_MIDDLE
+BOSSES[2].fight.helpers = { layout = BOSS2_HELPER, count = BOSS2_HELPERS }
+BOSSES[2].fight.on_cast = { [BOSS2_GROW] = function(d)
+    if helpersThere(2, BOSS2_HELPERS) then
+        boss2Lines(d)
+    end
+end }
+BOSSES[2].fight.on_pull = function(d) d:party_npc_yell("ranged", LINE_BOSS2) end
+BOSSES[2].fight.on_wipe = function(d)
+    if boss2_rounds > 0 then
+        boss2_rounds = 0
+        d:set_model_scale(BOSS2, BOSS2_FIRST_SCALE)
+    end
+end
+BOSSES[3].fight.middle = BOSS3_MIDDLE
+BOSSES[3].fight.helpers = { layout = BOSS3_HELPER, count = 5, release = true }
+BOSSES[3].fight.on_cast = { [BOSS3_PULL] = function(d)
+    if helpersThere(3, 5) then
+        boss3Lines(d)
+    end
+end }
+
+function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
+    D:cast(director, layout_id, action_id, actor_id, x, y, z)
 end
 
 function spawnBoss(director, index)
-    local boss = BOSSES[index]
-    director:spawn_boss(boss.bnpc, boss.wall, boss.line, boss.place)
-    if index == 1 then
-        kottos_helpers = spawnHelpers(director, KOTTOS_HELPER, 3)
-    elseif index == 2 then
-        boss2_helpers = spawnHelpers(director, BOSS2_HELPER, 6)
+    if index == 2 then
         boss2_rounds = 0
-    elseif index == 3 then
-        boss3_helpers = spawnHelpers(director, BOSS3_HELPER, 5)
     end
+    D:bringBoss(director, BOSSES[index].fight)
 end
 
-function onUpdate(director, health, player_health, info)
-    local now = os.time()
-    local due = {}
-    local waiting = {}
-    for _, entry in ipairs(later) do
-        if entry.at <= now then
-            table.insert(due, entry)
-        else
-            table.insert(waiting, entry)
-        end
-    end
-    later = waiting
-    for _, entry in ipairs(due) do
-        entry.fn(director)
-    end
+-- The ambushes: someone within AMBUSH_RANGE of the pile, and its gigas comes out.
+for index, ambush in ipairs(AMBUSHES) do
+    D:step({ name = "ambush" .. index,
+        where = function(m) return D.within(m, ambush, AMBUSH_RANGE) end,
+        run = function(director)
+            director:hide_eobj(ambush.rocks)
+            director:spawn_bnpc(ambush.bnpc)
+            director:set_hate(ambush.bnpc, nil, 300) -- the player
+            director:appear_bnpc(ambush.bnpc, AMBUSH_TIMELINE)
+        end })
+end
 
-    if info == nil then
-        return
-    end
-
-    -- A boss going for someone: the battle music (the first two), the second's line
-    for index, boss in ipairs(BOSSES) do
-        if not bosses_pulled[index] and info[boss.bnpc] ~= nil and info[boss.bnpc].target ~= nil then
-            bosses_pulled[index] = true
-            if boss.music then
-                director:set_bgm(BGM_BATTLE)
-            end
-            if index == 2 then
-                director:party_npc_yell("ranged", LINE_BOSS2)
-            end
-        end
-    end
-
-    local player = info.player
-    if player == nil then
-        return
-    end
-
-    for index, ambush in ipairs(AMBUSHES) do
-        if not ambushed[index] then
-            local dx, dy, dz = player.x - ambush.x, player.y - ambush.y, player.z - ambush.z
-            if dx * dx + dy * dy + dz * dz <= AMBUSH_RANGE * AMBUSH_RANGE then
-                ambushed[index] = true
-                director:hide_eobj(ambush.rocks)
-                director:spawn_bnpc(ambush.bnpc)
-                director:set_hate(ambush.bnpc, nil, 300) -- the player
-                director:appear_bnpc(ambush.bnpc, AMBUSH_TIMELINE)
-            end
-        end
-    end
-
-    if not final_started and doors_open[EOBJ_DOOR3] and player.x >= FINAL_AREA.min_x
-        and player.x <= FINAL_AREA.max_x and player.y <= FINAL_AREA.max_y and player.z <= FINAL_AREA.max_z then
-        final_started = true
+-- Coming down into the last hall, past the third door: its cutscene and the last boss.
+D:step({ name = "final", ready = function() return doors_open[EOBJ_DOOR3] == true end,
+    where = function(m)
+        return m.x >= FINAL_AREA.min_x and m.x <= FINAL_AREA.max_x and m.y <= FINAL_AREA.max_y
+            and m.z <= FINAL_AREA.max_z
+    end,
+    run = function(director)
         director:play_cutscene(CUTSCENE_FINAL)
         spawnBoss(director, 3)
         director:eobj_control(EOBJ_FINAL_STAGE, AC_FINAL_STAGE, AC_FINAL_STAGE_PARAMS)
         director:party_npc_yell("melee", LINE_FINAL, LINE_FINAL_AFTER)
-    end
+    end })
+
+function onUpdate(director, health, player_health, info)
+    D:update(director, health, player_health, info)
 end
 
 function onActorDeath(director, bnpc_id, position)
@@ -539,37 +528,7 @@ function onActorDeath(director, bnpc_id, position)
         return
     end
 
-    local index = bossIndex(bnpc_id)
-    if index == nil then
-        return
-    end
-    -- spawn_boss opens the arena (wall and line hidden, log 2014); the music stops and the coffers appear.
-    local boss = BOSSES[index]
-    bosses_dead[index] = true
-    if boss.other_line ~= nil then
-        director:hide_eobj(boss.other_line)
-    end
-    if boss.music then
-        director:set_bgm(0)
-    end
-    for _, coffer in ipairs(BOSS_COFFERS[index]) do
-        director:spawn_treasure(coffer)
-    end
-    for _, layout in ipairs(AFTER_BOSS[index] or {}) do
-        director:show_eobj(layout)
-    end
-    if index == 1 then
-        dismissHelpers(director, kottos_helpers, true)
-        kottos_helpers = {}
-    elseif index == 2 then
-        dismissHelpers(director, boss2_helpers, false)
-        boss2_helpers = {}
-    elseif index == 3 then
-        dismissHelpers(director, boss3_helpers, true)
-        boss3_helpers = {}
-        director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
-        director:complete_duty()
-    end
+    D:died(director, bnpc_id, position)
 end
 
 GIMMICKS = {
@@ -580,21 +539,12 @@ GIMMICKS = {
     [EOBJ_DOOR3_SLOT] = true, [EOBJ_DOOR3] = true,
 }
 
--- Everyone back at the start (a wipe; the server sends the enemies home whole): what's kept of a fight under way
--- goes, so the next pull is a first pull again: the battle music starts with it, what was due later isn't, and the
--- second boss is its first size (its growing isn't seen reset on retail: no wipe on it in Bob's captures.) Found by
--- `questkit duty-sim`'s rehearsed wipes (2026-11-10: the music never came again.)
+-- Everyone back at the start (a wipe; the server sends the enemies home whole): the fight under way is forgotten, so
+-- the next pull is a first pull again (`D`): the battle music starts with it, and the second boss is its first size
+-- (its `on_wipe`). A rock blasted still comes down (`keep`). Found by `questkit duty-sim`'s rehearsed wipes
+-- (2026-11-10: the music never came again.)
 function onPartyWipe(director)
-    later = {}
-    for index, _ in ipairs(BOSSES) do
-        if not bosses_dead[index] then
-            bosses_pulled[index] = false
-        end
-    end
-    if not bosses_dead[2] and boss2_rounds > 0 then
-        boss2_rounds = 0
-        director:set_model_scale(BOSS2, BOSS2_FIRST_SCALE)
-    end
+    D:wipe(director)
 end
 
 function onGimmickAccessor(director, actor_id, id, params)
@@ -639,14 +589,14 @@ function blast(director, index, detonator)
     for _, layout in ipairs(blast.hide) do
         director:hide_eobj(layout)
     end
-    after(BLAST_DELAY, function(director)
+    D:inSeconds(BLAST_DELAY, function(director)
         for _, layout in ipairs(blast.later_show) do
             director:show_eobj(layout)
         end
         for _, layout in ipairs(blast.later_hide) do
             director:hide_eobj(layout)
         end
-    end)
+    end, true)
 end
 
 function onEventActionCast(director, actor_id, target)

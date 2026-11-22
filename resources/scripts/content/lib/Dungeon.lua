@@ -114,8 +114,9 @@ end
 -- Runs fn(director, health, info) once the clock is `seconds` on, at the start of an update (before the party, the
 -- steps and the pulls are looked at), with that update's numbers: for a duty that keeps its own clock in seconds (the
 -- Stone Vigil's dives and Swinges). `after` counts updates and runs at an update's end.
-function Dungeon:inSeconds(seconds, fn)
-    table.insert(self.timed, { at = self.clock + seconds, fn = fn })
+function Dungeon:inSeconds(seconds, fn, keep)
+    -- `keep`: it runs on through a wipe too (the Copperbell Mines' rock coming down 10 s after its blast.)
+    table.insert(self.timed, { at = self.clock + seconds, fn = fn, keep = keep })
 end
 
 function Dungeon:runTimed(director, health, info)
@@ -296,6 +297,10 @@ end
 
 function Dungeon:dropHelpers(director, boss)
     for _, helper in ipairs(self.helpers_of[boss.id] or {}) do
+        -- `helpers.release`: let go first (ActorControl 417 with no one: the Copperbell Mines' first and last.)
+        if boss.helpers and boss.helpers.release then
+            director:release_bnpc(helper)
+        end
         director:despawn_bnpc(helper)
     end
     self.helpers_of[boss.id] = {}
@@ -543,9 +548,9 @@ function Dungeon:cast(director, layout_id, action_id, actor_id, x, y, z)
         end
     end
     if type(boss.on_cast) == "table" and boss.on_cast[action_id] then
-        boss.on_cast[action_id](director, x, y, z)
+        boss.on_cast[action_id](director, x, y, z, actor_id)
     elseif type(boss.on_cast) == "function" then
-        boss.on_cast(director, action_id, x, y, z)
+        boss.on_cast(director, action_id, x, y, z, actor_id)
     end
 end
 
@@ -596,7 +601,13 @@ function Dungeon:wipe(director)
     local was = self:bossById(self.fight)
     self.fight = nil
     self.later = {}
-    self.timed = {}
+    local kept = {}
+    for _, task in ipairs(self.timed) do
+        if task.keep then
+            table.insert(kept, task)
+        end
+    end
+    self.timed = kept
     self.helpers = {}
     if was then
         self:dropWaves(director, was)

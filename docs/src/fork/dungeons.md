@@ -39,16 +39,16 @@ gives its duty's facts:
 | --- | --- |
 | `pack({ name, layouts, ready, effects, spawns, come_out, on_fall })` | Once every one of `layouts` is dead (and `ready()`): its map effects ({ index, timeline, state }), `spawns` spawned (or come out of hiding with `come_out`), `on_fall(director)`; `done[name]` after (`pack1`... if unnamed). |
 | `step({ name, ready, where, run })` | Somewhere the party's steps set something off, once: when `ready()` (if given) and anyone passes `where(member)`, `run(director)`; looked at in order every update. |
-| `boss({ id, layout, wall, line, place, middle, room, helpers, bgm, after_bgm, talker, waves, ready, last, comes_later, on_pull, on_cast, on_death, on_wipe, on_recommence })` | A boss and its room: `director:boss_room` at setup (`comes_later`: `bringBoss` brings it, with `spawn_boss`), the wall hidden and the line shown until a pull, `room` = { members, radius } kept to it (`director:keep_in_room`), its hidden `helpers` = { layout, count } brought and held (`helperAt`, `helpersCast`), pulled when hurt or after someone (never again after a wipe till it's home, whole and with no target), its music, `talker` = { name, pull, at = { { seconds, text } }, ms, still }: its talks at the pull and into its fight, `waves` = { action, after, list }: each cast of `action` brings the next wave `after` seconds on, gone with its fall or a wipe; `last`: its fall ends the fights. |
+| `boss({ id, layout, wall, line, place, middle, room, helpers, bgm, after_bgm, talker, waves, ready, last, comes_later, on_pull, on_cast, on_death, on_wipe, on_recommence })` | A boss and its room: `director:boss_room` at setup (`comes_later`: `bringBoss` brings it, with `spawn_boss`), the wall hidden and the line shown until a pull, `room` = { members, radius } kept to it (`director:keep_in_room`), its hidden `helpers` = { layout, count, release } brought and held (`release`: let go, ActorControl 417, before they go as it falls) (`helperAt`, `helpersCast`), pulled when hurt or after someone (never again after a wipe till it's home, whole and with no target), its music, `talker` = { name, pull, at = { { seconds, text } }, ms, still }: its talks at the pull and into its fight, `waves` = { action, after, list }: each cast of `action` brings the next wave `after` seconds on, gone with its fall or a wipe; `last`: its fall ends the fights. |
 | `update(director, health, player_health, info, between)` | Every update: the party, the steps, the pulls, then the script's `between(director)`, then what's due (`after`). |
 | `group` (a boss's) | Several that are the boss together: a room for each at setup, pulled with any, fallen with the last (`on_death` gets that one and where it fell); `layout` is the first (Haukke Manor's pair.) |
 | `pulled_by` (a boss's) | Layouts whose being after someone pulls the boss too (Brayflox's first boss's adds), even before the boss is out (the Tam-Tara Deepcroft's packs, whose fall calls their room's boss); after a wipe not till they're after nobody. |
 | `fell(director, boss)` | A boss's fight over without its death (one held at 1 HP: the Praetorium's last; Sastasha's captains running off), once, and it isn't pulled again; `died` calls it. What was due by updates (`after`) goes; what's due on the clock (`inSeconds`) runs on (a wipe takes both.) |
 | `helpersOnEach(director, action, y)` | A helper's cast on each of the party, aimed at them. |
-| `inSeconds(seconds, fn)` | The duty's clock in seconds (`D.clock`, half a second an update): fn(director, health, info) once it's that far on, at the update's start (`after` counts updates and runs at its end); for a duty that keeps its own clock (the Stone Vigil's.) |
+| `inSeconds(seconds, fn, keep)` | The duty's clock in seconds (`D.clock`, half a second an update): fn(director, health, info) once it's that far on, at the update's start (`after` counts updates and runs at its end); for a duty that keeps its own clock (the Stone Vigil's.) A wipe takes what's due unless `keep` (the Copperbell Mines' rock coming down 10 s after its blast.) |
 | `schedule(director, rows, still, run)` | A clock table's rows ({ seconds, ... }) at their times, each `run(director, row)` if `still()` holds then: a fight that keeps to one clock from its pull (the Porta Decumana's.) |
 | `in_the_party(actor)` | Set by a script: who of the player and their members counts as the party (the Porta Decumana's: those in the arena.) |
-| `cast`, `died`, `wipe`, `recommence`, `setup`, `bringStartingHelpers` | What the server's calls do with it: a boss's waves and `on_cast`; packs and a boss's fall (helpers and waves gone, music, `on_death`); a wipe (every boss resetting, the fight forgotten, its waves gone, `on_wipe`). |
+| `cast`, `died`, `wipe`, `recommence`, `setup`, `bringStartingHelpers` | What the server's calls do with it: a boss's waves and `on_cast` (a table's fn(director, x, y, z, caster's actor), a function's fn(director, action, x, y, z, caster's actor)); packs and a boss's fall (helpers and waves gone, music, `on_death`); a wipe (every boss resetting, the fight forgotten, its waves gone, `on_wipe`). |
 | `after(seconds, fn)`, `once(name)`, `anyone(test)`, `Dungeon.within`, `allDead`, `countDead`, `comeOut` | The helpers every script had its own copy of. |
 
 A boss with `eobjs_at_setup = false` leaves its wall and line to `spawn_boss` as it comes (the Praetorium's); `arena`
@@ -90,8 +90,15 @@ script, in the hooks or around the calls. **Converted**, each playing its retail
   from the pack's pull (`pulled_by`) to its boss's fall, and the last boss (its waves and shields its own); the doors,
   key, gate and seal and the party's lines its own; two runs. Its room bosses are now pulled when hurt too, and after
   a wipe a room isn't pulled again till its pack and boss are home and after nobody.
+* The Copperbell Mines (`w1d1_re.lua`, 2026-11-21): its three bosses, each brought with its helpers (Kottos' and the
+  last boss's let go as it falls, `release`) and its round on its cast (`on_cast`, Kottos' leaps with the caster's
+  actor), the two ambushes and the last hall as steps; the charges, rocks, items, doors, drops and the party's lines
+  its own; two runs. `duty-sim` doesn't play the rounds (it brings the bosses itself, without helpers), so
+  `CopperbellBossesTest` runs them. Its bosses are now pulled when hurt too, and after a wipe wait till they're home
+  and whole; any player sets off an ambush or the last hall (before: the first player only); and a rock blasted just
+  before a wipe still comes down (before: the wipe took its second half, leaving the way shut.)
 
-The other six duty scripts are still written by hand; each is converted on its own, kept
+The other five duty scripts are still written by hand; each is converted on its own, kept
 passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
 
 ## The duty's beginning: everyone waits for the openings

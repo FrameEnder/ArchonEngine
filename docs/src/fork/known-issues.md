@@ -1805,8 +1805,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 ## Combat
 
 * The dungeon framework (`content/lib/Dungeon.lua`, 2026-11-21): Castrum Meridianum's, the Praetorium's, the Porta Decumana's, the
-  Stone Vigil's, Brayflox's Longstop's, Haukke Manor's, the Thousand Maws of Toto-Rak's, Sastasha's and the Tam-Tara
-  Deepcroft's scripts use it so far; the other six duties keep their own copies of packs, steps, boss rooms and wipes (and so miss fixes made in the
+  Stone Vigil's, Brayflox's Longstop's, Haukke Manor's, the Thousand Maws of Toto-Rak's, Sastasha's, the Tam-Tara
+  Deepcroft's and the Copperbell Mines' scripts use it so far; the other five duties keep their own copies of packs, steps, boss rooms and wipes (and so miss fixes made in the
   framework, such as a boss not re-pulled until it's home after a wipe) until each is converted.
 
 * Launchers (2026-11-21, untested in game): only those in `resources/data/launchers.json` (Castrum Meridianum's four)

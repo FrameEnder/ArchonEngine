@@ -1353,6 +1353,73 @@ class DungeonFrameworkTest(unittest.TestCase):
         self.assertEqual(list(self.lua.globals().fired.values()), [1.0])
 
 
+class CopperbellBossesTest(unittest.TestCase):
+    """The Copperbell Mines' script on the dungeon framework: each boss brought with its helpers, its round on its
+    cast, its helpers let go (or not) as it falls; a rock's blast still comes down after a wipe. `duty-sim` doesn't
+    play these: it brings the bosses itself, without helpers."""
+
+    def setUp(self):
+        try:
+            from lupa import LuaRuntime
+        except ImportError:
+            self.skipTest("lupa isn't installed")
+        from questkit import repo
+        self.lua = LuaRuntime(unpack_returned_tuples=True)
+        self.lua.execute((repo.SCRIPTS / "content" / "lib" / "Dungeon.lua").read_text())
+        self.lua.execute((repo.SCRIPTS / "content" / "w1d1_re.lua").read_text())
+        self.calls = []
+
+        def log(name, *args):
+            self.calls.append((name, list(args)))
+        self.lua.globals().LOG = log
+        # Spawns return an actor ID, as the server's do.
+        self.director = self.lua.eval("""setmetatable({ next_id = 1000 }, { __index = function(self, name)
+            return function(d, ...)
+                LOG(name, ...)
+                if name == "spawn_bnpc" then
+                    d.next_id = d.next_id + 1
+                    return d.next_id
+                end
+            end
+        end })""")
+        g = self.lua.globals()
+        g.onSetup(self.director)
+
+    def update(self, info, health=None):
+        g = self.lua.globals()
+        g.onUpdate(self.director, self.lua.table_from(health or {}), 100,
+                   self.lua.table_from({k: self.lua.table_from(v) for k, v in info.items()}))
+
+    def named(self, name):
+        return [args for n, args in self.calls if n == name]
+
+    def test_each_boss_its_helpers_and_round(self):
+        g = self.lua.globals()
+        for index, (layout, action, count, released) in enumerate(
+                [(9053767, 28543, 3, True), (9040077, 28463, 6, False), (9060676, 28760, 5, True)], start=1):
+            del self.calls[:]
+            g.spawnBoss(self.director, index)
+            self.assertEqual(len(self.named("hold_bnpc")), count)
+            self.update({"player": {"x": 0, "y": 0, "z": 0, "id": 1}, layout: {"x": 0, "y": 0, "z": 0, "target": 1}})
+            self.assertEqual(g.D.fight, index)
+            g.onActorCast(self.director, layout, action, 77, 0, 0, 0)
+            self.assertGreaterEqual(len(self.named("warp_bnpc")), count if index != 1 else 3)
+            if index == 1:
+                # Kottos himself leaps (the caster's actor), three times.
+                self.assertEqual([args[0] for args in self.named("jump_bnpc")], [77, 77, 77])
+            g.onActorDeath(self.director, layout, self.lua.table_from({"x": 0, "y": 0, "z": 0}))
+            self.assertEqual(len(self.named("release_bnpc")), count if released else 0)
+            self.assertEqual(len(self.named("despawn_bnpc")), count)
+
+    def test_a_blast_comes_down_through_a_wipe(self):
+        g = self.lua.globals()
+        g.blast(self.director, 1, g.EOBJ_DETONATOR1)
+        g.onPartyWipe(self.director)
+        for _ in range(21):
+            self.update({"player": {"x": 0, "y": 0, "z": 0, "id": 1}})
+        self.assertIn(2790163, [args[0] for args in self.named("show_eobj")])
+
+
 class BattleFrameworkTest(unittest.TestCase):
     """content/lib/Battle.lua's roles, run in Lua: a tank, two DPS and a support against a boss and two adds."""
 
