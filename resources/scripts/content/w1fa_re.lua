@@ -12,6 +12,10 @@
 -- 141), and 3.4 s after the Nail he casts Hellfire (458) round the arena; 9.8 s after it 775 goes with his line 2604 and
 -- he fights on with Eruption and his Radiant Plumes. At 0 his last line (2605), the closing cutscene and the duty is
 -- complete. Everyone down is a party wipe (server/wipe.rs): it all begins again.
+--
+-- On the dungeon framework (`content/lib/Dungeon.lua`, docs/src/fork/dungeons.md) since 2026-11-21: Ifrit's pull and
+-- talk, his helpers and his casts, his fall; his phases, the Nail and Hellfire and bringing him again after a wipe are
+-- its own.
 
 -- Which way players face as they come in and after a wipe (the InstanceContent has no entrance rect, and the entrance
 -- circle faces north): retail's 1.571, facing Ifrit, both times in the capture (Bob's bundle of 2026-10-28: Kawari
@@ -99,41 +103,49 @@ CUTSCENE_END = 87
 CUTSCENE_END_PARAMS = { 1, 18, 0, 0 }
 
 ifrit = nil
-helpers = {}
 phase = 1
-pulled = false
 nail_up = false
 nail_fallen = false
 said_low = false
 attempts = 1
 waiting_for_new_ifrit = false
 plumes = 0
--- The party where it stood at the last update: the player and their party's NPCs.
-party = {}
--- Things to do later: { at = os.time(), fn = function(director) }
-later = {}
 
-function after(seconds, fn)
-    table.insert(later, { at = os.time() + seconds, fn = fn })
-end
+DUNGEON = Dungeon.new()
+D = DUNGEON
+
+-- Ifrit (`D`): brought by the script (at the start and after a wipe), with no room of his own; pulled with his line
+-- (and the party's: the first attempt's, or the Lancer's after); his helpers held for his Eruptions and Plumes; his
+-- fall ends the duty.
+IFRIT_BOSS = D:boss({ id = 1, layout = IFRIT, middle = { x = MIDDLE.x, y = HELPER_Y, z = MIDDLE.z },
+    helpers = { layout = HELPER, count = HELPER_COUNT }, comes_later = true, eobjs_at_setup = false, bgm = false,
+    last = true, talker = { name = NAME_IFRIT, pull = TALK_PULL, ms = TALK_MS },
+    on_pull = function(d)
+        if attempts == 1 then
+            d:party_npc_yell("healer", LINE_PULL_FIRST_HEALER, 0, "ranged", LINE_PULL_FIRST)
+        else
+            d:party_npc_yell("melee", LINE_PULL_AGAIN)
+        end
+    end,
+    on_cast = function(d, action_id) ifritCast(d, action_id) end,
+    on_death = function(d)
+        talk(d, TALK_DEFEATED)
+        ifrit = nil
+        d:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
+        d:complete_duty()
+    end })
 
 function bringIfrit(director)
     ifrit = director:spawn_bnpc(IFRIT)
-    helpers = {}
-    for i = 1, HELPER_COUNT do
-        helpers[i] = director:spawn_bnpc(HELPER)
-        director:hold_bnpc(helpers[i])
-    end
+    D:bringHelpers(director, IFRIT_BOSS)
 end
 
 function reset()
     phase = 1
-    pulled = false
     nail_up = false
     nail_fallen = false
     said_low = false
     plumes = 0
-    later = {}
 end
 
 function onSetup(director)
@@ -157,7 +169,7 @@ function summonNail(director)
     director:appear_bnpc(NAIL, NAIL_APPEAR_TIMELINE, NAIL_APPEAR_DELAY)
     director:delay(0)
     nail_up = true
-    after(HELLFIRE_ANYWAY_AFTER, function(director)
+    D:inSeconds(HELLFIRE_ANYWAY_AFTER, function(director)
         if not nail_fallen and phase == 3 then
             director:despawn_bnpc(NAIL)
             hellfire(director)
@@ -193,10 +205,10 @@ end
 
 -- Where someone of the party stands, at random.
 function someoneOfTheParty()
-    if #party == 0 then
+    if #D.party == 0 then
         return nil
     end
-    return party[math.random(#party)]
+    return D.party[math.random(#D.party)]
 end
 
 function ring(radius, diagonals)
@@ -209,8 +221,13 @@ function ring(radius, diagonals)
     return spots
 end
 
-function onActorCast(director, layout_id, action_id, actor_id)
-    if layout_id ~= IFRIT or #helpers == 0 then
+function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
+    D:cast(director, layout_id, action_id, actor_id, x, y, z)
+end
+
+function ifritCast(director, action_id)
+    local helpers = D.helpers_of[IFRIT_BOSS.id] or {}
+    if #helpers == 0 then
         return
     end
     if action_id == ACTION_ERUPTION then
@@ -232,32 +249,12 @@ function onActorCast(director, layout_id, action_id, actor_id)
     end
 end
 
+-- His pull (`D`); his phases by his health.
 function onUpdate(director, health, player_health, info)
-    local now = os.time()
-    local due = {}
-    local waiting = {}
-    for _, entry in ipairs(later) do
-        if entry.at <= now then
-            table.insert(due, entry)
-        else
-            table.insert(waiting, entry)
-        end
-    end
-    later = waiting
-    for _, entry in ipairs(due) do
-        entry.fn(director)
-    end
+    D:update(director, health, player_health, info, function(d) phases(d, health) end)
+end
 
-    if info == nil then
-        return
-    end
-    party = {}
-    for key, actor in pairs(info) do
-        if key == "player" or (type(key) == "string" and key:sub(1, 5) == "party") then
-            table.insert(party, { x = actor.x, z = actor.z })
-        end
-    end
-
+function phases(director, health)
     local hp = health[IFRIT]
     if hp == nil then
         return
@@ -270,15 +267,6 @@ function onUpdate(director, health, player_health, info)
             return
         end
         waiting_for_new_ifrit = false
-    end
-    if not pulled and info[IFRIT] ~= nil and info[IFRIT].target ~= nil then
-        pulled = true
-        talk(director, TALK_PULL)
-        if attempts == 1 then
-            director:party_npc_yell("healer", LINE_PULL_FIRST_HEALER, 0, "ranged", LINE_PULL_FIRST)
-        else
-            director:party_npc_yell("melee", LINE_PULL_AGAIN)
-        end
     end
     if phase == 1 and hp < PHASE_2_AT then
         phase = 2
@@ -301,26 +289,21 @@ end
 function onActorDeath(director, bnpc_id, position)
     if bnpc_id == NAIL and not nail_fallen then
         hellfire(director)
-    elseif bnpc_id == IFRIT then
-        talk(director, TALK_DEFEATED)
-        for _, helper in ipairs(helpers) do
-            director:despawn_bnpc(helper)
-        end
-        helpers = {}
-        ifrit = nil
-        director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
-        director:complete_duty()
+    else
+        D:died(director, bnpc_id, position)
     end
 end
 
 -- Everyone down: as they're sent back, Ifrit, the Nail and his helpers go, and come back as at the start (retail
--- spawned him and his helpers again as the players arrived.)
+-- spawned him and his helpers again as the players arrived.) His fight is forgotten (`D`), and the new one isn't
+-- pulled till he's there whole and after nobody.
 function onPartyWipe(director)
     director:despawn_bnpc(IFRIT)
     director:despawn_bnpc(NAIL)
-    for _, helper in ipairs(helpers) do
+    for _, helper in ipairs(D.helpers_of[IFRIT_BOSS.id] or {}) do
         director:despawn_bnpc(helper)
     end
+    D:wipe(director)
     attempts = attempts + 1
     reset()
     waiting_for_new_ifrit = true

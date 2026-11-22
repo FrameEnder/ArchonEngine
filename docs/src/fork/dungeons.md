@@ -97,8 +97,14 @@ script, in the hooks or around the calls. **Converted**, each playing its retail
   `CopperbellBossesTest` runs them. Its bosses are now pulled when hurt too, and after a wipe wait till they're home
   and whole; any player sets off an ambush or the last hall (before: the first player only); and a rock blasted just
   before a wipe still comes down (before: the wipe took its second half, leaving the way shut.)
+* The Bowl of Embers (`w1fa_re.lua`, 2026-11-21): a trial; Ifrit as a boss with no room (brought by the script at the
+  start and after a wipe, as the Porta Decumana's are), his talk at the pull (`talker`), his helpers and his
+  Eruptions and Plumes (`on_cast`), the party where it stands (`D.party`); his phases, the Nail, Hellfire (on the
+  clock, `inSeconds`) and the second attempt its own; three runs. He's now pulled when hurt too, and after a wipe the
+  new Ifrit isn't pulled till he's whole and after nobody (it was the old one's health lingering an update that the
+  script guarded against, and still does for his phases.)
 
-The other five duty scripts are still written by hand; each is converted on its own, kept
+The other four duty scripts are still written by hand; each is converted on its own, kept
 passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
 
 ## The duty's beginning: everyone waits for the openings
