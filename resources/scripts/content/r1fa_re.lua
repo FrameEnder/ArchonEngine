@@ -34,6 +34,10 @@
 -- 17.7, 658 28.0); every run's times in TrialGaruda_239. A monolith left after a wipe stands again whole. Duty Support's members gather behind the monolith at (-8, -4) for Mistral Shriek, the
 -- Conjurer says 14381 at the pull and the Thaumaturge 14382 as the first Shriek begins. At 0 her last line (3705),
 -- the closing cutscene and the duty complete. Everyone down is a party wipe (server/wipe.rs): it begins again.
+--
+-- On the dungeon framework (`content/lib/Dungeon.lua`, docs/src/fork/dungeons.md) since 2026-11-21: Garuda's pull and
+-- talk, her helper, her casts, her fall, the clock; her vanishings, the plumes, the monoliths, Feather Rain and
+-- bringing her again after a wipe are its own.
 
 -- Which way players face as they come in and after a wipe: retail's -3.14, toward her, all three runs.
 ENTRANCE_ROTATION = -3.1416
@@ -146,26 +150,61 @@ CUTSCENE_END_PARAMS = { 1, 18, 0, 0 }
 TICK = 0.5
 
 garuda = nil
-helper = nil
 monoliths = {}
 plumes = {}
 phase = 1
 vanish_due = nil
 next_vanish = nil
-pulled = false
 attempts = 1
 waiting_for_new_garuda = false
 away = false
-ticks = 0
+-- When her cast ends and when she next vanishes (in updates, `D.ticks`), where she stands.
 cast_until = 0
 shrieks = 0
 garuda_at = nil
 feather_rain = false
 cracked = {}
-later = {}
 
+DUNGEON = Dungeon.new()
+D = DUNGEON
+
+-- What's due later, on the duty's clock (`D:inSeconds`: a wipe takes it, and her fall, `D:dropTimed`.)
 function after(seconds, fn)
-    table.insert(later, { at = ticks + math.max(1, math.ceil(seconds / TICK)), fn = fn })
+    D:inSeconds(seconds, fn)
+end
+
+-- Garuda (`D`): brought by the script (at the start and after a wipe), with no room of her own; pulled with her line
+-- (and the Conjurer's, the first attempt); her helper held for Feather Rain; her casts keep her from vanishing till
+-- they're done; her fall ends the duty.
+GARUDA_BOSS = D:boss({ id = 1, layout = GARUDA, middle = MIDDLE, helpers = { layout = HELPER, count = 1 },
+    comes_later = true, eobjs_at_setup = false, bgm = false, last = true,
+    talker = { name = NAME_GARUDA, pull = TALK_PULL, ms = TALK_MS },
+    on_pull = function(d)
+        if attempts == 1 then
+            d:party_npc_yell("healer", LINE_PULL)
+        end
+    end,
+    on_cast = function(d, action_id)
+        if CAST_SECONDS[action_id] ~= nil then
+            cast_until = math.max(cast_until, D.ticks + math.ceil(CAST_SECONDS[action_id] / TICK))
+        end
+    end,
+    on_death = function(d)
+        talk(d, TALK_DEFEATED)
+        feather_rain = false
+        D:dropTimed()
+        for _, plume in ipairs(plumes) do
+            d:despawn_bnpc(plume)
+        end
+        plumes = {}
+        garuda = nil
+        d:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
+        d:complete_duty()
+    end })
+
+-- Her helper, while she has it.
+function theHelper()
+    return (D.helpers_of[GARUDA_BOSS.id] or {})[1]
 end
 
 function talk(director, text)
@@ -174,8 +213,7 @@ end
 
 function bringGaruda(director)
     garuda = director:spawn_bnpc(GARUDA)
-    helper = director:spawn_bnpc(HELPER)
-    director:hold_bnpc(helper)
+    D:bringHelpers(director, GARUDA_BOSS)
 end
 
 function bringMonoliths(director)
@@ -199,13 +237,11 @@ function reset()
     phase = 1
     vanish_due = nil
     next_vanish = nil
-    pulled = false
     away = false
     cast_until = 0
     shrieks = 0
     feather_rain = false
     plumes = {}
-    later = {}
     cracked = {}
 end
 
@@ -239,7 +275,7 @@ function vanish(director, spot, action, back, cast)
                 cast(d2)
             end
             d2:actor_use_action(garuda, action)
-            cast_until = ticks + math.ceil(CAST_SECONDS[action] / TICK)
+            cast_until = D.ticks + math.ceil(CAST_SECONDS[action] / TICK)
             after(CAST_SECONDS[action], function(d3)
                 away = false
                 if action == ACTION_AERIAL_BLAST then
@@ -294,7 +330,7 @@ end
 function shriek(director)
     shrieks = shrieks + 1
     local first = shrieks == 1
-    next_vanish = ticks + math.ceil(SHRIEK_AGAIN_AFTER / TICK)
+    next_vanish = D.ticks + math.ceil(SHRIEK_AGAIN_AFTER / TICK)
     vanish(director, NORTH, ACTION_SHRIEK, nil, function(d)
         if first and attempts == 1 then
             d:party_npc_yell("ranged", LINE_SHRIEK)
@@ -367,10 +403,10 @@ function song(director)
 end
 
 function featherRain(director)
-    if not feather_rain or helper == nil then
+    if not feather_rain or theHelper() == nil then
         return
     end
-    director:actor_use_action(helper, ACTION_FEATHER_RAIN)
+    director:actor_use_action(theHelper(), ACTION_FEATHER_RAIN)
     after(FEATHER_RAIN_EVERY, featherRain)
 end
 
@@ -405,10 +441,10 @@ function aerialBlast(director)
     end)
 end
 
--- Her casts from her timeline (659), and the plumes' blasts: the plume falls 2.3 s later.
+-- Her casts from her timeline (659, `D`), and the plumes' blasts: the plume falls 2.3 s later.
 function onActorCast(director, layout_id, action_id, actor_id, x, y, z, target_id)
-    if layout_id == GARUDA and CAST_SECONDS[action_id] ~= nil then
-        cast_until = math.max(cast_until, ticks + math.ceil(CAST_SECONDS[action_id] / TICK))
+    if layout_id == GARUDA then
+        D:cast(director, layout_id, action_id, actor_id, x, y, z, target_id)
     elseif action_id == ACTION_PLUME_BLAST and (layout_id == RAZOR_PLUME or layout_id == SATIN_PLUME) then
         after(PLUME_FALLS_AFTER, function(d)
             d:kill_bnpc(actor_id)
@@ -416,25 +452,13 @@ function onActorCast(director, layout_id, action_id, actor_id, x, y, z, target_i
     end
 end
 
+-- Her pull (`D`); the monoliths cracking; her vanishings by her health.
 function onUpdate(director, health, player_health, info)
-    ticks = ticks + 1
-    local due = {}
-    local waiting = {}
-    for _, entry in ipairs(later) do
-        if entry.at <= ticks then
-            table.insert(due, entry)
-        else
-            table.insert(waiting, entry)
-        end
-    end
-    later = waiting
-    for _, entry in ipairs(due) do
-        entry.fn(director)
-    end
+    D:update(director, health, player_health, info, function(d) phases(d, health, info) end)
+end
 
-    if info == nil then
-        return
-    end
+function phases(director, health, info)
+    local ticks = D.ticks
     if info[GARUDA] ~= nil then
         garuda_at = { x = info[GARUDA].x, y = info[GARUDA].y, z = info[GARUDA].z, rotation = 0.0 }
     end
@@ -455,13 +479,6 @@ function onUpdate(director, health, player_health, info)
             return
         end
         waiting_for_new_garuda = false
-    end
-    if not pulled and info[GARUDA] ~= nil and info[GARUDA].target ~= nil then
-        pulled = true
-        talk(director, TALK_PULL)
-        if attempts == 1 then
-            director:party_npc_yell("healer", LINE_PULL)
-        end
     end
     if away then
         return
@@ -490,30 +507,20 @@ function onUpdate(director, health, player_health, info)
 end
 
 function onActorDeath(director, bnpc_id, position)
-    if bnpc_id ~= GARUDA then
-        return
-    end
-    talk(director, TALK_DEFEATED)
-    feather_rain = false
-    later = {}
-    for _, plume in ipairs(plumes) do
-        director:despawn_bnpc(plume)
-    end
-    plumes = {}
-    director:despawn_bnpc(HELPER)
-    helper = nil
-    garuda = nil
-    director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
-    director:complete_duty()
+    D:died(director, bnpc_id, position)
 end
 
--- Everyone down: as they're sent back, Garuda, her helper and the plumes go, and come back as at the start.
+-- Everyone down: as they're sent back, Garuda, her helper and the plumes go, and come back as at the start. Her fight
+-- is forgotten (`D`), and the new one isn't pulled till she's there whole and after nobody.
 function onPartyWipe(director)
     for _, plume in ipairs(plumes) do
         director:despawn_bnpc(plume)
     end
     director:despawn_bnpc(GARUDA)
-    director:despawn_bnpc(HELPER)
+    for _, helper in ipairs(D.helpers_of[GARUDA_BOSS.id] or {}) do
+        director:despawn_bnpc(helper)
+    end
+    D:wipe(director)
     -- The monoliths stand again, whole (cracked or crumbled.)
     for layout, _ in pairs(monoliths) do
         director:despawn_bnpc(layout)

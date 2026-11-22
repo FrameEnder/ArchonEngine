@@ -1462,6 +1462,28 @@ class NavelTitanTest(FrameworkScriptTest):
         self.assertEqual(spots, [(5, -5), (5, 5)])
 
 
+class HowlingEyeGarudaTest(FrameworkScriptTest):
+    """The Howling Eye's script on the dungeon framework: as Garuda falls, what's due on the clock goes (`dropTimed`):
+    no Feather Rain or plumes after her."""
+
+    SCRIPT = "r1fa_re.lua"
+
+    def test_nothing_of_hers_after_she_falls(self):
+        g = self.lua.globals()
+        party = {"player1": {"x": 5, "y": 0, "z": 5, "id": 11}}
+        self.update({**party, 4246177: {"x": 0, "y": 0, "z": -18, "target": 1}})
+        self.assertEqual(g.D.fight, 1)
+        # Her 50 % line: she's due to vanish a second on, and her plumes after it.
+        g.half(self.director)
+        g.onActorDeath(self.director, 4246177, self.lua.table_from({"x": 0, "y": 0, "z": 0}))
+        self.assertIn("complete_duty", [n for n, _ in self.calls])
+        del self.calls[:]
+        for _ in range(30):
+            self.update(dict(party))
+        self.assertEqual([n for n, _ in self.calls if n in ("set_targetable", "play_action_timeline", "spawn_bnpc")],
+                         [])
+
+
 class BattleFrameworkTest(unittest.TestCase):
     """content/lib/Battle.lua's roles, run in Lua: a tank, two DPS and a support against a boss and two adds."""
 

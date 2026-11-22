@@ -114,6 +114,11 @@ end
 -- Runs fn(director, health, info) once the clock is `seconds` on, at the start of an update (before the party, the
 -- steps and the pulls are looked at), with that update's numbers: for a duty that keeps its own clock in seconds (the
 -- Stone Vigil's dives and Swinges). `after` counts updates and runs at an update's end.
+-- What's due on the clock goes (the Howling Eye's Garuda falling: none of her plumes or rain after her.)
+function Dungeon:dropTimed()
+    self.timed = {}
+end
+
 function Dungeon:inSeconds(seconds, fn, keep)
     -- `keep`: it runs on through a wipe too (the Copperbell Mines' rock coming down 10 s after its blast.)
     table.insert(self.timed, { at = self.clock + seconds, fn = fn, keep = keep })

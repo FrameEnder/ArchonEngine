@@ -45,7 +45,7 @@ gives its duty's facts:
 | `pulled_by` (a boss's) | Layouts whose being after someone pulls the boss too (Brayflox's first boss's adds), even before the boss is out (the Tam-Tara Deepcroft's packs, whose fall calls their room's boss); after a wipe not till they're after nobody. |
 | `fell(director, boss)` | A boss's fight over without its death (one held at 1 HP: the Praetorium's last; Sastasha's captains running off), once, and it isn't pulled again; `died` calls it. What was due by updates (`after`) goes; what's due on the clock (`inSeconds`) runs on (a wipe takes both.) |
 | `helpersOnEach(director, action, y)` | A helper's cast on each of the party, aimed at them. |
-| `inSeconds(seconds, fn, keep)` | The duty's clock in seconds (`D.clock`, half a second an update): fn(director, health, info) once it's that far on, at the update's start (`after` counts updates and runs at its end); for a duty that keeps its own clock (the Stone Vigil's.) A wipe takes what's due unless `keep` (the Copperbell Mines' rock coming down 10 s after its blast.) |
+| `inSeconds(seconds, fn, keep)` | The duty's clock in seconds (`D.clock`, half a second an update): fn(director, health, info) once it's that far on, at the update's start (`after` counts updates and runs at its end); for a duty that keeps its own clock (the Stone Vigil's.) A wipe takes what's due unless `keep` (the Copperbell Mines' rock coming down 10 s after its blast); `dropTimed()` takes it all (the Howling Eye's Garuda falling: none of her plumes after her.) |
 | `schedule(director, rows, still, run)` | A clock table's rows ({ seconds, ... }) at their times, each `run(director, row)` if `still()` holds then: a fight that keeps to one clock from its pull (the Porta Decumana's.) |
 | `in_the_party(actor)` | Set by a script: who of the player and their members counts as the party (the Porta Decumana's: those in the arena.) |
 | `cast`, `died`, `wipe`, `recommence`, `setup`, `bringStartingHelpers` | What the server's calls do with it: a boss's waves and `on_cast` (a table's fn(director, x, y, z, caster's actor, target), a function's fn(director, action, x, y, z, caster's actor, target): whom it's aimed at, the Navel's Rock Throw's); packs and a boss's fall (helpers and waves gone, music, `on_death`); a wipe (every boss resetting, the fight forgotten, its waves gone, `on_wipe`). |
@@ -109,8 +109,14 @@ script, in the hooks or around the calls. **Converted**, each playing its retail
   two runs. `duty-sim` never plays Rock Throw (retail's recordings don't give it the cast), so `NavelTitanTest` runs
   it and Weight of the Land. He's now pulled when hurt too, and after a wipe the new Titan isn't pulled till he's
   whole and after nobody.
+* The Howling Eye (`r1fa_re.lua`, 2026-11-21): a trial, as the other two: Garuda with no
+  room, her talk at the pull, her helper (Feather Rain), her casts keeping her from vanishing, her fall (what's due on
+  the clock dropped with it, `dropTimed`, as the old script's own list was) and the clock; her vanishings, the plumes,
+  the monoliths and the second attempt its own; three runs. `HowlingEyeGarudaTest` checks nothing of hers comes after
+  she falls. She's now pulled when hurt too, and after a wipe the new Garuda isn't pulled till she's whole and after
+  nobody.
 
-The other three duty scripts are still written by hand; each is converted on its own, kept
+The other two duty scripts are still written by hand; each is converted on its own, kept
 passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
 
 ## The duty's beginning: everyone waits for the openings
