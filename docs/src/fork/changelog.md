@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-22 | — | `master` fast-forwarded to `test-pending` with Bob's OK ("alright merge everything to master"): 145 commits, from the AoE and rotation work of 2026-11-20 through the dungeon framework and these quests; work continues on `test-pending` (changelog). |
+| 2026-11-22 | — | Changelog (the fast-forward's range corrected). |
+| 2026-11-22 | `3d62328` | `master` fast-forwarded to `test-pending` with Bob's OK ("alright merge everything to master"): 145 commits, everything since the last fast-forward (2026-11-11): from a player's cutscene state through the AoE and rotation work, map-effect barriers, launchers and the dungeon framework to these quests; work continues on `test-pending` (changelog). |
 | 2026-11-22 | `1678c74` | Quests (1, 24, 32, 34, 37, 1425); questkit (transcribe: a trade scene goes on only when made); changelog. |
 | 2026-11-21 | `363f409` | Dungeons (every dungeon and trial on the framework; Keybound Brawler and A Merchant's Tale not dungeons, left as they are); known issues (the framework's conversion done); changelog. |
 | 2026-11-21 | `afa8c4d` | Dungeons (the Howling Eye on the dungeon framework; `dropTimed`); known issues; changelog. |
