@@ -360,12 +360,10 @@ function Dungeon:pulled(boss)
             it = it or (self.info and self.info[member])
         end
     end
-    if it == nil then
-        return false
-    end
     -- One of `pulled_by` (or of its `group`) after someone pulls it too (Brayflox's first boss with its three adds,
-    -- Haukke Manor's pair.)
-    local by = false
+    -- Haukke Manor's pair), even before the boss is out (the Tam-Tara Deepcroft's rooms: the pack's pull is the room's
+    -- fight, its boss called by the pack's fall.)
+    local by, others_there = false, false
     local others = {}
     for _, other in ipairs(boss.pulled_by or {}) do
         table.insert(others, other)
@@ -374,19 +372,25 @@ function Dungeon:pulled(boss)
         table.insert(others, other)
     end
     for _, other in ipairs(others) do
-        local them = self.info[other]
-        if them ~= nil and them.target ~= nil then
-            by = true
+        local them = self.info and self.info[other]
+        if them ~= nil then
+            others_there = true
+            if them.target ~= nil then
+                by = true
+            end
         end
+    end
+    if it == nil and not (others_there and boss.pulled_by) then
+        return false
     end
     local health = self.health[layout]
     if self.resetting[layout] then
-        if it.target == nil and (health == nil or health >= 100) then
+        if (it == nil or it.target == nil) and not by and (health == nil or health >= 100) then
             self.resetting[layout] = nil
         end
         return false
     end
-    return by or it.target ~= nil or (health ~= nil and health < 100)
+    return by or (it ~= nil and it.target ~= nil) or (health ~= nil and health < 100)
 end
 
 function Dungeon:pull(director, boss)

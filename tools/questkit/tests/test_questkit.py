@@ -1324,6 +1324,23 @@ class DungeonFrameworkTest(unittest.TestCase):
         self.update({"player": {"x": 1, "z": 1, "id": 1}, 701: {"x": 0, "z": 0, "target": 1}}, {701: 45})
         self.assertIsNone(d.fight)
 
+    def test_a_pack_pulls_its_room_before_the_boss_comes(self):
+        # The Tam-Tara Deepcroft's rooms: the pack's pull is the room's fight, the boss called by the pack's fall;
+        # after a wipe the room isn't pulled again until its pack is home and after nobody.
+        d, director = self.d, self.director
+        self.lua.execute("D:boss({ id = 3, layout = 801, wall = 9007, line = 9008, place = 10, "
+                         "pulled_by = { 811, 812 } })")
+        self.update({"player": {"x": 1, "z": 1, "id": 1}, 811: {"x": 0, "z": 0}, 812: {"x": 0, "z": 0}})
+        self.assertIsNone(d.fight)
+        self.update({"player": {"x": 1, "z": 1, "id": 1}, 811: {"x": 0, "z": 0, "target": 1}, 812: {"x": 0, "z": 0}})
+        self.assertEqual(d.fight, 3)
+        d.wipe(d, director)
+        self.update({"player": {"x": 1, "z": 1, "id": 1}, 811: {"x": 0, "z": 0, "target": 1}})
+        self.assertIsNone(d.fight)
+        self.update({"player": {"x": 1, "z": 1, "id": 1}, 811: {"x": 0, "z": 0}})
+        self.update({"player": {"x": 1, "z": 1, "id": 1}, 811: {"x": 0, "z": 0, "target": 1}})
+        self.assertEqual(d.fight, 3)
+
     def test_every_player_is_of_the_party(self):
         # A Duty Finder run's other players set things off too ("player" is one of "player1", "player2"...), and
         # the clock in seconds runs what's due at an update's start.

@@ -10,6 +10,10 @@
 -- key (found further on) opens, and they come at once. Past the third room's door, the seal at the last room plays
 -- its cutscene and brings the last boss, who calls adds at 80, 60 and 30 % and takes no damage while one of its
 -- shields (BNpcBase 125) stands.
+--
+-- On the dungeon framework (`content/lib/Dungeon.lua`, docs/src/fork/dungeons.md) since 2026-11-21: each room's pack
+-- (its fall calls the boss) and the room's fight from the pack's pull to the boss's fall, and the last boss; the
+-- gimmicks, the leaders' lines and the last boss's waves and shields are its own.
 
 -- The rooms: the boss arena's wall and line (shown while sealed), its place name, the pack, its leader and its boss.
 ROOMS = {
@@ -152,11 +156,8 @@ VARS_DOOR3 = { 48, 1, 1, 3, 3 }
 VARS_FINAL = { 1, 1, 1, 4, 7 }
 
 -- How far the party has got
-rooms_pulled = {}
 rooms_cleared = {}
 leaders_dead = {}
-pack_dead = {}
-bosses_called = {}
 final_dead = false
 has_key = false
 gate_opened = false
@@ -180,12 +181,72 @@ function setVars(director, vars)
     end
 end
 
+DUNGEON = Dungeon.new()
+D = DUNGEON
+
+-- Each room: its pack, whose last to fall calls the boss, who goes for the party at once. (Fifteen rooms in five of
+-- Bob's retail runs: it appeared 0.1-0.5 s after the pack's last death in twelve, whichever of them that was, the
+-- leader's own death up to 7.2 s before; in three it came with one of the pack still standing at 1-5% of its health,
+-- 1.5-1.8 s before that one died. What decided those isn't known.) The room's fight is from the pack's pull (the seal
+-- is the boss room's, its pack its triggers) to the boss's fall: battle music, and the leader's line while there's a
+-- leader to say it (not on a pull after a wipe that it didn't live to); the boss's fall opens the room again, the
+-- music stops and its coffers appear.
+for index, room in ipairs(ROOMS) do
+    D:pack({ name = "room" .. index, layouts = room.pack,
+        on_fall = function(d)
+            d:log_message(LOG_BOSS_APPEARS, { ROOM_BOSS_NAME, 1 })
+            d:spawn_bnpc(room.boss)
+            d:set_hate(room.boss, nil, 300) -- the player
+        end })
+    room.fight = D:boss({ id = index, layout = room.boss, wall = room.wall, line = room.line, place = room.place,
+        triggers = room.pack, pulled_by = room.pack, eobjs_at_setup = false, bgm = BGM_BATTLE, after_bgm = 0,
+        on_pull = function(d)
+            if not leaders_dead[index] then
+                d:yell(room.leader, room.yell)
+            end
+        end,
+        on_death = function(d)
+            rooms_cleared[index] = true
+            d:log_message(LOG_ROOM_CLEARED, {})
+            for _, coffer in ipairs(ROOM_COFFERS[index]) do
+                d:spawn_treasure(coffer)
+            end
+            if index == 1 then
+                d:party_npc_yell("ranged", PARTY_NPC_LINE_BOSS1)
+            end
+        end })
+end
+
+-- The last boss: brought by the last seal; no music of its own (none on retail.) A wipe takes away the adds of the
+-- waves it had reached, and it can be hurt again: its waves come again as its health falls from full. Not seen on
+-- retail (no wipe here in Bob's captures); found by `questkit duty-sim`'s rehearsed wipes (2026-11-10.)
+FINAL = D:boss({ id = 4, layout = BNPC_FINAL_BOSS, wall = EOBJ_FINAL_WALL, line = EOBJ_FINAL_LINE, place = PLACE_FINAL,
+    comes_later = true, eobjs_at_setup = false, bgm = false, last = true,
+    on_wipe = function(d)
+        for wave = 1, final_waves do
+            for _, id in ipairs(FINAL_WAVES[wave].adds) do
+                d:despawn_bnpc(id)
+            end
+        end
+        final_waves = 0
+        if shielded then
+            shielded = false
+            d:set_invulnerable(BNPC_FINAL_BOSS, false)
+        end
+    end,
+    on_death = function(d)
+        final_dead = true
+        d:spawn_treasure(FINAL_COFFER)
+        d:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
+        d:complete_duty()
+    end })
+
 function onSetup(director)
     director:set_sequence(1)
     setVars(director, VARS_START)
 
-    for index, room in ipairs(ROOMS) do
-        director:boss_room(room.boss, room.wall, room.line, room.place, room.pack)
+    D:setup(director)
+    for _, room in ipairs(ROOMS) do
         -- The walls stand open until a pull (retail: spawned in state 7)
         director:hide_eobj(room.wall)
     end
@@ -207,50 +268,12 @@ function onSetup(director)
     director:party_npc_yell("melee", PARTY_NPC_LINE_START, PARTY_NPC_LINE_START_AFTER)
 end
 
-function roomOf(layout_id)
-    for index, room in ipairs(ROOMS) do
-        if room.boss == layout_id then
-            return index, "boss"
-        end
-        for _, id in ipairs(room.pack) do
-            if id == layout_id then
-                return index, room.leader == layout_id and "leader" or "pack"
-            end
-        end
-    end
-    return nil
-end
-
--- A room's pack going for someone: battle music and its leader's line (the seal itself is the boss room's.)
-function pullRoom(director, index)
-    if rooms_pulled[index] then
-        return
-    end
-    rooms_pulled[index] = true
-    local room = ROOMS[index]
-    director:set_bgm(BGM_BATTLE)
-    -- (Its leader's line, while there's a leader to say it: not on a pull after a wipe that it didn't live to.)
-    if not leaders_dead[index] then
-        director:yell(room.leader, room.yell)
-    end
-end
-
+-- The rooms' and the last boss's pulls (`D`); the last boss's waves and shields.
 function onUpdate(director, health, player_health, info)
-    for index, room in ipairs(ROOMS) do
-        if not rooms_pulled[index] and info ~= nil then
-            for _, id in ipairs(room.pack) do
-                if info[id] ~= nil and info[id].target ~= nil then
-                    pullRoom(director, index)
-                    break
-                end
-            end
-            -- The room's boss alone, its pack gone (a pull after a wipe on it.)
-            if not rooms_pulled[index] and info[room.boss] ~= nil and info[room.boss].target ~= nil then
-                pullRoom(director, index)
-            end
-        end
-    end
+    D:update(director, health, player_health, info, function(d) finalWaves(d, health) end)
+end
 
+function finalWaves(director, health)
     if final_started and health[BNPC_FINAL_BOSS] ~= nil then
         local wave = FINAL_WAVES[final_waves + 1]
         if wave ~= nil and health[BNPC_FINAL_BOSS] < wave.health then
@@ -280,73 +303,22 @@ function onUpdate(director, health, player_health, info)
 end
 
 function onActorDeath(director, bnpc_id, position)
-    local index, what = roomOf(bnpc_id)
-    if what == "leader" or what == "pack" then
-        pack_dead[bnpc_id] = true
-        if what == "leader" then
+    for index, room in ipairs(ROOMS) do
+        if bnpc_id == room.leader then
             leaders_dead[index] = true
             if index == 1 then
                 director:party_npc_yell("melee", PARTY_NPC_LINE_LEADER1)
             end
         end
-        -- The last of the pack to fall calls the room's boss, who goes for the party at once. (Fifteen rooms in five
-        -- of Bob's retail runs: it appeared 0.1-0.5 s after the pack's last death in twelve, whichever of them that
-        -- was, the leader's own death up to 7.2 s before; in three it came with one of the pack still standing at
-        -- 1-5% of its health, 1.5-1.8 s before that one died. What decided those isn't known.)
-        local left = 0
-        for _, id in ipairs(ROOMS[index].pack) do
-            if not pack_dead[id] then
-                left = left + 1
-            end
-        end
-        if left == 0 and not bosses_called[index] then
-            bosses_called[index] = true
-            director:log_message(LOG_BOSS_APPEARS, { ROOM_BOSS_NAME, 1 })
-            director:spawn_bnpc(ROOMS[index].boss)
-            director:set_hate(ROOMS[index].boss, nil, 300) -- the player
-        end
-    elseif what == "boss" then
-        -- The room opens again (the boss room's), the music stops, its coffers appear
-        rooms_cleared[index] = true
-        director:set_bgm(0)
-        director:log_message(LOG_ROOM_CLEARED, {})
-        for _, coffer in ipairs(ROOM_COFFERS[index]) do
-            director:spawn_treasure(coffer)
-        end
-        if index == 1 then
-            director:party_npc_yell("ranged", PARTY_NPC_LINE_BOSS1)
-        end
-    elseif bnpc_id == BNPC_FINAL_BOSS then
-        final_dead = true
-        director:spawn_treasure(FINAL_COFFER)
-        director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
-        director:complete_duty()
     end
+    D:died(director, bnpc_id, position)
 end
 
--- Everyone back at the start (a wipe; the server sends the enemies home whole): what's kept of a fight under way
--- goes, so the next pull is a first pull again. A room not yet cleared is pulled anew (its music starts with it; its
--- boss stays out if its leader had fallen); the last boss's waves come again as its health falls from full, the adds
--- of the waves it had reached taken away first, and it can be hurt again. Not seen on retail (no wipe here in Bob's
--- captures); found by `questkit duty-sim`'s rehearsed wipes (2026-11-10.)
+-- Everyone back at the start (a wipe; the server sends the enemies home whole): the fight under way is forgotten, so
+-- the next pull is a first pull again (`D`): a room not yet cleared is pulled anew (its music starts with it; its boss
+-- stays out if its leader had fallen), and the last boss's waves go (its `on_wipe`.)
 function onPartyWipe(director)
-    for index, _ in ipairs(ROOMS) do
-        if not rooms_cleared[index] then
-            rooms_pulled[index] = false
-        end
-    end
-    if not final_dead then
-        for wave = 1, final_waves do
-            for _, id in ipairs(FINAL_WAVES[wave].adds) do
-                director:despawn_bnpc(id)
-            end
-        end
-        final_waves = 0
-        if shielded then
-            shielded = false
-            director:set_invulnerable(BNPC_FINAL_BOSS, false)
-        end
-    end
+    D:wipe(director)
 end
 
 function onGimmickAccessor(director, actor_id, id, params)
@@ -404,7 +376,10 @@ function onEventActionCast(director, actor_id, target)
             director:set_notice(id, true)
             director:set_hate(id, nil, 300) -- the player
         end
-        pullRoom(director, 3)
+        -- (Its fight begins with it: the music, the leader's line.)
+        if D.fight == nil then
+            D:pull(director, ROOMS[3].fight)
+        end
     elseif target == EOBJ_DOOR3 then
         door3_opened = true
         director:log_message(LOG_OPENED, {})
@@ -417,7 +392,7 @@ function onEventActionCast(director, actor_id, target)
         director:hide_eobj(EOBJ_FINAL_SEAL)
         setVars(director, VARS_FINAL)
         director:play_cutscene(CUTSCENE_FINAL)
-        director:spawn_boss(BNPC_FINAL_BOSS, EOBJ_FINAL_WALL, EOBJ_FINAL_LINE, PLACE_FINAL)
+        D:bringBoss(director, FINAL)
         director:party_npc_yell("tank", PARTY_NPC_LINE_FINAL, PARTY_NPC_LINE_FINAL_AFTER, "healer",
             PARTY_NPC_LINE_FINAL_HEALER)
     end

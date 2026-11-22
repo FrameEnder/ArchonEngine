@@ -42,7 +42,7 @@ gives its duty's facts:
 | `boss({ id, layout, wall, line, place, middle, room, helpers, bgm, after_bgm, talker, waves, ready, last, comes_later, on_pull, on_cast, on_death, on_wipe, on_recommence })` | A boss and its room: `director:boss_room` at setup (`comes_later`: `bringBoss` brings it, with `spawn_boss`), the wall hidden and the line shown until a pull, `room` = { members, radius } kept to it (`director:keep_in_room`), its hidden `helpers` = { layout, count } brought and held (`helperAt`, `helpersCast`), pulled when hurt or after someone (never again after a wipe till it's home, whole and with no target), its music, `talker` = { name, pull, at = { { seconds, text } }, ms, still }: its talks at the pull and into its fight, `waves` = { action, after, list }: each cast of `action` brings the next wave `after` seconds on, gone with its fall or a wipe; `last`: its fall ends the fights. |
 | `update(director, health, player_health, info, between)` | Every update: the party, the steps, the pulls, then the script's `between(director)`, then what's due (`after`). |
 | `group` (a boss's) | Several that are the boss together: a room for each at setup, pulled with any, fallen with the last (`on_death` gets that one and where it fell); `layout` is the first (Haukke Manor's pair.) |
-| `pulled_by` (a boss's) | Layouts whose being after someone pulls the boss too (Brayflox's first boss's adds.) |
+| `pulled_by` (a boss's) | Layouts whose being after someone pulls the boss too (Brayflox's first boss's adds), even before the boss is out (the Tam-Tara Deepcroft's packs, whose fall calls their room's boss); after a wipe not till they're after nobody. |
 | `fell(director, boss)` | A boss's fight over without its death (one held at 1 HP: the Praetorium's last; Sastasha's captains running off), once, and it isn't pulled again; `died` calls it. What was due by updates (`after`) goes; what's due on the clock (`inSeconds`) runs on (a wipe takes both.) |
 | `helpersOnEach(director, action, y)` | A helper's cast on each of the party, aimed at them. |
 | `inSeconds(seconds, fn)` | The duty's clock in seconds (`D.clock`, half a second an update): fn(director, health, info) once it's that far on, at the update's start (`after` counts updates and runs at its end); for a duty that keeps its own clock (the Stone Vigil's.) |
@@ -86,8 +86,12 @@ script, in the hooks or around the calls. **Converted**, each playing its retail
   from his pull; the coral, keys and doors, the captains' running off, the gate and the party's lines its own; two
   runs. Its bosses are now pulled when hurt too (before: when after someone), and after a wipe wait till they're home
   and whole.
+* The Tam-Tara Deepcroft (`f1d1_re.lua`, 2026-11-21): each room's pack (its fall calls the boss) and the room's fight
+  from the pack's pull (`pulled_by`) to its boss's fall, and the last boss (its waves and shields its own); the doors,
+  key, gate and seal and the party's lines its own; two runs. Its room bosses are now pulled when hurt too, and after
+  a wipe a room isn't pulled again till its pack and boss are home and after nobody.
 
-The other seven duty scripts are still written by hand; each is converted on its own, kept
+The other six duty scripts are still written by hand; each is converted on its own, kept
 passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
 
 ## The duty's beginning: everyone waits for the openings
