@@ -1353,10 +1353,10 @@ class DungeonFrameworkTest(unittest.TestCase):
         self.assertEqual(list(self.lua.globals().fired.values()), [1.0])
 
 
-class CopperbellBossesTest(unittest.TestCase):
-    """The Copperbell Mines' script on the dungeon framework: each boss brought with its helpers, its round on its
-    cast, its helpers let go (or not) as it falls; a rock's blast still comes down after a wipe. `duty-sim` doesn't
-    play these: it brings the bosses itself, without helpers."""
+class FrameworkScriptTest(unittest.TestCase):
+    """A duty script on the dungeon framework run in Lua, for what `duty-sim` can't play; spawns return actor IDs."""
+
+    SCRIPT = None
 
     def setUp(self):
         try:
@@ -1366,7 +1366,7 @@ class CopperbellBossesTest(unittest.TestCase):
         from questkit import repo
         self.lua = LuaRuntime(unpack_returned_tuples=True)
         self.lua.execute((repo.SCRIPTS / "content" / "lib" / "Dungeon.lua").read_text())
-        self.lua.execute((repo.SCRIPTS / "content" / "w1d1_re.lua").read_text())
+        self.lua.execute((repo.SCRIPTS / "content" / self.SCRIPT).read_text())
         self.calls = []
 
         def log(name, *args):
@@ -1376,7 +1376,7 @@ class CopperbellBossesTest(unittest.TestCase):
         self.director = self.lua.eval("""setmetatable({ next_id = 1000 }, { __index = function(self, name)
             return function(d, ...)
                 LOG(name, ...)
-                if name == "spawn_bnpc" then
+                if name == "spawn_bnpc" or name == "spawn_bnpc_part" then
                     d.next_id = d.next_id + 1
                     return d.next_id
                 end
@@ -1392,6 +1392,14 @@ class CopperbellBossesTest(unittest.TestCase):
 
     def named(self, name):
         return [args for n, args in self.calls if n == name]
+
+
+class CopperbellBossesTest(FrameworkScriptTest):
+    """The Copperbell Mines' script on the dungeon framework: each boss brought with its helpers, its round on its
+    cast, its helpers let go (or not) as it falls; a rock's blast still comes down after a wipe. `duty-sim` doesn't
+    play these: it brings the bosses itself, without helpers."""
+
+    SCRIPT = "w1d1_re.lua"
 
     def test_each_boss_its_helpers_and_round(self):
         g = self.lua.globals()
@@ -1418,6 +1426,40 @@ class CopperbellBossesTest(unittest.TestCase):
         for _ in range(21):
             self.update({"player": {"x": 0, "y": 0, "z": 0, "id": 1}})
         self.assertIn(2790163, [args[0] for args in self.named("show_eobj")])
+
+
+class NavelTitanTest(FrameworkScriptTest):
+    """The Navel's script on the dungeon framework: Rock Throw gaols whom it's aimed at (the framework's `cast` passes
+    the target on), which `duty-sim` never plays (retail's recordings don't give it the cast); Weight of the Land under
+    two of the party other than his target."""
+
+    SCRIPT = "s1fa_re.lua"
+    PARTY = {"player1": {"x": 5, "y": 0, "z": 5, "id": 11}, "party1": {"x": -5, "y": 0, "z": 5, "id": 12},
+             "party2": {"x": 5, "y": 0, "z": -5, "id": 13}}
+
+    def pulled(self):
+        info = dict(self.PARTY)
+        info[4039257] = {"x": 0, "y": 0, "z": -16, "target": 1, "target_id": 12}
+        self.update(info)
+        self.assertEqual(self.lua.globals().D.fight, 1)
+
+    def test_rock_throw_gaols_its_target(self):
+        g = self.lua.globals()
+        self.pulled()
+        g.onActorCast(self.director, 4039257, 645, 77, 0, 0, -16, 13)
+        for _ in range(9):
+            self.update(dict(self.PARTY))
+        self.assertIn((13, 292), [(args[0], args[1]) for args in self.named("gain_effect")])
+        gaol = [args for args in self.named("spawn_bnpc") if args[0] == 4249552]
+        self.assertEqual([tuple(args[1:4]) for args in gaol], [(5, 0, -5)])
+
+    def test_weight_of_the_land_not_on_his_target(self):
+        g = self.lua.globals()
+        self.pulled()
+        del self.calls[:]
+        g.onActorCast(self.director, 4039257, 644, 77, 0, 0, -16, None)
+        spots = sorted((args[1], args[3]) for args in self.named("warp_bnpc"))
+        self.assertEqual(spots, [(5, -5), (5, 5)])
 
 
 class BattleFrameworkTest(unittest.TestCase):

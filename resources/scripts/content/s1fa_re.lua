@@ -15,6 +15,10 @@
 -- s after it targetable again with his line 3803, and his last phase: Weight of the Land, Rock Throw and the rest.
 -- Rock Throw gaols whom it's aimed at (status 292 and a granite gaol round them until it's broken.) At 0 his last line
 -- (3805), the closing cutscene and the duty complete. Everyone down is a party wipe (server/wipe.rs): it begins again.
+--
+-- On the dungeon framework (`content/lib/Dungeon.lua`, docs/src/fork/dungeons.md) since 2026-11-21: Titan's pull and
+-- talk, his helpers and his casts, the party's places, his fall, the clock; his leaps, the Heart, Earthen Fury, the
+-- gaols and bringing him again after a wipe are its own.
 
 -- Which way players face as they come in and after a wipe (the InstanceContent has no entrance rect): retail's
 -- -3.142, toward Titan, all three runs.
@@ -134,28 +138,43 @@ TICK = 0.5
 
 titan = nil
 heart = nil
-helpers = {}
 phase = 1
 leaps = 0
 leap_due = nil
-pulled = false
 attempts = 1
 waiting_for_new_titan = false
--- The update count, when his cast ends (in updates), his last spot.
-ticks = 0
+-- When his cast ends (in updates, `D.ticks`), whom he's after.
 cast_until = 0
-titan_at = nil
 titan_target = nil
 -- Whom each granite gaol holds: { gaol = actor ID, prisoner = actor ID, at = { x, y, z } }
 gaols = {}
--- The party (the player and their party's NPCs) as at the last update: { id, x, y, z }
-party = {}
--- Things to do later: { at = an update count, fn = function(director) }
-later = {}
 
+DUNGEON = Dungeon.new()
+D = DUNGEON
+
+-- What's due later, on the duty's clock (`D:inSeconds`: a wipe takes it, his fall doesn't.)
 function after(seconds, fn)
-    table.insert(later, { at = ticks + math.max(1, math.ceil(seconds / TICK)), fn = fn })
+    D:inSeconds(seconds, fn)
 end
+
+-- Titan (`D`): brought by the script (at the start and after a wipe), with no room of his own; pulled with his line
+-- (and the Marauder's, the first attempt); his helpers held for Weight of the Land; his fall ends the duty.
+TITAN_BOSS = D:boss({ id = 1, layout = TITAN, middle = { x = MIDDLE.x, y = HELPER_Y, z = MIDDLE.z },
+    helpers = { layout = HELPER, count = HELPER_COUNT }, comes_later = true, eobjs_at_setup = false, bgm = false,
+    last = true, talker = { name = NAME_TITAN, pull = TALK_PULL, ms = TALK_MS },
+    on_pull = function(d)
+        if attempts == 1 then
+            d:party_npc_yell("tank", LINE_PULL)
+        end
+    end,
+    on_cast = function(d, action_id, x, y, z, actor_id, target_id) titanCast(d, action_id, x, y, z, target_id) end,
+    on_death = function(d)
+        talk(d, TALK_DEFEATED)
+        freeGaoled(d)
+        titan = nil
+        d:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
+        d:complete_duty()
+    end })
 
 function setVars(director, vars)
     for index, value in ipairs(vars) do
@@ -165,22 +184,16 @@ end
 
 function bringTitan(director)
     titan = director:spawn_bnpc(TITAN)
-    helpers = {}
-    for i = 1, HELPER_COUNT do
-        helpers[i] = director:spawn_bnpc(HELPER)
-        director:hold_bnpc(helpers[i])
-    end
+    D:bringHelpers(director, TITAN_BOSS)
 end
 
 function reset()
     phase = 1
     leaps = 0
     leap_due = nil
-    pulled = false
     heart = nil
     cast_until = 0
     gaols = {}
-    later = {}
 end
 
 function onSetup(director)
@@ -289,7 +302,7 @@ end
 
 -- Where someone of the party stands now, by actor ID.
 function whereIs(id)
-    for _, member in ipairs(party) do
+    for _, member in ipairs(D.party) do
         if member.id == id then
             return member
         end
@@ -297,13 +310,14 @@ function whereIs(id)
     return nil
 end
 
--- Rock Throw's target gaoled; Weight of the Land's marks under two of the party.
 function onActorCast(director, layout_id, action_id, actor_id, x, y, z, target_id)
-    if layout_id ~= TITAN then
-        return
-    end
+    D:cast(director, layout_id, action_id, actor_id, x, y, z, target_id)
+end
+
+-- His casts: how long he's busy; Rock Throw's target gaoled; Weight of the Land's marks under two of the party.
+function titanCast(director, action_id, x, y, z, target_id)
     if CAST_SECONDS[action_id] ~= nil then
-        cast_until = ticks + math.ceil(CAST_SECONDS[action_id] / TICK)
+        cast_until = D.ticks + math.ceil(CAST_SECONDS[action_id] / TICK)
     end
     if action_id == ACTION_ROCK_THROW and target_id ~= nil then
         local prisoner = target_id
@@ -321,10 +335,11 @@ function onActorCast(director, layout_id, action_id, actor_id, x, y, z, target_i
             d:set_hate(GAOL, nil, 300) -- the player
             table.insert(gaols, { gaol = gaol, prisoner = prisoner, at = spot })
         end)
-    elseif action_id == ACTION_WEIGHT and #helpers > 0 then
+    elseif action_id == ACTION_WEIGHT and #(D.helpers_of[TITAN_BOSS.id] or {}) > 0 then
+        local helpers = D.helpers_of[TITAN_BOSS.id]
         local his_target = titan_target
         local others = {}
-        for _, member in ipairs(party) do
+        for _, member in ipairs(D.party) do
             if member.id ~= his_target then
                 table.insert(others, member)
             end
@@ -338,33 +353,14 @@ function onActorCast(director, layout_id, action_id, actor_id, x, y, z, target_i
     end
 end
 
+-- His pull (`D`); his leaps by his health.
 function onUpdate(director, health, player_health, info)
-    ticks = ticks + 1
-    local due = {}
-    local waiting = {}
-    for _, entry in ipairs(later) do
-        if entry.at <= ticks then
-            table.insert(due, entry)
-        else
-            table.insert(waiting, entry)
-        end
-    end
-    later = waiting
-    for _, entry in ipairs(due) do
-        entry.fn(director)
-    end
+    D:update(director, health, player_health, info, function(d) phases(d, health, info) end)
+end
 
-    if info == nil then
-        return
-    end
-    party = {}
-    for key, actor in pairs(info) do
-        if type(key) == "string" and (key:match("^player%d+$") or key:match("^party%d+$")) then
-            table.insert(party, { id = actor.id, x = actor.x, y = actor.y, z = actor.z })
-        end
-    end
+function phases(director, health, info)
+    local ticks = D.ticks
     if info[TITAN] ~= nil then
-        titan_at = { x = info[TITAN].x, y = info[TITAN].y, z = info[TITAN].z }
         titan_target = info[TITAN].target_id
     end
 
@@ -379,13 +375,6 @@ function onUpdate(director, health, player_health, info)
             return
         end
         waiting_for_new_titan = false
-    end
-    if not pulled and info[TITAN] ~= nil and info[TITAN].target ~= nil then
-        pulled = true
-        talk(director, TALK_PULL)
-        if attempts == 1 then
-            director:party_npc_yell("tank", LINE_PULL)
-        end
     end
     -- His leaps, not while he casts.
     for which = 1, 2 do
@@ -426,27 +415,21 @@ function onActorDeath(director, bnpc_id, position)
             director:lose_effect(gaols[nearest].prisoner, STATUS_GAOL)
             table.remove(gaols, nearest)
         end
-    elseif bnpc_id == TITAN then
-        talk(director, TALK_DEFEATED)
-        freeGaoled(director)
-        for _, helper in ipairs(helpers) do
-            director:despawn_bnpc(helper)
-        end
-        helpers = {}
-        titan = nil
-        director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
-        director:complete_duty()
+    else
+        D:died(director, bnpc_id, position)
     end
 end
 
 -- Everyone down: as they're sent back, Titan, his Heart, the gaols and his helpers go, and come back as at the start.
+-- His fight is forgotten (`D`), and the new one isn't pulled till he's there whole and after nobody.
 function onPartyWipe(director)
     freeGaoled(director)
     director:despawn_bnpc(TITAN)
     director:despawn_bnpc(HEART)
-    for _, helper in ipairs(helpers) do
+    for _, helper in ipairs(D.helpers_of[TITAN_BOSS.id] or {}) do
         director:despawn_bnpc(helper)
     end
+    D:wipe(director)
     attempts = attempts + 1
     -- The music back to the duty's own for the new attempt (not seen on retail: no wipe here in Bob's captures.)
     if leaps > 0 then

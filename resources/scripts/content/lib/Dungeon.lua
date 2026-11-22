@@ -528,7 +528,7 @@ function Dungeon:update(director, health, player_health, info, between)
     self.updating = false
 end
 
-function Dungeon:cast(director, layout_id, action_id, actor_id, x, y, z)
+function Dungeon:cast(director, layout_id, action_id, actor_id, x, y, z, target_id)
     local boss = self:bossByLayout(layout_id)
     if boss == nil or self.fight ~= boss.id then
         return
@@ -548,9 +548,10 @@ function Dungeon:cast(director, layout_id, action_id, actor_id, x, y, z)
         end
     end
     if type(boss.on_cast) == "table" and boss.on_cast[action_id] then
-        boss.on_cast[action_id](director, x, y, z, actor_id)
+        boss.on_cast[action_id](director, x, y, z, actor_id, target_id)
     elseif type(boss.on_cast) == "function" then
-        boss.on_cast(director, action_id, x, y, z, actor_id)
+        -- (`target_id`: whom it's aimed at, the Navel's Rock Throw's.)
+        boss.on_cast(director, action_id, x, y, z, actor_id, target_id)
     end
 end
 

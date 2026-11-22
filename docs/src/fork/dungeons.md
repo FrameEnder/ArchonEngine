@@ -48,7 +48,7 @@ gives its duty's facts:
 | `inSeconds(seconds, fn, keep)` | The duty's clock in seconds (`D.clock`, half a second an update): fn(director, health, info) once it's that far on, at the update's start (`after` counts updates and runs at its end); for a duty that keeps its own clock (the Stone Vigil's.) A wipe takes what's due unless `keep` (the Copperbell Mines' rock coming down 10 s after its blast.) |
 | `schedule(director, rows, still, run)` | A clock table's rows ({ seconds, ... }) at their times, each `run(director, row)` if `still()` holds then: a fight that keeps to one clock from its pull (the Porta Decumana's.) |
 | `in_the_party(actor)` | Set by a script: who of the player and their members counts as the party (the Porta Decumana's: those in the arena.) |
-| `cast`, `died`, `wipe`, `recommence`, `setup`, `bringStartingHelpers` | What the server's calls do with it: a boss's waves and `on_cast` (a table's fn(director, x, y, z, caster's actor), a function's fn(director, action, x, y, z, caster's actor)); packs and a boss's fall (helpers and waves gone, music, `on_death`); a wipe (every boss resetting, the fight forgotten, its waves gone, `on_wipe`). |
+| `cast`, `died`, `wipe`, `recommence`, `setup`, `bringStartingHelpers` | What the server's calls do with it: a boss's waves and `on_cast` (a table's fn(director, x, y, z, caster's actor, target), a function's fn(director, action, x, y, z, caster's actor, target): whom it's aimed at, the Navel's Rock Throw's); packs and a boss's fall (helpers and waves gone, music, `on_death`); a wipe (every boss resetting, the fight forgotten, its waves gone, `on_wipe`). |
 | `after(seconds, fn)`, `once(name)`, `anyone(test)`, `Dungeon.within`, `allDead`, `countDead`, `comeOut` | The helpers every script had its own copy of. |
 
 A boss with `eobjs_at_setup = false` leaves its wall and line to `spawn_boss` as it comes (the Praetorium's); `arena`
@@ -103,8 +103,14 @@ script, in the hooks or around the calls. **Converted**, each playing its retail
   clock, `inSeconds`) and the second attempt its own; three runs. He's now pulled when hurt too, and after a wipe the
   new Ifrit isn't pulled till he's whole and after nobody (it was the old one's health lingering an update that the
   script guarded against, and still does for his phases.)
+* The Navel (`s1fa_re.lua`, 2026-11-21): a trial, as the Bowl of Embers: Titan with no room, his talk at the pull,
+  his helpers, his casts (`on_cast`, with whom Rock Throw is aimed at), the party's places and the clock (`inSeconds`,
+  the same updates as its own clock's); his leaps, the Heart, Earthen Fury, the gaols and the second attempt its own;
+  two runs. `duty-sim` never plays Rock Throw (retail's recordings don't give it the cast), so `NavelTitanTest` runs
+  it and Weight of the Land. He's now pulled when hurt too, and after a wipe the new Titan isn't pulled till he's
+  whole and after nobody.
 
-The other four duty scripts are still written by hand; each is converted on its own, kept
+The other three duty scripts are still written by hand; each is converted on its own, kept
 passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
 
 ## The duty's beginning: everyone waits for the openings
