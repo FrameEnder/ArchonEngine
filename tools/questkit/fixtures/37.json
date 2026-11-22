@@ -1,0 +1,50 @@
+{
+  "quest": 37,
+  "script": "SubFst011_00037",
+  "source": "scenes and effects from Bob's Chronofoil capture of 2026-11-22",
+  "params": {"ACTOR0": 1000195, "SEQ_0_ACTOR0": 0, "ENEMY0": 47, "SEQ_2_ACTOR0": 1},
+  "steps": [
+    {
+      "talk": 1000195,
+      "layout": 1141206,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [47, 1132988],
+      "expect": {"sequence": 1, "vars": "010000000000", "notices": [[0, [1, 6]]]}
+    },
+    {
+      "kill": [47, 1132992],
+      "expect": {"sequence": 1, "vars": "020000000000", "notices": [[0, [2, 6]]]}
+    },
+    {
+      "kill": [47, 1132993],
+      "expect": {"sequence": 1, "vars": "030000000000", "notices": [[0, [3, 6]]]}
+    },
+    {
+      "kill": [47, 1132827],
+      "expect": {"sequence": 1, "vars": "040000000000", "notices": [[0, [4, 6]]]}
+    },
+    {
+      "kill": [47, 1132833],
+      "expect": {"sequence": 1, "vars": "050000000000", "notices": [[0, [5, 6]]]}
+    },
+    {
+      "kill": [47, 1132829],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, [6, 6]]]}
+    },
+    {
+      "talk": 1000195,
+      "layout": 1141206,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 1, "flags": "0x2000", "results": [1, 5823, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

@@ -217,7 +217,10 @@ cleared) and the sequence; it plays the step's scenes with retail's flags and pa
 retail changed when the last one ends. Header: one line per step, by sequence. In detail:
 
 * **Answers**: a scene answered with a yield of 1 that more follows (an offer, a trade, a quest battle's yes/no, a
-  reward) goes on only on 1; a closed reward window sets `REWARD_CLOSED` (0x11). The reward's item goes to the scenes
+  reward) goes on only on 1, and so does a scene whose client script ends in NpcTrade however the client answered it
+  (`trade_scenes`, from the dump's listing: Coarse Correspondence's scene 1 is answered as a return, its trade's
+  results only when it's made, and its reward follows only a trade; before 2026-11-22 a cancelled trade went on to the
+  reward); a closed reward window sets `REWARD_CLOSED` (0x11). The reward's item goes to the scenes
   after it that showed it as their parameter (`{ chosen }`).
 * **A completing step's unlocks**: what retail unlocked with the reward (the step's `effects`: a duty, an aetheryte,
   an unlock) is written after `finish_quest` (`_effect_lines`; until 2026-11-17 a completing step's effects were

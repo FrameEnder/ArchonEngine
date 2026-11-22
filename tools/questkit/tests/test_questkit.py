@@ -2331,6 +2331,28 @@ class TranscribeTest(unittest.TestCase):
             result = replay.run(fixture, path)
             self.assertTrue(result.ok, replay.format_results([result]))
 
+    def test_a_trade_goes_on_only_when_made(self):
+        # Coarse Correspondence (24): scene 1 ends in NpcTrade and returns its results only when the trade's made, so
+        # the reward (100) follows only on 1, though the client answered scene 1 as a return (Bob's capture 3c7f26fa.)
+        listing = ("== SubFst001:OnScene00001  [function 0.0.1, 3 params]\n   methods  TurnTo, Talk, NpcTrade\n"
+                   "== SubFst001:OnScene00100  [function 0.0.2, 3 params]\n   methods  Talk, QuestReward\n")
+        self.assertEqual(transcribe.trade_scenes(listing), {1})
+        dump = {"quest_id": QUEST, "script": "SubTst001_09999", "name": "Test",
+                "params": [{"name": "ACTOR0", "value": 1001}]}
+        fixture = {"quest": QUEST, "script": "SubTst001_09999", "params": {"ACTOR0": 1001}, "steps": [
+            {"talk": 1001, "what": "ACTOR0", "scenes": [{"scene": 0, "flags": "0x2000", "results": [1, 0, 0],
+                                                         "yield": True}],
+             "expect": {"sequence": 255, "vars": "000000000000", "notices": []}},
+            {"talk": 1001, "what": "ACTOR0", "scenes": [
+                {"scene": 1, "flags": "0x2000", "results": [1, 2000079, 1, 0, 0, 0]},
+                {"scene": 100, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": True}],
+             "expect": {"completed": True, "notices": []}}]}
+        gated = transcribe.Transcript(dump, [("test", fixture)], listing).write("a made-up capture")
+        branch = gated.split("scene == 1 then", 1)[1].split("elseif", 1)[0]
+        self.assertIn("if results[1] ~= 1 then", branch)
+        ungated = transcribe.Transcript(dump, [("test", fixture)]).write("a made-up capture")
+        self.assertNotIn("if results[1] ~= 1 then", ungated.split("scene == 1 then", 1)[1].split("elseif", 1)[0])
+
     def test_flags(self):
         self.assertEqual(transcribe.flags_lua(0x2001), "NO_DEFAULT_CAMERA | HIDE_HOTBAR")
         self.assertEqual(transcribe.flags_lua(0xF8402EFB), "SET_BASE | HIDE_HOTBAR")

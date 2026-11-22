@@ -31,6 +31,8 @@
   "lines": {"1008683": {"1": 2}, "1008684": {"2": {"scene": 10, "flags": 8193}}, "1008685": {"2": {"scene": 11, "flags": 8193}}}},
  "1359": {"why": "Each of sequences 1 to 4 ends with the storm sergeant's line and four empty scenes for ACTOR2 to 5 (10 and 11 to 14, 27 and 28 to 31, 37 and 38 to 41, 45 and 46 to 49); sequence 3 has as many scenes as rows.",
   "lines": {"1008698": {"1": 10, "2": 27, "3": 37}, "1008699": {"1": null, "2": null, "3": null}, "1008688": {"1": null, "2": null, "3": null}, "1008689": {"1": null, "2": null, "3": null}, "1008928": {"1": null, "2": null, "3": null}}},
+ "1425": {"why": "Sequence 3: Yedythe (ACTOR1) waits while the children are found; scene 14 is her line (TEXT_SUBFST159_01425_YEADYTHE_000_020, the same as scene 4, hers in sequence 2), not a neighbour's.",
+  "lines": {"1007792": {"3": 14}}},
  "1443": {"why": "Sequence 255: the refugee's 15, then 16, the emote that ends the quest (recorded), so 17 is never reached.",
   "lines": {"1009049": {"255": 15}}},
  "3872": {"why": "Sequence 2: each private has a line before the salute, the salute's scene (recorded) and a line after it; which were saluted is in BitFlag8, as the script's onEmote sets it (flags 1, 2 and 3: 0x80, 0x40, 0x20 of UI8F, the first and third recorded).",

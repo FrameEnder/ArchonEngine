@@ -9,7 +9,9 @@ unlocks). `transcribe` turns one or more fixtures of a quest into a script in th
 * each step is one branch, chosen by what started it (talking to someone, a key item, an emote, an event range,
   entering the zone, a kill, a duty cleared) and the sequence it happened in; steps that start the same way in the
   same sequence are told apart by the variables retail had before them;
-* a scene answered with a yield of 1 (an offer, a trade, a reward, a quest battle's yes/no) goes on only on 1; a
+* a scene answered with a yield of 1 (an offer, a trade, a reward, a quest battle's yes/no) goes on only on 1, and so
+  does one whose client script ends in NpcTrade however the client answered it (the listing's: Coarse Correspondence's
+  scene 1 returns the trade's results only when it's made, else nothing, and its reward follows only a trade); a
   reward window closed sets REWARD_CLOSED, as retail does;
 * a progress bar between two scenes is the step's event action; a step whose bar retail broke off is the same step;
 * the scenes after a reward that carry the chosen item get it as their parameter;
@@ -123,8 +125,9 @@ def lua_list(values) -> str:
 
 
 class Transcript:
-    def __init__(self, dump: dict, fixture_list: list[tuple[str, dict]]):
+    def __init__(self, dump: dict, fixture_list: list[tuple[str, dict]], listing: str = ""):
         self.dump = dump
+        self.trades = trade_scenes(listing)
         self.quest = dump["quest_id"]
         self.params = fixtures.numeric_params(dump)
         self.labels = {p["name"]: p.get("label", "") for p in dump.get("params", []) if isinstance(p.get("name"), str)}
@@ -706,9 +709,10 @@ class Transcript:
                 lines.append(f"    {'if' if first else 'elseif'} step == {handler.number} and scene == {scene.scene} then")
                 first = False
                 last = index == len(handler.scenes) - 1
-                gate = scene.yielded and scene.results[:1] == [1] and (not last or handler.completed
-                                                                        or handler.accepted or handler.joins_battle
-                                                                        or handler.after is not None)
+                answered = scene.yielded or scene.scene in self.trades
+                gate = answered and scene.results[:1] == [1] and (not last or handler.completed
+                                                                  or handler.accepted or handler.joins_battle
+                                                                  or handler.after is not None)
                 if gate:
                     lines.append("        if results[1] ~= 1 then")
                     if chosen == index:
@@ -814,10 +818,23 @@ function onReturn(scene, results, player)
 end""".splitlines()
 
 
+def trade_scenes(listing: str) -> set[int]:
+    """The scenes whose client script calls NpcTrade (kawari-questdump's listing: each function's header, then its
+    `methods` line.)"""
+    scenes = set()
+    for match in re.finditer(r"^== \S+:OnScene(\d+) .*\n\s+methods\s+([^\n]*)", listing, re.M):
+        if "NpcTrade" in [m.strip() for m in match.group(2).split(",")]:
+            scenes.add(int(match.group(1)))
+    return scenes
+
+
 def transcribe(quest: int, dumps: Path, fixture_paths: list[Path], source: str) -> tuple[str, Transcript]:
     dump = fixtures.load_dump(dumps, quest)
     if dump is None:
         raise ValueError(f"no dump of quest {quest} in {dumps} (kawari-questdump dump {quest})")
     loaded = [(Path(p).stem, fixtures.load(Path(p))) for p in fixture_paths]
-    draft = Transcript(dump, loaded)
+    script = dump.get("script", "")
+    listing_path = Path(dumps) / script / f"{script}.txt"
+    listing = listing_path.read_text(errors="replace") if script and listing_path.exists() else ""
+    draft = Transcript(dump, loaded, listing)
     return draft.write(source), draft
