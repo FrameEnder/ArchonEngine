@@ -1312,6 +1312,18 @@ class DungeonFrameworkTest(unittest.TestCase):
         self.assertIsNone(d.fight)
         self.assertEqual(list(self.lua.globals().fell.values()), [602, 5])
 
+    def test_a_fight_ended_without_a_death_is_over(self):
+        # Sastasha's captains run off hurt (`fell` with no death): still there, hurt and after someone, but not
+        # pulled again.
+        d, director = self.d, self.director
+        self.lua.execute("D:boss({ id = 2, layout = 701, wall = 9005, line = 9006, place = 9, comes_later = true })")
+        self.update({"player": {"x": 1, "z": 1, "id": 1}, 701: {"x": 0, "z": 0, "target": 1}}, {701: 60})
+        self.assertEqual(d.fight, 2)
+        d.fell(d, director, d.bossById(d, 2), 701)
+        self.assertIsNone(d.fight)
+        self.update({"player": {"x": 1, "z": 1, "id": 1}, 701: {"x": 0, "z": 0, "target": 1}}, {701: 45})
+        self.assertIsNone(d.fight)
+
     def test_every_player_is_of_the_party(self):
         # A Duty Finder run's other players set things off too ("player" is one of "player1", "player2"...), and
         # the clock in seconds runs what's due at an update's start.

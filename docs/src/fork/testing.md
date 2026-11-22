@@ -106,7 +106,10 @@ Then two checks:
   Between the wipe and the second go (since 2026-11-21) the script has its updates with every NPC home, whole and
   after nobody, as the server sends them (`World.tick_home`, `home_until`): without them a boss beside the one
   rehearsed went on hurt and fighting as retail's was then, and a script that waits for its boss to be home before
-  a new pull (`content/lib/Dungeon.lua`) never pulled it (Brayflox's second boss's add, 2026-11-21).
+  a new pull (`content/lib/Dungeon.lua`) never pulled it (Brayflox's second boss's add, 2026-11-21). The boss
+  rehearsed is there through them too, home where it first appeared (`home_boss`), even when the stretch replayed
+  begins as it came: Sastasha's Chopper, pulled within a second of appearing, was gone in those updates and after
+  someone at once in the second go, so never seen home (2026-11-21).
 
 **What's written down** (`duties/known.json`, by fixture): the problems a run has now. `duty-sim` passes when each
 run has exactly those: a new one fails, and so does one that no longer happens until it's taken off the list

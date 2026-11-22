@@ -43,7 +43,7 @@ gives its duty's facts:
 | `update(director, health, player_health, info, between)` | Every update: the party, the steps, the pulls, then the script's `between(director)`, then what's due (`after`). |
 | `group` (a boss's) | Several that are the boss together: a room for each at setup, pulled with any, fallen with the last (`on_death` gets that one and where it fell); `layout` is the first (Haukke Manor's pair.) |
 | `pulled_by` (a boss's) | Layouts whose being after someone pulls the boss too (Brayflox's first boss's adds.) |
-| `fell(director, boss)` | A boss's fight over without its death (one held at 1 HP: the Praetorium's last), once; `died` calls it. What was due by updates (`after`) goes; what's due on the clock (`inSeconds`) runs on (a wipe takes both.) |
+| `fell(director, boss)` | A boss's fight over without its death (one held at 1 HP: the Praetorium's last; Sastasha's captains running off), once, and it isn't pulled again; `died` calls it. What was due by updates (`after`) goes; what's due on the clock (`inSeconds`) runs on (a wipe takes both.) |
 | `helpersOnEach(director, action, y)` | A helper's cast on each of the party, aimed at them. |
 | `inSeconds(seconds, fn)` | The duty's clock in seconds (`D.clock`, half a second an update): fn(director, health, info) once it's that far on, at the update's start (`after` counts updates and runs at its end); for a duty that keeps its own clock (the Stone Vigil's.) |
 | `schedule(director, rows, still, run)` | A clock table's rows ({ seconds, ... }) at their times, each `run(director, row)` if `still()` holds then: a fight that keeps to one clock from its pull (the Porta Decumana's.) |
@@ -81,8 +81,13 @@ script, in the hooks or around the calls. **Converted**, each playing its retail
 * The Thousand Maws of Toto-Rak (`f1r1_re.lua`, 2026-11-21): the six webs as packs, the three rooms' crossings as
   steps, the two rooms' bosses and the last; the adds, the tail and the eggs its own; two runs. Its bosses are now
   pulled when hurt too, and after a wipe wait till they're home and whole.
+* Sastasha (`s1d1_re.lua`, 2026-11-21): its four bosses (each brought by the script as it comes: the switch, the
+  sequences, the cove); each captain's fight ends as he runs off (`fell`), and Denn's two waves of adds are `after`s
+  from his pull; the coral, keys and doors, the captains' running off, the gate and the party's lines its own; two
+  runs. Its bosses are now pulled when hurt too (before: when after someone), and after a wipe wait till they're home
+  and whole.
 
-The other eight duty scripts are still written by hand; each is converted on its own, kept
+The other seven duty scripts are still written by hand; each is converted on its own, kept
 passing `duty-sim` against its runs. Test `DungeonFrameworkTest` (`test_questkit.py`).
 
 ## The duty's beginning: everyone waits for the openings

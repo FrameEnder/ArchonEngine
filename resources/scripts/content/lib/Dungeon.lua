@@ -503,6 +503,8 @@ function Dungeon:update(director, health, player_health, info, between)
         if self.fight == nil then
             for _, boss in ipairs(self.bosses) do
                 local fallen = boss.group and self:allDead(boss.group) or (not boss.group and self.dead[boss.layout])
+                -- (A fight ended without a death, by `fell`, is over too: Sastasha's captains, who run off hurt.)
+                fallen = fallen or self.done["fell" .. boss.id]
                 if not fallen and (boss.ready == nil or boss.ready()) and self:pulled(boss) then
                     self:pull(director, boss)
                     break

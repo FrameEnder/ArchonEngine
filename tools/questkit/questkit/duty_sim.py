@@ -392,6 +392,7 @@ class World:
         # (`wipe.rs`); without it a boss beside the one rehearsed went on as retail's was then, hurt and fighting, and
         # a script that waits for its boss to be home before a new pull (content/lib/Dungeon.lua) never saw it.
         self.home_until: float | None = None
+        self.home_boss: tuple | None = None  # the boss rehearsed and its life: home in those updates too
 
     def follow_calls(self) -> None:
         for t, name, args in self.stage.calls[self.seen_calls:]:
@@ -454,7 +455,14 @@ class World:
         """An update while everyone is home after a wipe: each NPC there, whole and after nobody, and nothing else."""
         stage, lua = self.stage, self.stage.lua
         health, info = {}, {}
-        for layout, (life, then) in self.present(t).items():
+        present = self.present(t)
+        if self.home_boss is not None and self.home_boss[0] not in present:
+            # The boss rehearsed stays in its room (the server sends it home; it isn't brought out again): the stretch
+            # to replay may begin as it appeared (Sastasha's Chopper, pulled within a second of coming), which left it
+            # gone till its second go, after someone at once.
+            layout, life = self.home_boss
+            present[layout] = (life, life.get("spawn") or 0.0)
+        for layout, (life, then) in present.items():
             health[layout] = 100
             x, y, z = _position_then(life["pos"], life.get("spawn") or then)
             info[layout] = lua.table_from({"hp": life["max_hp"], "max_hp": life["max_hp"], "x": x, "y": y, "z": z,
@@ -822,6 +830,9 @@ def rehearse_wipes(fixture: dict, name: str = "") -> SimResult:
             # the same stretch of retail's run again from 15 s after the wipe.
             # (A script without `onPartyWipe` keeps nothing of a fight, or this shows what it kept.)
             again = middle + 15.0
+            there = world.present(middle)
+            if layout in there:
+                world.home_boss = (layout, there[layout][0])
             world.shift = again - lead
             if layout in world.life:
                 world.rehearsing = (layout, world.life[layout])
