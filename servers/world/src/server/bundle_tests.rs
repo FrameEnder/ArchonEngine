@@ -455,6 +455,25 @@ fn castrum_meridianums_vanguard_holds_its_middle_and_nobody_walks_through_its_wa
     assert!(!arena.holds(Vec3A::new(-13.0 + 30.5, 70.1, 31.0)));
 }
 
+/// Bob, 2026-11-22: "I legit saw him cast targetted support inside a thermobaric strike". The Magitek Vanguard F-1's
+/// Targeted Support marks were still down 0.5 and 1.0 s into its Hypercharge: its timeline and its script's helpers
+/// each kept their own half-second clock. Each attack now holds its timeline until its helpers' have landed
+/// (`director:hold_timeline`, `content/w1d4_re.lua`); a hold already longer stays.
+#[test]
+fn a_bosss_next_attack_waits_for_its_helpers_to_land() {
+    use crate::server::director::hold_timeline_until;
+    let mut held = std::collections::HashMap::new();
+    let now = std::time::Instant::now();
+    let vanguard = ObjectId(370689582);
+    hold_timeline_until(&mut held, vanguard, now + Duration::from_secs_f32(8.7));
+    // A shorter hold (Hypercharge's own 4.7 s) doesn't cut Targeted Support's short.
+    hold_timeline_until(&mut held, vanguard, now + Duration::from_secs_f32(4.7));
+    assert_eq!(held[&vanguard], now + Duration::from_secs_f32(8.7));
+    // A longer one lengthens it.
+    hold_timeline_until(&mut held, vanguard, now + Duration::from_secs_f32(12.2));
+    assert_eq!(held[&vanguard], now + Duration::from_secs_f32(12.2));
+}
+
 /// Bob's run of Castrum Meridianum, 2026-11-21: "the area of effect data … not even attached to the enemy". Retail
 /// placed 29174 (BNpcBase 14573's 2.7 s cast, named to no one) on the caster's own spot in all five of its retail runs;
 /// Kawari aimed it at the caster's target, 3 to 4 yalms off. An area retail placed on the ground at the caster is cast

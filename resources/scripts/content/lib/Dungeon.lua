@@ -324,6 +324,16 @@ function Dungeon:helperAt(director, x, y, z, facing)
     return helper
 end
 
+-- The boss being fought holds its timeline for `seconds` (`director:hold_timeline`): its next attack waits until its
+-- helpers' attacks from this one have landed, while it auto-attacks as ever. Retail's Magitek Vanguard F-1 began each
+-- attack as the last one's helpers' landed, never with them still down (Bob, 2026-11-22.)
+function Dungeon:holdTimeline(director, seconds)
+    local boss = self:bossById(self.fight)
+    if boss ~= nil then
+        director:hold_timeline(boss.layout, seconds)
+    end
+end
+
 -- A helper casts `action` at each spot ({ x, z, facing }) at height `y`.
 function Dungeon:helpersCast(director, action, spots, y)
     for _, spot in ipairs(spots) do

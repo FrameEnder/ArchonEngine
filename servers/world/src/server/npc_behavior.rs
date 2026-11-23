@@ -672,6 +672,7 @@ pub fn npc_behavior(
 
     let busy_now = Instant::now();
     instance.busy_npcs.retain(|_, until| *until > busy_now);
+    instance.timeline_held.retain(|_, until| *until > busy_now);
     instance.rooted_npcs.retain(|_, until| *until > busy_now);
     // NPCs whose step a wall or a drop cut short this tick: their path goes on from where they stopped.
     let mut walled: HashSet<ObjectId> = HashSet::new();
@@ -1141,6 +1142,9 @@ pub fn npc_behavior(
             if instance.busy_npcs.contains_key(id) {
                 continue;
             }
+            // Its timeline held by its director (`director:hold_timeline`): what comes due waits, taken when the hold
+            // ends, while it moves and auto-attacks as ever.
+            let timeline_held = instance.timeline_held.contains_key(id);
 
             // Enemies stand still (and keep their target) while they cast.
             // (The cast stays recorded afterwards, for the action to land where it was aimed.)
@@ -1630,7 +1634,7 @@ pub fn npc_behavior(
                     current_path.clear();
                 }
                 let mut due: Vec<(TimepointData, bool)> = Vec::new();
-                if pending_action.is_none() {
+                if pending_action.is_none() && !timeline_held {
                     let from = *timeline_checked as f32 * BEHAVIOR_TICK_SECONDS;
                     let to = *timeline_position as f32 * BEHAVIOR_TICK_SECONDS;
                     *timeline_checked = *timeline_position;

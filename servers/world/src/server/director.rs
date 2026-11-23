@@ -562,6 +562,15 @@ pub enum LuaDirectorTask {
         who: u32,
         seconds: f32,
     },
+    /// Hold a BNpc's timeline (actor ID or layout ID) for `seconds`: what comes due meanwhile waits until then (late,
+    /// not dropped), while it moves and auto-attacks as ever (`Instance::timeline_held`). A boss's next attack waits
+    /// for its helpers' attacks from its last to land: retail's Magitek Vanguard F-1 began Hypercharge as Targeted
+    /// Support's marks landed, never with them still down; Kawari's half-second ticks had them on the ground together
+    /// for 0.5 and 1.0 s (Bob, 2026-11-22: "I legit saw him cast targetted support inside a thermobaric strike".)
+    HoldTimeline {
+        who: u32,
+        seconds: f32,
+    },
     /// Keep a BNpc (actor ID or layout ID) where it stands for `seconds`: it doesn't move, but acts as ever (its
     /// timeline, its attacks), as retail's Lady Amandine stood 4.9 s beside her eye where she'd leapt, using her 28643
     /// there (`Instance::rooted_npcs`.)
@@ -1595,6 +1604,11 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::BusyBattleNpc { who, seconds });
             Ok(())
         });
+        methods.add_method_mut("hold_timeline", |_, this, (who, seconds): (u32, f32)| {
+            this.tasks
+                .push(LuaDirectorTask::HoldTimeline { who, seconds });
+            Ok(())
+        });
         methods.add_method_mut("restart_timeline", |_, this, (who, anchor): (u32, u32)| {
             this.tasks
                 .push(LuaDirectorTask::RestartTimeline { who, anchor });
@@ -1947,6 +1961,17 @@ pub struct ArenaFloor {
     pub half_x: f32,
     pub half_z: f32,
     pub round: bool,
+}
+
+/// An NPC's timeline held until `until` (`director:hold_timeline`), or longer if a longer hold is already on: a boss's
+/// attack whose helpers land later than another's keeps its own (the Magitek Vanguard F-1's.)
+pub fn hold_timeline_until(
+    held: &mut std::collections::HashMap<ObjectId, Instant>,
+    actor_id: ObjectId,
+    until: Instant,
+) {
+    let entry = held.entry(actor_id).or_insert(until);
+    *entry = (*entry).max(until);
 }
 
 /// A boss room's arena as a script gives it: a layout's range by its ID, or (a duty whose ranges aren't known) its
@@ -4562,6 +4587,17 @@ pub fn director_tick(
                     continue;
                 };
                 instance.busy_npcs.insert(
+                    actor_id,
+                    Instant::now() + Duration::from_secs_f32(seconds.max(0.0)),
+                );
+            }
+            LuaDirectorTask::HoldTimeline { who, seconds } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to hold its timeline!");
+                    continue;
+                };
+                hold_timeline_until(
+                    &mut instance.timeline_held,
                     actor_id,
                     Instant::now() + Duration::from_secs_f32(seconds.max(0.0)),
                 );

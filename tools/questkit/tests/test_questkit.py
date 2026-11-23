@@ -1428,6 +1428,41 @@ class CopperbellBossesTest(FrameworkScriptTest):
         self.assertIn(2790163, [args[0] for args in self.named("show_eobj")])
 
 
+class CastrumVanguardTest(FrameworkScriptTest):
+    """Castrum Meridianum's Magitek Vanguard F-1 on the dungeon framework: each attack holds its timeline until its
+    helpers' attacks have landed, so the next can't come with them still down (Bob, 2026-11-22: "I legit saw him cast
+    targetted support inside a thermobaric strike"; Kawari's marks were down 0.5 and 1.0 s into its Hypercharge)."""
+
+    SCRIPT = "w1d4_re.lua"
+    LAYOUT = 9060849
+
+    def pulled(self):
+        g = self.lua.globals()
+        g.D.fight = 2
+        # Its helpers, as `bringHelpers` gives them.
+        g.D.helpers = self.lua.table_from(list(range(5001, 5008)))
+        g.D.helpers_of[2] = g.D.helpers
+
+    def held_for(self, action):
+        g = self.lua.globals()
+        del self.calls[:]
+        g.onActorCast(self.director, self.LAYOUT, action, 77, -13.0, 70.1, 31.0)
+        holds = [args for name, args in self.calls if name == "hold_timeline"]
+        self.assertEqual([args[0] for args in holds], [self.LAYOUT])
+        return holds[0][1]
+
+    def test_each_attack_waits_for_its_helpers(self):
+        self.pulled()
+        # Thermobaric Strike: its 28779 at 4.9 s, a 6.7 s cast, then retail's 0.6 s.
+        self.assertGreaterEqual(self.held_for(28778), 4.9 + 6.7)
+        # Targeted Support: its marks (2.7 s casts) come as they're due and land before the hold ends.
+        g = self.lua.globals()
+        held = self.held_for(28783)
+        self.assertGreaterEqual(held, g.BOSS2_MARKS_AFTER + 2.7)
+        # Hypercharge: its ring and circle, 4.7 s.
+        self.assertGreaterEqual(self.held_for(28780), 4.7)
+
+
 class NavelTitanTest(FrameworkScriptTest):
     """The Navel's script on the dungeon framework: Rock Throw gaols whom it's aimed at (the framework's `cast` passes
     the target on), which `duty-sim` never plays (retail's recordings don't give it the cast); Weight of the Land under

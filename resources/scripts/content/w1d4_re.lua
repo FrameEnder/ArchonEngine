@@ -104,6 +104,14 @@ BOSS1_TALKS = { { 14.6, 33524 }, { 40.8, 33525 }, { 78.3, 33526 } }
 NAME_BOSS1 = 557
 
 BOSS2_MIDDLE = { x = -13.0, y = 70.1, z = 31.0 }
+-- How long each of its attacks holds its timeline (`D:holdTimeline`) and when Targeted Support's marks come (seconds
+-- from the attack's cast; Bob's Chronofoil capture 281f92fb: 28779 4.9 s in for 6.7 s, then 0.6 s to its Overcharge;
+-- the marks 6.0 s in for 2.7 s (the earlier 6.4, from the notes of the November runs, would have them down into its
+-- Hypercharge); Hypercharge's helpers 4.7 s.)
+BOSS2_THERMOBARIC_HELD = 4.9 + 6.7 + 0.6
+BOSS2_MARKS_AFTER = 6.0
+BOSS2_MARKS_CAST = 2.7
+BOSS2_HYPERCHARGE_HELD = 4.7
 SPOTS_28779 = { { -5.1, 19.3 }, { -20.9, 42.7 }, { -24.7, 23.1 } }
 
 BOSS3_MIDDLE = { x = -98.0, y = 72.0, z = -33.0 }
@@ -332,8 +340,14 @@ D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = P
     arena = BOSS2_FLOOR,
     helpers = { layout = HELPER_BOSS2, count = HELPERS_BOSS2 },
     bgm = BGM_BATTLE, after_bgm = BGM_DUTY,
+    -- Each attack's next waits for its helpers' to land (`D:holdTimeline`), as retail's did: from its own cast,
+    -- Thermobaric Strike's 28779 at 4.9 s lands 6.7 s on and its Overcharge came 0.6 s after that; Targeted Support's
+    -- marks at 6.0 s land 2.7 s on, as its Hypercharge began; Hypercharge's ring and circle land 4.7 s on (Bob's
+    -- Chronofoil capture 281f92fb). Kawari's half-second ticks had the marks down 0.5 and 1.0 s into Hypercharge (Bob,
+    -- 2026-11-22: "I legit saw him cast targetted support inside a thermobaric strike".)
     on_cast = {
         [28778] = function(director)
+            D:holdTimeline(director, BOSS2_THERMOBARIC_HELD)
             D:after(4.9, function(d)
                 if D.fight == 2 then
                     D:helpersCast(d, 28779, { SPOTS_28779[math.random(#SPOTS_28779)] }, BOSS2_MIDDLE.y)
@@ -341,11 +355,13 @@ D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = P
             end)
         end,
         [28780] = function(director)
+            D:holdTimeline(director, BOSS2_HYPERCHARGE_HELD)
             D:helpersCast(director, 28781, { { BOSS2_MIDDLE.x, BOSS2_MIDDLE.z, -2.95 } }, BOSS2_MIDDLE.y)
             D:helpersCast(director, 28782, { { BOSS2_MIDDLE.x, BOSS2_MIDDLE.z, -2.95 } }, BOSS2_MIDDLE.y)
         end,
         [28783] = function(director)
-            D:after(6.4, function(d)
+            D:holdTimeline(director, BOSS2_MARKS_AFTER + BOSS2_MARKS_CAST)
+            D:after(BOSS2_MARKS_AFTER, function(d)
                 if D.fight == 2 then
                     for _, member in ipairs(D.party) do
                         D:helpersCast(d, 28784, { { member.x, member.z } }, BOSS2_MIDDLE.y)

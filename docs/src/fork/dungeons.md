@@ -45,6 +45,7 @@ gives its duty's facts:
 | `pulled_by` (a boss's) | Layouts whose being after someone pulls the boss too (Brayflox's first boss's adds), even before the boss is out (the Tam-Tara Deepcroft's packs, whose fall calls their room's boss); after a wipe not till they're after nobody. |
 | `fell(director, boss)` | A boss's fight over without its death (one held at 1 HP: the Praetorium's last; Sastasha's captains running off), once, and it isn't pulled again; `died` calls it. What was due by updates (`after`) goes; what's due on the clock (`inSeconds`) runs on (a wipe takes both.) |
 | `helpersOnEach(director, action, y)` | A helper's cast on each of the party, aimed at them. |
+| `holdTimeline(director, seconds)` | The boss being fought holds its timeline that long (`director:hold_timeline`): its next attack waits until its helpers' attacks from this one have landed, while it auto-attacks as ever. Each of the Magitek Vanguard F-1's attacks (2026-11-22). |
 | `inSeconds(seconds, fn, keep)` | The duty's clock in seconds (`D.clock`, half a second an update): fn(director, health, info) once it's that far on, at the update's start (`after` counts updates and runs at its end); for a duty that keeps its own clock (the Stone Vigil's.) A wipe takes what's due unless `keep` (the Copperbell Mines' rock coming down 10 s after its blast); `dropTimed()` takes it all (the Howling Eye's Garuda falling: none of her plumes after her.) |
 | `schedule(director, rows, still, run)` | A clock table's rows ({ seconds, ... }) at their times, each `run(director, row)` if `still()` holds then: a fight that keeps to one clock from its pull (the Porta Decumana's.) |
 | `in_the_party(actor)` | Set by a script: who of the player and their members counts as the party (the Porta Decumana's: those in the arena.) |
@@ -1381,11 +1382,18 @@ pulled with the first, nobody followed out), called for the five in `onSetup`. N
 needs to be in center of arena for his large area of effect attack", "his attack timeline has overlapping attack
 patterns"). Read through the harness (capture zone-1795359118, the server's log) against retail's 281f92fb:
 
-* *His timeline is retail's.* His twelve casts came in its order (28778 Thermobaric Strike, 28780 Hypercharge, 28785
-  Cermet Drill, 28778, 29146 Overcharge, 28783 Targeted Support, 28780, 28785, then round again), each within half a
-  second of retail's times from his first cast, with nothing else but 15 auto-attacks; Targeted Support's four 28784s
-  went under each of the four. Retail's patterns join as tightly (its Overcharge 0.6 s after Thermobaric Strike's 28779
-  lands, its Hypercharge before Targeted Support's marks go off). What made them look piled up was where he was.
+* *His attacks overlapped, as Bob saw, and retail's never did.* His own twelve casts came in retail's order (28778
+  Thermobaric Strike, 28780 Hypercharge, 28785 Cermet Drill, 28778, 29146 Overcharge, 28783 Targeted Support, 28780,
+  28785, then round again) and each within half a second of retail's times, with nothing else but 15 auto-attacks.
+  But his helpers' attacks keep the script's clock and his casts the timeline's, both in half-second ticks, and they
+  crossed: Targeted Support's marks (28784, 2.7 s) came 6.5 s after it and were still down 0.5 s and then 1.0 s into
+  his Hypercharge, and Thermobaric Strike's 28779 landed in the same tick as his Overcharge began. Retail's (281f92fb):
+  the marks 6.0 s after Targeted Support, landing as Hypercharge began (0.1 s), and Overcharge 0.6 s after 28779 landed.
+  I first told Bob his overlaps were retail's own pacing (wrong: read from his casts' starts alone, not where each
+  attack landed). Now each attack holds his timeline until its helpers' have landed (`holdTimeline`: Thermobaric
+  Strike 4.9 + 6.7 + 0.6 s, Targeted Support 6.0 + 2.7 s, Hypercharge 4.7 s); what falls due meanwhile comes then,
+  while he auto-attacks as ever. The marks come 6.0 s in (they were 6.4, from the notes of the November runs, which
+  aren't in the captures here to read again; with 6.4 retail's own Hypercharge would have come with them down).
 * *He holds his arena's middle.* Retail's walked to (-13.0, 31.0) in the 3 s after his pull and never moved again,
   every cast and auto-attack from there (281f92fb, 413.8 to 424.2 s). Kawari's chased his targets: his Hypercharge came
   from (4.3, 5.8), 30 yalms off the middle, while its helpers' circle and ring (28781, 28782) went off round the empty

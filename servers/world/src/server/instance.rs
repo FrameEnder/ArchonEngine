@@ -296,6 +296,9 @@ pub struct Instance {
     /// NPCs a director keeps busy until when (`director:busy_bnpc`): they don't move or act on their own, though their
     /// timelines go on.
     pub busy_npcs: HashMap<ObjectId, std::time::Instant>,
+    /// NPCs whose timelines a director holds until when (`director:hold_timeline`): what comes due waits until then,
+    /// while they move and auto-attack as ever.
+    pub timeline_held: HashMap<ObjectId, std::time::Instant>,
     /// NPCs a director keeps where they stand until when (`director:root_bnpc`): they don't move, but act as ever (their
     /// timeline, their attacks.)
     pub rooted_npcs: HashMap<ObjectId, std::time::Instant>,
