@@ -1,7 +1,7 @@
 {
     "hitbox_radius": 0.5,
     "autoattack_action_id": 872,
-    "attack_range": 3.0,
+    "attack_range": 3.0, "fights_from": [-98.01, 72.04, -33.01], "animation_locks": {"28788": 1.1, "28792": 1.6},
     "from_pull": true,
     "timeline_always_plays": false,
     "recorded_amounts": {
@@ -299,5 +299,5 @@
             "comment": "18.5 s: no cast, on everyone; again every 17.3 s (17.3 to 17.4 s on in Bob's Chronofoil capture deea324c of 2026-11-19, whose last part ran 40 s; it fell 19 to 31 s into it in the other runs)"
         }
     ],
-    "comment": "Castrum Meridianum's last boss (BNpcBase 14542, BNpcName 2118, layout 9060634): level 50, 119560 HP, there as the cutscene before its room begins. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.8) and Bob's 9ba7d981 (visit 0.12) and 50e72631 (visit 0.3) of 2026-11-17, all with Duty Support: five pulls (Connor's party fell twice), all the same to 0.2 s from the pull (battle talk 33515). Auto-attack 872 (264 to the tank); 28033 937 to a player and 768 to a member; 28798 827 to the tank; the last part's 29352 353 and 298, 29353 362 and 308. What goes with its other casts is the director's (content/w1d4_re.lua): the helpers' 28787, 29163, 28793, 28794, 28797, 28790, 29164 and 29356. Below 20 % the director starts the last part (`restart_timeline` with 33520). Hitbox and range not recorded."
+    "comment": "Castrum Meridianum's last boss (BNpcBase 14542, BNpcName 2118, layout 9060634): level 50, 119560 HP, there as the cutscene before its room begins. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.8) and Bob's 9ba7d981 (visit 0.12) and 50e72631 (visit 0.3) of 2026-11-17, all with Duty Support: five pulls (Connor's party fell twice), all the same to 0.2 s from the pull (battle talk 33515). Auto-attack 872 (264 to the tank); 28033 937 to a player and 768 to a member; 28798 827 to the tank; the last part's 29352 353 and 298, 29353 362 and 308. What goes with its other casts is the director's (content/w1d4_re.lua): the helpers' 28787, 29163, 28793, 28794, 28797, 28790, 29164 and 29356. Below 20 % the director starts the last part (`restart_timeline` with 33520). Hitbox and range not recorded. It fights from the middle (fights_from, 2026-11-23): retail's held it all fight but for its 28788s and the volleys' spots in three runs of four (af05916c, deea324c, 281f92fb; in 6320ae56 it walked off 15 yalms once, 115 to 122 s); the server's walked after the tank, casting 28798 from up to 14 yalms off it (Bob's mark: \"her position in some of the area of effect attacks aren't exactly right\"). Its locks (animation_locks): 28788 1.1 s (an AoeEffect8 at no one) and 28792 1.6 s, six and eight times in capture 281f92fb."
 }

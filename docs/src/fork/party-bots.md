@@ -181,6 +181,16 @@ beside them`). Bob's next Copperbell Mines run (same day) got the bots past the 
 of the first lift, which goes 30 yalms down: there's no walking after a lift. How retail's Duty Support members come
 down one isn't recorded (with the party, or after it), so the 25 yalms and 3 s are guesses.
 
+## Sent on with their player (2026-11-23)
+
+A director that sends the players somewhere (`director:warp_players`: a device, a cutscene's end) sends each one's bots
+with them, each to its corner of the diamond round where they're sent, facing their way, on the floor there
+(`party_bot::spots_beside`, `warp_beside`: ActorSetPos and ZoneIn as a bot catching up, its path and walling
+forgotten). Bob's mark in Castrum Meridianum: "player NPCs didn't go with me on teleport normally on duties like this
+if a character is teleported then every character is teleported save some rare exceptions": the cutscene before the
+last room sent him in, and his three bots stayed outside its walls, 24 yalms off (inside `CATCH_UP_DISTANCE`) and
+walled for 110 s. Which exceptions Bob has in mind isn't known. Test `a_players_bots_go_with_them_when_a_director_sends_them_on`.
+
 ## Bots kept as friends
 
 A bot sent a friend request is **kept**: `party-bot-friends.json` in the server's data folder (beside `world.db`,
@@ -510,6 +520,12 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   weaponskills re-applied 2 s before they wear off (the duration in their script); and its filler: the highest level
   combo starter, or its strongest plain weaponskill or spell (the potency in its script), so Stone II replaces Stone.
   Single-target attacks only. Melee bots auto-attack (870), physical ranged ones too (872); casters don't.
+  **A GCD action with a cooldown of its own starts the 2.5 s GCD**, not its cooldown (`npc_behavior::gcd_started_by`,
+  since 2026-11-23): Hot Shot's 40 s held a Machinist bot's GCD 40 s, so it used Hot Shot every 40 s and its oGCDs
+  and auto-attacks and never Split Shot (Bob's mark in Castrum Meridianum: "the machinist doesn't seem to be using any
+  moves"; 13 Hot Shots and no other weaponskill in 860 s). `questkit rotation` never showed it: its simulation took
+  the 2.5 s. Every job with such a GCD (Drill, Gnashing Fang, ...) had it. Test
+  `a_gcd_action_with_a_cooldown_of_its_own_starts_the_gcd`.
   **A combo step gets its combo potency** as a player's does, when the GCD action before it was the step it follows
   within 30 s (since 7.0; `RotationState::continues_combo`, since 2026-11-10). Before, a bot's combos were never in combo: Riot
   Blade, Rage of Halone and Disembowel always hit for their lower potency (135, 79 and 126 where Fast Blade did 119 and

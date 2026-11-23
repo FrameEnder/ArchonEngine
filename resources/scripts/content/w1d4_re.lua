@@ -40,7 +40,7 @@
 -- Not known, so guessed or left out: the event ranges (above); the second and last bosses' clocks past what the
 -- runs show (the rounds go on: the first's to 243 s, the last's 74.2 s round twice); what the last part does past 40 s
 -- (its 29352 and three 29353s every 17.3 s, seen twice);
--- where 28788 takes the last boss when it isn't the middle (the middle here); a wipe (the party fell twice at the
+-- a wipe (the party fell twice at the
 -- last boss in Connor's run and was back at it within 107 s: the fight begins again, everyone back in its room;
 -- at the first two the duty's entrance, as everywhere); the director's 0x80000007 [42] (sent as retail did); what
 -- EObj 2007457's ActorControl 409 does; coffers (none in a Duty Support run).
@@ -153,6 +153,21 @@ VOLLEYS = {
       { { -102.5, -26.4, 2.548 }, { -93.5, -39.7, 2.548 } },
       { { -117.4, -36.5, 2.548 }, { -108.5, -49.7, 2.548 } } },
 }
+-- Where its 28788 after 28791 takes it: by the first volley's 28793 (the first volley's VOLLEYS row: three runs
+-- (6320ae56, deea324c, 281f92fb) went to the second's, (-94.29, -13.66), and one (af05916c) to the first's, (-79.09,
+-- -36.7)); its others take it to the middle (14 of 14). Each is an AoeEffect8 at no one whose position is where it
+-- comes down (`aim_action`), then SnapNextMove and an ActorMove there 0.67 s later, facing as it was (Bob's mark of
+-- 2026-11-23: "having the same leap issue that cape westwind's boss had where is causes her to teleport to the end of
+-- the ring and the center").
+LEAP_EDGES = { { x = -79.09, y = 72.04, z = -36.7 }, { x = -94.29, y = 72.04, z = -13.66 } }
+LEAP_MIDDLE = { x = -98.01, y = 72.04, z = -33.01 }
+-- With each 7747 (SHOWS_FIRST, every VOLLEY_EVERY) it's put (ActorSetPos, facing as it was) at the next volley's 28793,
+-- and after the last back in the middle: retail's at each, 1.48 to 1.57 s after its 28792, the same four spots in the
+-- four runs (by VOLLEYS row.)
+VOLLEY_STANDS = { { x = -78.37, y = 72.0, z = -36.82 }, { x = -94.18, y = 72.0, z = -13.37 },
+                  { x = -109.18, y = 72.0, z = -16.42 }, { x = -81.42, y = 72.0, z = -21.82 } }
+VOLLEY_BACK = { x = -98.0, y = 72.0, z = -33.0 }
+LEAP = 28788
 VOLLEY_FIRST = 1.5
 VOLLEY_EVERY = 2.5
 SHOWS_FIRST = 9.6
@@ -226,16 +241,18 @@ AFTER_BOSS2 = { GUIDE, GENERATOR }
 
 -- Cid's way to the generator (`D:lead`; Bob's captures af05916c, 6320ae56, deea324c and 281f92fb, the same each time
 -- to a tenth of a yalm): from where he comes out he runs at 8.0 yalms a second, 0.1 to 0.3 s after talk 33513, west
--- along the road, round its corner and to the corner by the way talk 33512 opened, and waits there facing north. He
--- runs on once the party has caught up and gone by (0.3 to 2.9 s after one of them was north of z = -70 there in the
--- four runs, 3.2 to 14.3 s after he got there), to the generator, takes it as his target (0.1 to 0.6 s on) and hits
+-- along the road, round its corner and to the corner by the way talk 33512 opened, and there turns north (-0.287, 0.3
+-- s after he got there, all four runs). He runs on 4.0 to 6.0 s after the first of the party got level with him
+-- (north of his z there; 3.2 to 14.3 s after he got there) to the generator, takes it as his target (0.1 to 0.6 s on) and hits
 -- it every 2.05 s, 29159, 29159, 29160 over and over, each a Miss (266 in the four runs, its health untouched), until
 -- the cutscene before the last room (the last 0.1 to 1.2 s before it.)
 CID_FROM = { x = 6.55, y = 71.16, z = -97.47 }
 CID_SPEED = 8.0
-CID_WAY = { { x = -32.0, y = 69.06, z = -96.0 }, { x = -51.8, y = 68.9, z = -90.3 } }
-CID_GOES_ON_Z = -70.0
+CID_WAY = { { x = -32.0, y = 69.06, z = -96.0 }, { x = -51.8, y = 68.9, z = -90.3, rotation = -0.287 } }
+-- (Was "north of z = -70", 0.3 to 2.9 s before he went: Bob, 2026-11-23, "he should move much sooner".)
+CID_GOES_ON_Z = -90.3
 CID_GOES_ON_X = -40.0
+CID_GOES_ON_AFTER = 4.0
 CID_FIGHTS_FROM = { x = -51.38, y = 68.53, z = -23.15, rotation = -0.54 }
 CID_ATTACKS = { 29159, 29159, 29160 }
 CID_ATTACK_EVERY = 2.05
@@ -275,9 +292,10 @@ end
 function cidLeads(director)
     local legs = {}
     for _, spot in ipairs(CID_WAY) do
-        table.insert(legs, { to = spot, speed = CID_SPEED })
+        table.insert(legs, { to = spot, speed = CID_SPEED, rotation = spot.rotation })
     end
     table.insert(legs, { until_party = function(m) return m.z > CID_GOES_ON_Z and m.x < CID_GOES_ON_X end })
+    table.insert(legs, { wait = CID_GOES_ON_AFTER })
     table.insert(legs, { to = CID_FIGHTS_FROM, speed = CID_SPEED })
     D:lead(director, GUIDE, CID_FROM, legs, function(d)
         local at = CID_FIGHTS_FROM
@@ -435,10 +453,16 @@ D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = P
 
 -- The volleys after the last boss's 28791.
 function volleys(director)
+    -- The first two in either order and the last two in either order: retail's were 1 2 4 3, 2 1 3 4, 2 1 4 3 and 2 1 4
+    -- 3 (four runs; the script had the last two always 3 4 until Bob's mark of 2026-11-23.)
     local order = { 1, 2, 3, 4 }
     if math.random(2) == 1 then
-        order = { 2, 1, 3, 4 }
+        order[1], order[2] = 2, 1
     end
+    if math.random(2) == 1 then
+        order[3], order[4] = 4, 3
+    end
+    leapTo(director, LEAP_EDGES[order[1]])
     for n, which in ipairs(order) do
         local volley = VOLLEYS[which]
         local at = VOLLEY_FIRST + (n - 1) * VOLLEY_EVERY
@@ -460,6 +484,8 @@ function volleys(director)
     for n = 0, 3 do
         D:after(SHOWS_FIRST + n * VOLLEY_EVERY, function(d)
             if D.fight == 3 then
+                local to = VOLLEY_STANDS[order[n + 2]] or VOLLEY_BACK
+                d:warp_bnpc(BOSS3, to.x, to.y, to.z, nil, true)
                 d:play_action_timeline(BOSS3, TIMELINE_SHOWS)
             end
         end)
@@ -477,10 +503,19 @@ function twoInTheMiddle(director)
         BOSS3_MIDDLE.y)
 end
 
--- The last boss's 28788 (no cast, from its timeline): it comes out in the middle 0.7 s later.
+-- Where the last boss's next 28788 takes it (LEAP_EDGES), and where it's shown coming down.
+leap_to = LEAP_MIDDLE
+function leapTo(director, spot)
+    leap_to = spot
+    director:aim_action(BOSS3, LEAP, spot.x, spot.y, spot.z)
+end
+
+-- The last boss's 28788 (no cast, from its timeline): it comes down where it was aimed 0.7 s later, facing as it was;
+-- the next goes to the middle.
 function toTheMiddle(director)
     if D.fight == 3 then
-        director:jump_bnpc(BOSS3, BOSS3_MIDDLE.x, BOSS3_MIDDLE.y, BOSS3_MIDDLE.z, 1.763)
+        director:jump_bnpc(BOSS3, leap_to.x, leap_to.y, leap_to.z, nil, nil, true)
+        leapTo(director, LEAP_MIDDLE)
     end
 end
 
@@ -489,7 +524,11 @@ BOSS3_ON_CAST = {
         D:helpersCast(director, 28787, SPOTS_28787, BOSS3_MIDDLE.y)
         D:helpersCast(director, 29163, { { BOSS3_MIDDLE.x, BOSS3_MIDDLE.z, 1.763 } }, BOSS3_MIDDLE.y)
     end,
-    [28791] = function(director) volleys(director) end,
+    [28791] = function(director)
+        -- At the volleys' spots (`volleys`) until it's back in the middle, not walking back between them.
+        director:root_bnpc(BOSS3, SHOWS_FIRST + 3 * VOLLEY_EVERY + 0.1)
+        volleys(director)
+    end,
     [28795] = function(director)
         D:after(0.5, function(d)
             if D.fight == 3 then
@@ -525,6 +564,10 @@ D:boss({ id = 3, layout = BOSS3, wall = BOSS3_WALL, line = BOSS3_LINE, place = P
     on_pull = function(director)
         flares = 0
         last_part = false
+        leapTo(director, LEAP_MIDDLE)
+        -- Where it was pulled until its first 28788 (its timeline's `fights_from` is the middle, where that takes it):
+        -- retail's stood 2.0 to 4.4 yalms off the middle until then, four runs.
+        director:root_bnpc(BOSS3, AWAY_ONCE[1] + AWAY_FOR)
         -- Its 28788s, as its timeline has them.
         local function away(at)
             D:after(at + AWAY_FOR, function(d)

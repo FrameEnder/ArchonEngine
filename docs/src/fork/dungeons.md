@@ -1449,6 +1449,33 @@ second. Tests `a_link_family_is_pulled_together`, `a_bosss_wave_takes_on_the_par
   Whether he waits for the party or for something else at the corner is read from where they were: in one run the
   player was 26 yalms off and only the Duty Support members went by. Test `CastrumCidTest` (questkit).
 
+**Bob's marks of the afternoon of 2026-11-23** (on `5e9e306`):
+
+* *"cid stopped at the location he was suppose to but didn't face the way he would in a retail run"*: retail's
+  turned to -0.287 (north) 0.3 s after he got to the corner, all four runs; a `D:lead` leg's `rotation` turns him
+  there now (`move_bnpc`). *"he should move much sooner"*: going on as one of the party was north of z = -70 had him
+  wait while Bob stood past him at z = -74.6. He goes 4.0 s after the first of the party is level with him (north of
+  his z, -90.3), the shortest of the four runs (4.0 to 6.0 s after; it was 0.3 to 2.9 s after z = -70).
+* *"player NPCs didn't go with me on teleport"*: the cutscene before the last room sends the party in
+  (`warp_players`), and only players went; the bots stayed outside its walls, 24 yalms off (inside the catch-up
+  distance) and walled for 110 s. `warp_players` takes each player's bots too now ([Party bots](party-bots.md)).
+* *"the machinist doesn't seem to be using any moves"*: [Party bots](party-bots.md), its GCD.
+* *"Livia sas junius is having the same leap issue that cape westwind's boss had ... her position in some of the
+  area of effect attacks aren't exactly right"*. Retail's, four runs (af05916c, 6320ae56, deea324c, 281f92fb):
+  * every 28788 is an AoeEffect8 at no one, its lock 1.1 s, then SnapNextMove and an ActorMove there 0.67 s later
+    facing as she was (as Cape Westwind's 28872): in `cast_aims.json`'s "none" now, aimed (`aim_action`) where she
+    comes down. The server sent an ActionEffect1 naming her, so the client had no leap to play;
+  * the one after 28791 doesn't take her to the middle: to the first volley's 28793 spot ((-94.29, -13.66) when the
+    second row's volley comes first, three runs; (-79.09, -36.7) when the first row's, one). With each 7747 (1.48 to
+    1.57 s after each 28792) she's put (ActorSetPos, facing as she was) at the next volley's spot, and after the last
+    back in the middle. Kawari kept her in the middle through them (`warp_bnpc`'s new `keep_facing`);
+  * the last two volleys come in either order too (2 1 4 3 three times, 2 1 3 4 once; the script had them 3 4);
+  * she holds the middle all fight but for those (three runs; one walked off 15 yalms once): the server's walked after
+    the tank and cast 28798 from up to 14 yalms off the middle. Her timeline has `fights_from` the middle now, rooted
+    where she's pulled until her first 28788 (retail's stood 2.0 to 4.4 off until then) and through the volleys.
+  Her timeline's `animation_locks` give retail's: 28788 1.1 s, 28792 1.6 s (capture 281f92fb). Tests
+  `CastrumLiviaTest` (questkit), `a_leap_lands_on_no_one`.
+
 Retail's Black Eft held where its tank met it (it lunged 4 yalms at the tank and came back, 1.9 yalms from where it
 was pulled, not its arena's middle): no `fights_from` (`questkit chronofoil --spots`). Test
 `castrum_meridianums_vanguard_holds_its_middle_and_nobody_walks_through_its_walls`.

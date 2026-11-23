@@ -1463,6 +1463,49 @@ class CastrumVanguardTest(FrameworkScriptTest):
         self.assertGreaterEqual(self.held_for(28780), 4.7)
 
 
+class CastrumLiviaTest(FrameworkScriptTest):
+    """Castrum Meridianum's last boss through its volleys (Bob's mark of 2026-11-23: "the same leap issue that cape
+    westwind's boss had ... her position in some of the area of effect attacks aren't exactly right"). Retail's, four
+    runs: its 28788 after 28791 comes down at the first volley's spot (aimed, as Cape Westwind's leap), it's put at
+    each next one's with its 7747 and back in the middle after the last, rooted all the while; the last two volleys
+    come in either order as the first two do."""
+
+    SCRIPT = "w1d4_re.lua"
+    LAYOUT = 9060634
+
+    def run_volleys(self, rolls):
+        g = self.lua.globals()
+        g.D.fight = 3
+        g.D.helpers = self.lua.table_from(list(range(5001, 5051)))
+        g.D.helpers_of[3] = g.D.helpers
+        it = iter(rolls)
+        g.math.random = lambda *_: next(it)
+        del self.calls[:]
+        g.onActorCast(self.director, self.LAYOUT, 28791, 77, -98.0, 72.0, -33.0)
+        for _ in range(40):
+            self.update({"player1": {"x": -98.0, "y": 72, "z": -40.0, "id": 11}})
+
+    def test_it_goes_where_the_volleys_come_from(self):
+        # 2 1 4 3, as three runs of four.
+        self.run_volleys([1, 1])
+        aims = [args for args in self.named("aim_action") if args[1] == 28788]
+        self.assertEqual([round(aims[0][2], 2), round(aims[0][4], 2)], [-94.29, -13.66])
+        warps = [(round(args[1], 2), round(args[3], 2), args[5]) for args in self.named("warp_bnpc")
+                 if args[0] == self.LAYOUT]
+        self.assertEqual(warps, [(-78.37, -36.82, True), (-81.42, -21.82, True), (-109.18, -16.42, True),
+                                 (-98.0, -33.0, True)])
+        roots = [args for args in self.named("root_bnpc") if args[0] == self.LAYOUT]
+        self.assertGreaterEqual(roots[0][1], 9.6 + 3 * 2.5)
+
+    def test_the_last_two_either_way(self):
+        # 1 2 3 4: the first aimed at the first volley's spot.
+        self.run_volleys([2, 2])
+        aims = [args for args in self.named("aim_action") if args[1] == 28788]
+        self.assertEqual([round(aims[0][2], 2), round(aims[0][4], 2)], [-79.09, -36.7])
+        warps = [(round(args[1], 2), round(args[3], 2)) for args in self.named("warp_bnpc") if args[0] == self.LAYOUT]
+        self.assertEqual(warps[:3], [(-94.18, -13.37), (-109.18, -16.42), (-81.42, -21.82)])
+
+
 class CastrumCidTest(FrameworkScriptTest):
     """Castrum Meridianum's Cid leads the way (`D:lead`): with talk 33513 he runs to the corner, waits there until the
     party has gone by, runs on to the generator and hits it every 2.05 s, each only shown, until the cutscene (Bob's
@@ -1482,12 +1525,17 @@ class CastrumCidTest(FrameworkScriptTest):
         self.assertEqual([(args[0], round(args[1], 1), round(args[3], 1)) for args in sweeps],
                          [(9089788, -32.0, -96.0)])
         self.assertIn([9089788], self.named("hold_bnpc"))
-        # 38.6 then 20.6 yalms at 8 a second: at the corner by 7.4 s, and there he waits for the party.
+        # 38.6 then 20.6 yalms at 8 a second: at the corner by 7.4 s, turns north, and there waits for the party.
         for _ in range(30):
             self.at(-45.0, -92.0)
         self.assertEqual(len(self.named("sweep_bnpc")), 2)
-        # Someone gone by him, north: he runs on, and at the generator takes it as his target and hits it.
-        self.at(-52.0, -69.0)
+        self.assertIn([9089788, -51.8, 68.9, -90.3, -0.287], self.named("move_bnpc"))
+        # Someone level with him (Bob's mark of 2026-11-23: "he should move much sooner"): 4 s on he runs on, and at
+        # the generator takes it as his target and hits it.
+        for _ in range(8):
+            self.at(-52.0, -88.0)
+        self.assertEqual(len(self.named("sweep_bnpc")), 2)
+        self.at(-52.0, -88.0)
         self.assertEqual(round(self.named("sweep_bnpc")[2][3], 2), -23.15)
         # 67.2 yalms: there by 8.4 s, then a hit every 2.05 s.
         for _ in range(40):

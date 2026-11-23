@@ -1990,6 +1990,9 @@ fn a_leap_lands_on_no_one() {
     let aimed = aimed_at_someone(BOSS, true, 28872, None);
     assert!(!aimed);
     assert!(lands_on_no_one(true, aimed, false, true, true));
+    // And Castrum Meridianum's last boss's 28788 since 2026-11-23 (Bob's mark: "the same leap issue that cape westwind's
+    // boss had"): retail's an AoeEffect8 at no one, six of six in capture 281f92fb.
+    assert!(!aimed_at_someone(BOSS, true, 28788, None));
     // Not a player's action, an area (its own packet already), one on someone, or one that does something.
     assert!(!lands_on_no_one(false, aimed, false, true, true));
     assert!(!lands_on_no_one(true, aimed, true, true, true));
@@ -2088,4 +2091,34 @@ fn a_shown_attack_is_only_shown() {
     assert!(only_shown(&world.instance, cid, generator));
     assert!(!only_shown(&world.instance, cid, player));
     assert!(!only_shown(&world.instance, generator, cid));
+}
+
+/// Bob's mark of 2026-11-23 in Castrum Meridianum: "player NPCs didn't go with me on teleport normally on duties like
+/// this if a character is teleported then every character is teleported". The cutscene before the last room sent him
+/// in (`director:warp_players`) and left his bots outside its walls. Now each goes with him, to its corner of the
+/// diamond round where he's sent (`party_bot::spots_beside`, `warp_beside`).
+#[test]
+fn a_players_bots_go_with_them_when_a_director_sends_them_on() {
+    use crate::server::party_bot::{spots_beside, warp_beside};
+    let mut world = TestWorld::new();
+    let leader = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let first = world.player_npc(PLAYER + 10, leader, [-74.0, 0.0, -39.7]);
+    let second = world.player_npc(PLAYER + 11, leader, [-74.1, 0.0, -37.6]);
+    let to = Vec3A::new(-83.9, 0.0, -37.1);
+    let spots = spots_beside(&world.instance, leader, to, 3.14);
+    assert_eq!(spots.len(), 2);
+    for (_, spot) in &spots {
+        assert!(spot.distance(to) <= 4.0, "{spot}");
+    }
+    warp_beside(
+        &mut world.network.lock(),
+        &mut world.instance,
+        leader,
+        to,
+        3.14,
+    );
+    for bot in [first, second] {
+        let at = world.instance.find_actor(bot).unwrap().position().0;
+        assert!(at.distance(to) <= 4.0, "{at}");
+    }
 }

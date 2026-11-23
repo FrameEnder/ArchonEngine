@@ -39,6 +39,16 @@ const BOT_AREA_REACH: f32 = 5.0;
 /// A GCD action's recast when the sheet doesn't say (2.5 s.)
 const BOT_GCD: f32 = 2.5;
 
+/// The GCD a bot's GCD action starts, from its recast: its recast when shorter (Heat Blast's 1.5 s), else the GCD's 2.5
+/// s, also when the action has a cooldown of its own (`bot_choice`.)
+fn gcd_started_by(recast: f32) -> f32 {
+    if recast > 0.0 {
+        recast.min(BOT_GCD)
+    } else {
+        BOT_GCD
+    }
+}
+
 /// What a party bot with a rotation script sees around it (`bot_choice`), worked out before NPCs act.
 struct BotSurroundings {
     target_statuses: Vec<(u16, f32, bool)>,
@@ -64,13 +74,16 @@ fn bot_choice(
     let now = situation.now;
     let since = |at: Instant| now.saturating_duration_since(at).as_secs_f32();
     let last_gcd = state.last_gcd();
+    // The GCD a GCD action starts: its recast, up to the GCD's own. One with a cooldown of its own (Hot Shot's 40 s, Drill's
+    // 20 s) starts the 2.5 s GCD like the rest; taking its 40 s as the GCD kept Bob's Machinist bot from its every other
+    // weaponskill (Bob's mark of 2026-11-23 in Castrum Meridianum, "the machinist doesn't seem to be using any moves":
+    // Hot Shot 13 times in 860 s, Split Shot never.)
     let recast_of = |action: u32| {
         around
             .known
             .iter()
             .find(|known| known.id == action)
-            .map(|known| known.recast)
-            .filter(|recast| *recast > 0.0)
+            .map(|known| gcd_started_by(known.recast))
             .unwrap_or(BOT_GCD)
     };
     let (gcd_left, since_gcd) = match last_gcd {
@@ -2675,6 +2688,16 @@ fn can_notice(from: Vec3A, rotation: f32, to: Vec3A) -> bool {
 #[cfg(test)]
 mod notice_tests {
     use super::*;
+
+    /// Bob's mark of 2026-11-23: "the machinist doesn't seem to be using any moves". Hot Shot (a GCD weaponskill with
+    /// 40 s of its own) held the bot's GCD 40 s; it starts the 2.5 s one, as Heat Blast its 1.5 s.
+    #[test]
+    fn a_gcd_action_with_a_cooldown_of_its_own_starts_the_gcd() {
+        assert_eq!(gcd_started_by(40.0), 2.5);
+        assert_eq!(gcd_started_by(2.5), 2.5);
+        assert_eq!(gcd_started_by(1.5), 1.5);
+        assert_eq!(gcd_started_by(0.0), 2.5);
+    }
 
     #[test]
     fn sight_and_proximity() {

@@ -196,7 +196,8 @@ end
 -- ---- Leading the way ----
 
 -- An NPC (layout ID) leads the way from `from` ({ x, y, z }, where it stands), leg by leg: { to = { x, y, z }, speed =
--- yalms a second } runs it there in a straight line (`director:sweep_bnpc`), { wait = seconds } stands, and
+-- yalms a second, rotation = its facing there if it turns as it gets there } runs it there in a straight line
+-- (`director:sweep_bnpc`), { wait = seconds } stands, and
 -- { until_party = function(member) } stands until anyone of the party is where the test says; then
 -- `on_end(director)`. It's held all the while (`director:hold_bnpc`), so nothing else moves it, and stays held.
 -- Retail's Cid in Castrum Meridianum ran ahead of the party, waited at a corner until they'd caught up and gone by,
@@ -226,6 +227,9 @@ function Dungeon:runLeads(director)
                     break
                 end
                 lead.until_clock = nil
+                if leg.to ~= nil and leg.rotation ~= nil then
+                    director:move_bnpc(lead.layout, leg.to.x, leg.to.y, leg.to.z, leg.rotation)
+                end
                 lead.leg = lead.leg + 1
             elseif leg.to ~= nil then
                 director:sweep_bnpc(lead.layout, leg.to.x, leg.to.y, leg.to.z, leg.speed)

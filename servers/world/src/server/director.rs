@@ -510,10 +510,12 @@ pub enum LuaDirectorTask {
     },
     /// Put a BNpc (by actor ID, or layout ID) somewhere at once: an ActorSetPos from it to everyone, as retail moves
     /// its invisible helpers before they cast (the Copperbell Mines' first boss's three markers.)
+    /// (`rotation` None keeps the way it faces: `warp_bnpc`'s `keep_facing`, as Castrum Meridianum's last boss going
+    /// from one volley's spot to the next, the same facing throughout in retail's ActorSetPos.)
     WarpBattleNpc {
         who: u32,
         position: Position,
-        rotation: f32,
+        rotation: Option<f32>,
     },
     /// A BNpc (by actor ID, or layout ID) jumps somewhere: ActorControl `SnapNextMove` then an ActorMove there, as
     /// retail's Kottos leapt onto each marked spot in turn (`npc_behavior` picks up from where it lands.)
@@ -1579,11 +1581,24 @@ impl UserData for LuaDirector {
         });
         methods.add_method_mut(
             "warp_bnpc",
-            |_, this, (who, x, y, z, rotation): (u32, f32, f32, f32, Option<f32>)| {
+            |_,
+             this,
+             (who, x, y, z, rotation, keep_facing): (
+                u32,
+                f32,
+                f32,
+                f32,
+                Option<f32>,
+                Option<bool>,
+            )| {
                 this.tasks.push(LuaDirectorTask::WarpBattleNpc {
                     who,
                     position: Position(glam::Vec3A::new(x, y, z)),
-                    rotation: rotation.unwrap_or(0.0),
+                    rotation: if keep_facing.unwrap_or(false) {
+                        None
+                    } else {
+                        Some(rotation.unwrap_or(0.0))
+                    },
                 });
                 Ok(())
             },
@@ -3651,6 +3666,14 @@ pub fn director_tick(
                 let mut network = network.lock();
                 for actor_id in players {
                     warp_player_within(instance, &mut network, actor_id, *position, *rotation);
+                    // Their party's bots with them, as every character of a party is on retail.
+                    crate::server::party_bot::warp_beside(
+                        &mut network,
+                        instance,
+                        actor_id,
+                        position.0,
+                        *rotation,
+                    );
                 }
             }
             LuaDirectorTask::LeaveQuestBattle => {
@@ -4185,8 +4208,15 @@ pub fn director_tick(
                     continue;
                 };
                 let rotation = &match task {
-                    LuaDirectorTask::WarpBattleNpc { rotation, .. }
-                    | LuaDirectorTask::MoveBattleNpc { rotation, .. } => *rotation,
+                    LuaDirectorTask::WarpBattleNpc { rotation, .. } => {
+                        rotation.unwrap_or_else(|| {
+                            instance
+                                .find_actor(actor_id)
+                                .map(|actor| actor.rotation())
+                                .unwrap_or(0.0)
+                        })
+                    }
+                    LuaDirectorTask::MoveBattleNpc { rotation, .. } => *rotation,
                     LuaDirectorTask::JumpBattleNpc {
                         rotation,
                         keep_facing,

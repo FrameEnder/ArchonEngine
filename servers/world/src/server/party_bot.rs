@@ -3572,6 +3572,95 @@ fn formation_spot_now(
     Some((Position(at), facing))
 }
 
+/// Where `leader`'s bots go when a director sends them on (`director:warp_players`): each its corner of the diamond
+/// round where the leader is sent, facing their way, on the floor there (`formation_spot_now` from that spot). Bob's
+/// mark of 2026-11-23 in Castrum Meridianum: "player NPCs didn't go with me on teleport normally on duties like this if a
+/// character is teleported then every character is teleported": the cutscene before the last room sent him in and
+/// left his three bots outside its walls (24 yalms off, inside `CATCH_UP_DISTANCE`, walled for 110 s.)
+pub fn spots_beside(
+    instance: &Instance,
+    leader: ObjectId,
+    to: Vec3A,
+    facing: f32,
+) -> Vec<(ObjectId, Vec3A)> {
+    let mut bots: Vec<(ObjectId, &PartyBot)> = instance
+        .party_bots
+        .iter()
+        .filter(|(_, bot)| bot.leader == leader)
+        .map(|(id, bot)| (*id, bot))
+        .collect();
+    bots.sort_by_key(|(_, bot)| bot.order);
+    bots.into_iter()
+        .map(|(id, bot)| {
+            let (ahead, side) = bot.diamond.unwrap_or((-FOLLOW_DISTANCE, 0.0));
+            let spot = spot_around(to, facing, ahead, side);
+            let settled = match instance.collision.as_deref() {
+                Some(collision) => collision.settle(spot),
+                None => instance.navmesh.ground_under(spot).unwrap_or(spot),
+            };
+            (
+                id,
+                if (settled.y - to.y).abs() <= 2.0 {
+                    settled
+                } else {
+                    to
+                },
+            )
+        })
+        .collect()
+}
+
+/// Sends `leader`'s bots on with them (`spots_beside`): put there at once (ActorSetPos and ZoneIn, as a bot catching
+/// up), their way there and their walling forgotten.
+pub fn warp_beside(
+    network: &mut NetworkState,
+    instance: &mut Instance,
+    leader: ObjectId,
+    to: Vec3A,
+    facing: f32,
+) {
+    for (bot_id, spot) in spots_beside(instance, leader, to, facing) {
+        if let Some(NetworkedActor::Npc {
+            spawn,
+            navmesh_path,
+            ..
+        }) = instance.find_actor_mut(bot_id)
+        {
+            spawn.common.position = Position(spot);
+            spawn.common.rotation = facing;
+            navmesh_path.clear();
+        }
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.path.clear();
+            bot.walled_since = None;
+            bot.far_since = None;
+        }
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(
+            kawari::ipc::zone::ActorSetPos {
+                position: Position(spot),
+                rotation: facing,
+                ..Default::default()
+            },
+        ));
+        network.send_to_instance(
+            ObjectId::default(),
+            instance,
+            FromServer::PacketSegment(ipc, bot_id),
+            DestinationNetwork::ZoneClients,
+        );
+        network.send_ac_in_range_inclusive_instance(
+            instance,
+            bot_id,
+            ActorControlCategory::ZoneIn {
+                warp_finish_anim: 1,
+                raise_anim: 0,
+                unk1: 0,
+            },
+        );
+    }
+    instance.formation_facings.insert(leader, (to, facing));
+}
+
 /// Puts each of `leader`'s bots in its corner of the diamond round them at once (`diamond_spots`,
 /// `formation_spot_now`): as they come into a zone with them.
 fn place_in_the_diamond(instance: &mut Instance, game_data: &mut GameData, leader: ObjectId) {
