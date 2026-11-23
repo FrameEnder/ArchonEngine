@@ -556,8 +556,9 @@ function Dungeon:cast(director, layout_id, action_id, actor_id, x, y, z, target_
         if wave ~= nil then
             self:after(waves.after, function(d)
                 if self.fight == boss.id then
-                    -- Each comes out already in the boss's fight, after whom it's after (`director:join_fight`):
-                    -- retail's Black Eft's three waves, 14 of 14 the moment they appeared (Bob's mark of 2026-11-23.)
+                    -- Each comes out already in the boss's fight, with the party's enmity on the boss: it goes for
+                    -- whoever holds the most, the tank (`director:join_fight`): retail's Black Eft's three waves, 14
+                    -- of 14 the moment they appeared (Bob's mark of 2026-11-23.)
                     for _, layout in ipairs(wave) do
                         d:spawn_bnpc(layout)
                         d:join_fight(layout, boss.layout)

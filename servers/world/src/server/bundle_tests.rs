@@ -456,23 +456,32 @@ fn castrum_meridianums_vanguard_holds_its_middle_and_nobody_walks_through_its_wa
 }
 
 /// Bob's mark of 2026-11-23 in Castrum Meridianum: "reinforcements from the black eft fight don't auto aggro when
-/// spawned like in retail". Retail's three waves each went for the boss's target the moment they appeared (14 of 14,
-/// capture 281f92fb); now each joins its fight (`director:join_fight`, the framework's `waves`): whom the boss is after,
-/// or the player when it's after no one.
+/// spawned like in retail", and his correction: an add that appears has pulled no one, so it goes by the party's
+/// enmity, whoever holds the most (the tank, its stance), not by whom the boss happens to face. Retail's three waves
+/// each went for the tank the moment they appeared (14 of 14, capture 281f92fb); now each takes on the party's enmity
+/// on the boss (`director:join_fight`, `fight_enmity_of`): the most is the top, the rest keep their standing.
 #[test]
-fn a_bosss_wave_joins_its_fight() {
-    use crate::server::director::fight_target_of;
+fn a_bosss_wave_takes_on_the_partys_enmity() {
+    use crate::server::director::fight_enmity_of;
     let mut world = TestWorld::new();
-    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let healer = world.player(PLAYER, [0.0, 0.0, 0.0]);
     let tank = world.player(PLAYER + 1, [3.0, 0.0, 3.0]);
     let boss = world.enemy(ENEMY, [10.0, 0.0, -40.0], 61542);
-    // After no one yet: the player.
-    assert_eq!(fight_target_of(&world.instance, boss.0), Some(player));
-    // After the tank: the tank.
-    if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(boss) {
-        spawn.common.target_id.object_id = tank;
+    // Holding none yet: the player.
+    assert_eq!(
+        fight_enmity_of(&world.instance, boss.0),
+        vec![(healer, 300)]
+    );
+    // The tank holds the most, though the boss faces the healer (a mechanic, a taunt wearing off): the wave goes for
+    // the tank, the healer second.
+    if let Some(NetworkedActor::Npc { spawn, enmity, .. }) = world.instance.find_actor_mut(boss) {
+        spawn.common.target_id.object_id = healer;
+        enmity.insert(tank, 9000);
+        enmity.insert(healer, 2500);
     }
-    assert_eq!(fight_target_of(&world.instance, boss.0), Some(tank));
+    let mut taken = fight_enmity_of(&world.instance, boss.0);
+    taken.sort_by_key(|(_, amount)| std::cmp::Reverse(*amount));
+    assert_eq!(taken, vec![(tank, 9000), (healer, 2500)]);
 }
 
 /// Bob's marks of 2026-11-23 in Castrum Meridianum: "enemies with tethers between eachother should all be alerted and
