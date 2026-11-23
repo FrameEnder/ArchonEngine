@@ -1,0 +1,21 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "animation_locks": {
+        "381": 1.4
+    },
+    "timepoints": [
+        {
+            "time": 2.3,
+            "every": 7.2,
+            "data": {
+                "type": "action",
+                "action_id": 381,
+                "target": "itself"
+            },
+            "comment": "Aqueous Discharge (381, 2.5 s, 3 yalms round itself): retail's cast 2.3 s after its first auto-attack, and it died before another; every 7.2 s as Seer Folly's slug of the same name and level (QB75Slug_1677.json)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Beneath the Planks (quest 803): ENEMY0, the slug the third damp scaffolding brings out (BNpcBase 40, BNpcName 40, layout 4287003, drop-in layer QB_GaiUsa908_001 of fst_f1): level 29, 750 HP, aggressive, for the player who searched. From Bob's Chronofoil capture b58bf0d5 (2026-11-23; a level 52 white mage, every hit of its missed): an auto-attack (872) and one 381 in the 12 s it lived. No damage recorded (all missed), so its amounts are the defaults; hitbox not recorded."
+}

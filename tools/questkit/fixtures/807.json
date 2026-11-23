@@ -1,0 +1,37 @@
+{
+  "quest": 807,
+  "script": "GaiUsa912_00807",
+  "source": "Bob's Chronofoil capture b58bf0d5 (2026-11-23)",
+  "params": {"ACTOR0": 1006261, "ITEM0": 2000958, "ENEMY0": 2193, "ITEM1": 2000862, "HOWTO_EITEM": 139},
+  "steps": [
+    {
+      "talk": 1006261,
+      "layout": 4257902,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000100000000", "notices": []}
+    },
+    {
+      "layout": 1073892231,
+      "event_item": [2000958, 2193],
+      "expect": {"sequence": 1, "vars": "000100000000", "notices": []}
+    },
+    {
+      "kill": [2193, 3693188],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": [[0, [22602]]]}
+    },
+    {
+      "talk": 1006261,
+      "layout": 4257902,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 3, "flags": "0x2000", "results": [1, 5825, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "quest": 804,
+  "script": "GaiUsa909_00804",
+  "source": "Bob's Chronofoil capture b58bf0d5 (2026-11-23)",
+  "params": {"ACTOR0": 1006261, "ENEMY0": 48, "ITEM0": 2000631},
+  "steps": [
+    {
+      "talk": 1006261,
+      "layout": 4257902,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [48, 1133248],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": [[0, [1, 5, 25407]]]}
+    },
+    {
+      "kill": [48, 1162402],
+      "expect": {"sequence": 1, "vars": "002000000000", "notices": [[0, [2, 5, 25407]]]}
+    },
+    {
+      "kill": [48, 1133246],
+      "expect": {"sequence": 1, "vars": "003000000000", "notices": [[0, [3, 5, 25407]]]}
+    },
+    {
+      "kill": [48, 1415361],
+      "expect": {"sequence": 1, "vars": "004000000000", "notices": [[0, [4, 5, 25407]]]}
+    },
+    {
+      "kill": [48, 1162399],
+      "expect": {"sequence": 255, "vars": "005000000000", "notices": [[0, [5, 5, 25407]]]}
+    },
+    {
+      "talk": 1006261,
+      "layout": 4257902,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 3, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

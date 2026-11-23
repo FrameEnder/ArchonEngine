@@ -1,5 +1,5 @@
 {
-    "comment": "What a key item does to the battle NPC it's used on, beyond starting its quest's event (server/action.rs: use_event_item; event_item_effects.rs). Retail's ActionEffect for the item listed these statuses on the NPC (GainEffect, its unk1 byte as recorded) and the EffectResult after it had them (each for `duration` seconds, from the player) and its health and maximum health at `health_percent` % of what its maximum was, rounded down; `animation_lock` is the ActionEffect's. Recorded: Factual Folklore's (quest 927) ITEM0, 2000961, on ENEMY0 (BNpcBase 2196, 14283 HP): statuses 22 and 62 for 300 s, health and maximum 2856, a 1.6 s lock, all three uses in Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06). Return to Your Dust's (861) ITEM0, 2000960, on ENEMY1 (BNpcBase 2195, 10278 HP): the same two statuses for 300 s with the same bytes, health and maximum 2055, a 1.6 s lock (Bob's Chronofoil capture 651981e7, 2026-11-16). `captures`: the NPC is taken, not weakened: Don't Let the Cat out of the Bag's (863) ITEM0, 2000670, on a hecatoncheir tremorward (BNpcBase 2269) in the same capture: the ActionEffect lists no status (a 0.1 s lock), ActorControl 607 `[itself, 2, 197, 100]` comes from the NPC with the quest's event, 0.63 s later ActorControl 14 `[0]` and 2 `[2]` and an EffectResult with its health at 0, and its DeleteActor 0.49 s after that; no Defeated, nothing counted as a kill.",
+    "comment": "What a key item does to the battle NPC it's used on, beyond starting its quest's event (server/action.rs: use_event_item; event_item_effects.rs). Retail's ActionEffect for the item listed these statuses on the NPC (GainEffect, its unk1 byte as recorded) and the EffectResult after it had them (each for `duration` seconds, from the player) and its health and maximum health at `health_percent` % of what its maximum was, rounded down; `animation_lock` is the ActionEffect's. Recorded: Factual Folklore's (quest 927) ITEM0, 2000961, on ENEMY0 (BNpcBase 2196, 14283 HP): statuses 22 and 62 for 300 s, health and maximum 2856, a 1.6 s lock, all three uses in Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06). Return to Your Dust's (861) ITEM0, 2000960, on ENEMY1 (BNpcBase 2195, 10278 HP): the same two statuses for 300 s with the same bytes, health and maximum 2055, a 1.6 s lock (Bob's Chronofoil capture 651981e7, 2026-11-16). `captures`: the NPC is taken, not weakened: Don't Let the Cat out of the Bag's (863) ITEM0, 2000670, on a hecatoncheir tremorward (BNpcBase 2269) in the same capture: the ActionEffect lists no status (a 0.1 s lock), ActorControl 607 `[itself, 2, 197, 100]` comes from the NPC with the quest's event, 0.63 s later ActorControl 14 `[0]` and 2 `[2]` and an EffectResult with its health at 0, and its DeleteActor 0.49 s after that; no Defeated, nothing counted as a kill. Shocking Discoveries' (805) ITEM0, 2000632, on a zu egg (BNpcBase 2267): `captures` and `quiet`: the ActionEffect lists no status (a 0.1 s lock), ActorControl 607 `[itself, 2, 197, 100]` with the quest's event, and its DeleteActor 1.11 s later with nothing between (no Kill, no character mode, no EffectResult). Doing the Dirty Work's (807) ITEM0, 2000958, on a monitoring node (BNpcBase 2193, 7983 HP): Factual Folklore's, statuses 22 and 62 for 300 s with the same bytes, health and maximum 1596, a 1.6 s lock. Both in Bob's Chronofoil capture b58bf0d5 (2026-11-23).",
     "items": {
         "2000961": {
             "statuses": [
@@ -35,6 +35,26 @@
         },
         "2000670": {
             "captures": true
+        },
+        "2000632": {
+            "captures": true,
+            "quiet": true
+        },
+        "2000958": {
+            "statuses": [
+                {
+                    "id": 22,
+                    "duration": 300.0,
+                    "unk1": 176
+                },
+                {
+                    "id": 62,
+                    "duration": 300.0,
+                    "unk1": 206
+                }
+            ],
+            "health_percent": 20,
+            "animation_lock": 1.6
         }
     }
 }

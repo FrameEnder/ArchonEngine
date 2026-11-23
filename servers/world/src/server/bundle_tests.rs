@@ -1769,7 +1769,7 @@ fn a_battle_npc_a_key_item_took_goes_without_being_defeated() {
     let enemy = world.enemy(ENEMY, [3.0, 4.0, 288.0], 3000);
     world.sent(player);
 
-    crate::server::actor::capture_battle_npc(&world.network, &mut world.instance, enemy);
+    crate::server::actor::capture_battle_npc(&world.network, &mut world.instance, enemy, false);
 
     let Some(NetworkedActor::Npc { spawn, state, .. }) = world.instance.find_actor(enemy) else {
         panic!("it's still there until its despawn");
@@ -1805,8 +1805,29 @@ fn a_battle_npc_a_key_item_took_goes_without_being_defeated() {
         crate::server::QueuedTaskData::SendDefeated { .. }
     )));
     // A second call does nothing.
-    crate::server::actor::capture_battle_npc(&world.network, &mut world.instance, enemy);
+    crate::server::actor::capture_battle_npc(&world.network, &mut world.instance, enemy, false);
     assert!(world.sent(player).is_empty());
+}
+
+/// Shocking Discoveries (805), Bob's Chronofoil capture b58bf0d5 (2026-11-23): the quest's ITEM0 used on a zu egg takes
+/// it quietly, ActorControl 607 with the quest's event and its DeleteActor 1.11 s later, nothing between: no Kill, no
+/// EffectResult (`event_item_effects.json`'s `quiet`).
+#[test]
+fn a_battle_npc_a_key_item_took_quietly_is_only_gone() {
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 4.0, 290.0]);
+    let egg = world.enemy(ENEMY, [3.0, 4.0, 288.0], 750);
+    world.sent(player);
+    crate::server::actor::capture_battle_npc(&world.network, &mut world.instance, egg, true);
+    let Some(NetworkedActor::Npc { state, .. }) = world.instance.find_actor(egg) else {
+        panic!("it's still there until its despawn");
+    };
+    assert_eq!(*state, NpcState::Dead);
+    assert!(world.sent(player).is_empty());
+    assert!(world.instance.queued_task.iter().any(|task| matches!(
+        task.data,
+        crate::server::QueuedTaskData::DeadDespawn { actor_id, .. } if actor_id == egg
+    )));
 }
 
 /// FATE 586, Bob's Chronofoil capture 651981e7 (2026-11-16; "586 was the one implement that"): one enemy, and the

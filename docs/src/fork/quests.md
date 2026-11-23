@@ -237,6 +237,15 @@ No Defeated, nothing counted as a kill. Kawari: `"captures": true` for the item 
 `a_battle_npc_a_key_item_took_goes_without_being_defeated`. Whether retail's client lets the item be used on one at
 full health wasn't seen.
 
+**Taking it quietly** (2026-11-23). Shocking Discoveries' (805) ITEM0, 2000632, on an open-world zu egg (BNpcBase
+2267, 750 HP; Bob's Chronofoil capture b58bf0d5): the ActionEffect with no status (0.1 s lock), with the quest's event
+(notice 0 `[22606]`, sequence 255) ActorControl 607 `[itself, 2, 197, 100]`, and its DeleteActor 1.11 s later with
+nothing between: no mode, no ActorControl 14 or 2, no EffectResult. `"quiet": true` beside `"captures"`
+(`capture_battle_npc`'s `quietly`). Test `a_battle_npc_a_key_item_took_quietly_is_only_gone`. Doing the Dirty Work's
+(807) ITEM0, 2000958, on a monitoring node (BNpcBase 2193, 7983 HP) is Factual Folklore's: statuses 22 and 62 (0xB0,
+0xCE) for 300 s, health and maximum at a fifth (1596), a 1.6 s lock; the quest moves on with its death (notice 0
+`[22602]`, 255) 18 s later.
+
 ### Emotes on an NPC
 
 Some quests want an emote used on an NPC (Double Dealing, 466: ACTOR1 won't talk until you do). On retail (Bob's
@@ -522,6 +531,12 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 34 | Derision of Labor | `000/SubFst009_00034` | client script (2026-11-22), Chronofoil capture 3c7f26fa (`34.json`); transcribed | As 24: ITEM0 at the offer, ACTOR1's trade (1) and reward (100). |
 | 37 | Population Control | `000/SubFst011_00037` | client script (2026-11-22), Chronofoil capture 3c7f26fa (`37.json`); transcribed | Six ENEMY0 kills, any of them (UI8AL, notice 0 `[count, 6]`), then 255; ACTOR0's reward (1). |
 | 1425 | Saw That One Coming | `014/SubFst159_01425` | client script (2026-11-22), Chronofoil capture 3c7f26fa (`1425.json`); transcribed, the children's part by hand | Eral's offer (0, 1); Yedythe (2: notice 0, 2); Beatin (3: notice 1 `[22633]`, three ITEM0s, UI8BH 3, sequence 3); the three children in any order, each taking one ITEM0 (NpcTrade 5, 8, 11, then 6, 9, 12: notice 2 `[count, 3]`, UI8AL the count, UI8BH the ITEM0s left, BitFlag8 1-3 by IsAcceptEvent), the last to 255; Yedythe's cutscene (15) completes it and unlocks 28 (retail's ToggleUnlock, `RECORDED_QUEST_UNLOCKS`). Yedythe's line meanwhile is scene 14 (`sidetalk_hand.json`). The children's other five orders checked in Lua. |
+| 40 | For Friendship | `000/SubFst013_00040` | client script (2026-11-23), Bob's Chronofoil capture b58bf0d5 (`40.json`); transcribed, the wrong emotes by hand | Nicoliaux and Aunillie in turn: three emotes on Aunillie (5, 18, 11: scenes 100, 98, 96, notices 0, 2, 4), Nicoliaux between (2, 4: notices 1, 3), reward (6). Any other emote on her plays that sequence's empty EMOTENO scene (99, 97, 95; the client's, not seen on retail). |
+| 803 | Beneath the Planks | `008/GaiUsa908_00803` | client script (2026-11-23), Chronofoil capture b58bf0d5 (`803.json`); transcribed, sequence 2 by hand | Roustebant (0, 1) in Gridania, Thievenaix (2); three things in any order, as the client's IsAcceptEvent allows: two damp scaffoldings searched (3/4, 5/6: UI8AL, UI8BH and BitFlag8 1, 2), ENEMY0 (BNpcBase 40, from the third scaffolding, 7/8: drop-in layer `QB_GaiUsa908_001` of fst_f1 and `BeneathThePlanksSlug_40.json`, retail's spawn and actions) down (UI8BL); UI8AH counts them (notice 1 `[count, 3]`), the third: 255; Thievenaix's reward (9). |
+| 804 | Fungal Frolic | `008/GaiUsa909_00804` | client script (2026-11-23), Chronofoil capture b58bf0d5 (`804.json`); transcribed | Five ENEMY0 kills (UI8BH, notice 0 `[count, 5, 25407]`), then 255; Marcette (2, 3). |
+| 805 | Shocking Discoveries | `008/GaiUsa910_00805` | client script (2026-11-23), Chronofoil capture b58bf0d5 (`805.json`); transcribed | ITEM0 (UI8BH 1) on a zu egg (BNpcBase 2267): taken quietly (`event_item_effects.json`), notice 0 `[22606]`, 255; Marcette (2, 3). |
+| 806 | In Too Deep | `008/GaiUsa911_00806` | client script (2026-11-23), Chronofoil capture b58bf0d5 (`806.json`); transcribed | Hobriaut (0, 1); three destinations searched in any order (2/3, 4/5, 6/7; BitFlag8 1-3, UI8AH counts, notice 0 `[count, 3, 22614]`), the third: 255; Hobriaut (8, 9). |
+| 807 | Doing the Dirty Work | `008/GaiUsa912_00807` | client script (2026-11-23), Chronofoil capture b58bf0d5 (`807.json`); transcribed | ITEM0 on a monitoring node (BNpcBase 2193): Factual Folklore's statuses and a fifth of its health; its death: notice 0 `[22602]`, 255; Marcette (2, 3: chosen reward). |
 | 201 | Passing Muster | `002/SubFst045_00201` | client script, Chronofoil capture | The client checks item level 5 gear itself and returns 0 if not. |
 | 445 | Chasing Shadows | `004/ManFst005_00445` | client script, recording (replay), Chronofoil capture (notices, quest battle) | Examine the blade (scene 2, Process event action; UI8AL remembers it until the battle starts), quest battle 11, aftermath on re-entering, second blade gives ITEM0 (UI8BH, notice 2 `[30426]`, the only notice), trade. |
 | 3854 | Eggs over Queasy | `038/XxaFst034_03854` | client script, Chronofoil capture | Three chigoe kills each give an egg (UI8BH, notice 0 `[count, 3, 22623]`), trade. |

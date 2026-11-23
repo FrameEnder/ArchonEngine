@@ -621,6 +621,7 @@ pub fn use_event_item(
             CAPTURED_AFTER,
             QueuedTaskData::Captured {
                 actor_id: target_id,
+                quietly: weakening.is_some_and(|weakening| weakening.quiet),
             },
         );
     }

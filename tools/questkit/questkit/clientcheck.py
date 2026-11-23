@@ -25,6 +25,8 @@ from . import repo
 
 _SCENE_FN = re.compile(r":OnScene(\d+)\b")
 _PLAY_ARG = re.compile(r"\bplay_scene\s*\(\s*([A-Za-z_][\w.]*|\d+)")
+# `questkit transcribe`'s scripts play through `play(player, scene, …)` and a bar's next scene (`{ scene = N`.)
+_PLAY_HELPER = re.compile(r"\bplay\s*\(\s*player\s*,\s*([A-Za-z_][\w.]*|\d+)|\{\s*scene\s*=\s*([A-Za-z_][\w.]*|\d+)")
 # A TALKS-table script's entries (`{ seq = 1, who = ACTOR1, scenes = { 2, 3 }, ... }`): the scenes each plays in turn.
 _TALK_SCENES = re.compile(r"\bscenes\s*=\s*\{([\d\s,]*)\}")
 _NUM_CONST = re.compile(
@@ -93,7 +95,7 @@ def check(kind: str, name: str, server_script: Path, listing: str, params: dict[
         used = len(re.findall(rf"\b{const}\b", code)) > 1
         if const.startswith("SCENE") and used and value == int(value) and value < 65536:
             played.add(int(value))
-    for arg in _PLAY_ARG.findall(code):
+    for arg in _PLAY_ARG.findall(code) + [a or b for a, b in _PLAY_HELPER.findall(code)]:
         if arg.isdigit():
             played.add(int(arg))
         elif arg in constants:

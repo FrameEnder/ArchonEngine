@@ -35,6 +35,10 @@ pub struct Effects {
     /// starts and is gone a second later, without being defeated (`server::actor::capture_battle_npc`.)
     #[serde(default)]
     pub captures: bool,
+    /// With `captures`: the NPC goes without being shown defeated (no Kill, character mode or EffectResult at 0),
+    /// as Shocking Discoveries' zu egg did.
+    #[serde(default)]
+    pub quiet: bool,
 }
 
 fn table() -> &'static Table {
@@ -85,5 +89,13 @@ mod tests {
         let bag = super::effects(2000670).unwrap();
         assert!(bag.captures && bag.statuses.is_empty());
         assert_eq!(weakened(bag, 160, 3000), (160, 3000));
+        assert!(!bag.quiet);
+        // Shocking Discoveries' (805) ITEM0 takes its zu egg quietly; Doing the Dirty Work's (807) ITEM0 does to its
+        // monitoring node what Factual Folklore's does: 7983 HP, then 1596 and 1596 (Bob's capture b58bf0d5.)
+        let egg = super::effects(2000632).unwrap();
+        assert!(egg.captures && egg.quiet && egg.statuses.is_empty());
+        let node = super::effects(2000958).unwrap();
+        assert_eq!(node.statuses.len(), 2);
+        assert_eq!(weakened(node, 7983, 7983), (1596, 1596));
     }
 }

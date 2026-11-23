@@ -826,7 +826,9 @@ Quest dumps (`kawari-questdump dump`'s `<script>/<script>.txt` and `quest.json`)
 For every server script with a client script there it reports, worst first:
 
 * **scenes the server plays that the client doesn't have** (a constant `SCENE*` the script uses, not only defines;
-  a number or a constant passed to `play_scene`; or one of the sheet's `SEQ_*` scene parameters);
+  a number or a constant passed to `play_scene`, or since 2026-11-23 to `transcribe`'s `play(player, …)` and a bar's
+  `{ scene = … }`, which it didn't see, so every transcribed script showed "the server plays none"; or one of the
+  sheet's `SEQ_*` scene parameters);
 * **constants named as the client's but with another value** (the client sets them in its script's second chunk,
   `SETTABLE R0["MAIN_MENU_RESULT_SPECIALSHOP"] = 2`);
 * **names that look like the sheet's parameters** (an upper-case name with a number: `ACTOR0`, `SEQ_1_EOBJECT2`) that

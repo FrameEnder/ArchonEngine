@@ -650,6 +650,7 @@ pub fn capture_battle_npc(
     network: &Arc<Mutex<NetworkState>>,
     instance: &mut Instance,
     actor_id: ObjectId,
+    quietly: bool,
 ) {
     const GONE_AFTER: Duration = Duration::from_millis(490);
     let Some(NetworkedActor::Npc { state, spawn, .. }) = instance.find_actor_mut(actor_id) else {
@@ -665,7 +666,9 @@ pub fn capture_battle_npc(
     let layout_id = spawn.common.layout_id;
     instance.cancel_actor_tasks(actor_id);
     let quest_spawned = instance.quest_spawned_npcs.remove(&actor_id);
-    {
+    // Quietly: no defeat shown, only gone (retail's zu egg, Shocking Discoveries' ITEM0: ActorControl 607 and its
+    // DeleteActor 1.11 s later, nothing between; Bob's Chronofoil capture b58bf0d5, 2026-11-23.)
+    if !quietly {
         let mut network = network.lock();
         set_character_mode(
             instance,
