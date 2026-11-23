@@ -562,6 +562,15 @@ pub enum LuaDirectorTask {
         who: u32,
         seconds: f32,
     },
+    /// A BNpc (actor ID or layout ID) joins the fight of another (`with`, actor ID or layout ID): it goes for whom that
+    /// one is fighting (its target), or the player if it's fighting no one. Retail's Black Eft's three waves each went
+    /// for its target, the tank, the moment they appeared (Bob's Chronofoil capture 281f92fb: 14 of 14, 0.0 s); Kawari's
+    /// waited to notice someone (Bob's mark of 2026-11-23, "reinforcements from the black eft fight don't auto aggro
+    /// when spawned like in retail".)
+    JoinFight {
+        who: u32,
+        with: u32,
+    },
     /// Hold a BNpc's timeline (actor ID or layout ID) for `seconds`: what comes due meanwhile waits until then (late,
     /// not dropped), while it moves and auto-attacks as ever (`Instance::timeline_held`). A boss's next attack waits
     /// for its helpers' attacks from its last to land: retail's Magitek Vanguard F-1 began Hypercharge as Targeted
@@ -1604,6 +1613,10 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::BusyBattleNpc { who, seconds });
             Ok(())
         });
+        methods.add_method_mut("join_fight", |_, this, (who, with): (u32, u32)| {
+            this.tasks.push(LuaDirectorTask::JoinFight { who, with });
+            Ok(())
+        });
         methods.add_method_mut("hold_timeline", |_, this, (who, seconds): (u32, f32)| {
             this.tasks
                 .push(LuaDirectorTask::HoldTimeline { who, seconds });
@@ -1961,6 +1974,30 @@ pub struct ArenaFloor {
     pub half_x: f32,
     pub half_z: f32,
     pub round: bool,
+}
+
+/// How much enmity an NPC joining a fight (`director:join_fight`) has for whom it joins it on: as much as the scripts'
+/// own waves were set on the player with (`set_hate(…, nil, 300)`.)
+const JOIN_FIGHT_ENMITY: u32 = 300;
+
+/// Whom the BNpc `with` (actor ID or layout ID) is fighting (`director:join_fight`): its target, or the player if it's
+/// fighting no one (or isn't there).
+pub fn fight_target_of(instance: &Instance, with: u32) -> Option<ObjectId> {
+    let fighting = resolve_bnpc(instance, with)
+        .and_then(|id| instance.find_actor(id))
+        .and_then(|actor| match actor {
+            NetworkedActor::Npc { spawn, .. } if spawn.common.target_id.object_id.is_valid() => {
+                Some(spawn.common.target_id.object_id)
+            }
+            _ => None,
+        });
+    fighting.or_else(|| {
+        instance
+            .actors
+            .iter()
+            .find(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+            .map(|(id, _)| *id)
+    })
 }
 
 /// An NPC's timeline held until `until` (`director:hold_timeline`), or longer if a longer hold is already on: a boss's
@@ -4590,6 +4627,23 @@ pub fn director_tick(
                     actor_id,
                     Instant::now() + Duration::from_secs_f32(seconds.max(0.0)),
                 );
+            }
+            LuaDirectorTask::JoinFight { who, with } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to join a fight!");
+                    continue;
+                };
+                let target_id = fight_target_of(instance, *with);
+                let Some(target_id) = target_id else {
+                    tracing::warn!(
+                        "Nobody for bnpc {who} to fight (as {with} isn't fighting, nor is a player here)"
+                    );
+                    continue;
+                };
+                // Picked up on the next NPC tick, as being attacked is; as much as SetHate gives a wave (300.)
+                if let Some(actor) = instance.find_actor_mut(actor_id) {
+                    actor.add_enmity(target_id, JOIN_FIGHT_ENMITY);
+                }
             }
             LuaDirectorTask::HoldTimeline { who, seconds } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {

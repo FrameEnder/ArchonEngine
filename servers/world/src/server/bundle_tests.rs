@@ -455,6 +455,65 @@ fn castrum_meridianums_vanguard_holds_its_middle_and_nobody_walks_through_its_wa
     assert!(!arena.holds(Vec3A::new(-13.0 + 30.5, 70.1, 31.0)));
 }
 
+/// Bob's mark of 2026-11-23 in Castrum Meridianum: "reinforcements from the black eft fight don't auto aggro when
+/// spawned like in retail". Retail's three waves each went for the boss's target the moment they appeared (14 of 14,
+/// capture 281f92fb); now each joins its fight (`director:join_fight`, the framework's `waves`): whom the boss is after,
+/// or the player when it's after no one.
+#[test]
+fn a_bosss_wave_joins_its_fight() {
+    use crate::server::director::fight_target_of;
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let tank = world.player(PLAYER + 1, [3.0, 0.0, 3.0]);
+    let boss = world.enemy(ENEMY, [10.0, 0.0, -40.0], 61542);
+    // After no one yet: the player.
+    assert_eq!(fight_target_of(&world.instance, boss.0), Some(player));
+    // After the tank: the tank.
+    if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(boss) {
+        spawn.common.target_id.object_id = tank;
+    }
+    assert_eq!(fight_target_of(&world.instance, boss.0), Some(tank));
+}
+
+/// Bob's marks of 2026-11-23 in Castrum Meridianum: "enemies with tethers between eachother should all be alerted and
+/// aggro'd when a enemy with a tether connected to them is aggro'd", "I had to manually aggro each". The lines are the
+/// client's own for a link family (SpawnNpc's `link_family`, `link_range`, `max_links`); retail's two families there
+/// went for the party each at one moment (capture 281f92fb: family 1, five, limit 4, range 50, at 33.8 s; family 2,
+/// six, limit 5, at 41.0 s). Kawari sent the families but never pulled them together.
+#[test]
+fn a_link_family_is_pulled_together() {
+    use crate::server::npc_behavior::{LinkMember, link_target};
+    let player = ObjectId(0x1000_0001);
+    // Family 2's first pulled, at (141, -61); another of it at (133, -66), 9.4 yalms off.
+    let first = LinkMember {
+        family: 2,
+        position: Vec3A::new(141.0, 91.4, -61.0),
+        target: player,
+    };
+    let other = Vec3A::new(133.0, 91.4, -66.0);
+    assert_eq!(link_target(&[first], 2, 50, 5, other), Some(player));
+    // Not another family's, nor one with none.
+    let family_1 = LinkMember {
+        family: 1,
+        position: Vec3A::new(184.0, 94.2, -89.0),
+        target: player,
+    };
+    assert_eq!(link_target(&[family_1], 2, 50, 5, other), None);
+    assert_eq!(link_target(&[first], 0, 50, 5, other), None);
+    // Not beyond the family's range.
+    assert_eq!(link_target(&[first], 2, 5, 5, other), None);
+    // Not once the first and `max_links` others are fighting.
+    let six: Vec<LinkMember> = (0..6)
+        .map(|_| LinkMember {
+            family: 2,
+            position: Vec3A::new(141.0, 91.4, -61.0),
+            target: player,
+        })
+        .collect();
+    assert_eq!(link_target(&six, 2, 50, 5, other), None);
+    assert_eq!(link_target(&six[..5], 2, 50, 5, other), Some(player));
+}
+
 /// Bob, 2026-11-22: "I legit saw him cast targetted support inside a thermobaric strike". The Magitek Vanguard F-1's
 /// Targeted Support marks were still down 0.5 and 1.0 s into its Hypercharge: its timeline and its script's helpers
 /// each kept their own half-second clock. Each attack now holds its timeline until its helpers' have landed

@@ -301,6 +301,47 @@ pub fn past_a_wall(
     Some(Vec3A::new(along.x, y, along.z))
 }
 
+/// One of a link family fighting (`link_target`.)
+#[derive(Clone, Copy)]
+pub struct LinkMember {
+    pub family: u8,
+    pub position: Vec3A,
+    pub target: ObjectId,
+}
+
+/// Whom an NPC of link family `family` (SpawnNpc's `link_family`, 0 none) at `position` joins, pulled with its family:
+/// the target of the nearest of its family fighting within `range` yalms (`link_range`), while fewer than `max_links`
+/// others (`max_links`) besides the first are fighting. Retail's linked enemies (the client draws the lines between them)
+/// all went for the party at the same moment: Castrum Meridianum's two families by the first boss, five (limit 4,
+/// range 50) at 33.8 s and six (limit 5) at 41.0 s (Bob's Chronofoil capture 281f92fb); Kawari's had to be pulled one by
+/// one (Bob's marks of 2026-11-23, "I had to manually aggro each so the tether didn't work as intended".)
+pub fn link_target(
+    fighting: &[LinkMember],
+    family: u8,
+    range: u8,
+    max_links: u8,
+    position: Vec3A,
+) -> Option<ObjectId> {
+    if family == 0 {
+        return None;
+    }
+    let family_fighting: Vec<&LinkMember> = fighting
+        .iter()
+        .filter(|member| member.family == family)
+        .collect();
+    // The first, and up to `max_links` others (0: no limit given.)
+    if max_links != 0 && family_fighting.len() > max_links as usize {
+        return None;
+    }
+    family_fighting
+        .into_iter()
+        .filter(|member| Vec3A::distance(member.position, position) <= range as f32)
+        .min_by(|a, b| {
+            Vec3A::distance(a.position, position).total_cmp(&Vec3A::distance(b.position, position))
+        })
+        .map(|member| member.target)
+}
+
 /// Whether the navmesh lets a walker held up by a wall at `here` go on past it to `to`: when there's navmesh at `to`,
 /// only if the navmesh joins the two directly (a path no longer than twice the distance and 2 yalms, ending there): a
 /// wall in the collision the navmesh doesn't have (a bump, a gimmick the director hasn't touched). One the navmesh goes
@@ -1054,6 +1095,27 @@ pub fn npc_behavior(
             _ => None,
         })
         .collect();
+    // Link families (SpawnNpc's `link_family`, `link_range`, `max_links`, from the zone's data): while one of a family is
+    // fighting, the rest of it within the family's range join it on its target, up to its limit (`link_target`).
+    let fighting_links: Vec<LinkMember> = instance
+        .actors
+        .values()
+        .filter_map(|actor| match actor {
+            NetworkedActor::Npc { spawn, state, .. }
+                if spawn.link_family != 0
+                    && *state == NpcState::Hate
+                    && spawn.common.health_points > 0
+                    && spawn.common.target_id.object_id.is_valid() =>
+            {
+                Some(LinkMember {
+                    family: spawn.link_family,
+                    position: spawn.common.position.0,
+                    target: spawn.common.target_id.object_id,
+                })
+            }
+            _ => None,
+        })
+        .collect();
     // mut pass
     for (id, actor) in &mut instance.actors {
         // A director's helper does only what it's told: it neither moves, notices, fights nor follows a timeline
@@ -1284,8 +1346,18 @@ pub fn npc_behavior(
                 let possible_enemies =
                     game_data.get_battalion_enemies(spawn.common.battalion as u32);
                 let room = room_of(spawn.common.layout_id);
-                // Pulled with the rest of its room: their target is its own (`Room`.)
-                let pulled_with = room.and_then(|room| room_targets.get(&room).copied());
+                // Pulled with the rest of its room: their target is its own (`Room`.) Or with its link family.
+                let pulled_with = room
+                    .and_then(|room| room_targets.get(&room).copied())
+                    .or_else(|| {
+                        link_target(
+                            &fighting_links,
+                            spawn.link_family,
+                            spawn.link_range,
+                            spawn.max_links,
+                            spawn.common.position.0,
+                        )
+                    });
 
                 for (target_id, position, battalion) in &enemies {
                     if pulled_with.is_some_and(|with| with != *target_id) {
