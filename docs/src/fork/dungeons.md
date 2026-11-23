@@ -40,6 +40,7 @@ gives its duty's facts:
 | `pack({ name, layouts, ready, effects, spawns, come_out, on_fall })` | Once every one of `layouts` is dead (and `ready()`): its map effects ({ index, timeline, state }), `spawns` spawned (or come out of hiding with `come_out`), `on_fall(director)`; `done[name]` after (`pack1`... if unnamed). |
 | `step({ name, ready, where, run })` | Somewhere the party's steps set something off, once: when `ready()` (if given) and anyone passes `where(member)`, `run(director)`; looked at in order every update. |
 | `boss({ id, layout, wall, line, place, middle, room, helpers, bgm, after_bgm, talker, waves, ready, last, comes_later, on_pull, on_cast, on_death, on_wipe, on_recommence })` | A boss and its room: `director:boss_room` at setup (`comes_later`: `bringBoss` brings it, with `spawn_boss`), the wall hidden and the line shown until a pull, `room` = { members, radius } kept to it (`director:keep_in_room`), its hidden `helpers` = { layout, count, release } brought and held (`release`: let go, ActorControl 417, before they go as it falls) (`helperAt`, `helpersCast`), pulled when hurt or after someone (never again after a wipe till it's home, whole and with no target), its music, `talker` = { name, pull, at = { { seconds, text } }, ms, still }: its talks at the pull and into its fight, `waves` = { action, after, list }: each cast of `action` brings the next wave `after` seconds on, each of it already in the boss's fight, with the party's enmity on the boss, so it goes for whoever holds the most (`director:join_fight`, 2026-11-23: retail's Black Eft's waves, 14 of 14 the moment they appeared), gone with its fall or a wipe; `last`: its fall ends the fights. |
+| `lead(director, layout, from, legs, on_end)` | An NPC leads the way from `from`, leg by leg: `{ to, speed }` runs there in a straight line (`director:sweep_bnpc`), `{ wait = s }` stands, `{ until_party = function(member) }` stands until anyone of the party is where the test says; then `on_end(director)`. Held all the while (`hold_bnpc`) and after (2026-11-23: Castrum Meridianum's Cid, who ran ahead, waited at a corner for the party and ran on to the generator). |
 | `update(director, health, player_health, info, between)` | Every update: the party, the steps, the pulls, then the script's `between(director)`, then what's due (`after`). |
 | `group` (a boss's) | Several that are the boss together: a room for each at setup, pulled with any, fallen with the last (`on_death` gets that one and where it fell); `layout` is the first (Haukke Manor's pair.) |
 | `pulled_by` (a boss's) | Layouts whose being after someone pulls the boss too (Brayflox's first boss's adds), even before the boss is out (the Tam-Tara Deepcroft's packs, whose fall calls their room's boss); after a wipe not till they're after nobody. |
@@ -1425,6 +1426,28 @@ tank was the boss's target, as I first wrote: an add that appears has pulled no 
 and the tank holds the most (its stance and enmity actions; Bob, 2026-11-23). A wave takes on the party's enmity on
 the boss, each as much as they hold there (`fight_enmity_of`), so a healer the boss turned on for a moment stays
 second. Tests `a_link_family_is_pulled_together`, `a_bosss_wave_takes_on_the_partys_enmity`.
+
+**Bob's later marks of 2026-11-23** (on `329afa044`):
+
+* *"thermobaric strike is doing no damage when it should"*: its 28779 is a helper's, and the helpers are level 1, so
+  a level 50 player was 49 levels above it and missed 40 % of the time (`npc_miss_percent`): 7 of its 12 hits that
+  run were misses. Retail's hit 8 of 8 (281f92fb), and retail's helpers hit players 79 levels above them 888 times in
+  924 across every capture at hand. In a duty with a level sync both sides now count at the duty's level
+  (`action::levels_for_a_miss`, [Combat](combat.md)). Its damage fell off with distance as retail's (Kawari 471-703,
+  retail 357-1356.)
+* *"characters are in the air"* (at the Vanguard's room's way in): the bots walked 0.38 to 0.5 yalms over the road,
+  on the surface over it ([Party bots](party-bots.md), "On the ground their player walked on"); put down from 0.25 now.
+* *"cid is staionary he should move to a specific location wait for us then begin moving to target the field
+  generator"*: he stood where he came out. Retail's, the same in four runs (af05916c, 6320ae56, deea324c, 281f92fb,
+  to a tenth of a yalm): with talk 33513 (0.1 to 0.3 s after it) he runs west at 8.0 yalms a second from (6.55,
+  71.16, -97.47) along the road, round its corner (-32.0, -96.0) to (-51.8, 68.9, -90.3), and waits there facing
+  north, 3.2 to 14.3 s; he runs on as the party goes by (0.3 to 2.9 s after one of them was north of z = -70 there),
+  to (-51.38, 68.53, -23.15), takes 9091115 (BNpcBase 14618, the generator) as his target 0.1 to 0.6 s later (SetTarget
+  alone, no other ActorControl) and hits it with 29159, 29159, 29160 every 2.05 s, each a Miss, its health untouched
+  (266 in the four runs), until the cutscene before the last room. Now the framework leads him (`D:lead`: legs that
+  run, wait, or wait for the party) and the script fights for show (`director:aim_bnpc`, `director:show_attacks`).
+  Whether he waits for the party or for something else at the corner is read from where they were: in one run the
+  player was 26 yalms off and only the Duty Support members went by. Test `CastrumCidTest` (questkit).
 
 Retail's Black Eft held where its tank met it (it lunged 4 yalms at the tank and came back, 1.9 yalms from where it
 was pulled, not its arena's middle): no `fights_from` (`questkit chronofoil --spots`). Test

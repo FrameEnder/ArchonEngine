@@ -582,6 +582,14 @@ pub enum LuaDirectorTask {
         who: u32,
         seconds: f32,
     },
+    /// A BNpc's (actor ID or layout ID) attacks on another (`on`) are only shown, or (`shown` false) real again: each
+    /// hit lands as a miss and does nothing (`Instance::shown_attacks`). Retail's Cid hit Castrum Meridianum's 9091115
+    /// with 29159 and 29160 every 2 s until the cutscene, every one a Miss, its health untouched (four runs.)
+    ShowAttacks {
+        who: u32,
+        on: u32,
+        shown: bool,
+    },
     /// Keep a BNpc (actor ID or layout ID) where it stands for `seconds`: it doesn't move, but acts as ever (its
     /// timeline, its attacks), as retail's Lady Amandine stood 4.9 s beside her eye where she'd leapt, using her 28643
     /// there (`Instance::rooted_npcs`.)
@@ -624,6 +632,13 @@ pub enum LuaDirectorTask {
     },
     /// `director:engage_bnpc`: into a fight, after `target` (its weapon drawn, its nameplate red), or out of it.
     EngageBattleNpc {
+        who: u32,
+        target: Option<u32>,
+    },
+    /// `director:aim_bnpc`: a BNpc's target (SetTarget) and nothing else, its weapon and battle left as they are, or
+    /// cleared: retail's Cid took Castrum Meridianum's 9091115 as his target 0.1 to 0.6 s after reaching it, with no
+    /// other ActorControl (four runs.)
+    AimBattleNpc {
         who: u32,
         target: Option<u32>,
     },
@@ -674,6 +689,16 @@ pub fn engage_npc(
         actor_id,
         ActorControlCategory::SetBattle { battle: fighting },
     );
+    aim_npc(network, instance, actor_id, target);
+}
+
+/// An NPC's target (`director:aim_bnpc`, and `engage_npc`'s last): SetTarget to everyone around, and its spawn's.
+pub fn aim_npc(
+    network: &mut NetworkState,
+    instance: &mut Instance,
+    actor_id: ObjectId,
+    target: Option<ObjectId>,
+) {
     let aimed = ObjectTypeId {
         object_id: target.unwrap_or_default(),
         object_type: ObjectTypeKind::None,
@@ -1619,6 +1644,17 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::JoinFight { who, with });
             Ok(())
         });
+        methods.add_method_mut(
+            "show_attacks",
+            |_, this, (who, on, shown): (u32, u32, Option<bool>)| {
+                this.tasks.push(LuaDirectorTask::ShowAttacks {
+                    who,
+                    on,
+                    shown: shown.unwrap_or(true),
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("hold_timeline", |_, this, (who, seconds): (u32, f32)| {
             this.tasks
                 .push(LuaDirectorTask::HoldTimeline { who, seconds });
@@ -1739,6 +1775,11 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
+        methods.add_method_mut("aim_bnpc", |_, this, (who, target): (u32, Option<u32>)| {
+            this.tasks
+                .push(LuaDirectorTask::AimBattleNpc { who, target });
+            Ok(())
+        });
         methods.add_method_mut(
             "hold_attacks",
             |_, this, (who, held): (u32, Option<bool>)| {
@@ -4658,6 +4699,19 @@ pub fn director_tick(
                     }
                 }
             }
+            LuaDirectorTask::ShowAttacks { who, on, shown } => {
+                let (Some(actor_id), Some(target_id)) =
+                    (resolve_bnpc(instance, *who), resolve_bnpc(instance, *on))
+                else {
+                    tracing::warn!("Failed to find bnpc {who} or {on} for show_attacks!");
+                    continue;
+                };
+                if *shown {
+                    instance.shown_attacks.insert((actor_id, target_id));
+                } else {
+                    instance.shown_attacks.remove(&(actor_id, target_id));
+                }
+            }
             LuaDirectorTask::HoldTimeline { who, seconds } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {
                     tracing::warn!("Failed to find bnpc {who} to hold its timeline!");
@@ -4693,6 +4747,14 @@ pub fn director_tick(
                 };
                 let target_id = target.and_then(|target| resolve_bnpc(instance, target));
                 engage_npc(&mut network.lock(), instance, actor_id, target_id);
+            }
+            LuaDirectorTask::AimBattleNpc { who, target } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to aim!");
+                    continue;
+                };
+                let target_id = target.and_then(|target| resolve_bnpc(instance, target));
+                aim_npc(&mut network.lock(), instance, actor_id, target_id);
             }
             LuaDirectorTask::HoldAttacks { who, held } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {

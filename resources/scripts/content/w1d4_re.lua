@@ -221,7 +221,24 @@ APPEAR_TIMELINE = 142
 APPEAR_AFTER = 0.7
 
 -- Who comes out with the second boss's fall and with the last cutscene (`nonpop` in the drop-in.)
-AFTER_BOSS2 = { GUIDE, 9091115 }
+GENERATOR = 9091115 -- BNpcBase 14618, at the hidden three's corner (Bob: "the field generator")
+AFTER_BOSS2 = { GUIDE, GENERATOR }
+
+-- Cid's way to the generator (`D:lead`; Bob's captures af05916c, 6320ae56, deea324c and 281f92fb, the same each time
+-- to a tenth of a yalm): from where he comes out he runs at 8.0 yalms a second, 0.1 to 0.3 s after talk 33513, west
+-- along the road, round its corner and to the corner by the way talk 33512 opened, and waits there facing north. He
+-- runs on once the party has caught up and gone by (0.3 to 2.9 s after one of them was north of z = -70 there in the
+-- four runs, 3.2 to 14.3 s after he got there), to the generator, takes it as his target (0.1 to 0.6 s on) and hits
+-- it every 2.05 s, 29159, 29159, 29160 over and over, each a Miss (266 in the four runs, its health untouched), until
+-- the cutscene before the last room (the last 0.1 to 1.2 s before it.)
+CID_FROM = { x = 6.55, y = 71.16, z = -97.47 }
+CID_SPEED = 8.0
+CID_WAY = { { x = -32.0, y = 69.06, z = -96.0 }, { x = -51.8, y = 68.9, z = -90.3 } }
+CID_GOES_ON_Z = -70.0
+CID_GOES_ON_X = -40.0
+CID_FIGHTS_FROM = { x = -51.38, y = 68.53, z = -23.15, rotation = -0.54 }
+CID_ATTACKS = { 29159, 29159, 29160 }
+CID_ATTACK_EVERY = 2.05
 AT_THE_LAST_ROOM = { 9206933, 9206934 }
 CUTSCENE_LAST = 275
 CUTSCENE_LAST_PARAMS = { 0, 151, 0, 0 }
@@ -243,6 +260,32 @@ boss3_free_at = 0
 
 function talk(director, text)
     director:battle_talk(GUIDE, NAME_GUIDE, text, 0, TALK_MS)
+end
+
+-- Cid hits the generator (CID_ATTACKS in turn) until the cutscene before the last room.
+local function cidAttacks(director, n)
+    if D.done.cutscene_played then
+        return
+    end
+    director:use_action(GUIDE, CID_ATTACKS[(n - 1) % #CID_ATTACKS + 1], GENERATOR)
+    D:after(CID_ATTACK_EVERY, function(d) cidAttacks(d, n + 1) end)
+end
+
+-- Cid leads the way to the generator (CID_WAY), waiting for the party at the corner.
+function cidLeads(director)
+    local legs = {}
+    for _, spot in ipairs(CID_WAY) do
+        table.insert(legs, { to = spot, speed = CID_SPEED })
+    end
+    table.insert(legs, { until_party = function(m) return m.z > CID_GOES_ON_Z and m.x < CID_GOES_ON_X end })
+    table.insert(legs, { to = CID_FIGHTS_FROM, speed = CID_SPEED })
+    D:lead(director, GUIDE, CID_FROM, legs, function(d)
+        local at = CID_FIGHTS_FROM
+        d:move_bnpc(GUIDE, at.x, at.y, at.z, at.rotation)
+        d:show_attacks(GUIDE, GENERATOR)
+        cidAttacks(d, 1)
+        D:after(0.5, function(d2) d2:aim_bnpc(GUIDE, GENERATOR) end)
+    end)
 end
 
 -- ---- The packs whose fall opens the way ----
@@ -294,7 +337,10 @@ D:step({ name = "ambush", ready = function() return D.dead[BOSS2] == true end,
     run = function(d) D:comeOut(d, AMBUSH, APPEAR_TIMELINE, APPEAR_AFTER) end })
 D:step({ name = "talk_33513", ready = done("talk_33512"),
     where = function(m) return m.z < WHERE_TALK_33513_Z and m.x < 30 end,
-    run = function(d) talk(d, 33513) end })
+    run = function(d)
+        talk(d, 33513)
+        cidLeads(d)
+    end })
 D:step({ name = "talk_33514", ready = done("talk_33513"),
     where = function(m) return m.x < WHERE_TALK_33514_X and m.z < -40 end,
     run = function(d) talk(d, 33514) end })
@@ -571,6 +617,7 @@ function onActorDeath(director, layout_id, position)
     if D.done.two and not D.done.cutscene and D:allDead(TWO) and D:allDead(SIX) then
         D:once("cutscene")
         D:after(CUTSCENE_LAST_AFTER, function(d)
+            D:once("cutscene_played")
             d:play_cutscene(CUTSCENE_LAST, CUTSCENE_LAST_PARAMS)
             d:hide_eobj(EOBJ_BEFORE_LAST)
             D:bringBoss(d, D:bossById(3))

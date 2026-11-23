@@ -299,6 +299,10 @@ pub struct Instance {
     /// NPCs whose timelines a director holds until when (`director:hold_timeline`): what comes due waits until then,
     /// while they move and auto-attack as ever.
     pub timeline_held: HashMap<ObjectId, std::time::Instant>,
+    /// Attacks only shown (`director:show_attacks`): each (attacker, target) here, every hit of the attacker's on the
+    /// target lands as a miss and does nothing, as retail's Cid's 29159 and 29160 on Castrum Meridianum's
+    /// 9091115 (every one of 266 in four runs a Miss, its health untouched.)
+    pub shown_attacks: HashSet<(ObjectId, ObjectId)>,
     /// NPCs a director keeps where they stand until when (`director:root_bnpc`): they don't move, but act as ever (their
     /// timeline, their attacks.)
     pub rooted_npcs: HashMap<ObjectId, std::time::Instant>,

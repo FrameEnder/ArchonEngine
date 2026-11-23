@@ -107,13 +107,33 @@ const NPC_PARRY_MULTIPLIER: f32 = 0.83;
 /// How often an NPC's attack on a player misses, in percent, by how many levels the player is above it (Bob's
 /// Chronofoil captures: 0-3 % at the same level or below the enemy, 12-14 % 1-2 above, 21-30 % 3-10 above, 32-53 %
 /// further.)
-fn npc_miss_percent(player_level: u8, enemy_level: u8) -> u8 {
+///
+/// In a duty with a level sync, each side counts at the duty's level (`levels_for_a_miss`.)
+pub(crate) fn npc_miss_percent(player_level: u8, enemy_level: u8) -> u8 {
     match player_level.saturating_sub(enemy_level) {
         0 => 2,
         1..=2 => 12,
         3..=10 => 25,
         _ => 40,
     }
+}
+
+/// The levels a miss goes by (`npc_miss_percent`, player's then the NPC's): in a duty with a level sync, the player's
+/// no higher than it and the NPC's no lower. A boss's helpers are level 1 (retail's as Kawari's), which put a level 50
+/// player 49 above them and missed 40 % of their mechanics: Castrum Meridianum's Thermobaric Strike missed 7 of 12 in
+/// Bob's run of 2026-11-23 ("thermobaric strike is doing no damage when it should"). Retail's helpers hit as an enemy
+/// of the duty's level does: Thermobaric Strike 8 of 8 (capture 281f92fb), and helpers' attacks on players 79 levels
+/// above them 888 of 924 (96 %, every Chronofoil capture at hand.)
+pub(crate) fn levels_for_a_miss(instance: &Instance, player_level: u8, npc_level: u8) -> (u8, u8) {
+    match instance.synced_level {
+        Some(synced) if synced > 0 => (player_level.min(synced), npc_level.max(synced)),
+        _ => (player_level, npc_level),
+    }
+}
+
+/// Whether `from`'s attacks on `target` are only shown, each a miss (`director:show_attacks`.)
+pub(crate) fn only_shown(instance: &Instance, from: ObjectId, target: ObjectId) -> bool {
+    instance.shown_attacks.contains(&(from, target))
 }
 
 /// What to multiply an NPC's damage against players by: its recorded retail auto-attack damage over what its stats
@@ -1371,6 +1391,19 @@ pub fn execute_action(
             effects_builder.effects.clear();
         }
 
+        // An attack a director only shows (`director:show_attacks`) is a miss on that target: no damage, no status.
+        if let Some(effects_builder) = &mut effects_builder
+            && only_shown(instance, from_actor_id, request.target.object_id)
+        {
+            effects_builder.effects = vec![TargetEffect(TargetEffectKind::Miss)];
+            effects_builder.periodic.clear();
+        }
+        for (id, effects) in &mut area_bystanders {
+            if only_shown(instance, from_actor_id, *id) {
+                *effects = vec![TargetEffect(TargetEffectKind::Miss)];
+            }
+        }
+
         // A gaze lands only on those facing the caster; the rest are missed (their status and damage both), and stay
         // in the result as a miss, as retail showed them.
         if let Some(effects_builder) = &mut effects_builder
@@ -1396,13 +1429,15 @@ pub fn execute_action(
 
         // What retail's recording says this NPC's action does to this kind of target (Timeline::recorded_amounts):
         // allies and enemies in quest battles hurt and heal each other, and the player, as much as they did there.
-        let miss_percent = npc_miss_percent(
+        let (target_level, caster_level) = levels_for_a_miss(
+            instance,
             instance
                 .find_actor(request.target.object_id)
                 .map(|target| target.get_common_spawn().level)
                 .unwrap_or(common_spawn.level),
             common_spawn.level,
         );
+        let miss_percent = npc_miss_percent(target_level, caster_level);
         let recorded = recorded_for(request.target.object_id);
 
         if let Some(recorded) = recorded
@@ -1457,8 +1492,12 @@ pub fn execute_action(
                 _ => None,
             };
             if let Some(scale) = scale {
-                let miss_percent =
-                    npc_miss_percent(bystander.get_common_spawn().level, common_spawn.level);
+                let (bystander_level, caster_level) = levels_for_a_miss(
+                    instance,
+                    bystander.get_common_spawn().level,
+                    common_spawn.level,
+                );
+                let miss_percent = npc_miss_percent(bystander_level, caster_level);
                 roll_npc_hit(effects, scale, miss_percent);
             }
             // One that can't be hurt shows it (effect 7) and takes nothing, as a target does.

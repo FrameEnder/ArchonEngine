@@ -300,7 +300,11 @@ Enemies still compute damage like players do (stat × potency), which is far too
 * Every hit on a player varies ±5 %, crits 5 % of the time for 1.5× (retail 6.0 %, ×1.50), is parried 5 % for 83 %
   damage (retail 5–6 % on Bob, 7–9 % on tanks, 0.83×), and misses by how far the player is above the enemy
   (`npc_miss_percent`, from the captures): 2 % at the same level or below it, 12 % 1–2 levels above, 25 % 3–10 above,
-  40 % more (retail 0–3 %, 12–14 %, 21–30 %, 32–53 %). It was a flat 8 %.
+  40 % more (retail 0–3 %, 12–14 %, 21–30 %, 32–53 %). It was a flat 8 %. **In a duty with a level sync** each side
+  counts at the duty's level (since 2026-11-23, `levels_for_a_miss`: the player no higher, the NPC no lower): a boss's
+  helpers are level 1, and missed a level 50 player 40 % of the time, Castrum Meridianum's Thermobaric Strike 7 of 12
+  (Bob's mark, "doing no damage when it should"); retail's hit 8 of 8, and helpers' attacks on players 79 levels above
+  them landed 888 times in 924 (every capture at hand). Test `a_helper_hits_as_the_dutys_level`.
 * **A recorded amount is what a damage dealer or healer took.** Bob's Paladin (2026-11-18, capture 6320ae56, level
   50 with Duty Support) took 1/1.75 of what his other jobs had from Castrum Meridianum's enemies' auto-attacks
   (eight kinds: 1/1.67 to 1/1.87) and about 1/1.5 from its spells and from the Porta Decumana's attacks (nine

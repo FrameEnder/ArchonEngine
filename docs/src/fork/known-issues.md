@@ -37,6 +37,8 @@ twice, the Porta Decumana and the last quest battle twice, then the Waking Sands
   places that set things off on the way (the first talks, map effects 2-3 and 8-9, the three in hiding, talks 33510,
   33513 and 33514, the objectives as a boss's room is entered) are where the party was in the runs, not the game's
   event ranges; a party that takes another line may set them off early, late or not at all (the script's `WHERE_*`).
+  Cid goes on from the corner as the party passes north of z = -70 there (`CID_GOES_ON_Z`, 0.3 to 2.9 s before he
+  did in four runs), also a reading of where they were rather than the game's own condition.
   What the map effects are (gates, lights) isn't known either: they're sent when retail sent them, and whether
   Kawari's collision lets the party through before them is untested. The device after the first boss sends every
   player on at once (`warp_players`), not only who used it. Also guessed: the bosses' rounds past the runs (the first's seen to 243 s, the others' twice), the last

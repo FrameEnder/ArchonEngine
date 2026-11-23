@@ -680,6 +680,13 @@ player's height too (`on_the_players_ground`, from `Instance::footsteps`: the pl
 floor is the ground). Test `a_bot_walks_on_the_ground_its_player_walked_on`. What the surface over the road is isn't
 known (no collision file here); where no player walked it can still happen.
 
+From 0.25 yalms over since 2026-11-23 (Bob's mark at the Magitek Vanguard's way in, "characters are in the air"): the
+bots stood 0.38 to 0.5 over the road there, where retail's players stood at 70.6 to 70.88 within a yalm (281f92fb),
+which the 0.5 let be. The floor it's put down on is the highest within 0.5 of the player's step and below the one it's
+on (a slope the player walked lower on leaves it be). Every bot put down that day (17, from 0.50 to 0.97 over) had
+been on a surface of material 0x7006, which vnavmesh's reading counts as ground; it isn't left out of the floors as
+long as no collision file says what it is.
+
 **Same navigation as the enemies; what was missing was the material bits** (Bob, 2026-11-21: "why is using the
 navmesh like the monsters, and questionable the plugin can do so hard of a workaround … something is wrong with the
 playerNPC implementation of navigation"). Player NPCs and enemies go the same way: a path on the navmesh, each step on

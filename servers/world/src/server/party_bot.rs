@@ -515,9 +515,14 @@ const TRODDEN_WITHIN: f32 = 1.5;
 /// The trail's nearest step to a bot this far off at most is where it joins it.
 const TRAIL_JOIN: f32 = 4.0;
 
-/// How much higher than the ground its player walked on nearby a bot may stand before it's put down on that ground,
-/// and how near (across) a step of theirs counts.
-const OVER_THE_PLAYERS_GROUND: f32 = 0.5;
+/// How much higher than the ground its player walked on nearby a bot may stand before it's put down on that ground
+/// (where the collision has a floor within `PLAYERS_FLOOR_WITHIN` of their step), and how near (across) a step of
+/// theirs counts. It was 0.5 (2026-11-21), and Castrum Meridianum's bots walked 0.38 to 0.5 over the road there
+/// (Bob's mark of 2026-11-23, "characters are in the air", at (-4.2, 70.8, 62.7): the server had them at 70.3 to 71.4,
+/// retail's players at 70.6 to 70.88 within a yalm, capture 281f92fb). Every bot put down that day (17) had been on the
+/// same surface over it, material 0x7006, from 0.50 to 0.97 up: none of it is ground players stand on.
+const OVER_THE_PLAYERS_GROUND: f32 = 0.25;
+const PLAYERS_FLOOR_WITHIN: f32 = 0.5;
 const PLAYERS_GROUND_WITHIN: f32 = 1.5;
 
 /// `at`, on the ground its player walked on there when the zone's collision has it standing higher (by more than
@@ -542,11 +547,12 @@ fn on_the_players_ground(collision: Option<&Collision>, trail: &[Vec3A], at: Vec
     if at.y - step.y <= OVER_THE_PLAYERS_GROUND {
         return at;
     }
+    // Only a floor below the one it's on (`floor` takes the highest in reach.)
     match collision.floor(
         at.x,
         at.z,
-        step.y + OVER_THE_PLAYERS_GROUND,
-        step.y - OVER_THE_PLAYERS_GROUND,
+        (step.y + PLAYERS_FLOOR_WITHIN).min(at.y - OVER_THE_PLAYERS_GROUND),
+        step.y - PLAYERS_FLOOR_WITHIN,
     ) {
         Some(y) => {
             // Which surface it was on, for the bundles: what the collision has there that the client doesn't.
@@ -5228,6 +5234,23 @@ mod tests {
         let away = Vec3A::new(6.0, 88.8, 6.0);
         assert_eq!(on_the_players_ground(Some(&collision), &trail, away), away);
         assert_eq!(on_the_players_ground(None, &trail, lifted), lifted);
+
+        // Bob's mark of 2026-11-23, "characters are in the air": the bots 0.38 to 0.5 over it, which the 0.5 before
+        // left be. And a slope the player walked a little lower on (no floor under the bot but its own): as it is.
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        quad(&mut v, &mut t, 70.85); // the road
+        quad(&mut v, &mut t, 71.3); // the surface over it
+        let count = t.len();
+        let collision = Collision::build(v, t, vec![0; count], vec![0; count], 0.75, 0.4, 55.0);
+        let trail = vec![Vec3A::new(0.0, 70.88, 0.0)];
+        let put = on_the_players_ground(Some(&collision), &trail, Vec3A::new(0.5, 71.3, 0.5));
+        assert!((put.y - 70.85).abs() < 0.01, "{put}");
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        quad(&mut v, &mut t, 71.3);
+        let count = t.len();
+        let slope = Collision::build(v, t, vec![0; count], vec![0; count], 0.75, 0.4, 55.0);
+        let on_it = Vec3A::new(0.5, 71.3, 0.5);
+        assert_eq!(on_the_players_ground(Some(&slope), &trail, on_it), on_it);
     }
 
     #[test]

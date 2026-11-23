@@ -63,6 +63,8 @@ function Dungeon.new()
     -- The duty's own clock in seconds (half a second an update), and what's due on it (`inSeconds`.)
     self.clock = 0
     self.timed = {}
+    -- NPCs leading the way (`lead`.)
+    self.leads = {}
     return self
 end
 
@@ -189,6 +191,58 @@ function Dungeon:comeOut(director, layouts, timeline, after)
         director:spawn_bnpc(layout)
         director:appear_bnpc(layout, timeline or Dungeon.APPEAR_TIMELINE, after or Dungeon.APPEAR_AFTER)
     end
+end
+
+-- ---- Leading the way ----
+
+-- An NPC (layout ID) leads the way from `from` ({ x, y, z }, where it stands), leg by leg: { to = { x, y, z }, speed =
+-- yalms a second } runs it there in a straight line (`director:sweep_bnpc`), { wait = seconds } stands, and
+-- { until_party = function(member) } stands until anyone of the party is where the test says; then
+-- `on_end(director)`. It's held all the while (`director:hold_bnpc`), so nothing else moves it, and stays held.
+-- Retail's Cid in Castrum Meridianum ran ahead of the party, waited at a corner until they'd caught up and gone by,
+-- and ran on to where he fought (four runs; Bob's mark of 2026-11-23: "cid is stationary he should move to a specific
+-- location wait for us then begin moving".)
+function Dungeon:lead(director, layout, from, legs, on_end)
+    director:hold_bnpc(layout)
+    table.insert(self.leads, { layout = layout, at = { x = from.x, y = from.y, z = from.z }, legs = legs, leg = 1,
+                               on_end = on_end })
+end
+
+function Dungeon:runLeads(director)
+    local going = {}
+    for _, lead in ipairs(self.leads) do
+        while true do
+            local leg = lead.legs[lead.leg]
+            if leg == nil then
+                if lead.on_end ~= nil then
+                    lead.on_end(director)
+                end
+                break
+            end
+            if lead.until_clock ~= nil then
+                -- (Half a second an update: a leg ending between two is done at the later.)
+                if self.clock + 1e-6 < lead.until_clock then
+                    table.insert(going, lead)
+                    break
+                end
+                lead.until_clock = nil
+                lead.leg = lead.leg + 1
+            elseif leg.to ~= nil then
+                director:sweep_bnpc(lead.layout, leg.to.x, leg.to.y, leg.to.z, leg.speed)
+                local dx, dz = leg.to.x - lead.at.x, leg.to.z - lead.at.z
+                lead.until_clock = self.clock + math.sqrt(dx * dx + dz * dz) / leg.speed
+                lead.at = { x = leg.to.x, y = leg.to.y, z = leg.to.z }
+            elseif leg.wait ~= nil then
+                lead.until_clock = self.clock + leg.wait
+            elseif leg.until_party ~= nil and self:anyone(leg.until_party) then
+                lead.leg = lead.leg + 1
+            else
+                table.insert(going, lead)
+                break
+            end
+        end
+    end
+    self.leads = going
 end
 
 -- ---- Packs ----
@@ -525,6 +579,7 @@ function Dungeon:update(director, health, player_health, info, between)
             end
         end
         self:checkSteps(director)
+        self:runLeads(director)
         if self.fight == nil then
             for _, boss in ipairs(self.bosses) do
                 local fallen = boss.group and self:allDead(boss.group) or (not boss.group and self.dead[boss.layout])

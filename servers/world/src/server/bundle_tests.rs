@@ -2053,3 +2053,39 @@ fn only_a_hit_can_miss() {
     assert_eq!(effects.len(), 1);
     assert_eq!(effects[0].0, TargetEffectKind::Miss);
 }
+
+/// Bob's mark of 2026-11-23 in Castrum Meridianum: "thermobaric strike is doing no damage when it should". Its 28779 is
+/// a helper's, level 1 (retail's as Kawari's), so a level 50 player was 49 above it and 40 % of its hits missed (7 of
+/// 12 that run). Retail's helpers hit as the duty's enemies: Thermobaric Strike 8 of 8 (capture 281f92fb), helpers'
+/// attacks on players 79 levels above 888 of 924. In a synced duty each side counts at the duty's level.
+#[test]
+fn a_helper_hits_as_the_dutys_level() {
+    use crate::server::action::{levels_for_a_miss, npc_miss_percent};
+    let mut world = TestWorld::new();
+    world.instance.synced_level = Some(50);
+    let (player, helper) = levels_for_a_miss(&world.instance, 50, 1);
+    assert_eq!((player, helper), (50, 50));
+    assert_eq!(npc_miss_percent(player, helper), 2);
+    // A higher player synced down; an enemy above the sync keeps its level.
+    assert_eq!(levels_for_a_miss(&world.instance, 90, 1), (50, 50));
+    assert_eq!(levels_for_a_miss(&world.instance, 50, 52), (50, 52));
+    // Unsynced (the open world, a duty above the player): as they are.
+    world.instance.synced_level = None;
+    assert_eq!(levels_for_a_miss(&world.instance, 50, 1), (50, 1));
+}
+
+/// Bob's mark of 2026-11-23 in Castrum Meridianum: "cid is staionary he should move to a specific location wait for us
+/// then begin moving to target the field generator". At the generator retail's Cid hit it every 2.05 s, each a Miss
+/// (266 in four runs), its health untouched: `director:show_attacks` (`only_shown`), for him on it and no one else.
+#[test]
+fn a_shown_attack_is_only_shown() {
+    use crate::server::action::only_shown;
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let cid = world.enemy(ENEMY, [0.0, 0.0, 3.0], 258900);
+    let generator = world.enemy(ENEMY + 1, [0.0, 0.0, 6.0], 2589);
+    world.instance.shown_attacks.insert((cid, generator));
+    assert!(only_shown(&world.instance, cid, generator));
+    assert!(!only_shown(&world.instance, cid, player));
+    assert!(!only_shown(&world.instance, generator, cid));
+}

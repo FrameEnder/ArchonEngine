@@ -1463,6 +1463,48 @@ class CastrumVanguardTest(FrameworkScriptTest):
         self.assertGreaterEqual(self.held_for(28780), 4.7)
 
 
+class CastrumCidTest(FrameworkScriptTest):
+    """Castrum Meridianum's Cid leads the way (`D:lead`): with talk 33513 he runs to the corner, waits there until the
+    party has gone by, runs on to the generator and hits it every 2.05 s, each only shown, until the cutscene (Bob's
+    mark of 2026-11-23: "cid is staionary he should move to a specific location wait for us then begin moving to
+    target the field generator"; four retail runs)."""
+
+    SCRIPT = "w1d4_re.lua"
+
+    def at(self, x, z):
+        self.update({"player1": {"x": x, "y": 69, "z": z, "id": 11}})
+
+    def test_he_leads_waits_and_fights_for_show(self):
+        g = self.lua.globals()
+        g.D.done.talk_33512 = True
+        self.at(5.0, -80.0)
+        sweeps = self.named("sweep_bnpc")
+        self.assertEqual([(args[0], round(args[1], 1), round(args[3], 1)) for args in sweeps],
+                         [(9089788, -32.0, -96.0)])
+        self.assertIn([9089788], self.named("hold_bnpc"))
+        # 38.6 then 20.6 yalms at 8 a second: at the corner by 7.4 s, and there he waits for the party.
+        for _ in range(30):
+            self.at(-45.0, -92.0)
+        self.assertEqual(len(self.named("sweep_bnpc")), 2)
+        # Someone gone by him, north: he runs on, and at the generator takes it as his target and hits it.
+        self.at(-52.0, -69.0)
+        self.assertEqual(round(self.named("sweep_bnpc")[2][3], 2), -23.15)
+        # 67.2 yalms: there by 8.4 s, then a hit every 2.05 s.
+        for _ in range(40):
+            self.at(-58.0, -53.0)
+        self.assertEqual(self.named("show_attacks"), [[9089788, 9091115]])
+        self.assertEqual(self.named("aim_bnpc"), [[9089788, 9091115]])
+        hits = [args[1] for args in self.named("use_action") if args[0] == 9089788]
+        self.assertEqual(hits[:3], [29159, 29159, 29160])
+        self.assertTrue(all(args[2] == 9091115 for args in self.named("use_action") if args[0] == 9089788))
+        # The cutscene: no more.
+        g.D.done.cutscene_played = True
+        count = len(self.named("use_action"))
+        for _ in range(10):
+            self.at(-58.0, -53.0)
+        self.assertEqual(len(self.named("use_action")), count)
+
+
 class NavelTitanTest(FrameworkScriptTest):
     """The Navel's script on the dungeon framework: Rock Throw gaols whom it's aimed at (the framework's `cast` passes
     the target on), which `duty-sim` never plays (retail's recordings don't give it the cast); Weight of the Land under
