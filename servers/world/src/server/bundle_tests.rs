@@ -393,6 +393,68 @@ fn a_boss_rooms_enemies_keep_to_it() {
     assert!(crate::map_effect_barriers::takes_down(1043, 1, 2, 1));
 }
 
+/// Bob's run of Castrum Meridianum, 2026-11-22 (harness capture zone-1795359118): "allies and boss left the damn arena",
+/// "Magitek Vanguard F-1 … needs to be in center of arena for his large area of effect attack", "walls are still
+/// blocking NPCS". Dodging out past the Vanguard's ring (28782, 12.5 to 30 from the middle), three bots walked through
+/// its arena's east side (held at x = 6) after their 2 s, and it chased them out, casting from 30 yalms off the middle;
+/// retail's walked to the middle in 3 s and never moved again (capture 281f92fb).
+#[test]
+fn castrum_meridianums_vanguard_holds_its_middle_and_nobody_walks_through_its_walls() {
+    use crate::server::npc_behavior::{holds_spot, joins_directly};
+    // Its timeline fights from the middle (`fights_from`).
+    let timeline: kawari::common::Timeline = serde_json::from_str(
+        &std::fs::read_to_string("../../resources/timelines/CastrumMeridianumBoss2_14541.json")
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(timeline.fights_from, Some([-13.0, 70.1, 31.0]));
+    // While fighting someone it goes to its spot, not to them; walking home after the fight, home.
+    let middle = Vec3A::new(-13.0, 70.1, 31.0);
+    assert_eq!(
+        holds_spot(
+            &timeline,
+            &crate::server::actor::NpcTarget::Actor(ObjectId(7))
+        ),
+        Some(middle)
+    );
+    let home = crate::server::actor::NpcTarget::Position(Vec3A::new(-14.1, 70.1, 25.1));
+    assert_eq!(holds_spot(&timeline, &home), None);
+
+    // A wall the navmesh goes round stops a walker: from the east side's inside (x = 6) to the courtyard past it, the
+    // navmesh's way is round by the door, many times the distance.
+    let inside = Vec3A::new(6.0, 70.1, 14.0);
+    let outside = Vec3A::new(8.0, 70.1, 14.0);
+    let round_by_the_door = [
+        Vec3A::new(-13.0, 70.1, 50.0),
+        Vec3A::new(-13.0, 70.1, 60.0),
+        Vec3A::new(8.0, 70.1, 40.0),
+        outside,
+    ];
+    assert!(!joins_directly(inside, outside, &round_by_the_door));
+    // Nor where the navmesh has no way there at all.
+    assert!(!joins_directly(inside, outside, &[]));
+    // A bump the navmesh doesn't have (its way goes straight on) lets it on.
+    assert!(joins_directly(inside, outside, &[outside]));
+
+    // Its floor as a shape (Boss Mod's arena): the bots stay on it, 0.5 in from its edge.
+    let floor = crate::server::director::ArenaFloor {
+        x: -13.0,
+        z: 31.0,
+        half_x: 20.0,
+        half_z: 20.0,
+        round: false,
+    };
+    let arena = crate::server::dodge::Arena::from_floor(&floor);
+    assert!(arena.holds(Vec3A::new(6.0, 70.1, 14.0)));
+    assert!(!arena.holds(Vec3A::new(8.0, 70.1, 14.0)));
+    assert!(
+        !arena.holds(Vec3A::new(2.5, 70.1, 8.2)),
+        "where a bot went in Bob's run"
+    );
+    // Out past the ring (30 from the middle) is off the floor everywhere, so the bots dodge into the hole instead.
+    assert!(!arena.holds(Vec3A::new(-13.0 + 30.5, 70.1, 31.0)));
+}
+
 /// Bob's run of Castrum Meridianum, 2026-11-21: "the area of effect data … not even attached to the enemy". Retail
 /// placed 29174 (BNpcBase 14573's 2.7 s cast, named to no one) on the caster's own spot in all five of its retail runs;
 /// Kawari aimed it at the caster's target, 3 to 4 yalms off. An area retail placed on the ground at the caster is cast

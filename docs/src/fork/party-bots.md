@@ -600,6 +600,12 @@ From Bob's bundle 20261110-182408 (the Stone Vigil, a party of Player NPCs):
 
 ## Boss fights: spots of their own (2026-11-10)
 
+(2026-11-22) A boss room's floor can be a shape where its range isn't known (`director:boss_room` / `spawn_boss`'s
+arena as `{ x, z, half_x, half_z, round }`, `director::ArenaFloor`; `dodge::arena` takes it first): Castrum
+Meridianum's three, from Boss Mod's arenas. The bots' spots and dodges keep to it as to a range; without one, Bob's bots
+dodged out past the Magitek Vanguard F-1's ring and through its arena's side. They no longer walk through a wall the
+navmesh goes round after their 2 s either (combat.md, "No walking through a wall the navmesh goes round").
+
 Bob, 2026-11-10: "have the NPCs act more freely rather than snapping onto the leader until after the death of the
 boss, have them stand in their spots, and move accordingly as needed to stay close to where they need to be."
 

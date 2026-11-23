@@ -301,6 +301,50 @@ pub fn past_a_wall(
     Some(Vec3A::new(along.x, y, along.z))
 }
 
+/// Whether the navmesh lets a walker held up by a wall at `here` go on past it to `to`: when there's navmesh at `to`,
+/// only if the navmesh joins the two directly (a path no longer than twice the distance and 2 yalms, ending there): a
+/// wall in the collision the navmesh doesn't have (a bump, a gimmick the director hasn't touched). One the navmesh goes
+/// round, or keeps apart, is a real wall, and it stays one: Bob's mark of 2026-11-22 in Castrum Meridianum, "allies and
+/// boss left the damn arena": dodging out past the Magitek Vanguard F-1's ring, three bots walked through his arena's
+/// side after their 2 s and he followed them, again and again. Where there's no navmesh at `to` (a path's tail past
+/// where the navmesh ends: Yda's in Brotherly Love), it goes on as before.
+pub fn navmesh_lets_past(navmesh: &crate::navmesh::Navmesh, here: Vec3A, to: Vec3A) -> bool {
+    if !navmesh.is_available() || navmesh.ground_under(to).is_none() {
+        return true;
+    }
+    joins_directly(here, to, &navmesh.calculate_path(here, to, 0.0))
+}
+
+/// Whether the navmesh's `path` from `here` to `to` joins them directly: it ends there, and is no longer than twice the
+/// distance and 2 yalms (`navmesh_lets_past`.)
+pub fn joins_directly(here: Vec3A, to: Vec3A, path: &[Vec3A]) -> bool {
+    let Some(end) = path.last() else {
+        return false;
+    };
+    let mut length = 0.0;
+    let mut from = here;
+    for point in path {
+        length += Vec3A::distance(from, *point);
+        from = *point;
+    }
+    flat_distance(*end, to) <= NAVMESH_PAST_END && length <= flat_distance(here, to) * 2.0 + 2.0
+}
+
+/// How near (yalms) the navmesh's path past a wall has to end to where the walker would go (`navmesh_lets_past`.)
+const NAVMESH_PAST_END: f32 = 1.0;
+
+/// How near (yalms) an NPC that fights from a spot (`Timeline::fights_from`) has to be to it to stand there: retail's
+/// Magitek Vanguard F-1 stood within a few centimetres of its arena's middle.
+const FIGHTS_FROM_ARRIVE: f32 = 0.5;
+
+/// Where an NPC fighting someone stays (`Timeline::fights_from`), if it holds a spot.
+pub fn holds_spot(timeline: &kawari::common::Timeline, target: &NpcTarget) -> Option<Vec3A> {
+    match (timeline.fights_from, target) {
+        (Some(spot), NpcTarget::Actor(_)) => Some(Vec3A::from_array(spot)),
+        _ => None,
+    }
+}
+
 /// Whether an NPC at `from` sees whom it's after at `to`, on its instance's `collision` (`Collision::sees`): through a
 /// wall, a floor or a door the director shut, it doesn't act on them; it walks on until it does. Without a collision
 /// (not made yet) it sees everyone. Bob's Haukke Manor bundles 20261103-051638 and -051833: bots and enemies attacked
@@ -752,7 +796,17 @@ pub fn npc_behavior(
                         spawn.common.position.0,
                         target_pos,
                     ));
-            let (position, rotation) = if in_reach && !(strayed && !current_path.is_empty()) {
+            // One that fights from a spot (`holds_spot`) stands there once it's got there, turning to whom it fights;
+            // until then it walks there.
+            let holds = holds_spot(timeline, current_target);
+            let stands = match holds {
+                Some(spot) => {
+                    current_path.is_empty()
+                        || flat_distance(spawn.common.position.0, spot) <= FIGHTS_FROM_ARRIVE
+                }
+                None => in_reach && !(strayed && !current_path.is_empty()),
+            };
+            let (position, rotation) = if stands {
                 // Standing on the spot it walked to keeps its facing (atan2(0, 0) turned it north there.)
                 let rotation = if flat_distance(spawn.common.position.0, target_pos) < MIN_STEP {
                     spawn.common.rotation
@@ -795,20 +849,26 @@ pub fn npc_behavior(
                         // A gimmick the director put up (a sealed room's wall, a locked door) stops it for good, as
                         // it stops a player; so does one between it and where it'd go on to, and a drop there it
                         // wouldn't step down (`past_a_wall`.)
-                        let past =
-                            (walk.blocked && !walk.sealed && walled_for >= NPC_WALL_PATIENCE_TICKS)
-                                .then(|| {
-                                    let here = spawn.common.position.0;
-                                    past_a_wall(collision, here, along, max_drop).or_else(|| {
-                                        up_the_navmesh(
-                                            instance.navmesh.ground_under(along),
-                                            collision.crosses_sealed(here, along),
-                                            here,
-                                            max_drop,
-                                        )
-                                    })
-                                })
-                                .flatten();
+                        let past = (walk.blocked
+                            && !walk.sealed
+                            && walled_for >= NPC_WALL_PATIENCE_TICKS
+                            && navmesh_lets_past(
+                                &instance.navmesh,
+                                spawn.common.position.0,
+                                along,
+                            ))
+                        .then(|| {
+                            let here = spawn.common.position.0;
+                            past_a_wall(collision, here, along, max_drop).or_else(|| {
+                                up_the_navmesh(
+                                    instance.navmesh.ground_under(along),
+                                    collision.crosses_sealed(here, along),
+                                    here,
+                                    max_drop,
+                                )
+                            })
+                        })
+                        .flatten();
                         if walk.blocked && walled_for == NPC_WALL_PATIENCE_TICKS {
                             tracing::info!(
                                 "NPC {} (layout {}) held up by a wall at {:?} for {} ticks: {}",
@@ -819,7 +879,7 @@ pub fn npc_behavior(
                                 if past.is_some() {
                                     "walking on through"
                                 } else {
-                                    "it stays (a gimmick the director put up, or no floor and no navmesh it would step onto, there)"
+                                    "it stays (a gimmick the director put up, a wall the navmesh goes round, or no floor and no navmesh it would step onto, there)"
                                 }
                             );
                         }
@@ -1397,11 +1457,17 @@ pub fn npc_behavior(
                     let in_reach = distance <= reach
                         && (matches!(current_target, NpcTarget::Position(_))
                             || in_sight(sight.as_deref(), spawn.common.position.0, target_pos));
-                    let needs_repath = match current_target {
-                        NpcTarget::Actor(_) => {
+                    // One that fights from a spot (`holds_spot`) plans only its way there.
+                    let holds = holds_spot(timeline, current_target);
+                    let needs_repath = match (holds, &*current_target) {
+                        (Some(spot), _) => {
+                            current_path.is_empty()
+                                && flat_distance(spawn.common.position.0, spot) > FIGHTS_FROM_ARRIVE
+                        }
+                        (None, NpcTarget::Actor(_)) => {
                             current_path.is_empty() && (!in_reach || strayed_to.is_some())
                         }
-                        NpcTarget::Position(_) => current_path.is_empty(),
+                        (None, NpcTarget::Position(_)) => current_path.is_empty(),
                     };
                     can_take_action = in_reach && pending_action.is_none();
 
@@ -1410,6 +1476,7 @@ pub fn npc_behavior(
                     // they move. The old one kept advancing while it stood, and it jumped back and forth along it
                     // when it ran again (2026-10-19 bundle.)
                     if matches!(current_target, NpcTarget::Actor(_))
+                        && holds.is_none()
                         && in_reach
                         && strayed_to.is_none()
                         && !current_path.is_empty()
@@ -1433,7 +1500,7 @@ pub fn npc_behavior(
                         } else {
                             target_pos
                         };
-                        let goal = strayed_to.unwrap_or(chase_to);
+                        let goal = holds.unwrap_or(strayed_to.unwrap_or(chase_to));
                         // A room's NPC goes no further than its room's edge after anyone (`Room::keep_inside`.)
                         let goal = match room_of(spawn.common.layout_id) {
                             Some(room) => rooms[room].keep_inside(goal),
@@ -1646,6 +1713,7 @@ pub fn npc_behavior(
                             }
                             // Out of its reach: it walks there first (`PendingAction`.)
                             if forced_on.is_none()
+                                && timeline.fights_from.is_none()
                                 && let Some(reach) = reach
                                 && on != *id
                                 && positions.get(&on).is_some_and(|at| {

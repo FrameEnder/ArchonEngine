@@ -252,7 +252,8 @@ end
 -- pull and so many seconds into its fight; `waves` = { action, after, list }: each of its casts of `action` brings
 -- the next wave of `list` `after` seconds later (gone with its fall or a wipe); `ready()` whether it can be pulled
 -- yet; `group` = { layouts }: several that are the boss together (pulled with any, fallen with the last; `layout`
--- the first of them); `pulled_by` = { layouts }: one of them after someone pulls it too; `arena` its room's range;
+-- the first of them); `pulled_by` = { layouts }: one of them after someone pulls it too; `arena` its room's range (a
+-- layout ID, or its floor as { x, z, half_x, half_z, round }: Castrum Meridianum's, whose ranges aren't known);
 -- `last`: its fall ends the duty's fights. Hooks: `on_pull(director)`, `on_cast[action](director, x, y, z)` (or
 -- `on_cast(director, action, x, y, z)`), `on_death(director, layout, position)` (the one that fell last, and where),
 -- `on_wipe(director)`, `on_recommence(director)`.

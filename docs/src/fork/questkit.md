@@ -439,6 +439,14 @@ reads, chat left out), so `compare` and the rest can use it.
   It also reads every duty entry (`chronofoil_entrances.py`: where retail put the player, the client's first facing,
   the entrance circle retail hid) and fails where `ENTRANCE_CIRCLE_IDS` or `entrance_facing.json` hasn't it;
   `--save` keeps those in `questkit/data/entrances.json` (`DutyEntrances`; [Dungeons](dungeons.md#where-players-come-in)).
+* **`--spots`** (2026-11-22) tells, for every enemy that cast three times or more in the captures' duties (not the
+  helpers and launchers, whose places are the director's), whether it held one spot through its fight, whether it
+  walked there after its pull, and whether that spot is its arena's middle as Boss Mod has it (within a yalm); one
+  that did all three fights from there, and its timeline needs `fights_from` (combat.md): a `MISSING` line and exit 1
+  otherwise, or where `fights_from` is off retail's spot (`chronofoil_spots.py`). Retail's Magitek Vanguard F-1 walked
+  6 yalms to its arena's middle and held it; the Black Eft held where its tank met it, Haukke Manor's Manor Claviger
+  a spot 1.4 yalms off hers, and the quest battles' allies stood to cast: none of those. Over the captures in release
+  `1` (2026-10-17), 207 enemies, only the Vanguard; the later captures aren't in it yet.
 * **`--quest Q[,Q]`** prints what those quests did (`chronofoil_quest.py`): talks, scenes with their flags and the
   client's answers (yield or return, results, error code), notices, quest updates, and the zone changes, attunements
   and unlocks while their events were open. `questkit fixture --chronofoil` makes fixtures from the same reading.

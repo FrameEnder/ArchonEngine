@@ -455,10 +455,13 @@ impl Instance {
                 // One made before the collision had the layouts' simple shapes (version 4) or left open doors open
                 // (version 5), or beside a navmesh with 32-bit polygon references (version 6: that navmesh isn't read),
                 // or with a duty's map effect barriers built in (version 7, `map_effect_barriers`): made again too.
-                let older = instance
-                    .collision
-                    .as_ref()
-                    .is_some_and(|collision| collision.is_older());
+                // Or one from a build that couldn't find the zone's map effect barriers (version 7), for a zone with
+                // some (Castrum Meridianum's, Bob's marks of 2026-11-22.)
+                let has_barriers =
+                    !crate::map_effect_barriers::barriers(instance.zone.id).is_empty();
+                let older = instance.collision.as_ref().is_some_and(|collision| {
+                    collision.is_older() || (has_barriers && collision.may_lack_barriers())
+                });
                 if older {
                     tracing::info!(
                         "{nvm_path:?}'s collision is from an older kawari-navimesh (before open doors and simple shapes), so it's made again"

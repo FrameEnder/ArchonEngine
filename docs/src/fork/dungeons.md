@@ -1376,6 +1376,39 @@ map effect, gone after: the same for everyone, the navmesh's paths through it. A
 more than 10.7 yalms out, in all five runs: `director:keep_in_room` (only whoever is inside is noticed, the rest
 pulled with the first, nobody followed out), called for the five in `onSetup`. Not checked in game.
 
+**The Magitek Vanguard F-1 and the walls** (2026-11-22, Bob's run on `8642b957a`: "walls are still blocking NPCS",
+"allies and boss left the damn arena", "Magitek Vanguard F-1 does not follow his timeline in retail well, and he
+needs to be in center of arena for his large area of effect attack", "his attack timeline has overlapping attack
+patterns"). Read through the harness (capture zone-1795359118, the server's log) against retail's 281f92fb:
+
+* *His timeline is retail's.* His twelve casts came in its order (28778 Thermobaric Strike, 28780 Hypercharge, 28785
+  Cermet Drill, 28778, 29146 Overcharge, 28783 Targeted Support, 28780, 28785, then round again), each within half a
+  second of retail's times from his first cast, with nothing else but 15 auto-attacks; Targeted Support's four 28784s
+  went under each of the four. Retail's patterns join as tightly (its Overcharge 0.6 s after Thermobaric Strike's 28779
+  lands, its Hypercharge before Targeted Support's marks go off). What made them look piled up was where he was.
+* *He holds his arena's middle.* Retail's walked to (-13.0, 31.0) in the 3 s after his pull and never moved again,
+  every cast and auto-attack from there (281f92fb, 413.8 to 424.2 s). Kawari's chased his targets: his Hypercharge came
+  from (4.3, 5.8), 30 yalms off the middle, while its helpers' circle and ring (28781, 28782) went off round the empty
+  middle. His timeline has `fights_from` now (combat.md): he walks there and stays, turning to whom he fights.
+* *The bots dodged out of the arena and walked through its walls, and he followed.* Out past the ring (12.5 to 30 from
+  the middle) is off the arena everywhere, but no arena was named, so the bots went for it; held by the arena's east
+  side (x = 6, 2 s), they and he "walked on through" it again and again. Now a wall the navmesh goes round stops
+  everyone for good (`npc_behavior::navmesh_lets_past`, combat.md), and the three bosses' floors are given as shapes
+  (`BOSS*_FLOOR`, Boss Mod's arenas; `director:boss_room`'s arena as a shape, `ArenaFloor`): the bots' spots and dodges
+  keep to them. The second's is square to the axes: Boss Mod's has a third number (20), but the walls Kawari's bots
+  and boss were held by ran along x = 6 to 7, its east side so.
+* *The barriers never came down for the bots.* Map effects 0, 1, 5 and 6 took down their SharedGroups (9077746 to
+  9077749) without any "gone from this instance's collision": the collision didn't have them as gimmicks. A bot stood
+  held 80 s at (-38, 125) after map effect 5, and another walked through barrier 1's spot after its patience.
+  `kawari-navimesh` reads the duty's ContentFinderCondition to find them, and read it with no language, which can't be
+  read (it has text); it then left them built in without a word. It reads it in the server's language now, says why
+  whenever it finds none, collision version 8, and a version 7 file is made again for a zone with barriers
+  (`Collision::may_lack_barriers`). The server warns at the duty's start if one still isn't a gimmick.
+
+Retail's Black Eft held where its tank met it (it lunged 4 yalms at the tank and came back, 1.9 yalms from where it
+was pulled, not its arena's middle): no `fights_from` (`questkit chronofoil --spots`). Test
+`castrum_meridianums_vanguard_holds_its_middle_and_nobody_walks_through_its_walls`.
+
 **The Imperial casters' area attacks** (2026-11-21, Bob's run on `259c65d`: "far too common, not even attached to the
 enemy, the enemies aren't waiting to cast their area of effect action before moving"). Three things, all against the
 five retail runs (`questkit rates`, [Combat](combat.md)). *How often*: the drafted timelines had no `every` for an

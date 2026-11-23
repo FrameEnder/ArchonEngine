@@ -459,6 +459,18 @@ def _chronofoil(args) -> int:
         out = chronofoil_spawns.save(registry)
         print(f"{sum(len(v) for v in registry.values())} battle NPCs in {len(registry)} territories merged into {out}")
         return 0
+    if args.spots:
+        from . import chronofoil_spots
+
+        seen = []
+        for capture in captures:
+            seen += chronofoil_spots.observe(capture, tables)
+        text, problems = chronofoil_spots.report(seen)
+        print(text or "No casting enemies in these captures' duties")
+        for problem in problems:
+            print("MISSING " + problem)
+        print(f"{len(seen)} casting enemies, {len(problems)} whose timeline doesn't fight from where retail's did")
+        return 1 if problems else 0
     if args.layers:
         from . import chronofoil_layers
 
@@ -918,6 +930,9 @@ def main(argv=None) -> int:
                         "checked against resources/data/layer_filters.json, and every duty entry (where, which way, "
                         "the entrance circle), checked against ENTRANCE_CIRCLE_IDS and entrance_facing.json; fails "
                         "where the server would do otherwise")
+    p.add_argument("--spots", action="store_true",
+                   help="which duty enemies walked to a spot and fought from it on retail (the Magitek Vanguard F-1 "
+                        "its arena's middle), checked against their timelines' fights_from; fails where one is missing")
     p.add_argument("--save", action="store_true",
                    help="with --layers: keep the observations (numbers only, layer_keys.json and entrances.json) for the "
                         "test suite's check")

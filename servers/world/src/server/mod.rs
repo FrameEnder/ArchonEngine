@@ -511,6 +511,17 @@ impl WorldServer {
                 .filter_map(|(index, _)| map_effects.as_ref()?.get(*index as usize).copied())
                 .filter(|layout_id| *layout_id > 0)
             {
+                // One the collision doesn't have as a gimmick is built in: it stays after its map effect, for
+                // everyone but players (Bob's marks of 2026-11-22: its build couldn't find the barriers.)
+                if instance
+                    .collision
+                    .as_ref()
+                    .is_some_and(|collision| !collision.has_gimmick(layout_id as u32))
+                {
+                    tracing::warn!(
+                        "Map effect barrier SharedGroup {layout_id} isn't a gimmick in this zone's collision: it won't come down for NPCs"
+                    );
+                }
                 instance.seal_gimmick(layout_id as u32);
             }
         } else {

@@ -836,12 +836,22 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * **Layer filter keys after A Realm Reborn** (2026-11-19): Connor's capture af05916c, read whole with `--layers`, names
   keys the table hasn't: the Waking Sands' 96535 and 96536 (after 1191, 1192 and 3878) and the Rising Stones' (351:
   96654 to 100185, after 3878 to 1448). Not in `layer_keys.json` yet (the test would fail); 2.x's story isn't played.
-* **Map effects' barriers** (2026-11-21, untested in game): only those in `resources/data/map_effect_barriers.json`
+* **Map effects' barriers** (2026-11-21; on Bob's server they never worked until 2026-11-22: `kawari-navimesh` read
+  ContentFinderCondition without a language and found none): only those in `resources/data/map_effect_barriers.json`
   are gimmicks (Castrum Meridianum's 0, 1, 5 and 6, from its script's packs); another duty's barrier a map effect
   takes down is still built into its collision and navmesh until it's listed. Which [timeline, state] puts one back
-  (none seen: Castrum Meridianum's stay down) isn't known. Every zone's navmesh and collision are made again on its
-  first entry (collision version 7). The Black Eft's room is kept by `keep_in_room` (a circle of 24 yalms, its line's
-  distance); the second and last bosses' rooms aren't (no complaint, their adds not measured).
+  (none seen: Castrum Meridianum's stay down) isn't known. Castrum Meridianum's navmesh and collision are made again
+  on its next entry (collision version 8; a version 7 file only for a zone with barriers), and whether its four
+  barriers then have collision of their own is said in the log as it's built ("has no collision of its own here") and
+  at the duty's start ("isn't a gimmick"): unchecked until Bob's server builds it. The Black Eft's room is kept by
+  `keep_in_room` (a circle of 24 yalms, its line's distance); the second and last bosses' rooms aren't (no complaint,
+  their adds not measured). The three bosses' floors are Boss Mod's arenas, not the duty's own ranges (unknown); the
+  second's taken square to the axes from where Bob's bots were held, not Boss Mod's third number.
+* **Castrum Meridianum's shortcut before the last room** (Bob's mark of 2026-11-22, "shortcuts aren't appearing", after
+  a wipe at the Magitek Vanguard F-1): the script has it only from the last room on (`SHORTCUT_LAST`, from capture
+  6320ae56). Where retail's shortcut goes after the first or second boss, and when it first shows, isn't in any capture
+  read: none wiped before the last room (281f92fb never showed 2000700 at all, as retail shows it only after a wipe).
+  A retail run with a wipe at the second boss (or the duty's pop ranges from its layout) would give it.
 * **The Scenario Guide's click opens no map** for A Hero in Need (1037, not yet taken) from the Waking Sands (Bob's
   mark of 2026-11-19; M opens the map). Everything the server sends for it is retail's and the click sends nothing,
   so the client is refusing for a reason of its own, not found yet: Kawari Probe 0.7.2's Stuck window records the

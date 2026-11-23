@@ -251,6 +251,22 @@ impl Arena {
         }
     }
 
+    /// From a boss room's floor given as a shape (`director::ArenaFloor`.)
+    pub fn from_floor(floor: &crate::server::director::ArenaFloor) -> Self {
+        Self {
+            centre: Vec3A::new(floor.x, 0.0, floor.z),
+            half: Vec2::new(
+                floor.half_x,
+                if floor.round {
+                    floor.half_x
+                } else {
+                    floor.half_z
+                },
+            ),
+            round: floor.round,
+        }
+    }
+
     /// Whether `point` is on it, `ARENA_MARGIN` in from its edge.
     pub fn holds(&self, point: Vec3A) -> bool {
         let offset = Vec2::new(point.x - self.centre.x, point.z - self.centre.z);
@@ -266,6 +282,14 @@ impl Arena {
 /// The floor of the boss room the instance's director is fighting in, if it named one (and the zone has that range: a
 /// layout ID that isn't one leaves the dodgers free, as before.)
 pub fn arena(instance: &Instance) -> Option<Arena> {
+    // One given as a shape (`ArenaFloor`: Castrum Meridianum's, whose ranges aren't known.)
+    if let Some(floor) = instance
+        .directors
+        .iter()
+        .find_map(|director| director.arena_floor())
+    {
+        return Some(Arena::from_floor(&floor));
+    }
     let id = instance
         .directors
         .iter()

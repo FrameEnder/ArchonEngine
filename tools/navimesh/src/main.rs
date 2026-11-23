@@ -135,8 +135,9 @@ fn main() {
     // The barriers its director takes down with a map effect (`kawari_world::map_effect_barriers`): SharedGroups no
     // event object owns, gimmicks by their own layout ID. Built in, Castrum Meridianum's way into its first boss's room
     // stayed in the collision and the navmesh after it opened (Bob's marks of 2026-11-20 and 21.)
-    for layout_id in map_effect_barriers(&mut resolver, zone_id, row.ContentFinderCondition) {
-        bound.insert(layout_id, layout_id);
+    let barrier_layouts = map_effect_barriers(&mut resolver, zone_id, row.ContentFinderCondition);
+    for layout_id in &barrier_layouts {
+        bound.insert(*layout_id, *layout_id);
     }
     // Which layers are this territory's (its LVB layer set), as the world server spawns from and the client shows:
     // only those are built from (FrameEnder fork, 2026-11-14). With every layer of the level, each territory had the
@@ -193,6 +194,15 @@ fn main() {
         .collect();
     gimmicks.sort_unstable();
     gimmicks.dedup();
+    // A barrier with no triangles of its own changes nothing (`map_effect_barriers.json`: "an index whose SharedGroup
+    // has no collision"); said, so one that should have some can be looked into.
+    for layout_id in &barrier_layouts {
+        if gimmicks.binary_search(layout_id).is_err() {
+            tracing::info!(
+                "Map effect barrier SharedGroup {layout_id} has no collision of its own here"
+            );
+        }
+    }
     tracing::info!(
         "{} collision triangles from {} vertices; {gimmick_triangles} of them the gimmicks of {} event objects {gimmicks:?} (left out of the navmesh); {outside_layer_set} layers outside the territory's layer set {layer_set:?} left out; {} collision boxes of open doors left out",
         geometry.triangles.len(),
@@ -777,31 +787,46 @@ fn map_effect_barriers(
     content_finder_condition: u16,
 ) -> Vec<u32> {
     let barriers = kawari_world::map_effect_barriers::barriers(zone_id);
-    if barriers.is_empty() || content_finder_condition == 0 {
+    if barriers.is_empty() {
         return Vec::new();
     }
-    let Some(condition) = ContentFinderConditionSheet::read_from(resolver, Language::None)
-        .ok()
-        .and_then(|sheet| sheet.row(content_finder_condition as u32))
+    // Each way of not finding them is said: before 2026-11-22 they were left built in without a word, so Castrum
+    // Meridianum's ways stayed walls after they opened (Bob's marks of 2026-11-22, "walls are still blocking NPCS".)
+    let missing = |why: &str| {
+        tracing::warn!(
+            "Map effect barriers of territory {zone_id} not found ({why}): they're built in, and stay after they open"
+        );
+        Vec::new()
+    };
+    if content_finder_condition == 0 {
+        return missing("its TerritoryType has no ContentFinderCondition");
+    }
+    // ContentFinderCondition has text (the duty's name), so it's read in a language, as the world server reads it
+    // (`GameData`): with none it can't be read, which is why they weren't found.
+    let Ok(conditions) =
+        ContentFinderConditionSheet::read_from(resolver, get_config().world.language())
     else {
-        return Vec::new();
+        return missing("ContentFinderCondition couldn't be read");
+    };
+    let Some(condition) = conditions.row(content_finder_condition as u32) else {
+        return missing("no such ContentFinderCondition");
     };
     // ContentLinkType 1: an InstanceContent.
     if condition.ContentLinkType != 1 {
-        return Vec::new();
+        return missing("its ContentFinderCondition isn't an InstanceContent");
     }
     let Some(managed) = InstanceContentSheet::read_from(resolver, Language::None)
         .ok()
         .and_then(|sheet| sheet.row(condition.Content as u32))
         .map(|row| row.ContentDirectorManagedSG as u32)
     else {
-        return Vec::new();
+        return missing("its InstanceContent couldn't be read");
     };
     let Ok(sheet) = ContentDirectorManagedSGSheet::read_from(resolver, Language::None) else {
-        return Vec::new();
+        return missing("ContentDirectorManagedSG couldn't be read");
     };
     let Some((_, rows)) = sheet.into_iter().find(|(id, _)| *id == managed) else {
-        return Vec::new();
+        return missing("its InstanceContent has no ContentDirectorManagedSG rows");
     };
     let layouts: Vec<i32> = rows.iter().map(|(_, row)| row.LayoutId).collect();
     let found: Vec<u32> = barriers

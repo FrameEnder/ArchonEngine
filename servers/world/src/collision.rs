@@ -41,7 +41,12 @@ use glam::Vec3A;
 
 /// The file's first bytes, and the layout's version.
 const MAGIC: &[u8; 4] = b"KCOL";
-const VERSION: u32 = 7;
+const VERSION: u32 = 8;
+/// The version whose builds couldn't find a duty's map effect barriers (`kawari-navimesh` read ContentFinderCondition
+/// without a language, which can't be read, and left them built in), still read (the same layout): made again only
+/// for a zone with barriers (`may_lack_barriers`.) Castrum Meridianum's ways stayed walls after they opened (Bob's
+/// marks of 2026-11-22.)
+const VERSION_BARRIERS_NOT_FOUND: u32 = 7;
 /// The version before the map effects' barriers were gimmicks (`map_effect_barriers`), still read (the same layout):
 /// made again, so a duty's barriers leave its navmesh and can leave its collision.
 const VERSION_BARRIERS_BUILT_IN: u32 = 6;
@@ -322,6 +327,7 @@ impl Collision {
         let version = r.u32()?;
         if ![
             VERSION,
+            VERSION_BARRIERS_NOT_FOUND,
             VERSION_BARRIERS_BUILT_IN,
             VERSION_BESIDE_32_BIT_NAVMESH,
             VERSION_WITH_DOORS_SHUT,
@@ -424,9 +430,10 @@ impl Collision {
         let path = path_for(nvm_path);
         let key = path.to_string_lossy().to_string();
         let mut loaded = LOADED.get_or_init(Default::default).lock().ok()?;
-        // One already loaded, unless it's an older one that's been made again since.
+        // One already loaded, unless it's an older one that's been made again since (any before this version: a
+        // version 7 one of a zone with barriers is made again, `may_lack_barriers`.)
         if let Some(collision) = loaded.get(&key).and_then(Weak::upgrade)
-            && (!collision.is_older() || !is_current(&path))
+            && (!collision.may_lack_barriers() || !is_current(&path))
         {
             return Some(collision);
         }
@@ -520,6 +527,12 @@ impl Collision {
     /// Whether it's from an older file, made before the open doors were left open (version 4) or the simple shapes
     /// were in it (version 3 or 2): the zone's navmesh and collision are made again.
     pub fn is_older(&self) -> bool {
+        self.version < VERSION_BARRIERS_NOT_FOUND
+    }
+
+    /// Whether it's from a build that may have left a duty's map effect barriers built in (version 7): made again for
+    /// a zone that has them (`map_effect_barriers`.)
+    pub fn may_lack_barriers(&self) -> bool {
         self.version < VERSION
     }
 
@@ -1143,7 +1156,13 @@ mod tests {
         // A version 5 file (beside a navmesh with 32-bit polygon references) too.
         three[4..8].copy_from_slice(&5u32.to_le_bytes());
         assert!(Collision::from_bytes(&three).unwrap().is_older());
-        assert!(!Collision::from_bytes(&built.to_bytes()).unwrap().is_older());
+        // A version 7 file (a duty's map effect barriers not found by its build) reads, and isn't older, but may lack
+        // its barriers: made again for a zone that has some.
+        three[4..8].copy_from_slice(&7u32.to_le_bytes());
+        let seven = Collision::from_bytes(&three).unwrap();
+        assert!(!seven.is_older() && seven.may_lack_barriers());
+        let current = Collision::from_bytes(&built.to_bytes()).unwrap();
+        assert!(!current.is_older() && !current.may_lack_barriers());
     }
 
     #[test]

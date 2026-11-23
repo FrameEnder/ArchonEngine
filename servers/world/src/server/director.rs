@@ -166,6 +166,7 @@ pub enum LuaDirectorTask {
         /// The layout's range (an EventRange or MapRange's layout ID, 0 for none) the room's floor is: see
         /// `DirectorBoss::arena`.
         arena: u32,
+        floor: Option<ArenaFloor>,
     },
     /// A boss arena whose boss is spawned some other way (or later): sealed `wall_id` 15 s after the boss or one of
     /// `triggers` (layout IDs) goes for someone, unsealed when the boss dies. The Tam-Tara Deepcroft's rooms seal as
@@ -177,6 +178,7 @@ pub enum LuaDirectorTask {
         place_name: u32,
         triggers: Vec<u32>,
         arena: u32,
+        floor: Option<ArenaFloor>,
     },
     /// Whether a BNpc takes damage (`director:set_invulnerable`.)
     SetInvulnerable {
@@ -1066,14 +1068,16 @@ impl UserData for LuaDirector {
                 u32,
                 u32,
                 u32,
-                Option<u32>,
+                Option<mlua::Value>,
             )| {
+                let (arena, floor) = arena_of(arena)?;
                 this.tasks.push(LuaDirectorTask::SpawnBoss {
                     bnpc_id,
                     wall_id,
                     line_id,
                     place_name,
-                    arena: arena.unwrap_or(0),
+                    arena,
+                    floor,
                 });
                 Ok(())
             },
@@ -1088,15 +1092,17 @@ impl UserData for LuaDirector {
                 u32,
                 u32,
                 Option<Vec<u32>>,
-                Option<u32>,
+                Option<mlua::Value>,
             )| {
+                let (arena, floor) = arena_of(arena)?;
                 this.tasks.push(LuaDirectorTask::BossRoom {
                     bnpc_id,
                     wall_id,
                     line_id,
                     place_name,
                     triggers: triggers.unwrap_or_default(),
-                    arena: arena.unwrap_or(0),
+                    arena,
+                    floor,
                 });
                 Ok(())
             },
@@ -1926,6 +1932,45 @@ pub struct DirectorBoss {
     /// last boss's terrace is the cylinder 9059667 (20 yalms) in its gimmick layer; retail's party never went more
     /// than 19.4 yalms from its middle, Kawari's ran 27 out to get away from its puddles (Bob's bundle 20261104-204423.)
     arena: u32,
+    /// The room's floor as a shape, for a duty whose ranges aren't known (`ArenaFloor`): kept to as `arena` is.
+    floor: Option<ArenaFloor>,
+}
+
+/// A boss room's floor as a shape (`director:boss_room`'s arena as { x, z, half_x, half_z, round }), for a duty whose
+/// layout ranges aren't known: its middle across the ground, its half-sizes (a circle's radius in both), and whether
+/// it's round. Castrum Meridianum's, from Boss Mod's arenas (github.com/awgil/ffxiv_bossmod, BSD-3-Clause): Kawari's
+/// bots dodged out past the Magitek Vanguard F-1's ring and through its arena's side (Bob's marks of 2026-11-22.)
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ArenaFloor {
+    pub x: f32,
+    pub z: f32,
+    pub half_x: f32,
+    pub half_z: f32,
+    pub round: bool,
+}
+
+/// A boss room's arena as a script gives it: a layout's range by its ID, or (a duty whose ranges aren't known) its
+/// floor as a shape, { x, z, half_x, half_z, round } (`ArenaFloor`.)
+fn arena_of(arena: Option<mlua::Value>) -> mlua::Result<(u32, Option<ArenaFloor>)> {
+    Ok(match arena {
+        Some(mlua::Value::Integer(id)) => (id as u32, None),
+        Some(mlua::Value::Number(id)) => (id as u32, None),
+        Some(mlua::Value::Table(shape)) => (0, Some(ArenaFloor::from_lua(&shape)?)),
+        _ => (0, None),
+    })
+}
+
+impl ArenaFloor {
+    fn from_lua(shape: &mlua::Table) -> mlua::Result<Self> {
+        let half_x: f32 = shape.get("half_x")?;
+        Ok(Self {
+            x: shape.get("x")?,
+            z: shape.get("z")?,
+            half_x,
+            half_z: shape.get::<Option<f32>>("half_z")?.unwrap_or(half_x),
+            round: shape.get::<Option<bool>>("round")?.unwrap_or(false),
+        })
+    }
 }
 
 #[derive(Debug, Default)]
@@ -2488,6 +2533,14 @@ impl DirectorData {
             .values()
             .find(|boss| boss.arena != 0 && boss.state != DirectorBossState::Open)
             .map(|boss| boss.arena)
+    }
+
+    /// The floor, as a shape (`ArenaFloor`), of the boss room being fought, if it was given one.
+    pub fn arena_floor(&self) -> Option<ArenaFloor> {
+        self.bosses
+            .values()
+            .find(|boss| boss.floor.is_some() && boss.state != DirectorBossState::Open)
+            .and_then(|boss| boss.floor)
     }
 
     /// A party wipe: every boss room that was sealed (or sealing) opens again, its boss to be pulled anew. Retail, the
@@ -3254,6 +3307,7 @@ pub fn director_tick(
                 line_id,
                 place_name,
                 arena,
+                floor,
             } => {
                 if let Some(mut npc) = instance.zone.get_battle_npc(*bnpc_id) {
                     npc.common.handler_id = director_id;
@@ -3273,6 +3327,7 @@ pub fn director_tick(
                             place_name: *place_name,
                             triggers: [0; 8],
                             arena: *arena,
+                            floor: *floor,
                         },
                     );
                 } else {
@@ -3286,6 +3341,7 @@ pub fn director_tick(
                 place_name,
                 triggers,
                 arena,
+                floor,
             } => {
                 let mut ids = [0; 8];
                 for (slot, id) in ids.iter_mut().zip(triggers) {
@@ -3302,6 +3358,7 @@ pub fn director_tick(
                         place_name: *place_name,
                         triggers: ids,
                         arena: *arena,
+                        floor: *floor,
                     },
                 );
             }
@@ -5639,6 +5696,7 @@ mod tests {
             place_name: 609,
             triggers: [0; 8],
             arena: 0,
+            floor: None,
         }
     }
 

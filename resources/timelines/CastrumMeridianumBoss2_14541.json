@@ -4,6 +4,11 @@
     "attack_range": 3.0,
     "from_pull": true,
     "timeline_always_plays": false,
+    "fights_from": [
+        -13.0,
+        70.1,
+        31.0
+    ],
     "recorded_amounts": {
         "870": {
             "npcs": 262
@@ -95,5 +100,5 @@
             "comment": "82.6 s after it, then every 53.8 s"
         }
     ],
-    "comment": "Castrum Meridianum's second boss (BNpcBase 14541, BNpcName 2116, layout 9060849): level 50, 77022 HP. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.8) and Bob's 9ba7d981 (visit 0.12) and 50e72631 (visit 0.3) of 2026-11-17, all with Duty Support: no talk at its pull; its first 28778 came 10.6 to 11.4 s after the duty's battle music began, and from it the three runs' casts were the same to 0.5 s: 28780 at 17.4 s, 28785 at 27.5, then a round of 53.8 s (28778, 29146, 28783, 28780, 28785 at 41.1, 53.3, 60.8, 69.4 and 82.6 s, and again at 94.9, 107.0, 114.5 and 123.1). It fell 123 to 132 s after its first cast. Auto-attack 870 (262 to the tank), 28785 713 to the tank; its other casts are the helpers' to carry out (content/w1d4_re.lua). Hitbox and range not recorded."
+    "comment": "Castrum Meridianum's second boss (BNpcBase 14541, BNpcName 2116, layout 9060849): level 50, 77022 HP. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.8) and Bob's 9ba7d981 (visit 0.12) and 50e72631 (visit 0.3) of 2026-11-17, all with Duty Support: no talk at its pull; its first 28778 came 10.6 to 11.4 s after the duty's battle music began, and from it the three runs' casts were the same to 0.5 s: 28780 at 17.4 s, 28785 at 27.5, then a round of 53.8 s (28778, 29146, 28783, 28780, 28785 at 41.1, 53.3, 60.8, 69.4 and 82.6 s, and again at 94.9, 107.0, 114.5 and 123.1). It fell 123 to 132 s after its first cast. Auto-attack 870 (262 to the tank), 28785 713 to the tank; its other casts are the helpers' to carry out (content/w1d4_re.lua). Hitbox and range not recorded. It fights from its arena's middle (`fights_from`): it walked there in the 3 s after its pull and never moved again, every cast and auto-attack from there (Bob's 281f92fb, visit at 413.8 s: from (-14.1, 25.1) to (-13.0, 31.0) by 424.2, then only turning)."
 }

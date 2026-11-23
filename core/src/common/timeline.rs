@@ -52,6 +52,14 @@ pub struct Timeline {
     /// What this NPC shouts with its actions, by action ID: see `Shouts`.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub shouts: BTreeMap<u32, Shouts>,
+    /// Where (x, y, z) this NPC fights from once pulled: it walks there and stays, turning to whom it fights and acting
+    /// on them from there, its timeline's actions too, never chasing anyone. Retail's Magitek Vanguard F-1 (Castrum
+    /// Meridianum's second boss) walked to its arena's middle in the 3 s after its pull and never moved again, every
+    /// cast and auto-attack from there (Bob's Chronofoil capture 281f92fb); Kawari's chased the bots out of its arena
+    /// (Bob's marks of 2026-11-22, "he needs to be in center of arena".) `questkit chronofoil --spots` finds the ones
+    /// that did in the captures (walked to their arena's middle and held it) and fails where a timeline lacks it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fights_from: Option<[f32; 3]>,
 }
 
 /// The lines an NPC shouts as it uses one of its actions, as retail sent them: ActorControl 73 `[line]` from the NPC,
@@ -509,6 +517,7 @@ mod tests {
                 animation_locks: BTreeMap::default(),
                 rotation: None,
                 shouts: BTreeMap::default(),
+                fights_from: None,
                 from_pull: false,
                 timepoints: vec![Timepoint {
                     time: 20.0,

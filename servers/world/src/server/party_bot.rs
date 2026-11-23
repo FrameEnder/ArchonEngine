@@ -648,6 +648,16 @@ fn walk_like_a_player(
                 }
                 return (walk.at, true);
             }
+            // Nor through a wall the navmesh goes round (an arena's side: `navmesh_lets_past`, Bob's mark of
+            // 2026-11-22.)
+            if !crate::server::npc_behavior::navmesh_lets_past(navmesh, here, to) {
+                if patience_ran_out {
+                    tracing::info!(
+                        "Party bot at {here}: held up by a wall the navmesh goes round on its way to {to}; it stays"
+                    );
+                }
+                return (walk.at, true);
+            }
             if let Some(gimmick) = walk.gimmick
                 && patience_ran_out
             {

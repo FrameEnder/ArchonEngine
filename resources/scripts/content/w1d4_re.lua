@@ -93,6 +93,13 @@ ACTION_BOSS1_ALL = 29268
 ACTION_BOSS1_HELPER = 29269
 BOSS1_HELPER_AFTER = { 5.1, 5.6, 6.2 }
 BOSS1_MIDDLE = { x = 11.8, y = 70.2, z = -38.6 }
+-- The bosses' floors (their rooms' ranges aren't known here): Boss Mod's arenas (github.com/awgil/ffxiv_bossmod,
+-- BSD-3-Clause), which the party bots stand and dodge on and never leave while the boss is fought. The second's is
+-- square to the axes: Boss Mod's has a third number (20), but the walls Kawari's bots and boss were held by ran along
+-- x = 6 to 7, its east side so (Bob's run of 2026-11-22.)
+BOSS1_FLOOR = { x = 10.0, z = -40.0, half_x = 20.0 }
+BOSS2_FLOOR = { x = -13.0, z = 31.0, half_x = 20.0, half_z = 20.0 }
+BOSS3_FLOOR = { x = -98.0, z = -33.0, half_x = 20.0, round = true }
 BOSS1_TALKS = { { 14.6, 33524 }, { 40.8, 33525 }, { 78.3, 33526 } }
 NAME_BOSS1 = 557
 
@@ -287,6 +294,7 @@ D:step({ name = "talk_33514", ready = done("talk_33513"),
 -- ---- The first boss ----
 
 D:boss({ id = 1, layout = BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = PLACE_BOSS1, middle = BOSS1_MIDDLE,
+    arena = BOSS1_FLOOR,
     -- It and its four keep to their room: they notice only whoever comes in, are pulled together, and don't follow
     -- anyone out (retail's five, all five runs: pulled within 2.1 s of each other as the player came 7 to 11 yalms
     -- inside the line, none more than 10.7 yalms from the middle; Bob's mark of 2026-11-21: "enemies are not suppose
@@ -321,6 +329,7 @@ D:boss({ id = 1, layout = BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = P
 -- ---- The second boss ----
 
 D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = PLACE_BOSS2, middle = BOSS2_MIDDLE,
+    arena = BOSS2_FLOOR,
     helpers = { layout = HELPER_BOSS2, count = HELPERS_BOSS2 },
     bgm = BGM_BATTLE, after_bgm = BGM_DUTY,
     on_cast = {
@@ -445,6 +454,7 @@ BOSS3_ON_CAST = {
 }
 
 D:boss({ id = 3, layout = BOSS3, wall = BOSS3_WALL, line = BOSS3_LINE, place = PLACE_BOSS3, middle = BOSS3_MIDDLE,
+    arena = BOSS3_FLOOR,
     comes_later = true, last = true, bgm = false,
     helpers = { layout = HELPER_BOSS3, count = HELPERS_BOSS3 },
     ready = done("last_room"),

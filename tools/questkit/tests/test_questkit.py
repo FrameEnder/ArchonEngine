@@ -3433,3 +3433,39 @@ class LibZstdTest(unittest.TestCase):
         reader = io.BufferedReader(chronofoil._LibZstdReader.open(io.BytesIO(out.raw[:size])))
         self.assertEqual(reader.read(1), b"\x00")
         self.assertEqual(reader.read(), data[1:])
+
+
+class ChronofoilSpotsTest(unittest.TestCase):
+    """`questkit chronofoil --spots`: an enemy that walked to a spot and fought from it needs `fights_from` in its
+    timeline (the Magitek Vanguard F-1, Bob's marks of 2026-11-22); one that only held where its tank found it (the
+    Black Eft) doesn't."""
+
+    def entry(self, base, walked, held=True, spot=(-13.02, 70.24, 30.99)):
+        return {"capture": "281f92fb", "territory": 1043, "content": 15, "base": base, "hp": 77022, "casts": 8,
+                "spot": list(spot), "off": 0.0 if held else 6.0, "span": 88.0, "held": held, "walked": walked}
+
+    def test_the_vanguard_fights_from_its_middle(self):
+        from questkit import chronofoil_spots
+        text, problems = chronofoil_spots.report([self.entry(14541, 6.0)])
+        self.assertIn("walked 6.0 yalms to its arena's middle", text)
+        self.assertEqual(problems, [])  # its timeline has fights_from
+
+    def test_one_at_its_middle_without_fights_from_is_missing(self):
+        from questkit import chronofoil_spots
+        # The Black Eft's timeline has none: had it walked to its arena's middle (10, -40 in Boss Mod), missing.
+        _, problems = chronofoil_spots.report([self.entry(14538, 6.0, spot=(10.2, 70.2, -40.3))])
+        self.assertEqual(len(problems), 1)
+        self.assertIn("14538", problems[0])
+        # Held where it stood (retail's: its tank in reach), or a spot not its arena's middle: not fights_from.
+        _, problems = chronofoil_spots.report([self.entry(14538, 1.9, spot=(13.44, 70.48, -39.6))])
+        self.assertEqual(problems, [])
+        text, problems = chronofoil_spots.report([self.entry(272, 7.4, spot=(3.22, 0.11, 1.24))])
+        self.assertEqual(problems, [])
+        self.assertIn("not its arena's middle", text)
+
+    def test_a_fights_from_off_retails_spot(self):
+        from questkit import chronofoil_spots
+        # Retail's Vanguard held a spot that isn't where its timeline says (`fights_from` the middle): off.
+        _, problems = chronofoil_spots.report([self.entry(14541, 1.0, spot=(-5.0, 70.2, 31.0))])
+        self.assertEqual(len(problems), 1)
+        self.assertIn("off retail's", problems[0])
