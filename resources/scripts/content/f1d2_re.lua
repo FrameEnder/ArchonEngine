@@ -249,7 +249,9 @@ D:boss({ id = 2, layout = PAIR_LAYOUTS[1], group = PAIR_LAYOUTS, wall = PAIR_WAL
         director:party_npc_yell("ranged", LINE_PAIR)
     end })
 
+-- Its wall is the last room's door, shut from the start as retail spawned it (state 0) till the eye opens it.
 D:boss({ id = 3, layout = BNPC_FINAL, wall = FINAL_WALL, line = FINAL_LINE, place = PLACE_FINAL,
+    wall_shut_at_start = true,
     comes_later = true, eobjs_at_setup = false, last = true, bgm = false,
     -- Its actions the director plays out (see the top of the file.)
     on_cast = {

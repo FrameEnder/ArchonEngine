@@ -3868,6 +3868,8 @@ fn update_party(
         .iter()
         .filter(|(id, _)| !instance.party_bots.contains_key(id))
         .filter(|(id, _)| !instance.untargetable_npcs.contains(id))
+        // Nor a launcher (`launcher::is_launcher`: retail's took no hit.)
+        .filter(|(_, actor)| !crate::server::launcher::is_launcher(instance, actor))
         .filter_map(|(id, actor)| match actor {
             NetworkedActor::Npc {
                 enmity,

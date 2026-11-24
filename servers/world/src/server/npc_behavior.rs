@@ -1853,6 +1853,16 @@ pub fn npc_behavior(
                                         })
                                         .or_else(|| positions.get(&fighting).copied())
                                 }
+                                (TimepointTarget::Itself, TimepointFacing::AnyFoe) => {
+                                    let foes: Vec<Vec3A> = enmity
+                                        .keys()
+                                        .filter_map(|foe| positions.get(foe).copied())
+                                        .collect();
+                                    fastrand::choice(&foes)
+                                        .copied()
+                                        .or_else(|| positions.get(&fighting).copied())
+                                }
+                                (TimepointTarget::Itself, TimepointFacing::AsItStands) => None,
                                 (TimepointTarget::Itself, _) => positions.get(&fighting).copied(),
                                 _ if on != *id => Some(at),
                                 _ => None,

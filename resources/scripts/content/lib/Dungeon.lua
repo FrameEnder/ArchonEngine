@@ -65,6 +65,7 @@ function Dungeon.new()
     self.timed = {}
     -- NPCs leading the way (`lead`.)
     self.leads = {}
+    self.pursuits = {}
     return self
 end
 
@@ -200,6 +201,9 @@ end
 -- (`director:sweep_bnpc`), { wait = seconds } stands, and
 -- { until_party = function(member) } stands until anyone of the party is where the test says; then
 -- `on_end(director)`. It's held all the while (`director:hold_bnpc`), so nothing else moves it, and stays held.
+-- Legs one after another at one speed, none turning it but the last, are one run by their points without a stop
+-- (`director:sweep_bnpc_path`): retail's Praetorium Cid ran his seven to the terminal in one go (five runs), where a
+-- sweep a leg stopped him at each till the next update (Bob's mark of 2026-11-24: "he stops on each one").
 -- Retail's Cid in Castrum Meridianum ran ahead of the party, waited at a corner until they'd caught up and gone by,
 -- and ran on to where he fought (four runs; Bob's mark of 2026-11-23: "cid is stationary he should move to a specific
 -- location wait for us then begin moving".)
@@ -232,10 +236,37 @@ function Dungeon:runLeads(director)
                 end
                 lead.leg = lead.leg + 1
             elseif leg.to ~= nil then
-                director:sweep_bnpc(lead.layout, leg.to.x, leg.to.y, leg.to.z, leg.speed)
-                local dx, dz = leg.to.x - lead.at.x, leg.to.z - lead.at.z
-                lead.until_clock = self.clock + math.sqrt(dx * dx + dz * dz) / leg.speed
-                lead.at = { x = leg.to.x, y = leg.to.y, z = leg.to.z }
+                -- This leg and the ones straight after it at its speed, up to one that turns it.
+                local last = lead.leg
+                while leg.rotation == nil do
+                    local next_leg = lead.legs[last + 1]
+                    if next_leg == nil or next_leg.to == nil or next_leg.speed ~= leg.speed then
+                        break
+                    end
+                    last = last + 1
+                    if next_leg.rotation ~= nil then
+                        break
+                    end
+                end
+                local length = 0
+                local points = {}
+                local at = lead.at
+                for i = lead.leg, last do
+                    local to = lead.legs[i].to
+                    local dx, dz = to.x - at.x, to.z - at.z
+                    length = length + math.sqrt(dx * dx + dz * dz)
+                    table.insert(points, { to.x, to.y, to.z })
+                    at = to
+                end
+                if last == lead.leg then
+                    director:sweep_bnpc(lead.layout, leg.to.x, leg.to.y, leg.to.z, leg.speed)
+                else
+                    director:sweep_bnpc_path(lead.layout, points, leg.speed)
+                end
+                lead.until_clock = self.clock + length / leg.speed
+                lead.at = { x = at.x, y = at.y, z = at.z }
+                -- Its end is the last leg's (its turn, if it turns there.)
+                lead.leg = last
             elseif leg.wait ~= nil then
                 lead.until_clock = self.clock + leg.wait
             elseif leg.until_party ~= nil and self:anyone(leg.until_party) then
@@ -247,6 +278,63 @@ function Dungeon:runLeads(director)
         end
     end
     self.leads = going
+end
+
+-- ---- Going for one of the party ----
+
+-- An NPC (actor ID) goes for one of the party (`target`, their actor ID) and no one else: it stands `after` seconds,
+-- then walks at `speed` yalms a second towards wherever they are, and within `reach` of them (centre to centre) uses
+-- `action` on them, once (`on_reach(director)` then, if given). It's held (`director:hold_bnpc`): no auto-attack, no
+-- other target, whoever hits it. Retail's Praetorium Death Claw (BNpcBase 14452, five runs): spawned tethered to one
+-- of the party (`spawn_tethered_bnpc`), it stood 4.9 s, walked at 3.0 yalms a second after them alone and, the three
+-- times it got there, used 28480 on them from 3.2 to 3.7 yalms; it never auto-attacked. It's re-aimed at them every
+-- update (`director:sweep_bnpc` to just short of them.) A pursuit ends with its NPC (once seen), or its quarry, gone.
+function Dungeon:pursue(director, npc, target, pursuit)
+    director:hold_bnpc(npc)
+    table.insert(self.pursuits, { npc = npc, target = target, speed = pursuit.speed, reach = pursuit.reach,
+                                  action = pursuit.action, on_reach = pursuit.on_reach,
+                                  from = self.clock + (pursuit.after or 0) })
+end
+
+function Dungeon:runPursuits(director)
+    local going = {}
+    for _, pursuit in ipairs(self.pursuits) do
+        local it = self.info and self.info["actor" .. pursuit.npc]
+        local quarry = nil
+        for _, member in ipairs(self.party) do
+            if member.id == pursuit.target then
+                quarry = member
+            end
+        end
+        -- (Its NPC may not be there yet, an update after its spawn: it's waited for, and the pursuit ends once it's
+        -- been seen and is gone.)
+        if it == nil and not pursuit.seen and quarry ~= nil then
+            table.insert(going, pursuit)
+        elseif it ~= nil and quarry ~= nil and not pursuit.reached then
+            pursuit.seen = true
+            table.insert(going, pursuit)
+            if self.clock + 1e-6 >= pursuit.from then
+                local dx, dz = quarry.x - it.x, quarry.z - it.z
+                local distance = math.sqrt(dx * dx + dz * dz)
+                if distance <= pursuit.reach then
+                    pursuit.reached = true
+                    director:sweep_bnpc(pursuit.npc, it.x, it.y or quarry.y, it.z, pursuit.speed)
+                    if pursuit.action ~= nil then
+                        director:actor_use_action(pursuit.npc, pursuit.action, pursuit.target)
+                    end
+                    if pursuit.on_reach ~= nil then
+                        pursuit.on_reach(director)
+                    end
+                else
+                    -- To just short of them (a tenth of its reach in, so it's there by its next look.)
+                    local short = (pursuit.reach * 0.9) / distance
+                    director:sweep_bnpc(pursuit.npc, quarry.x - dx * short, quarry.y, quarry.z - dz * short,
+                                        pursuit.speed)
+                end
+            end
+        end
+    end
+    self.pursuits = going
 end
 
 -- ---- Packs ----
@@ -312,7 +400,8 @@ end
 -- yet; `group` = { layouts }: several that are the boss together (pulled with any, fallen with the last; `layout`
 -- the first of them); `pulled_by` = { layouts }: one of them after someone pulls it too; `arena` its room's range (a
 -- layout ID, or its floor as { x, z, half_x, half_z, round }: Castrum Meridianum's, whose ranges aren't known);
--- `last`: its fall ends the duty's fights. Hooks: `on_pull(director)`, `on_cast[action](director, x, y, z)` (or
+-- `last`: its fall ends the duty's fights; `wall_shut_at_start`: its wall is a door retail spawned shut (Haukke Manor's
+-- last), where every other boss's wall is opened at the start (`BossWallsOpenAtTheStartTest`). Hooks: `on_pull(director)`, `on_cast[action](director, x, y, z)` (or
 -- `on_cast(director, action, x, y, z)`), `on_death(director, layout, position)` (the one that fell last, and where),
 -- `on_wipe(director)`, `on_recommence(director)`.
 function Dungeon:boss(boss)
@@ -584,6 +673,7 @@ function Dungeon:update(director, health, player_health, info, between)
         end
         self:checkSteps(director)
         self:runLeads(director)
+        self:runPursuits(director)
         if self.fight == nil then
             for _, boss in ipairs(self.bosses) do
                 local fallen = boss.group and self:allDead(boss.group) or (not boss.group and self.dead[boss.layout])

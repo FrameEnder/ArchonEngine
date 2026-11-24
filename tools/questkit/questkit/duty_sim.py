@@ -358,7 +358,8 @@ class Stage:
         return True
 
 
-SPAWNS = ("spawn_bnpc", "spawn_boss", "spawn_bnpc_part")
+# (A tethered one is spawned as any: the Praetorium's Death Claws, Tam-Tara's shields.)
+SPAWNS = ("spawn_bnpc", "spawn_boss", "spawn_bnpc_part", "spawn_tethered_bnpc")
 
 
 def _points(pct: float, max_hp: int) -> int:

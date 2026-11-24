@@ -1376,7 +1376,7 @@ class FrameworkScriptTest(unittest.TestCase):
         self.director = self.lua.eval("""setmetatable({ next_id = 1000 }, { __index = function(self, name)
             return function(d, ...)
                 LOG(name, ...)
-                if name == "spawn_bnpc" or name == "spawn_bnpc_part" then
+                if name == "spawn_bnpc" or name == "spawn_bnpc_part" or name == "spawn_tethered_bnpc" then
                     d.next_id = d.next_id + 1
                     return d.next_id
                 end
@@ -1392,6 +1392,49 @@ class FrameworkScriptTest(unittest.TestCase):
 
     def named(self, name):
         return [args for n, args in self.calls if n == name]
+
+
+class BossWallsOpenAtTheStartTest(unittest.TestCase):
+    """Every duty on the dungeon framework opens its bosses' walls as it begins: retail spawned them open (event state
+    7) and closed each 15 s into its fight. The Praetorium's stood closed from the start in Kawari, the first boss's
+    room sealed before anyone came (Bob's marks of 2026-11-24: "the dungeon is literally impossible to play")."""
+
+    def test_no_boss_wall_starts_closed(self):
+        try:
+            from lupa import LuaRuntime
+        except ImportError:
+            self.skipTest("lupa isn't installed")
+        from questkit import repo
+        checked = []
+        for script in sorted((repo.SCRIPTS / "content").glob("*.lua")):
+            text = script.read_text()
+            if "D:boss(" not in text or "function onSetup" not in text:
+                continue
+            lua = LuaRuntime(unpack_returned_tuples=True)
+            lua.execute((repo.SCRIPTS / "content" / "lib" / "Dungeon.lua").read_text())
+            lua.execute(text)
+            states = {}
+
+            def log(name, *args):
+                if name in ("hide_eobj", "show_eobj") and args:
+                    states[args[0]] = name
+            lua.globals().LOG = log
+            director = lua.eval("""setmetatable({ next_id = 1000 }, { __index = function(self, name)
+                return function(d, ...)
+                    LOG(name, ...)
+                    if name == "spawn_bnpc" or name == "spawn_bnpc_part" or name == "spawn_tethered_bnpc" then
+                        d.next_id = d.next_id + 1
+                        return d.next_id
+                    end
+                end
+            end })""")
+            lua.globals().onSetup(director)
+            for boss in lua.globals().D.bosses.values():
+                if boss.wall and not boss.wall_shut_at_start:
+                    checked.append(script.name)
+                    self.assertEqual(states.get(boss.wall), "hide_eobj",
+                                     f"{script.name}: boss {boss.id}'s wall {boss.wall} isn't opened at the start")
+        self.assertIn("w1d5_re.lua", checked)
 
 
 class CopperbellBossesTest(FrameworkScriptTest):
@@ -1479,18 +1522,22 @@ class PraetoriumTest(FrameworkScriptTest):
         self.assertEqual(self.named("party_npc_yell")[0][:2], ["healer", 14395])
         self.assertEqual(self.named("party_npc_yell")[0][3:5], ["melee", 14394])
         self.assertEqual(self.named("battle_talk"), [])
-        # The updates are 0.1 s apart: talk 32920 at 1.5 s, Cid off at 1.7 s.
-        for _ in range(18):
+        # Two updates a second: talk 32920 at 1.5 s, Cid off at 1.7 s.
+        for _ in range(4):
             self.at(165.0, 186.1, -5.0)
         self.assertEqual([args[2] for args in self.named("battle_talk")], [32920])
         self.assertIn([self.CID], self.named("hold_bnpc"))
-        sweeps = [args for args in self.named("sweep_bnpc") if args[0] == self.CID]
-        self.assertEqual([round(sweeps[0][1], 2), round(sweeps[0][3], 2), sweeps[0][4]], [170.37, -10.27, 6.0])
-        # 66.7 yalms at 6 a second: there by 11.2 s, turned to the terminal, 63 [48].
-        for _ in range(120):
+        # One run by his seven points, no stop at any (Bob's mark of 2026-11-24: "he stops on each one").
+        paths = [args for args in self.named("sweep_bnpc_path") if args[0] == self.CID]
+        self.assertEqual(len(paths), 1)
+        points = [(round(p[1], 2), round(p[3], 2)) for p in paths[0][1].values()]
+        self.assertEqual(len(points), 7)
+        self.assertEqual((points[0], points[-1], paths[0][2]), ((170.37, -10.27), (196.83, -4.84), 6.0))
+        # 66.7 yalms at 6 a second: there by 11.2 s from his setting off, turned to the terminal, 63 [48].
+        for _ in range(23):
             self.at(165.0, 186.1, -5.0)
-        sweeps = [args for args in self.named("sweep_bnpc") if args[0] == self.CID]
-        self.assertEqual(len(sweeps), 7)
+        self.assertEqual(len([args for args in self.named("sweep_bnpc_path") if args[0] == self.CID]), 1)
+        self.assertEqual([args for args in self.named("sweep_bnpc") if args[0] == self.CID], [])
         self.assertIn([self.CID, 196.83, 186.05, -4.84, -0.526], self.named("move_bnpc"))
         controls = [args for args in self.named("bnpc_control") if args[0] == self.CID]
         self.assertEqual([(args[1], list(args[2].values())) for args in controls], [(63, [48])])
@@ -1511,18 +1558,105 @@ class PraetoriumTest(FrameworkScriptTest):
         g.D.fight = 2
         g.math.random = lambda *_: 3
         g.D.bossById(g.D, 2).on_pull(self.director)
-        # Leaps at 45.1, 65.9, 109.4 and 133.2 s, the updates 0.1 s apart.
-        for _ in range(1400):
+        # Leaps at 45.1, 65.9, 109.4 and 133.2 s, two updates a second.
+        for _ in range(280):
             self.update({"player1": {"x": -164.0, "y": -104.2, "z": 10.0, "id": 11}})
         aims = [(round(args[2], 1), round(args[4], 1)) for args in self.named("aim_action") if args[1] == 28475]
         self.assertEqual(aims[:4], [(-164.0, 20.0), (-164.0, 0.0), (-164.0, 20.0), (-164.0, 0.0)])
-        jumps = [(round(args[1], 1), round(args[3], 1), args[6]) for args in self.named("jump_bnpc")
-                 if args[0] == 9054847]
-        self.assertEqual(jumps[0], (-164.0, 20.0, True))
+        # Out to the edge facing the middle (retail aimed all ten 28478s at it) and kept there till it leaps back
+        # (20.8 s, then 23.8); back to the middle keeping its facing.
+        # (Lua leaves off trailing nils.)
+        jumps = [args + [None] * (7 - len(args)) for args in self.named("jump_bnpc") if args[0] == 9054847]
+        jumps = [(round(a[1], 1), round(a[3], 1), round(a[4], 2) if a[4] else None, a[6]) for a in jumps]
+        self.assertEqual(jumps[:2], [(-164.0, 20.0, 3.14, None), (-164.0, 0.0, None, True)])
+        roots = [round(args[1], 1) for args in self.named("root_bnpc") if args[0] == 9054847]
+        self.assertEqual(roots[:2], [20.8, 23.8])
         self.assertEqual([args[1:] for args in self.named("bnpc_control") if args[0] == 9054847 and args[1] == 70][0][0],
                          70)
         self.assertEqual(len([1 for args in self.named("bnpc_control") if args[0] == 9054847 and args[1] == 70]), 1)
         self.assertEqual([args[1] for args in self.named("yell") if args[0] == 9054847], [13640])
+
+
+class PraetoriumClawAndEnrageTest(FrameworkScriptTest):
+    """The second boss's Death Claw and the last boss's enrage (2026-11-24, from the five retail runs and Harmony's visual
+    guide): the claw comes at one of the four edges tethered to one of the party, stands 4.9 s, walks after them alone
+    at 3.0 yalms a second and uses 28480 on them as it gets there; the last boss's 28500 wipes the party if the gauge
+    fills with any of the four standing, and the part ends as before when they're all down."""
+
+    SCRIPT = "w1d5_re.lua"
+    BOSS2 = 9054847
+    BOSS3 = 9055066
+
+    def test_the_claw_goes_for_its_tethered_member_alone(self):
+        g = self.lua.globals()
+        g.D.fight = 2
+        g.math.random = lambda *_: 2
+        party = {"player1": {"x": -164.0, "y": -104.2, "z": 0.0, "id": 11},
+                 "party1": {"x": -160.0, "y": -104.2, "z": 5.0, "id": 21}}
+        self.update(party)
+        g.D.bossById(g.D, 2).on_cast[28479](self.director)
+        # 3.6 s on (two updates a second.)
+        for _ in range(8):
+            self.update(party)
+        spawns = self.named("spawn_tethered_bnpc")
+        self.assertEqual(len(spawns), 1)
+        layout, quarry, tether, x, y, z, facing = spawns[0]
+        # Edge 2 (south), facing the middle (north), tethered to the second of the party with Channeling 17.
+        self.assertEqual((layout, quarry, tether, x, z, round(facing, 2)), (9054848, 21, 17, -164.0, 20.0, 3.14))
+        claw = self.director.next_id
+        self.assertIn([claw], self.named("hold_bnpc"))
+        # It stands 4.9 s (seen an update after its spawn), then walks after them at 3.0, re-aimed each update.
+        here = {"x": -164.0, "y": -104.2, "z": 20.0}
+        self.update(party)
+        for _ in range(8):
+            self.update({**party, f"actor{claw}": here})
+        self.assertEqual([args for args in self.named("sweep_bnpc") if args[0] == claw], [])
+        for _ in range(2):
+            self.update({**party, f"actor{claw}": here})
+        sweeps = [args for args in self.named("sweep_bnpc") if args[0] == claw]
+        self.assertEqual(len(sweeps), 2)
+        self.assertEqual(sweeps[-1][4], 3.0)
+        # Short of them by its reach, on the way to them.
+        self.assertTrue(abs(((sweeps[-1][1] + 160.0) ** 2 + (sweeps[-1][3] - 5.0) ** 2) ** 0.5 - 3.15) < 0.01)
+        # There (3.2 yalms off): 28480 on them, once, and no more sweeps after them.
+        self.update({**party, f"actor{claw}": {"x": -160.0, "y": -104.2, "z": 8.2}})
+        uses = [args for args in self.named("actor_use_action") if args[0] == claw]
+        self.assertEqual(uses, [[claw, 28480, 21]])
+        count = len([args for args in self.named("sweep_bnpc") if args[0] == claw])
+        for _ in range(10):
+            self.update({**party, f"actor{claw}": {"x": -160.0, "y": -104.2, "z": 8.2}})
+        self.assertEqual(len([args for args in self.named("actor_use_action") if args[0] == claw]), 1)
+        self.assertEqual(len([args for args in self.named("sweep_bnpc") if args[0] == claw]), count)
+
+    def second_part(self, floored_at=None):
+        """The second part from its talk, the four floored at `floored_at` seconds (never if None)."""
+        g = self.lua.globals()
+        g.D.fight = 3
+        g.part2 = False
+        g.part2_over = False
+        g.part2_ending = False
+        self.lua.execute("phantoms = { 501, 502, 503, 504 } floored = {} gone = {}")
+        self.lua.execute("D.clock = 0")
+        g.secondPart(self.director)
+        player = {"player1": {"x": -562.0, "y": -268.0, "z": 220.0, "id": 11}}
+        for tick in range(220):
+            if floored_at is not None and tick / 2 >= floored_at:
+                self.lua.execute("for _, p in ipairs(phantoms) do floored[p] = true end")
+            self.update(player)
+
+    def test_the_gauge_full_with_the_four_standing_wipes_the_party(self):
+        self.second_part()
+        uses = [args[1] for args in self.named("actor_use_action") if args[0] == self.BOSS3]
+        self.assertIn(28500, uses)
+        self.assertNotIn(28499, uses)
+        gauge = [args[1] for args in self.named("command") if args[1][1] == 58]
+        self.assertEqual(max(n[2] for n in gauge if n[2] != 0xFFFFFFFF), 10000)
+
+    def test_the_four_down_ends_it_as_before(self):
+        self.second_part(floored_at=70.0)
+        uses = [args[1] for args in self.named("actor_use_action") if args[0] == self.BOSS3]
+        self.assertIn(28499, uses)
+        self.assertNotIn(28500, uses)
 
 
 class CastrumLiviaTest(FrameworkScriptTest):
@@ -1583,22 +1717,27 @@ class CastrumCidTest(FrameworkScriptTest):
         g = self.lua.globals()
         g.D.done.talk_33512 = True
         self.at(5.0, -80.0)
-        sweeps = self.named("sweep_bnpc")
-        self.assertEqual([(args[0], round(args[1], 1), round(args[3], 1)) for args in sweeps],
-                         [(9089788, -32.0, -96.0)])
+        # His two legs to the corner are one run, no stop between (Bob's mark of 2026-11-24 in the Praetorium.)
+        paths = self.named("sweep_bnpc_path")
+        self.assertEqual(len(paths), 1)
+        self.assertEqual(paths[0][0], 9089788)
+        points = [(round(p[1], 1), round(p[3], 1)) for p in paths[0][1].values()]
+        self.assertEqual(points, [(-32.0, -96.0), (-51.8, -90.3)])
+        self.assertEqual(paths[0][2], 8.0)
+        self.assertEqual(self.named("sweep_bnpc"), [])
         self.assertIn([9089788], self.named("hold_bnpc"))
         # 38.6 then 20.6 yalms at 8 a second: at the corner by 7.4 s, turns north, and there waits for the party.
         for _ in range(30):
             self.at(-45.0, -92.0)
-        self.assertEqual(len(self.named("sweep_bnpc")), 2)
+        self.assertEqual(len(self.named("sweep_bnpc")), 0)
         self.assertIn([9089788, -51.8, 68.9, -90.3, -0.287], self.named("move_bnpc"))
         # Someone level with him (Bob's mark of 2026-11-23: "he should move much sooner"): 4 s on he runs on, and at
         # the generator takes it as his target and hits it.
         for _ in range(8):
             self.at(-52.0, -88.0)
-        self.assertEqual(len(self.named("sweep_bnpc")), 2)
+        self.assertEqual(len(self.named("sweep_bnpc")), 0)
         self.at(-52.0, -88.0)
-        self.assertEqual(round(self.named("sweep_bnpc")[2][3], 2), -23.15)
+        self.assertEqual(round(self.named("sweep_bnpc")[0][3], 2), -23.15)
         # 67.2 yalms: there by 8.4 s, then a hit every 2.05 s.
         for _ in range(40):
             self.at(-58.0, -53.0)

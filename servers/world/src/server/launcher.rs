@@ -48,8 +48,13 @@ pub struct LauncherState {
 
 /// `territory`'s launchers (`launchers.json`.)
 pub fn launchers(territory: u16) -> Vec<Launcher> {
+    table().get(&territory).cloned().unwrap_or_default()
+}
+
+/// Every territory's launchers, read once.
+fn table() -> &'static HashMap<u16, Vec<Launcher>> {
     static TABLE: OnceLock<HashMap<u16, Vec<Launcher>>> = OnceLock::new();
-    let table = TABLE.get_or_init(|| {
+    TABLE.get_or_init(|| {
         let value: serde_json::Value =
             serde_json::from_str(include_str!("../../../../resources/data/launchers.json"))
                 .unwrap_or_default();
@@ -98,8 +103,22 @@ pub fn launchers(territory: u16) -> Vec<Launcher> {
             table.insert(territory, launchers);
         }
         table
-    });
-    table.get(&territory).cloned().unwrap_or_default()
+    })
+}
+
+/// Whether `actor` is one of its zone's launchers. Nobody fights one: no bot takes it on and no player's area hits it
+/// (retail's ten in the Praetorium took no hit in five runs; in Bob's run of 2026-11-24 his tank bot attacked one and
+/// everyone's areas caught it till it died: on the enemies' battalion, it was a foe to Kawari.)
+pub fn is_launcher(instance: &Instance, actor: &NetworkedActor) -> bool {
+    let NetworkedActor::Npc { spawn, .. } = actor else {
+        return false;
+    };
+    spawn.common.layout_id != 0
+        && table().get(&instance.zone.id).is_some_and(|launchers| {
+            launchers
+                .iter()
+                .any(|launcher| launcher.layout == spawn.common.layout_id)
+        })
 }
 
 fn across_the_ground(a: Vec3A, b: Vec3A) -> f32 {

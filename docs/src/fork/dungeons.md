@@ -40,7 +40,9 @@ gives its duty's facts:
 | `pack({ name, layouts, ready, effects, spawns, come_out, on_fall })` | Once every one of `layouts` is dead (and `ready()`): its map effects ({ index, timeline, state }), `spawns` spawned (or come out of hiding with `come_out`), `on_fall(director)`; `done[name]` after (`pack1`... if unnamed). |
 | `step({ name, ready, where, run })` | Somewhere the party's steps set something off, once: when `ready()` (if given) and anyone passes `where(member)`, `run(director)`; looked at in order every update. |
 | `boss({ id, layout, wall, line, place, middle, room, helpers, bgm, after_bgm, talker, waves, ready, last, comes_later, on_pull, on_cast, on_death, on_wipe, on_recommence })` | A boss and its room: `director:boss_room` at setup (`comes_later`: `bringBoss` brings it, with `spawn_boss`), the wall hidden and the line shown until a pull, `room` = { members, radius } kept to it (`director:keep_in_room`), its hidden `helpers` = { layout, count, release } brought and held (`release`: let go, ActorControl 417, before they go as it falls) (`helperAt`, `helpersCast`), pulled when hurt or after someone (never again after a wipe till it's home, whole and with no target), its music, `talker` = { name, pull, at = { { seconds, text } }, ms, still }: its talks at the pull and into its fight, `waves` = { action, after, list }: each cast of `action` brings the next wave `after` seconds on, each of it already in the boss's fight, with the party's enmity on the boss, so it goes for whoever holds the most (`director:join_fight`, 2026-11-23: retail's Black Eft's waves, 14 of 14 the moment they appeared), gone with its fall or a wipe; `last`: its fall ends the fights. |
-| `lead(director, layout, from, legs, on_end)` | An NPC leads the way from `from`, leg by leg: `{ to, speed }` runs there in a straight line (`director:sweep_bnpc`), `{ wait = s }` stands, `{ until_party = function(member) }` stands until anyone of the party is where the test says; then `on_end(director)`. Held all the while (`hold_bnpc`) and after (2026-11-23: Castrum Meridianum's Cid, who ran ahead, waited at a corner for the party and ran on to the generator). |
+| `lead(director, layout, from, legs, on_end)` | An NPC leads the way from `from`, leg by leg: `{ to, speed }` runs there in a straight line (`director:sweep_bnpc`), `{ wait = s }` stands, `{ until_party = function(member) }` stands until anyone of the party is where the test says; then `on_end(director)`. Held all the while (`hold_bnpc`) and after (2026-11-23: Castrum Meridianum's Cid, who ran ahead, waited at a corner for the party and ran on to the generator). Legs one after another at one speed, none turning it but the last, are one run without a stop (`sweep_bnpc_path`, 2026-11-24: the Praetorium's Cid). |
+| `pursue(director, npc, target, { speed, after, reach, action, on_reach })` | (2026-11-24) An NPC (actor ID) goes for one of the party (`target`) and no one else: stands `after` s, walks at `speed` towards them, re-aimed every update (`sweep_bnpc` to just short of them), and within `reach` uses `action` on them once. Held: no auto-attack, no other target. Waits for its NPC to be there after its spawn; ends with it (once seen) or its quarry gone. The Praetorium's Death Claw. |
+| `wall_shut_at_start` (a boss's) | Its wall is a door retail spawned shut (Haukke Manor's last room); every other boss's wall must be opened at the start (`BossWallsOpenAtTheStartTest`, 2026-11-24: the Praetorium's stood shut, its first room sealed before anyone came). |
 | `update(director, health, player_health, info, between)` | Every update: the party, the steps, the pulls, then the script's `between(director)`, then what's due (`after`). |
 | `group` (a boss's) | Several that are the boss together: a room for each at setup, pulled with any, fallen with the last (`on_death` gets that one and where it fell); `layout` is the first (Haukke Manor's pair.) |
 | `pulled_by` (a boss's) | Layouts whose being after someone pulls the boss too (Brayflox's first boss's adds), even before the boss is out (the Tam-Tara Deepcroft's packs, whose fall calls their room's boss); after a wipe not till they're after nobody. |
@@ -1656,7 +1658,7 @@ where they were in the runs (the script's `WHERE_*`).
 | 674.8-842.2 | **The armour** (EObj 2012819, GimmickAccessor 0x40A): a one-second event and **Mount 17**; the player uses **action 1128** from it (39 times) (4500 to each enemy it hits, every time) on the sixteen. The last five dead (9082028-9082032): map effect 5, and the way's end (a ramp by (231, 66)) takes everyone below with a PrepareZoning (739.0: (108.7, -106.0, 0.5), still mounted) to seven more (9168161-9168164, 9168175-9168177, there as the party is). A player north of z -29.5: map effect 8 and the first of four of base 14566 (9082092; it dead: map effect 12, timeline 1); the three of 9168162-9168164 dead and a player west of x 54.5: map effect 9 and the second (13); all seven dead and a player west of x -16.5: map effect 10 and the third; it dead: map effect 11 and the fourth 0.6 s on; it dead: map effects 14 and 18 and base 14616 (9089992, 34951 HP) |
 | 842.2 | Base 14616 dead: **cutscene 392** `[5, 392, 1, 0, 0]` (107 s), map effect 6 (timeline 1, state 4) with it and 7 (4, 4) 2 s on; the mount goes 1.6 s into it (SetMode 1 and ActorControl 930) |
 | 960.3 | West of x -130: objective 2 and **cutscene 283** `[5, 283, 1, 151, 0]` (240 s); the second boss there 2.3 s in |
-| 1208.2-1348.2 | **The second boss** (9054847, BNpcBase 14451, BNpcName 2135, 77877 HP; arena 20 yalms round (-164, 0)): talk 32900 4.1 s after its pull in all five runs (map effect 0, timeline 2 state 1, with it), 32902 and 32901 9.2 and 29.6 s after that, 32903 as its health goes below 20 % (19.8 to 19.9 % in four runs, 18.4 in one). Its casts the same to 0.4 s (`PraetoriumBoss2_14451.json`, to 148.8 s: 28483 on its target, 28477 shared, 28482 and 28478 cones, 28476 on everyone, 28481 round it, 28475 with no cast before some of them: where it goes then wasn't read); 0.9 s after each 28479 lands one of base 14452 (9054848) comes, north of the middle then south, with its 28480. EventLogMessage 2012 `[454, 15]`, wall 2000822. 137 to 160 s. It fallen: objective 3, map effects 0 (8, 4) and 15, **cutscene 284** `[5, 284, 1, 149, 0]` (103 s) |
+| 1208.2-1348.2 | **The second boss** (9054847, BNpcBase 14451, BNpcName 2135, 77877 HP; arena 20 yalms round (-164, 0)): talk 32900 4.1 s after its pull in all five runs (map effect 0, timeline 2 state 1, with it), 32902 and 32901 9.2 and 29.6 s after that, 32903 as its health goes below 20 % (19.8 to 19.9 % in four runs, 18.4 in one). Its casts the same to 0.4 s (`PraetoriumBoss2_14451.json`, to 148.8 s: 28483 on its target, 28477 shared, 28482 and 28478 cones, 28476 on everyone, 28481 round it, 28475 with no cast before some of them: where it goes then wasn't read); 0.9 s after each 28479 lands one of base 14452 (9054848, the Death Claw) comes at one of the four edges, tethered to one of the party (see [below](#the-praetorium-against-its-runs-2026-11-24)), with its 28480. EventLogMessage 2012 `[454, 15]`, wall 2000822. 137 to 160 s. It fallen: objective 3, map effects 0 (8, 4) and 15, **cutscene 284** `[5, 284, 1, 149, 0]` (103 s) |
 | 1465.9 | **EObj 2012817** (GimmickAccessor 0x408; spawned as cutscene 283 began): objective 4, map effect 16, **cutscene 118** `[5, 118, 0, 152, 1]` (278 s); as it ends everyone at (-550.2, -268.0, 220.3) and the last boss there |
 | 1750.7-1995.3 | **The last boss** (9055066, BNpcBase 14453, BNpcName 2136, 93255 HP; a room 15 by 20 round (-562, 220)): talks 32904 (the pull), 32906, 32905, 32907 at 39.5, 62.1 and 80.5 s; [its fight](#the-praetoriums-last-boss) below. It doesn't fall: at 1 HP the duty is complete (0x40000003), **cutscene 374** `[5, 374, 0, 18, 0]`, then everyone out at (-764.7, -344.0, 0.5) |
 
@@ -1693,7 +1695,8 @@ first too) take places at the corners of a rectangle 15 by 20 round the middle a
 | 27.8 | Their 29051, and the rows of 29052 from 31.5 s, south to north in all four runs |
 | 49.9 | Their 28491, and the 28492s 3.9 s in |
 | | **Each of the four doesn't fall**: at 1 HP it goes (ActorControl 54 `[0]`, ActionTimeline 7737) once it's free: at once, or 2.2 s after the cast it was in (all sixteen in four runs) |
-| 67.9 or 77.9 | **It ends**: talk 32908 and ActorControl 70 `[8201036]`. 67.9 s in the one run where all four were at 1 HP by then (66.1 s), 77.9 in the three where the last got there at 68.4, 70.1 and 76.7 s: a look every 10 s here, 87.9 the last whatever they are (a guess: none was missed) |
+| 67.9 or 77.9 | **It ends**: talk 32908 and ActorControl 70 `[8201036]`. 67.9 s in the one run where all four were at 1 HP by then (66.1 s), 77.9 in the three where the last got there at 68.4, 70.1 and 76.7 s: a look every 10 s here (67.9, 77.9, 87.9), and at the gauge's full (97.5 s) |
+| 97.5 | **The gauge full with any of the four up**: its 28500 wipes the party (2026-11-24, from Harmony's visual guide; no run let it fill: the full, 10000, and 28500's area and amount, more than anyone's HP, are guesses) |
 | +2.1 | Its 28499 on everyone (605 to 1650: what scales it wasn't read) |
 | +5.1, +7.4 | ActorControls 70 `[8201619]`, then 62 and 63 `[0]`; the gauge gone (0xFFFFFFFF) at +9.1 |
 | +12.2 | Talk 32909, it can be targeted, and fights on: 28495 7.1 s later. It was at 1 HP 7 to 12 s after that cast began |
@@ -1766,6 +1769,54 @@ played (scratch: each actor's moves, ActorControls, NpcYells, casts and effects)
 
 Tests `PraetoriumTest` (Cid's run and 63 `[48]`, the launchers' stretches, the second boss's leaps out and back) and
 `the_praetoriums_launchers_cast_only_while_the_director_has_them_on`. **Unplayed.**
+
+**Bob's run on `f3c32e2`** (2026-11-24, four marks, read through the harness), and the points of Harmony's visual
+guide to the dungeon checked against the five runs:
+
+* **The first boss's room was sealed before anyone came** ("the arena that lead to the cutscene was blocked before
+  entering ... the dungeon is literally impossible to play"): Kawari spawned its wall (EObj 2000828, at x 209) shut
+  (event state 0) and Bob stopped against it at x 208.3. Retail spawned both rooms' walls open (state 7: 2000828 and
+  the second's 2000822) and shut each with ActorControl 106 `[0]` 15 s into its fight, opening them with the lines
+  (106 `[7]`) as the boss fell (captures 6320ae56 and af05916c). The script now opens both at setup, as every other
+  duty on the framework does; `BossWallsOpenAtTheStartTest` holds every framework duty to it (Haukke Manor's last,
+  a door retail spawned shut, says so: `wall_shut_at_start`). Retail's members ran in a column behind the player
+  (z +1.7, 0, -1.7, about 6 yalms a second) through the wall's spot and stopped level with them as the cutscene began:
+  nothing more than following through an open wall, which the bots do.
+* **Cid stopped at each of his points** ("make his movement a tad stiff as he stops on each one"): one sweep a leg,
+  the next only at the next update. `D:lead` now runs legs at one speed as one path (`sweep_bnpc_path`).
+* **A launcher was killed**: Bob's tank bot attacked one (Heavy Swing, Tomahawk) and everyone's areas caught it.
+  Kawari's spawn was retail's (battalion 4, no HOSTILE flag, display flags 0x40008); retail's ten took no hit in five
+  runs. A launcher is now beyond players' areas and no bot's foe (`launcher::is_launcher`). (Display flag 0x8 alone
+  doesn't say an NPC isn't fought: the last boss's four 14455s have it, and are fought.)
+* **The Machinist bot stood idle mid-fight** (Fenkaa Fenlenkaar, at (221.4, 156.0, -43.9), "refused to attack"):
+  the server's log has her held up by the zone's collision for 94.5 s on her way to her place by Bob (29 yalms off,
+  past her 25), not attacking meanwhile, then put beside him. Not fixed: see [Known issues](known-issues.md).
+* **The Death Claw** (BNpcBase 14452; the guide: "This claw will tether to one player and slowly move towards them.
+  If it reaches its target, it will knock them back"): retail's came at one of the four edges 20 yalms out (north,
+  south, east, west, no order: the script had north then south), facing the middle, its SpawnNpc's tether target one
+  of the party (a member or the player) with Channeling 17; it stood 4.9 s, walked after them alone at 3.0 yalms a
+  second and, the three times of ten it got there, used 28480 on them (knockback row 70) from 3.2 to 3.7 yalms; it
+  never auto-attacked. Now so (`spawn_tethered_bnpc` to a party member, `D:pursue`).
+* **Augmented Uprising** (28478, "leap to the outer edge ... a massive frontal cone"): retail's went straight at the
+  middle from the edge (0.00 rad off, ten of ten) and the boss stood on the edge 20.8 to 23.8 s till it leapt back,
+  turning only for its 28483. Kawari kept whatever facing it leapt with and let it walk off after the tank. It lands
+  facing the middle now, its 28478 `as_it_stands`, rooted on the edge till its next leap.
+* **Grand Sword** (28473, "turn to face a random player"): retail's was aimed at one of the party, the tank or not
+  (nine casts: a Thaumaturge, the White Mage player, a Lancer, an Arcanist...). It faced the tank in Kawari; now
+  `any_foe`. Iron Uprising (28482) went at the tank every time (ten of ten), as before.
+* **Veni Vidi Vici and the gauge** ("If all four phantoms haven't been destroyed before the blade energy gauge has
+  reached 100%. This attack will instantly wipe the party"): the second part no longer ends at 87.9 s whatever the four
+  are; with any up as the gauge fills, 28500 wipes the party (above). 28499's amounts (605 to 1650) follow each target's
+  defence, not the gauge.
+* **Already as the guide says**: Ceruleum Vent, Prototype Laser Alpha and Beta, Spine Shatter, Augmented Shatter,
+  Augmented Suffering (its knockback from the middle), Wheel of Suffering, Horridus Bellum, Terminus Est, Phantasmata,
+  Innocence, Festina Lente, Ductus, Hand of the Empire, the four's Heirsbane.
+* **Not built, no data**: the ring of lightning ether round the second boss's room (the guide: a damage-over-time to
+  whoever touches it; nobody did in the runs, so its status isn't known; map effect 0 shows it and nothing hurts);
+  Iron Uprising's knockback (it hit no one in ten casts).
+
+Tests `BossWallsOpenAtTheStartTest`, `PraetoriumClawAndEnrageTest`, the leaps' in `PraetoriumTest`,
+`nobody_fights_a_launcher`, `a_path_goes_on_round_its_points_without_stopping`. **Unplayed.**
 
 ## At a wipe, duty by duty (2026-11-10)
 

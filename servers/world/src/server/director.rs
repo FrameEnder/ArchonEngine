@@ -89,12 +89,16 @@ pub enum LuaDirectorTask {
         /// adds (one layout ID for each kind) wherever it called them.
         at: Option<(Position, Option<f32>)>,
     },
-    /// Spawn a BNpc (by layout ID) tethered to another (by layout ID): the line the client draws between them, a
-    /// Channeling row, comes with its spawn and goes when it dies (retail: Tam-Tara's shields to Galvanth.)
+    /// Spawn a BNpc (by layout ID) tethered to another actor (an actor ID: a player, a bot; or a BNpc's layout ID):
+    /// the line the client draws between them, a Channeling row, comes with its spawn and goes when it dies (retail:
+    /// Tam-Tara's shields to Galvanth; the Praetorium's Death Claws to one of the party, Channeling 17.) `actor_id` is
+    /// the one it's given; `at` where, if not its layout's spot.
     SpawnTetheredBattleNpc {
         id: u32,
         to: u32,
         channeling: u16,
+        actor_id: ObjectId,
+        at: Option<(Position, Option<f32>)>,
     },
     /// Remove a BNpc (by layout ID) without it dying, e.g. the background fighters before a quest battle's cutscene.
     DespawnBattleNpc {
@@ -357,6 +361,8 @@ pub enum LuaDirectorTask {
         cast_after: Option<f32>,
         /// It goes with its walk (ActorMove's movement type 2) whatever its speed, as QB86's darting bombs did.
         walking: bool,
+        /// The points it goes by on its way to `to`, without stopping (`sweep_bnpc_path`; none: straight.)
+        via: Vec<Position>,
     },
     /// Plays an animation (ActionTimeline) on a BNpc, as retail's Sastasha captain does as he calls his men through the
     /// gate (980.)
@@ -1057,10 +1063,32 @@ impl UserData for LuaDirector {
         );
         methods.add_method_mut(
             "spawn_tethered_bnpc",
-            |_, this, (id, to, channeling): (u32, u32, u16)| {
-                this.tasks
-                    .push(LuaDirectorTask::SpawnTetheredBattleNpc { id, to, channeling });
-                Ok(())
+            |_,
+             this,
+             (id, to, channeling, x, y, z, rotation): (
+                u32,
+                u32,
+                u16,
+                Option<f32>,
+                Option<f32>,
+                Option<f32>,
+                Option<f32>,
+            )| {
+                let actor_id = ObjectId(fastrand::u32(1..0xE000_0000));
+                let at = match (x, y, z) {
+                    (Some(x), Some(y), Some(z)) => {
+                        Some((Position(glam::Vec3A::new(x, y, z)), rotation))
+                    }
+                    _ => None,
+                };
+                this.tasks.push(LuaDirectorTask::SpawnTetheredBattleNpc {
+                    id,
+                    to,
+                    channeling,
+                    actor_id,
+                    at,
+                });
+                Ok(actor_id.0)
             },
         );
         methods.add_method_mut("despawn_bnpc", |_, this, layout_id: u32| {
@@ -1906,6 +1934,37 @@ impl UserData for LuaDirector {
                     every: every.unwrap_or(1.0),
                     cast_after,
                     walking: walking.unwrap_or(false),
+                    via: Vec::new(),
+                });
+                Ok(())
+            },
+        );
+        // A BNpc run by several points in one go, at `speed` (`{ { x, y, z }, ... }`, the last its end): no stop at
+        // any (the Praetorium's Cid, five retail runs.)
+        methods.add_method_mut(
+            "sweep_bnpc_path",
+            |_, this, (who, points, speed, delay): (u32, Vec<mlua::Table>, f32, Option<f32>)| {
+                let mut path = Vec::new();
+                for point in points {
+                    let x: f32 = point.get(1)?;
+                    let y: f32 = point.get(2)?;
+                    let z: f32 = point.get(3)?;
+                    path.push(Position(glam::Vec3A::new(x, y, z)));
+                }
+                let Some(to) = path.pop() else {
+                    return Ok(());
+                };
+                this.tasks.push(LuaDirectorTask::SweepBattleNpc {
+                    who,
+                    to,
+                    speed,
+                    delay: delay.unwrap_or(0.0),
+                    helper: None,
+                    action: 0,
+                    every: 1.0,
+                    cast_after: None,
+                    walking: false,
+                    via: path,
                 });
                 Ok(())
             },
@@ -3288,11 +3347,29 @@ pub fn director_tick(
                     tracing::warn!("Failed to find bnpc {id} for SpawnBattleNpc, it won't spawn!");
                 }
             }
-            LuaDirectorTask::SpawnTetheredBattleNpc { id, to, channeling } => {
+            LuaDirectorTask::SpawnTetheredBattleNpc {
+                id,
+                to,
+                channeling,
+                actor_id,
+                at,
+            } => {
                 if let Some(mut npc) = instance.zone.get_battle_npc(*id) {
                     npc.common.handler_id = director_id;
-                    match instance.find_npc(*to) {
-                        Some((target, _)) => {
+                    if let Some((position, rotation)) = at {
+                        npc.common.position = *position;
+                        if let Some(rotation) = rotation {
+                            npc.common.rotation = *rotation;
+                        }
+                    }
+                    // An actor ID (one of the party), else a BNpc's layout ID.
+                    let target = if instance.find_actor(ObjectId(*to)).is_some() {
+                        Some(ObjectId(*to))
+                    } else {
+                        instance.find_npc(*to).map(|(target, _)| target)
+                    };
+                    match target {
+                        Some(target) => {
                             // Retail's spawn carried the tether: its target and the Channeling row (Bob's Tam-Tara
                             // captures of 2026-10-24: every shield, tether 1 to Galvanth.)
                             npc.common.tether_target_id = target;
@@ -3304,7 +3381,7 @@ pub fn director_tick(
                     }
                     let config = get_config();
                     let mut game_data = game_data.lock();
-                    instance.insert_npc(ObjectId(fastrand::u32(..)), npc, &config, &mut game_data);
+                    instance.insert_npc(*actor_id, npc, &config, &mut game_data);
                 } else {
                     tracing::warn!(
                         "Failed to find bnpc {id} for SpawnTetheredBattleNpc, it won't spawn!"
@@ -4350,6 +4427,7 @@ pub fn director_tick(
                 every,
                 cast_after,
                 walking,
+                via,
             } => {
                 let Some(walker) = resolve_bnpc(instance, *who) else {
                     tracing::warn!("Failed to find bnpc {who} to sweep!");
@@ -4392,6 +4470,7 @@ pub fn director_tick(
                 instance.sweeps.push(crate::server::sweep::Sweep {
                     walker,
                     from,
+                    via: via.iter().map(|point| point.0).collect(),
                     to: to.0,
                     speed: *speed,
                     sets_off: now + Duration::from_secs_f32(delay.max(0.0)),

@@ -1237,6 +1237,40 @@ fn a_players_area_action_leaves_a_directors_helper_alone() {
     assert!(!beyond(passive));
 }
 
+/// Bob's run of 2026-11-24 in the Praetorium: his tank bot attacked one of the launchers (BNpcBase 6358, battalion 4 as
+/// the enemies, no HOSTILE flag) and everyone's areas caught it till it died; retail's ten took no hit in five runs.
+/// A zone's launcher is beyond the players' area actions and no bot's foe; an enemy beside it is hit as ever.
+#[test]
+fn nobody_fights_a_launcher() {
+    use crate::server::action::beyond_area_actions;
+    use crate::server::launcher::is_launcher;
+    let mut world = TestWorld::new();
+    world.instance.zone.id = 1044;
+    world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let launcher = world.enemy(ENEMY, [2.0, 0.0, 2.0], 2589);
+    let enemy = world.enemy(ENEMY + 1, [3.0, 0.0, 3.0], 6472);
+    for (id, layout) in [(launcher, 9082875), (enemy, 9081969)] {
+        if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(id) {
+            spawn.common.layout_id = layout;
+        }
+    }
+    {
+        let instance = &world.instance;
+        let actor = |id| instance.find_actor(id).unwrap();
+        assert!(is_launcher(instance, actor(launcher)));
+        assert!(!is_launcher(instance, actor(enemy)));
+        assert!(beyond_area_actions(instance, launcher, actor(launcher)));
+        assert!(!beyond_area_actions(instance, enemy, actor(enemy)));
+    }
+    // Another zone's NPC of that layout is no launcher.
+    world.instance.zone.id = 1043;
+    let instance = &world.instance;
+    assert!(!is_launcher(
+        instance,
+        instance.find_actor(launcher).unwrap()
+    ));
+}
+
 /// Cape Westwind's boss with his shield up (statuses 680 and 2195 after his 28866; `director:guard_front`): retail's
 /// blocked the hit from straight in front for nothing and let the ones from 46° off and more through (Bob's and
 /// Connor's Chronofoil captures, four runs). Kawari's took every hit, and the counter that answers one never came.

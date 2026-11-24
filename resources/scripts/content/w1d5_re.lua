@@ -46,10 +46,12 @@
 --     (the director's 0x8000000C [58, n], n up 111 a second from 7.5 s). At 77.9 s talk 32908, 28499 on everyone 2.1
 --     s later, talk 32909 at 90.1 and it fights on (28495 7.1 s later; it fell within 12 s of it in the runs).
 --
--- Not known, so guessed or left out: the event ranges (above); what ends the second part (77.9 s in three runs, 67.9
--- in one with its gauge stopped at 65.5 s: 77.9 here, the gauge to 67.6 s as in Bob's last run) and what the gauge
--- and 28499's amount (605 to 1650) have to do with the 14455s' deaths; which edge 28475 takes the second boss to
--- (one at random here); the bosses' clocks past what the runs show (the rounds go on); a fall at a boss (it wasn't seen: the party is
+-- Not known, so guessed or left out: the event ranges (above); the gauge's full (10000 here, at 97.5 s, when 28500
+-- wipes the party with any of the four standing: Harmony's visual guide; no run let it fill) and its 28500's area
+-- and amount (more than anyone's HP); which edge 28475 takes the second boss to (one at random here); the second
+-- boss's ring of lightning at the edge (the guide: a damage-over-time to whoever touches it; no run did, so its
+-- status isn't known: map effect 0 shows it, nothing hurts); Iron Uprising's (28482) knockback (it hit no one in ten
+-- casts); the bosses' clocks past what the runs show (the rounds go on); a fall at a boss (it wasn't seen: the party is
 -- sent back to where the last lift or cutscene put it, `set_start`, and the fight begins again); whether the 14455s
 -- attack between their casts (they do here); the members on the ride (they walk); ActorControls 20, 62, 63 and 70 on
 -- the last boss (sent as retail did); Cid's NpcYell 13805 every 8 s while the party watches cutscene 280 (four runs of
@@ -60,7 +62,12 @@
 -- floor (CID_*), the members' story lines (LINE_*), the bosses' own (YELL_*), the second boss's 28475 out to an edge
 -- and back, every leap an AoeEffect8 at no one where it comes down (`cast_aims.json`, `aim_action`), and the ten
 -- launchers' 29049 (`launchers.json`: the first five from map effect 4 to the ten's fall, the other five from the
--- ride's first six falling to map effect 5).
+-- ride's first six falling to map effect 5). Later the same day (Bob's run on `f3c32e2`: "the arena that lead to the
+-- cutscene was blocked before entering ... the dungeon is literally impossible to play"): both boss rooms' walls open
+-- from the start as retail spawned them; Cid runs his points in one go (`D:lead` by `sweep_bnpc_path`); the Death
+-- Claw at one of four edges, tethered to one of the party and going for them alone (`D:pursue`); Grand Sword at one
+-- of the party at random and Augmented Uprising at the middle (the timelines' facings), the second boss kept on its
+-- edge till it leaps back; the last boss's enrage.
 
 -- Written with the dungeon framework (content/lib/Dungeon.lua, loaded first): its packs, steps and bosses are
 -- declared below, and what only this duty does is in their hooks.
@@ -159,7 +166,17 @@ BOSS2_TALKS = { { 4.1, 32900 }, { 13.3, 32902 }, { 33.7, 32901 } }
 BOSS2_TALK_BELOW = 20
 BOSS2_ADD = 9054848
 BOSS2_ADD_AFTER = 3.6 -- its 28479's 2.7 s and 0.9 more
-BOSS2_ADD_AT = { { -164.0, -104.2, -20.0 }, { -164.0, -104.2, 20.0 } }
+-- Where each came: one of the four edges, 20 yalms out, facing the middle (ten in five runs: north, south, east and
+-- west, no order to it), tethered to one of the party (SpawnNpc's tether target, Channeling 17: a member or the
+-- player). It stood 4.9 s, walked after them alone at 3.0 yalms a second and, the three times it got there, used
+-- 28480 on them from 3.2 to 3.7 yalms (knockback row 70); it never auto-attacked (`D:pursue`.)
+BOSS2_ADD_AT = { { -164.0, -104.2, -20.0 }, { -164.0, -104.2, 20.0 }, { -144.0, -104.2, 0.0 },
+    { -184.0, -104.2, 0.0 } }
+BOSS2_ADD_TETHER = 17
+BOSS2_ADD_STANDS = 4.9
+BOSS2_ADD_SPEED = 3.0
+BOSS2_ADD_REACH = 3.5
+BOSS2_ADD_ACTION = 28480
 
 BOSS3 = 9055066
 BOSS3_MIDDLE = { x = -562.0, y = -268.0, z = 220.0 }
@@ -220,8 +237,14 @@ PHANTOM_LOCK = 2.2
 COMMAND_GAUGE = 0x8000000C
 GAUGE = 58
 GAUGE_FROM = 7.5
-GAUGE_SECONDS = 80
 GAUGE_FULL_SECONDS = 9.0 -- n is 1000 nine seconds in: 111 a second
+-- Full at 10000 (a guess: 100 %, as the client's gauge shows hundredths; it stopped at 64 to 77 % in the runs), 90 s on,
+-- when, with any of the four still standing, the boss's 28500 wipes the party (Harmony's visual guide: "If all four
+-- phantoms haven't been destroyed before the blade energy gauge has reached 100% ... this attack will instantly wipe
+-- the party"; none of the five runs let it fill.)
+GAUGE_FULL = 10000
+GAUGE_SECONDS = 90
+ENRAGE = 28500
 
 -- Cid, the same in all five runs to a tenth of a yalm: 0.2 s after talk 32920 he runs at 6.0 yalms a second along
 -- the entrance's floor to the magitek terminal (CID_TO_TERMINAL), and as he gets there ActorControl 63 [48]; with
@@ -546,7 +569,7 @@ D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = P
     on_pull = function(director)
         adds = 0
         leaps = 0
-        local function leap(at)
+        local function leap(at, next_at)
             D:after(at - BOSS2_AIM_BEFORE, function(d)
                 if D.fight ~= 2 then
                     return
@@ -566,9 +589,21 @@ D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = P
                 -- Aimed as its timeline's 28475 goes out (the same half-second), so its AoeEffect8 shows where it lands.
                 d:aim_action(BOSS2, BOSS2_LEAP, to.x, BOSS2_MIDDLE.y, to.z)
                 local first = leaps == 1
+                local out = leaps % 2 == 1
                 D:after(BOSS2_AIM_BEFORE + BOSS2_LEAP_LANDS, function(d2)
                     if D.fight == 2 then
-                        d2:jump_bnpc(BOSS2, to.x, BOSS2_MIDDLE.y, to.z, nil, nil, true)
+                        if out then
+                            -- On the edge facing the middle, for its 28478 (timeline `as_it_stands`), and kept there
+                            -- till it leaps back: retail's turned to the middle as the cast began and stood on the edge
+                            -- the whole 20.8 to 23.8 s, turning only for its 28483 (five runs.)
+                            local facing = math.atan(BOSS2_MIDDLE.x - to.x, BOSS2_MIDDLE.z - to.z)
+                            d2:jump_bnpc(BOSS2, to.x, BOSS2_MIDDLE.y, to.z, facing)
+                            if next_at ~= nil then
+                                d2:root_bnpc(BOSS2, next_at - at)
+                            end
+                        else
+                            d2:jump_bnpc(BOSS2, to.x, BOSS2_MIDDLE.y, to.z, nil, nil, true)
+                        end
                     end
                 end)
                 if first then
@@ -581,13 +616,18 @@ D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = P
                 end
             end)
         end
+        -- Every leap's time in order, each told the next (an edge leap is rooted till then.)
+        local times = {}
         for _, at in ipairs(BOSS2_LEAPS_ONCE) do
-            leap(at)
+            table.insert(times, at)
         end
         for round = 0, ROUNDS - 1 do
             for _, at in ipairs(BOSS2_LEAPS_ROUND) do
-                leap(at + round * BOSS2_LEAPS_EVERY)
+                table.insert(times, at + round * BOSS2_LEAPS_EVERY)
             end
+        end
+        for index, at in ipairs(times) do
+            leap(at, times[index + 1])
         end
         for index, row in ipairs(BOSS2_TALKS) do
             D:after(row[1], function(d)
@@ -606,13 +646,18 @@ D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = P
                 director:yell(BOSS2, YELL_BOSS2_28478)
             end
         end,
-        -- 0.9 s after each 28479 lands one of BNpcBase 14452 comes (north, then south.)
+        -- 0.9 s after each 28479 lands one of BNpcBase 14452 comes, at one of the edges (`BOSS2_ADD_AT`.)
         [28479] = function(director)
             adds = adds + 1
-            local at = BOSS2_ADD_AT[(adds - 1) % #BOSS2_ADD_AT + 1]
+            local at = BOSS2_ADD_AT[math.random(#BOSS2_ADD_AT)]
             D:after(BOSS2_ADD_AFTER, function(d)
-                if D.fight == 2 then
-                    d:spawn_bnpc(BOSS2_ADD, at[1], at[2], at[3], 0.0)
+                if D.fight == 2 and #D.party > 0 then
+                    local quarry = D.party[math.random(#D.party)]
+                    local facing = math.atan(BOSS2_MIDDLE.x - at[1], BOSS2_MIDDLE.z - at[3])
+                    local claw = d:spawn_tethered_bnpc(BOSS2_ADD, quarry.id, BOSS2_ADD_TETHER, at[1], at[2], at[3],
+                                                       facing)
+                    D:pursue(d, claw, quarry.id, { speed = BOSS2_ADD_SPEED, after = BOSS2_ADD_STANDS,
+                                                   reach = BOSS2_ADD_REACH, action = BOSS2_ADD_ACTION })
                 end
             end)
         end,
@@ -778,15 +823,26 @@ function secondPart(director)
             end
         end)
     end
-    -- It ends at the first of these with all four at 1 HP, and at the last whatever they are (a guess: 67.9 s once,
-    -- 77.9 three times; none was missed.)
-    for index, seconds in ipairs(PART2_ENDS) do
+    -- It ends at the first of these with all four at 1 HP (67.9 s once, 77.9 three times in the runs); with any of them
+    -- still up as the gauge fills, the boss's 28500 wipes the party.
+    for _, seconds in ipairs(PART2_ENDS) do
         at(seconds, function(d)
-            if allFloored() or index == #PART2_ENDS then
+            if allFloored() and not part2_ending then
                 secondPartEnds(d)
             end
         end)
     end
+    at(GAUGE_FROM + GAUGE_FULL * GAUGE_FULL_SECONDS / 1000, function(d)
+        if part2_ending then
+            return
+        end
+        if allFloored() then
+            -- (All four down since the last look: it ends now.)
+            secondPartEnds(d)
+        else
+            d:actor_use_action(BOSS3, ENRAGE)
+        end
+    end)
     for _, seconds in ipairs(PART2_ON_EACH) do
         at(seconds, function(d) phantomsUse(d, 28498, 4.7, true) end)
     end
@@ -1004,6 +1060,13 @@ function onSetup(director)
     setLaunchers(director, LAUNCHERS_RIDE, false)
     for _, object in ipairs({ EOBJ_LIFT1, EOBJ_HANGAR, EOBJ_ARMOUR, EOBJ_LAST, EOBJ_AFTER_LAST, EOBJ_EXIT }) do
         director:hide_eobj(object)
+    end
+    -- The bosses' walls stand open until their pulls: retail spawned 2000828 and 2000822 with event state 7 (open) at
+    -- the start and closed them (ActorControl 106 [0]) 15 s into each fight (captures 6320ae56 and af05916c). Kawari
+    -- spawned them closed, so the first boss's room was sealed before anyone came (Bob's marks of 2026-11-24: "the
+    -- arena that lead to the cutscene was blocked before entering", "the dungeon is literally impossible to play").
+    for _, wall in ipairs({ BOSS1_WALL, BOSS2_WALL }) do
+        director:hide_eobj(wall)
     end
     D:setup(director)
 end

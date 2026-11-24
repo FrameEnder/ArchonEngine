@@ -82,7 +82,8 @@
             "data": {
                 "type": "action",
                 "action_id": 28478,
-                "target": "itself"
+                "target": "itself",
+                "facing": "as_it_stands"
             },
             "comment": "46.6 s: a 6.7 s cast, a cone of 45 yalms"
         },
@@ -163,7 +164,8 @@
             "data": {
                 "type": "action",
                 "action_id": 28478,
-                "target": "itself"
+                "target": "itself",
+                "facing": "as_it_stands"
             },
             "comment": "111.0 s"
         },
@@ -248,7 +250,8 @@
             "data": {
                 "type": "action",
                 "action_id": 28478,
-                "target": "itself"
+                "target": "itself",
+                "facing": "as_it_stands"
             },
             "comment": "178.3 s, then every 67.3 s: not seen (it fell at 137 to 160 s); the round from 91.1 s again"
         },
@@ -303,5 +306,5 @@
             "comment": "216.1 s, then every 67.3 s: not seen (it fell at 137 to 160 s); the round from 91.1 s again"
         }
     ],
-    "comment": "The Praetorium's second boss (BNpcBase 14451, BNpcName 2135, layout 9054847): level 50, 77877 HP, there 2.3 s into cutscene 283. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.10) and Bob's 9ba7d981 (2026-11-17, visits 0.14 and 0.16), 50e72631 (2026-11-17, visit 0.5) and 6320ae56 (2026-11-18, visit 0.3), all with Duty Support: its casts were the same to 0.4 s from its pull in all five runs (battle talk 32900 comes 4.1 s after it), to 148.8 s; it fell at 137 to 160 s. Auto-attack 872 (434 and 262); 28483 on its target (1013 and 733), 28477 shared (1067 and 829), 28482 (a cone of 7 yalms, 120 degrees, a knockback: it hit no one), 28479 (one of BNpcBase 14452 comes, the director's: content/w1d5_re.lua), 28475 (no cast: it goes somewhere else in its room, which wasn't read: it stays here), 28478 (a cone of 45 yalms, 90 degrees: 2099 to a player), 28476 (everyone, a knockback: 620 and 572), 28481 (a circle of 7: 1636 to a member). Past 148.8 s the round from 91.1 s goes on every 67.3 s, a guess. Hitbox and range not recorded. Its 28475's lock: 1.1 s (an AoeEffect8 at no one where it comes down, retail's in all five runs; 2026-11-24)."
+    "comment": "The Praetorium's second boss (BNpcBase 14451, BNpcName 2135, layout 9054847): level 50, 77877 HP, there 2.3 s into cutscene 283. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.10) and Bob's 9ba7d981 (2026-11-17, visits 0.14 and 0.16), 50e72631 (2026-11-17, visit 0.5) and 6320ae56 (2026-11-18, visit 0.3), all with Duty Support: its casts were the same to 0.4 s from its pull in all five runs (battle talk 32900 comes 4.1 s after it), to 148.8 s; it fell at 137 to 160 s. Auto-attack 872 (434 and 262); 28483 on its target (1013 and 733), 28477 shared (1067 and 829), 28482 (a cone of 7 yalms, 120 degrees, a knockback: it hit no one), 28479 (one of BNpcBase 14452 comes, the director's: content/w1d5_re.lua), 28475 (no cast: it goes somewhere else in its room, which wasn't read: it stays here), 28478 (a cone of 45 yalms, 90 degrees: 2099 to a player), 28476 (everyone, a knockback: 620 and 572), 28481 (a circle of 7: 1636 to a member). Past 148.8 s the round from 91.1 s goes on every 67.3 s, a guess. Hitbox and range not recorded. Its 28475's lock: 1.1 s (an AoeEffect8 at no one where it comes down, retail's in all five runs; 2026-11-24). Each 28478 (Augmented Uprising, a cone over most of the room) goes the way it stands (`as_it_stands`): the director turns it to the middle as it lands on its edge, where retail aimed all ten, 0.00 rad off (2026-11-24)."
 }

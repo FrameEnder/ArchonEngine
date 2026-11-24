@@ -2844,6 +2844,7 @@ pub(crate) fn beyond_area_actions(
     actor: &NetworkedActor,
 ) -> bool {
     instance.untargetable_npcs.contains(&id)
+        || crate::server::launcher::is_launcher(instance, actor)
         || (instance.held_npcs.contains(&id)
             && matches!(actor, NetworkedActor::Npc { spawn, .. }
                 if !spawn.character_data_flags.contains(CharacterDataFlag::HOSTILE)))

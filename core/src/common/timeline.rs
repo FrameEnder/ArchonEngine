@@ -402,6 +402,14 @@ pub enum TimepointFacing {
     /// the player, within a degree, while it fought the one it was there to kill (Bob's Chronofoil captures 44df02fc and
     /// c9145fdc: 19 casts in seven runs.)
     Player,
+    /// Towards one of those on its enmity list, at random (whom it's fighting among them): the Praetorium's first boss
+    /// aimed each Grand Sword (28473, a cone) within a hundredth of a radian at one of the party, a Thaumaturge, a
+    /// White Mage, a Lancer, an Arcanist as often as the tank (nine casts in five retail runs, Bob's and Connor's
+    /// captures.)
+    AnyFoe,
+    /// The way it stands, unturned: a director turned it (the Praetorium's second boss aimed each Augmented Uprising,
+    /// 28478, straight at the middle from the edge it had leapt to, ten casts in five runs, whoever it fought.)
+    AsItStands,
 }
 
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]

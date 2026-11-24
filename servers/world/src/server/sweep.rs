@@ -8,6 +8,11 @@
 //! way (an ActorMove each tick to where it will be by the next, at the speed, and its position along the line on the
 //! server), puts the helper where the walker is at each of its casts and has it use the action there; and the way
 //! ahead of each moving walker is a danger the party gets out of (`dodge::dangers`.)
+//!
+//! A sweep can go by several points in one run (`via`, `director:sweep_bnpc_path`): the Praetorium's Cid ran to the
+//! terminal by seven of them at 6 yalms a second with an ActorMove every 0.31 s and no stop at any (five retail runs),
+//! where one sweep a point stopped him at each till the next began (Bob's mark of 2026-11-24 on `f3c32e2`: "he stops
+//! on each one"). Each tick's ActorMove is where it will be a tick on along the whole way, round a corner if one comes.
 
 use std::{
     sync::Arc,
@@ -42,6 +47,8 @@ pub struct Sweep {
     /// What moves.
     pub walker: ObjectId,
     pub from: Vec3A,
+    /// The points it goes by on its way from `from` to `to`, in order (none: straight.)
+    pub via: Vec<Vec3A>,
     pub to: Vec3A,
     /// Yalms a second.
     pub speed: f32,
@@ -73,13 +80,62 @@ impl Sweep {
         }
     }
 
+    /// Its way's legs, `from` by each of `via` to `to`.
+    fn legs(&self) -> impl Iterator<Item = (Vec3A, Vec3A)> + '_ {
+        let points: Vec<Vec3A> = std::iter::once(self.from)
+            .chain(self.via.iter().copied())
+            .chain(std::iter::once(self.to))
+            .collect();
+        (0..points.len() - 1).map(move |i| (points[i], points[i + 1]))
+    }
+
+    fn across(a: Vec3A, b: Vec3A) -> f32 {
+        Vec2::new(b.x - a.x, b.z - a.z).length()
+    }
+
+    /// The leg it's on after going `gone` yalms, and how far along it.
+    fn leg_at(&self, gone: f32) -> (Vec3A, Vec3A, f32) {
+        let mut left = gone;
+        let mut last = (self.from, self.to);
+        for (a, b) in self.legs() {
+            let length = Self::across(a, b);
+            if left < length {
+                return (a, b, left);
+            }
+            left -= length;
+            last = (a, b);
+        }
+        (last.0, last.1, Self::across(last.0, last.1))
+    }
+
+    fn gone(&self, now: Instant) -> f32 {
+        if now <= self.sets_off {
+            0.0
+        } else {
+            now.duration_since(self.sets_off).as_secs_f32() * self.speed
+        }
+    }
+
+    fn direction_of(a: Vec3A, b: Vec3A) -> Vec3A {
+        Vec3A::new(b.x - a.x, 0.0, b.z - a.z)
+            .try_normalize()
+            .unwrap_or(Vec3A::Z)
+    }
+
+    /// The way it's going at `now` (its leg's.)
+    fn direction_at(&self, now: Instant) -> Vec3A {
+        let (a, b, _) = self.leg_at(self.gone(now));
+        Self::direction_of(a, b)
+    }
+
     fn direction(&self) -> Vec3A {
-        let flat = Vec3A::new(self.to.x - self.from.x, 0.0, self.to.z - self.from.z);
-        flat.try_normalize().unwrap_or(Vec3A::Z)
+        // A straight sweep's one way; a path's, its last leg's.
+        let (a, b) = self.legs().last().unwrap_or((self.from, self.to));
+        Self::direction_of(a, b)
     }
 
     fn length(&self) -> f32 {
-        Vec2::new(self.to.x - self.from.x, self.to.z - self.from.z).length()
+        self.legs().map(|(a, b)| Self::across(a, b)).sum()
     }
 
     /// When it reaches the end.
@@ -92,17 +148,38 @@ impl Sweep {
         if now <= self.sets_off {
             return self.from;
         }
-        let gone = now.duration_since(self.sets_off).as_secs_f32() * self.speed;
+        let gone = self.gone(now);
         if gone >= self.length() {
             return self.to;
         }
-        self.from + (self.to - self.from) * (gone / self.length())
+        let (a, b, along) = self.leg_at(gone);
+        let length = Self::across(a, b);
+        if length <= 0.0 {
+            return b;
+        }
+        a + (b - a) * (along / length)
     }
 
-    /// The way it faces as it goes (the game's rotation: 0 is +z.)
+    /// The way it faces as it goes (the game's rotation: 0 is +z): a straight sweep's one way.
     pub fn rotation(&self) -> f32 {
         let direction = self.direction();
         f32::atan2(direction.x, direction.z)
+    }
+
+    /// The way it faces at `now`, on whichever leg it's on.
+    pub fn rotation_at(&self, now: Instant) -> f32 {
+        let direction = self.direction_at(now);
+        f32::atan2(direction.x, direction.z)
+    }
+
+    /// The way from `at` to where it will be at `then`: a path's ActorMove faces where it's going next, round a corner.
+    fn facing_towards(&self, at: Vec3A, then: Instant, now: Instant) -> f32 {
+        let ahead = self.position(then);
+        let way = Vec3A::new(ahead.x - at.x, 0.0, ahead.z - at.z);
+        if way.length() < 0.01 {
+            return self.rotation_at(now);
+        }
+        f32::atan2(way.x, way.z)
     }
 
     /// The way ahead of it while it moves and hurts: a line from just behind it (its action's reach) to its end,
@@ -112,8 +189,10 @@ impl Sweep {
         {
             return None;
         }
+        // The rest of the leg it's on.
         let at = self.position(now);
-        let left = Vec2::new(self.to.x - at.x, self.to.z - at.z).length();
+        let (_, end, _) = self.leg_at(self.gone(now));
+        let left = Vec2::new(end.x - at.x, end.z - at.z).length();
         Some(Danger {
             action_id: self.action,
             shape: AreaShape::Line {
@@ -121,9 +200,9 @@ impl Sweep {
                 width: self.radius * 2.0,
             },
             caster_id: self.helper.unwrap_or(self.walker),
-            caster: at - self.direction() * self.radius,
-            rotation: self.rotation(),
-            aimed_at: self.to,
+            caster: at - self.direction_at(now) * self.radius,
+            rotation: self.rotation_at(now),
+            aimed_at: end,
             caster_radius: 0.0,
             until: self.arrives(),
         })
@@ -168,13 +247,18 @@ pub fn update(
         if now >= sweep.sets_off && !arrived {
             sweep.moving = true;
             let ahead = sweep.position(now + TICK);
+            let rotation = if sweep.via.is_empty() {
+                sweep.rotation()
+            } else {
+                sweep.facing_towards(at, now + TICK, now)
+            };
             network.lock().send_in_range_instance(
                 sweep.walker,
                 instance,
                 FromServer::ActorMove(
                     sweep.walker,
                     Position(ahead),
-                    sweep.rotation(),
+                    rotation,
                     sweep.movement_type(),
                     kawari::common::MoveAnimationState::None,
                     kawari::common::JumpState::NoneOrFalling,
@@ -193,7 +277,7 @@ pub fn update(
         {
             spawn.common.position = Position(at);
             if sweep.moving && !arrived {
-                spawn.common.rotation = sweep.rotation();
+                spawn.common.rotation = sweep.rotation_at(now);
             }
             navmesh_path.clear();
             *navmesh_path_lerp = 0.0;
@@ -206,13 +290,14 @@ pub fn update(
                 sweep.next_cast += sweep.every.max(Duration::from_millis(100));
             }
             let caster = sweep.helper.unwrap_or(sweep.walker);
+            let rotation = sweep.rotation_at(now);
             if let Some(helper) = sweep.helper {
                 if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(helper) {
                     spawn.common.position = Position(at);
                 }
                 let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(ActorSetPos {
                     position: Position(at),
-                    rotation: sweep.rotation(),
+                    rotation,
                     ..Default::default()
                 }));
                 network.lock().send_to_instance(
@@ -249,6 +334,7 @@ mod tests {
         Sweep {
             walker: ObjectId(1),
             from: Vec3A::new(57.0, 4.5, lane),
+            via: Vec::new(),
             to: Vec3A::new(30.4, 4.0, lane),
             speed: 3.0,
             sets_off: now + Duration::from_secs_f32(after),
@@ -304,5 +390,37 @@ mod tests {
         assert!(last.danger(now + Duration::from_secs(8)).is_none());
         assert!(last.danger(now + Duration::from_secs(12)).is_some());
         assert!(last.danger(now + Duration::from_secs(25)).is_none());
+    }
+
+    /// Bob's mark of 2026-11-24 in the Praetorium: "the points cid walks along make his movement a tad stiff as he
+    /// stops on each one". Retail's Cid ran his seven points to the terminal at 6 yalms a second without a stop; a path
+    /// sweep goes on round each, its ActorMove each tick where it will be a tick on, and reaches the end when the
+    /// whole way's length at its speed says.
+    #[test]
+    fn a_path_goes_on_round_its_points_without_stopping() {
+        let now = Instant::now();
+        let mut cid = whirlwind(now, 0.0, 0.0);
+        cid.action = 0;
+        cid.helper = None;
+        cid.speed = 6.0;
+        cid.from = Vec3A::new(0.0, 0.0, 0.0);
+        cid.via = vec![Vec3A::new(6.0, 0.0, 0.0)];
+        cid.to = Vec3A::new(6.0, 0.0, 6.0);
+        // Twelve yalms at six a second.
+        assert!(((cid.arrives() - now).as_secs_f32() - 2.0).abs() < 0.01);
+        let at = |s: f32| cid.position(now + Duration::from_secs_f32(s));
+        assert!((at(0.5) - Vec3A::new(3.0, 0.0, 0.0)).length() < 0.01);
+        assert!((at(1.5) - Vec3A::new(6.0, 0.0, 3.0)).length() < 0.01);
+        // Facing +x on the first leg, +z on the second.
+        let first = cid.rotation_at(now + Duration::from_secs_f32(0.5));
+        assert!((first - std::f32::consts::FRAC_PI_2).abs() < 0.01);
+        assert!(cid.rotation_at(now + Duration::from_secs_f32(1.5)).abs() < 0.01);
+        // 0.75 s in, a tick before the corner, its ActorMove goes on past it, so it never stops there.
+        let t = now + Duration::from_secs_f32(0.75);
+        let ahead = cid.position(t + TICK);
+        assert!(ahead.z > 0.5 && (ahead.x - 6.0).abs() < 0.01, "{ahead:?}");
+        let facing = cid.facing_towards(at(0.75), t + TICK, t);
+        assert!(facing > 0.0 && facing < std::f32::consts::FRAC_PI_2);
+        assert_eq!(at(3.0), cid.to);
     }
 }

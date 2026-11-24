@@ -3,6 +3,24 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Bob's run of the Praetorium on `f3c32e2` (2026-11-24)
+
+* **A bot held up mid-fight by the zone's collision**: the Machinist bot (Fenkaa Fenlenkaar) stood at (221.4, 156.0,
+  -43.9) on the floor below the first lift, 2 yalms above Bob's (154.2), 29 yalms from her target (past her 25), and
+  neither shot nor moved for 35 s; the log: "the zone's collision held it up ... on its way to [210.9, 154.3, -70.9]
+  for 94.5 s; on along the navmesh", then she was put beside Bob (30 yalms behind out of combat). The 2 s
+  `WALL_PATIENCE` that sends an out-of-combat bot on through what the client doesn't have is counted over the fight
+  too, and a ranged bot out of reach and walled stays put. Not reproduced: the zone's collision is built from game
+  files on Bob's server, not here. What to look at next: a bundle from that spot, or the harness's capture of a run
+  where it happens again.
+* **The second boss's ring of lightning** (Harmony's visual guide: touching it inflicts a damage-over-time): nobody
+  touched it in the five runs, so its status and area aren't known; map effect 0 shows it and nothing hurts.
+* **Iron Uprising's (28482) knockback**: it hit no one in ten casts, so its row isn't known; it does damage only.
+* **The last boss's enrage** (28500 as the gauge fills with any of the four standing): from the guide, never seen; the
+  gauge's full (10000) and 28500's area (the Action sheet's) and amount (more than anyone's HP) are guesses.
+* Untested in game: the walls open at the start, Cid's run in one go, the Death Claw's tether and walk, the second
+  boss on its edge facing the middle, Grand Sword at anyone, the launchers left alone.
+
 ## Bob's Chronofoil capture 9ba7d981 (2026-11-17, the end of A Realm Reborn's story)
 
 Three hours: Operation Archon to The Ultimate Weapon with Cape Westwind twice, Castrum Meridianum, the Praetorium
