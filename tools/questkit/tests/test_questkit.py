@@ -2,6 +2,7 @@
 
 import gzip
 import json
+import math
 import sys
 import tempfile
 import unittest
@@ -1657,6 +1658,94 @@ class PraetoriumClawAndEnrageTest(FrameworkScriptTest):
         uses = [args[1] for args in self.named("actor_use_action") if args[0] == self.BOSS3]
         self.assertIn(28499, uses)
         self.assertNotIn(28500, uses)
+
+
+class JadeStoaTest(FrameworkScriptTest):
+    """The Jade Stoa (content/cfc_290.lua) against Bob's Chronofoil capture 84700114 (2026-11-24): the seizing and the
+    throw, the orbs, the eight circles and the end."""
+
+    SCRIPT = "cfc_290.lua"
+    PARTY = {"player1": {"x": 5.0, "y": 0.0, "z": 5.0, "id": 11}, "party1": {"x": -5.0, "y": 0.0, "z": 3.0, "id": 21}}
+
+    def run_for(self, seconds, info=None):
+        for _ in range(int(seconds * 2)):
+            self.update(info or self.PARTY)
+
+    def test_a_seized_one_is_thrown_to_the_marked_spot(self):
+        g = self.lua.globals()
+        self.update(self.PARTY)
+        g.D.helpers = g.D.helpers_of[1]
+        g.math.random = lambda *a: 1 if a else 0.25
+        g.seizing(self.director, "cast", True)
+        uses = lambda action: [args for args in self.named("actor_use_action") if args[1] == action]
+        self.assertEqual(len(uses(10208)), 1)
+        who = uses(10208)[0][2]
+        self.assertIn(who, (11, 21))
+        self.run_for(13.0)
+        self.assertEqual([args[2] for args in uses(10209)], [who])
+        # The landing: a helper 14 yalms out with marker 62 over it; he dashes (10210 aimed across the middle) and
+        # 0.8 s after he's down the seized is thrown there and the helper's 10806 lands round them.
+        marked = [args for args in self.named("actor_control") if args[1] == 34 and args[2][1] == 62]
+        self.assertEqual(len(marked), 1)
+        tosses = self.named("toss_player")
+        self.assertEqual(len(tosses), 1)
+        self.assertEqual(tosses[0][0], who)
+        self.assertAlmostEqual((tosses[0][1] ** 2 + tosses[0][3] ** 2) ** 0.5, 14.0, places=3)
+        aims = [args for args in self.named("aim_action") if args[1] == 10210]
+        self.assertAlmostEqual((aims[0][2] ** 2 + aims[0][4] ** 2) ** 0.5, 4.0, places=3)
+        self.assertEqual([args[0] for args in uses(10806)], [marked[0][0]])
+        self.assertIn([who, 201], self.named("lose_effect"))
+        self.assertIn([who, 1477], self.named("lose_effect"))
+        # The second of a pair seizes someone else, at once, and dashes back across.
+        g.seizing(self.director, "now", False)
+        self.assertNotEqual(uses(10070)[0][2], who)
+        self.run_for(10.0)
+        aims = [args for args in self.named("aim_action") if args[1] == 10210]
+        self.assertAlmostEqual(aims[1][2], -aims[0][2], places=3)
+        self.assertAlmostEqual(aims[1][4], -aims[0][4], places=3)
+
+    def test_the_orbs_spiral_out_and_go_off_on_whoever_they_reach(self):
+        g = self.lua.globals()
+        self.update(self.PARTY)
+        g.math.random = lambda *a: 1
+        g.theOrbs(self.director, 2)
+        self.run_for(30.0)
+        spawns = [args for args in self.named("spawn_bnpc") if args[0] == 7231123]
+        self.assertEqual(len(spawns), 22)
+        degrees = [round(math.degrees(args[4])) for args in spawns]
+        # Two at a time, back to back; the first three sets the same way, then 18 degrees on each.
+        self.assertEqual(degrees[:8], [-91, 91, -91, 91, -91, 91, -73, 109])
+        sweeps = [args for args in self.named("sweep_bnpc") if args[4] == 2.0]
+        self.assertEqual(len(sweeps), 22)
+        self.assertIn([self.lua.eval("byakko"), 1480], self.named("lose_effect"))
+        # One within 1.5 yalms of the party goes off and falls 2 s on.
+        g.orbs = self.lua.table_from([self.lua.table_from({"id": 900, "gone_at": 999, "blown": False})])
+        info = dict(self.PARTY, actor900={"x": 5.0, "y": 0.1, "z": 6.2})
+        self.update(info)
+        self.assertIn([900, 10824], self.named("actor_use_action"))
+        self.run_for(3.0, info)
+        self.assertIn([900], self.named("kill_bnpc"))
+
+    def test_the_eight_circles_step_out(self):
+        g = self.lua.globals()
+        self.update(self.PARTY)
+        g.D.helpers = g.D.helpers_of[1]
+        g.math.random = lambda *a: 1
+        g.theCircles(self.director)
+        self.run_for(12.0)
+        casts = [args for args in self.named("actor_use_action") if args[1] == 10808]
+        steps = [args for args in self.named("actor_use_action") if args[1] == 10809]
+        self.assertEqual((len(casts), len(steps)), (8, 24))
+        warps = [args for args in self.named("warp_bnpc")]
+        far = max((args[1] ** 2 + args[3] ** 2) ** 0.5 for args in warps)
+        self.assertAlmostEqual(far, 20.0, places=3)
+
+    def test_his_fall_completes_the_duty_and_plays_its_scene(self):
+        g = self.lua.globals()
+        g.BYAKKO_BOSS.on_death(self.director)
+        self.run_for(4.0)
+        self.assertEqual(len(self.named("complete_duty")), 1)
+        self.assertEqual(self.named("play_cutscene")[0][0], 1734)
 
 
 class CastrumLiviaTest(FrameworkScriptTest):

@@ -1,0 +1,25 @@
+{
+    "comment": "Hakutei, the Jade Stoa (BNpcBase 8440, layout 7231122, 535840 HP), who fights in Byakko's place for 65.7 s from 107.6 s after the pull. Auto-attack 870 (slashing, from 5.4 yalms); his casts are content/cfc_290.lua's. Amounts: the White Mage's, the tank's for 870 and 10802 (only the tank took them). From Bob's Chronofoil capture 84700114 (2026-11-24, visit 0.4: Bob a level 88 White Mage and a friend's level 86 Gunbreaker, unsynced, against the level 70 trial; one run, won).",
+    "autoattack_action_id": 870,
+    "hitbox_radius": 2.5,
+    "attack_range": 3.0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "recorded_amounts": {
+        "870": {
+            "players": 4238
+        },
+        "10801": {
+            "players": 21331
+        },
+        "10802": {
+            "players": 8581
+        },
+        "10827": {
+            "players": 20396
+        },
+        "10828": {
+            "players": 29077
+        }
+    }
+}

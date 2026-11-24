@@ -3,6 +3,26 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## The Jade Stoa (2026-11-24, unplayed)
+
+From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeons.md#the-jade-stoa)):
+
+* Its script's name: `content/cfc_290.lua`, by the server's fallback, as its ShortCode isn't known without the game's
+  sheets. The server's log names the ShortCode it looked for first; the script can be renamed to it.
+* Hakutei: retail had him there from zone-in, hidden (display flags 0x60008, 0x20000 not known to Kawari), shown by
+  his 9679, whose effect of kind 61 Kawari doesn't send; here he's spawned as he comes. Whether he's shown at all in
+  game is untested. The same kind 61 came with each of Byakko's actions that show something only (9681, 10212, 10215,
+  10222, 10794, 10821) and is left out.
+* Guessed: the puddles' size (4 yalms); whom Hakutei marks for 10828 (one of the party at random: the tank in the run);
+  which set of eight circles comes first (both did); the leaper's spots (the run's three, in its order); the block's
+  length (205.9 s, from 205.1, 206.2 and 206.3).
+* Not sent: the director's 0x80000001 [522] and 0x80000008 as the intermission begins and 0x80000009 at 201.1 s (the
+  BGM change is sent as `set_bgm`); the two WalkInEvents at 184.1 s; Byakko's ActorControls 49 and 62 as he leaves and
+  comes back (untargetable and targetable are `set_targetable`'s).
+* With more than two in the party: retail's chasing circles came one at each of the two; here one at each member, as
+  are the 10793s and 10811s. Untested with a full party of bots.
+* Recorded amounts are a White Mage's at level 88 unsynced; the tank-buster's is the Gunbreaker's.
+
 ## Bob's run of the Praetorium on `f3c32e2` (2026-11-24)
 
 * **A bot held up mid-fight by the zone's collision**: the Machinist bot (Fenkaa Fenlenkaar) stood at (221.4, 156.0,

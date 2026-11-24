@@ -48,6 +48,10 @@ python3 tools/questkit duty-sim --make r1d1_re.lua --run run.json.gz     # a fix
 python3 tools/questkit duty-sim --update-known                          # after a fix, or a new fixture
 ```
 
+A wipe is rehearsed in each boss fight retail got through in one go; a fight whose music started again with a track it
+had at its pull was pulled more than once and is left out (since 2026-11-24 only that: the Jade Stoa's fight changes
+its music three times in one pull, and before was skipped.)
+
 A **duty fixture** (`tools/questkit/duties/<ContentFinderCondition>-<capture>.json`, numbers only) is one retail run
 from the duty commencing (the director's 0x40000001): every NPC by layout ID with its lives (appeared, first had a
 target, fell, health a percent at a time, where a boss went), where the player and the party stood, the NPCs' casts,

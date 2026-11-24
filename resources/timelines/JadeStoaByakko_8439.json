@@ -1,0 +1,31 @@
+{
+    "comment": "Byakko, the Jade Stoa (ContentFinderCondition 290, territory 746; BNpcBase 8439, layout 7231121, level 70, 2903794 HP). His casts are content/cfc_290.lua's (one clock from the pull, his jumps and dashes with them); here his auto-attack (872, blunt: up to 8.1 yalms from the tank, so a 5-yalm hitbox) and what each hit did: the median of the White Mage's hits (a damage dealer's or healer's, combat.md), the tank's for 872 and the tank-buster 10797 (only the tank took them; 36296 when it caught the healer too). From Bob's Chronofoil capture 84700114 (2026-11-24, visit 0.4: Bob a level 88 White Mage and a friend's level 86 Gunbreaker, unsynced, against the level 70 trial; one run, won). The hits were on players 16 to 18 levels above the trial: an enemy's damage before the target's defence doesn't depend on the target, and that defence differs a few percent between level 70 synced and 88 (dungeons.md), so the amounts stand as recorded; the misses (85 of 160 auto-attacks) don't, as a synced party is at the trial's level (`levels_for_a_miss`).",
+    "autoattack_action_id": 872,
+    "hitbox_radius": 5.0,
+    "attack_range": 3.0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "recorded_amounts": {
+        "872": {
+            "players": 3243
+        },
+        "10796": {
+            "players": 17508
+        },
+        "10797": {
+            "players": 14842
+        },
+        "10798": {
+            "players": 10207
+        },
+        "10799": {
+            "players": 6456
+        },
+        "10800": {
+            "players": 10328
+        },
+        "10830": {
+            "players": 5448
+        }
+    }
+}

@@ -808,9 +808,12 @@ def rehearse_wipes(fixture: dict, name: str = "") -> SimResult:
         result.error = f"script error: {str(error).strip().splitlines()[0]}"
         return result
     for layout, pulled, fell in _fights(fixture):
+        # Its music started again with a track it had at its pull: pulled more than once on retail, its first go isn't a
+        # whole fight. A fight that changes its music as it goes doesn't (the Jade Stoa's 522, 1 and 523, one pull.)
+        before = {e[2] for e in fixture["events"] if e[1] == "bgm" and e[2] and e[0] <= pulled + 1.0}
         if len(fixture["npcs"][str(layout)]) > 1 or any(
-                e[1] == "bgm" and e[2] and pulled + 1.0 < e[0] < fell for e in fixture["events"]):
-            continue  # pulled more than once on retail: its first go isn't a whole fight
+                e[1] == "bgm" and e[2] and pulled + 1.0 < e[0] < fell and e[2] in before for e in fixture["events"]):
+            continue
         middle = round((pulled + (fell - pulled) / 2) * 2) / 2
         lead = max(0.0, round((pulled - 5.0) * 2) / 2)
         # Not from before the boss was there: what a script does once as its room is entered (the boss, its helpers,

@@ -1,0 +1,13 @@
+{
+    "comment": "The Jade Stoa's leaper of the intermission (BNpcBase 8546, layout 7236115): three times it comes to a spot at the arena's north edge and comes down there (10819, blunt). From Bob's Chronofoil capture 84700114 (2026-11-24, visit 0.4: Bob a level 88 White Mage and a friend's level 86 Gunbreaker, unsynced, against the level 70 trial; one run, won). No auto-attack.",
+    "autoattack_action_id": 0,
+    "hitbox_radius": 0.5,
+    "attack_range": 3.0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "recorded_amounts": {
+        "10819": {
+            "players": 4893
+        }
+    }
+}

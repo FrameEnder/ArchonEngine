@@ -597,6 +597,24 @@ pub enum LuaDirectorTask {
         layout: u32,
         on: bool,
     },
+    /// Someone (an actor ID: a player, a bot) thrown through the air to a spot: an ActorControl 220
+    /// (ExecuteGimmickJump) from them to everyone with the landing, its GimmickJump row and the duty's count of tosses,
+    /// as retail's Jade Stoa threw the one Byakko had seized to the spot a helper had been marked at (row 10, eleven
+    /// throws in Bob's Chronofoil capture 84700114, landing to 0.04 yalms of the helper's spot.)
+    TossPlayer {
+        who: u32,
+        to: Position,
+        gimmick_jump: u32,
+    },
+    /// An ActorControl from any actor (an actor ID, a player's or a bot's too, or a BNpc's layout ID) to everyone,
+    /// itself included: a marker over one of the party comes from them (retail's Jade Stoa marked everyone with 101,
+    /// ActorControl 34 [101, their own ID], from each of them, and Hakutei's one with 87.) `bnpc_control` is a BNpc's,
+    /// to the others.
+    ActorControlFrom {
+        who: u32,
+        category: u32,
+        params: [u32; 4],
+    },
     /// A BNpc's (actor ID or layout ID) attacks on another (`on`) are only shown, or (`shown` false) real again: each
     /// hit lands as a miss and does nothing (`Instance::shown_attacks`). Retail's Cid hit Castrum Meridianum's 9091115
     /// with 29159 and 29160 every 2 s until the cutscene, every one a Miss, its health untouched (four runs.)
@@ -1698,6 +1716,32 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::Launcher { layout, on });
             Ok(())
         });
+        methods.add_method_mut(
+            "actor_control",
+            |_, this, (who, category, params): (u32, u32, Option<Vec<u32>>)| {
+                let mut four = [0; 4];
+                for (slot, value) in four.iter_mut().zip(params.unwrap_or_default()) {
+                    *slot = value;
+                }
+                this.tasks.push(LuaDirectorTask::ActorControlFrom {
+                    who,
+                    category,
+                    params: four,
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "toss_player",
+            |_, this, (who, x, y, z, gimmick_jump): (u32, f32, f32, f32, Option<u32>)| {
+                this.tasks.push(LuaDirectorTask::TossPlayer {
+                    who,
+                    to: Position(glam::Vec3A::new(x, y, z)),
+                    gimmick_jump: gimmick_jump.unwrap_or(10),
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut(
             "show_attacks",
             |_, this, (who, on, shown): (u32, u32, Option<bool>)| {
@@ -4818,6 +4862,62 @@ pub fn director_tick(
                         actor.add_enmity(target_id, amount);
                     }
                 }
+            }
+            LuaDirectorTask::ActorControlFrom {
+                who,
+                category,
+                params,
+            } => {
+                let actor_id = if instance.find_actor(ObjectId(*who)).is_some() {
+                    Some(ObjectId(*who))
+                } else {
+                    resolve_bnpc(instance, *who)
+                };
+                let Some(actor_id) = actor_id else {
+                    tracing::warn!("Failed to find {who} for actor_control!");
+                    continue;
+                };
+                network.lock().send_ac_in_range_inclusive_instance(
+                    instance,
+                    actor_id,
+                    ActorControlCategory::Unknown {
+                        category: *category,
+                        param1: params[0],
+                        param2: params[1],
+                        param3: params[2],
+                        param4: params[3],
+                        param5: 0,
+                    },
+                );
+            }
+            LuaDirectorTask::TossPlayer {
+                who,
+                to,
+                gimmick_jump,
+            } => {
+                let actor_id = ObjectId(*who);
+                let Some(actor) = instance.find_actor_mut(actor_id) else {
+                    tracing::warn!("Failed to find {who} for toss_player!");
+                    continue;
+                };
+                // Where they come down is where the server has them (the client's next position says so too.)
+                match actor {
+                    NetworkedActor::Player { spawn, .. } => spawn.common.position = *to,
+                    NetworkedActor::Npc { spawn, .. } => spawn.common.position = *to,
+                    _ => {}
+                }
+                instance.tosses += 1;
+                network.lock().send_ac_in_range_inclusive_instance(
+                    instance,
+                    actor_id,
+                    ActorControlCategory::ExecuteGimmickJump {
+                        landing_position_x: to.0.x,
+                        landing_position_y: to.0.y,
+                        landing_position_z: to.0.z,
+                        gimmick_jump_type: *gimmick_jump,
+                        unk1: instance.tosses,
+                    },
+                );
             }
             LuaDirectorTask::Launcher { layout, on } => {
                 if *on {

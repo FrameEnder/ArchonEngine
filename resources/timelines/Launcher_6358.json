@@ -6,7 +6,31 @@
         "29049": {
             "players": 600,
             "npcs": 600
+        },
+        "10793": {
+            "players": 21565
+        },
+        "10806": {
+            "players": 22980
+        },
+        "10808": {
+            "players": 6979
+        },
+        "10809": {
+            "players": 4457
+        },
+        "10811": {
+            "players": 7413
+        },
+        "10818": {
+            "players": 2744
+        },
+        "10822": {
+            "players": 9697
+        },
+        "10829": {
+            "players": 12754
         }
     },
-    "comment": "BNpcBase 6358: unseen launchers that never fight on their own (`launcher.rs`, `resources/data/launchers.json`): Castrum Meridianum's 29154 (no hit seen in 86 casts, so no amount) and the Praetorium's 29049, 600 to each player or Duty Support member it caught (39 hits in five retail runs: Connor's Chronofoil capture af05916c, Bob's 9ba7d981, 50e72631 and 6320ae56). No auto-attack."
+    "comment": "BNpcBase 6358: unseen launchers that never fight on their own (`launcher.rs`, `resources/data/launchers.json`): Castrum Meridianum's 29154 (no hit seen in 86 casts, so no amount) and the Praetorium's 29049, 600 to each player or Duty Support member it caught (39 hits in five retail runs: Connor's Chronofoil capture af05916c, Bob's 9ba7d981, 50e72631 and 6320ae56). No auto-attack. Also the Jade Stoa's helpers (the same base, content/cfc_290.lua): 10793, 10806 (the thrown one's landing), 10808 and 10809 (the eight circles and their steps), 10811 (on each of the party), 10818, 10822 and 10829, the White Mage's median of each, from Bob's Chronofoil capture 84700114 (2026-11-24, visit 0.4: Bob a level 88 White Mage and a friend's level 86 Gunbreaker, unsynced, against the level 70 trial; one run, won)."
 }

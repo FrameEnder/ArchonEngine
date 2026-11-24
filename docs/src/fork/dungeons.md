@@ -1,7 +1,9 @@
 # Dungeons
 
 The duties the fork has scripted from retail captures: their director script (`resources/scripts/content/<short
-name>.lua`, the ContentFinderCondition's ShortCode), their enemies (a drop-in, `resources/dropins/<short
+name>.lua`, the ContentFinderCondition's ShortCode; one written from a capture alone, its ShortCode not known without
+the game's sheets, is `content/cfc_<ContentFinderCondition>.lua`, which the server falls back on and says so in its
+log, since 2026-11-24), their enemies (a drop-in, `resources/dropins/<short
 name>_planmap.json`: the client's layouts have no battle NPCs), the enemies' timelines (`resources/timelines/`) and
 action scripts. The director API they use is described in [Quest Battles and Directors](quest-battles.md); the Duty
 Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](loot.md).
@@ -21,6 +23,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | Castrum Meridianum | 15 | 1043 | `content/w1d4_re.lua` | five runs with Duty Support (the fourth Bob's 6320ae56 of 2026-11-18, a Paladin; the fifth his deea324c of 2026-11-19, a White Mage, the fights drawn out): Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
 | The Porta Decumana | 830 | 1048 | `content/w1d5_battle.lua` | four runs with Duty Support (the fourth Bob's 6320ae56 of 2026-11-18, a Paladin): Connor's af05916c (2026-11-09), Bob's 9ba7d981 and 50e72631 (2026-11-17) |
 | The Praetorium | 16 | 1044 | `content/w1d5_re.lua` | five runs with Duty Support (Connor's af05916c, Bob's 9ba7d981 twice, 50e72631 and 6320ae56): the two lifts and three more objects, six cutscenes, the ride on the armour (Mount 17, action 1128), three bosses with their helpers, the last one's second part with its four and the gauge. No layout dump. **Unplayed** ([below](#the-praetorium)) |
+| The Jade Stoa (Byakko) | 290 | 746 | `content/cfc_290.lua` | one run unsynced (Bob's 84700114, a level 88 White Mage and a friend's level 86 Gunbreaker, 2026-11-24): Byakko's two parts, Hakutei, the intermission, the seizings and throws, the orbs, the eight circles. **Unplayed** ([below](#the-jade-stoa)) |
 
 Every duty script in this table is checked against AutoDuty's route for its territory (`questkit autoduty`, see
 [questkit](questkit.md)): on 2026-11-13 each names every object AutoDuty uses, and Sastasha's keys are the one
@@ -1817,6 +1820,66 @@ guide to the dungeon checked against the five runs:
 
 Tests `BossWallsOpenAtTheStartTest`, `PraetoriumClawAndEnrageTest`, the leaps' in `PraetoriumTest`,
 `nobody_fights_a_launcher`, `a_path_goes_on_round_its_points_without_stopping`. **Unplayed.**
+
+## The Jade Stoa
+
+ContentFinderCondition 290, territory 746, InstanceContent 20051 (director 0x80034E53), level 70. From Bob's Chronofoil
+capture 84700114 (2026-11-24, visit 0.4): Bob a level 88 White Mage and a friend's level 86 Gunbreaker, unsynced, two
+players; won at the first attempt, Byakko falling 1235 s after the pull. Read with `questkit chronofoil --battle` and the
+visit's packets (ActorSetPos for the helpers' spots, AoeEffect8's aim for where each area landed, ActorControl 220 for
+the throws), numbers only; cactbot's timeline (`byakko.txt`, territory 746) has the same order 4.5 s off. Boss Mod has
+only the Unreal version. The script is `content/cfc_290.lua` (its ShortCode isn't known here: the server's fallback);
+drop-in `territory_746.json` (Byakko 8439 at layout 7231121, Hakutei 8440 at 7231122, the orb 8441 at 7231123, two
+helpers 6358 at 7231126 and 7231127, the leaper 8546 at 7236115; all `nonpop`, the director brings them; retail's 27
+other helpers had no layout, so the script brings 32 copies); timelines `JadeStoaByakko_8439`, `JadeStoaHakutei_8440`,
+`JadeStoaOrb_8441`, `JadeStoaLeaper_8546` and the helpers' amounts in `Launcher_6358` (the base's one file); 36 action
+scripts `JadeStoa<Byakko|Hakutei|Helper|Orb|Leaper>_<action>.lua` (damage types from each hit's byte: blunt 0x73 for his
+auto-attack, 10798, 10806, 10819, 10822; slashing 0x71 for Hakutei's auto-attack and 10802; magic the rest).
+
+**Level.** The run was 16 to 18 levels above the trial. Its misses aren't the trial's (85 of Byakko's 160 auto-attacks
+missed; a synced party is at its level, `levels_for_a_miss`); its amounts are: an enemy's damage before the target's
+defence doesn't depend on the target, and the defence's share differs a few percent between level 70 synced and 88 (15
+× defence over the level's divisor), so each action's `recorded_amounts` is the White Mage's median as recorded, the
+tank's where only the tank was hit (the auto-attacks, 10797, 10802).
+
+**One clock from the pull**, every part on it (Hakutei's health didn't end his: he stood at 54 % when it ended):
+
+| Seconds | What |
+|---|---|
+| 0.7 | Talk 18600 (the pull) |
+| 0-105.8 | Byakko: 10799 (raidwide), 10797 (tank-buster), a seizing (24.3), 10798, 10797, his orbs in twos (61.6), 10799, two 10796 from the middle, a jump and 10796 from the edge (88.9), 10071 and a jump (105.8) |
+| 107.6 | He leaves (9681; untargetable, ActionTimeline 7737, put 80 yalms below at 114.8); Hakutei comes (9679) |
+| 114.8-178.5 | Weather 96; the helpers' 10793 at each of the party (2.2 s) and puddles there (EObj 2002601, 3.4 s on for 7.6 s: 273 to whoever stands in one, 4 yalms here, a guess); 10802 twice on his target; marker 87 on one of the party and 10828 on them 5.1 s on; 10801; 9822, 10825; 10827 (19.7 s, everyone, 783 for 8 s); he goes (ActionTimeline 7738, untargetable and held: retail's stayed, hidden) |
+| 176.9-290.5 | The intermission: talks 18607, 18608, 18609, 18610, 18603, 18611; BGM 522; weather 93; 1479 on everyone (198.7 to 259.3); chasing circles (10817 at each of the party, 10818 there 6.05 s on: 205.7, 207.7, 209.7, then every 2 s from 223.9 to 233.9); 10822 from the middle (213.4, 237.7); the leaper (8546) at (14.1, -14.1), (0, -20), (-14.1, -14.1), 10819 1.1 s after each; 1513 for 5.1 s; Byakko back (10794, weather 94, 783 for 5 s on everyone, BGM 1 then 523, targetable at 267.3); 10829 on everyone (274.4) |
+| 290.5- | Byakko's last part: 10797, then from 300.7 a block once (183.1 s) and another over and over (205.1, 206.2 and 206.3 apart in the run: 205.9 here): the eight circles twice, everyone marked (101) for 10811, 10800, 10799 with 10830 6.2 s on, two seizings, 10798, jumps and 10796, the orbs in threes, 10797 |
+| at 10 % | Talk 18613 with the next marking |
+| his fall | The duty complete 2.1 s on, scene 3 (cutscene 1734, `{1, 18}`) 3.6 s on |
+
+* **A seizing**: 10208 (3.7 s) on one of the party, or 10070 (instant, the second of a pair: someone else) stuns them
+  (201) and 10209 seizes them (1477) 5.1 or 1.1 s on; a helper is put 14 yalms out at a random angle with marker 62
+  over it (ActorControl 34 [62, the helper]); for the first of a pair he jumps to one of two spots 4 yalms out across
+  the middle (on a multiple of 45 degrees) and casts 10210 (4.7 s) at the other, coming down there; the second dashes
+  back. 0.8 s after he's down the seized is thrown to the helper's spot (ActorControl 220, GimmickJump row 10, landing
+  to 0.04 yalms of it; `director:toss_player`), the helper's 10806 lands round them, and the stun and seizing go.
+* **The orbs** (8441): out of the middle 5.2 s after his 10221 began (1480 on him till the last set), two back to back
+  (first part) or three 120 degrees apart (last part: -62, 180, 60) every 2 s, eleven sets, the first three the same
+  way and each after 18 degrees on (one way or the other: both in the run), at 2 yalms a second to 19.7 out, where they
+  fade; one goes off (10824, 202 for 90 s) on whoever comes within 1.5 yalms of it (the 16 hits: 0.07 to 1.46) and
+  falls 2 s later.
+* **The eight circles**: four helpers at 5 yalms on the diagonals and four on the axes, one set 3.1 s after the other
+  (either first), 10808 (4.7 s; 482 for 8 s), then each steps 5 yalms out (10809) three times, 6.15 s after its cast
+  began and 1.07 s apart.
+* **Everyone marked**: ActorControl 34 [101, their ID] from each (`director:actor_control`), his 10215, and 8.1 s on a
+  helper's 10811 at each.
+* **His jumps**: 0.8 s after 10071, straight there (`jump_bnpc`), the cast 0.9 s after: to the middle for his orbs and
+  10796s there (facing one of the party), to one of eight spots 19.6 yalms out for 10796 from the edge (facing the
+  middle).
+
+Tests: `JadeStoaTest` (the throw to the marked spot, the orbs' spiral and their going off, the circles' steps, the end),
+duty fixture `290-84700114` (226 events matched; Byakko's fall written in by hand: retail sent none, his health 0.18 %
+at the last look), a wipe rehearsed. **Unplayed.** Known differences in the fixture: retail's fourth orb wave of the
+last part had 30 orbs, not 33, and three came as he fell; Hakutei was there from zone-in, hidden (display flags
+0x60008), and shown by his 9679, whose effect of kind 61 Kawari doesn't know: he's spawned as he comes here.
 
 ## At a wipe, duty by duty (2026-11-10)
 

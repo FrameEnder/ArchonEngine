@@ -443,9 +443,23 @@ impl WorldServer {
             let content_short_name = game_data
                 .get_content_short_name(content_finder_condition)
                 .unwrap();
-            let file_name = get_config()
+            let mut file_name = get_config()
                 .filesystem
                 .locate_script_file(&format!("content/{content_short_name}.lua"));
+            // Fork: a duty scripted from a capture alone, its ShortCode not known without the game's sheets, goes by its
+            // ContentFinderCondition (`content/cfc_<id>.lua`: the Jade Stoa's, 290, 2026-11-24.) The log says which.
+            if std::fs::metadata(&file_name).is_err() {
+                let by_id = get_config()
+                    .filesystem
+                    .locate_script_file(&format!("content/cfc_{content_finder_condition}.lua"));
+                if std::fs::metadata(&by_id).is_ok() {
+                    tracing::info!(
+                        "No content/{content_short_name}.lua: scripting ContentFinderCondition \
+                         {content_finder_condition} by {by_id}"
+                    );
+                    file_name = by_id;
+                }
+            }
 
             let mut director = DirectorData {
                 id,

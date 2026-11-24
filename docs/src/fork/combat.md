@@ -311,6 +311,10 @@ Enemies still compute damage like players do (stat × potency), which is far too
   actions: 1/1.42 to 1/1.6); in the last quest battle of The Ultimate Weapon he took a quarter *more* than the runs
   before (192 for 145, 1024 for 832). Kawari gives every player a timeline's `players` amount whatever their job:
   a tank takes too much. Nothing scales it by the player's defence yet ([Known issues](known-issues.md)).
+* **An unsynced recording** (2026-11-24, the Jade Stoa's: players 16 to 18 levels above the duty) gives amounts but
+  not misses: an enemy's damage before the target's defence doesn't depend on the target, and the defence's share
+  (15 × defence over the level's divisor) differs a few percent between the duty's level synced and the player's own,
+  so the amounts stand; its misses (85 of 160 auto-attacks) are the level gap's, which a synced party doesn't have.
 * **Recorded amounts** come first: a timeline's `recorded_amounts` (`{"<action>": {"players": avg, "npcs": avg}}`)
   says what that NPC's action did on retail to a player and to another NPC. The hit is scaled to it (then varied,
   missed, parried or critical as above), and a heal (Cure) is set to it ±5 %. Used for quest battle allies and
