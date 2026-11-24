@@ -1,0 +1,12 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "recorded_amounts": {
+        "29049": {
+            "players": 600,
+            "npcs": 600
+        }
+    },
+    "comment": "BNpcBase 6358: unseen launchers that never fight on their own (`launcher.rs`, `resources/data/launchers.json`): Castrum Meridianum's 29154 (no hit seen in 86 casts, so no amount) and the Praetorium's 29049, 600 to each player or Duty Support member it caught (39 hits in five retail runs: Connor's Chronofoil capture af05916c, Bob's 9ba7d981, 50e72631 and 6320ae56). No auto-attack."
+}

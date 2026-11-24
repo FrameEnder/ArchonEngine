@@ -584,6 +584,13 @@ pub enum LuaDirectorTask {
         who: u32,
         seconds: f32,
     },
+    /// A launcher (`launcher.rs`, by layout ID) goes on (`on`) or stops: retail's Praetorium launchers cast only while
+    /// their stretch was fought (the first five from map effect 4 to the ten's fall, the ride's five from its first six
+    /// falling to map effect 5, five runs), though the party was near before and after.
+    Launcher {
+        layout: u32,
+        on: bool,
+    },
     /// A BNpc's (actor ID or layout ID) attacks on another (`on`) are only shown, or (`shown` false) real again: each
     /// hit lands as a miss and does nothing (`Instance::shown_attacks`). Retail's Cid hit Castrum Meridianum's 9091115
     /// with 29159 and 29160 every 2 s until the cutscene, every one a Miss, its health untouched (four runs.)
@@ -1657,6 +1664,10 @@ impl UserData for LuaDirector {
         });
         methods.add_method_mut("join_fight", |_, this, (who, with): (u32, u32)| {
             this.tasks.push(LuaDirectorTask::JoinFight { who, with });
+            Ok(())
+        });
+        methods.add_method_mut("launcher", |_, this, (layout, on): (u32, bool)| {
+            this.tasks.push(LuaDirectorTask::Launcher { layout, on });
             Ok(())
         });
         methods.add_method_mut(
@@ -4727,6 +4738,14 @@ pub fn director_tick(
                     for (target_id, amount) in enmity {
                         actor.add_enmity(target_id, amount);
                     }
+                }
+            }
+            LuaDirectorTask::Launcher { layout, on } => {
+                if *on {
+                    instance.launchers_off.remove(layout);
+                } else {
+                    instance.launchers_off.insert(*layout);
+                    instance.launchers.remove(layout);
                 }
             }
             LuaDirectorTask::ShowAttacks { who, on, shown } => {

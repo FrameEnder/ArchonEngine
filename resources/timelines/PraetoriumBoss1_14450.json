@@ -1,5 +1,8 @@
 {
     "hitbox_radius": 0.5,
+    "animation_locks": {
+        "28467": 2.1
+    },
     "autoattack_action_id": 870,
     "attack_range": 3.0,
     "from_pull": true,
@@ -134,5 +137,5 @@
             "comment": "104.9 s: the cone; then every 52.7 s (a guess: it fell at 115 to 124 s, and 28474 and 28468 came 52.7 s apart)"
         }
     ],
-    "comment": "The Praetorium's first boss (ContentFinderCondition 16, territory 1044; BNpcBase 14450, BNpcName 2134, layout 9054638): level 50, 62291 HP, there 2.2 s into cutscene 280. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.10) and Bob's 9ba7d981 (2026-11-17, visits 0.14 and 0.16), 50e72631 (2026-11-17, visit 0.5) and 6320ae56 (2026-11-18, visit 0.3), all with Duty Support: its casts were the same to 0.7 s from its first being hit in all five runs, and it fell at 115 to 124 s. Auto-attack 870 (428 to a player, 260 to Duty Support's tank); 28474 (4.7 s, on everyone: 927 and 831), 28473 (4.7 s, a cone of 25 yalms, 90 degrees: 1891 to a member), 28467 (no cast: to the middle a second later), 28468 and 28471 (4.7 s: the helpers' 28469, 28470 and 28472, the director's: content/w1d5_re.lua). Past 105 s the round from 58.9 s goes on every 52.7 s, a guess. Hitbox and range not recorded."
+    "comment": "The Praetorium's first boss (ContentFinderCondition 16, territory 1044; BNpcBase 14450, BNpcName 2134, layout 9054638): level 50, 62291 HP, there 2.2 s into cutscene 280. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.10) and Bob's 9ba7d981 (2026-11-17, visits 0.14 and 0.16), 50e72631 (2026-11-17, visit 0.5) and 6320ae56 (2026-11-18, visit 0.3), all with Duty Support: its casts were the same to 0.7 s from its first being hit in all five runs, and it fell at 115 to 124 s. Auto-attack 870 (428 to a player, 260 to Duty Support's tank); 28474 (4.7 s, on everyone: 927 and 831), 28473 (4.7 s, a cone of 25 yalms, 90 degrees: 1891 to a member), 28467 (no cast: to the middle a second later), 28468 and 28471 (4.7 s: the helpers' 28469, 28470 and 28472, the director's: content/w1d5_re.lua). Past 105 s the round from 58.9 s goes on every 52.7 s, a guess. Hitbox and range not recorded. Its 28467's lock: 2.1 s (an AoeEffect8 at no one where it comes down, retail's in all five runs; 2026-11-24)."
 }

@@ -48,17 +48,24 @@
 --
 -- Not known, so guessed or left out: the event ranges (above); what ends the second part (77.9 s in three runs, 67.9
 -- in one with its gauge stopped at 65.5 s: 77.9 here, the gauge to 67.6 s as in Bob's last run) and what the gauge
--- and 28499's amount (605 to 1650) have to do with the 14455s' deaths; where 28475 takes the second boss (it stays);
--- the bosses' clocks past what the runs show (the rounds go on); a fall at a boss (it wasn't seen: the party is
+-- and 28499's amount (605 to 1650) have to do with the 14455s' deaths; which edge 28475 takes the second boss to
+-- (one at random here); the bosses' clocks past what the runs show (the rounds go on); a fall at a boss (it wasn't seen: the party is
 -- sent back to where the last lift or cutscene put it, `set_start`, and the fight begins again); whether the 14455s
 -- attack between their casts (they do here); the members on the ride (they walk); ActorControls 20, 62, 63 and 70 on
--- the last boss (sent as retail did); the ten of BNpcBase 6358 that showed for a moment along the way (left out);
--- BNpcBase 14567 by the entrance (it stands there); coffers (none in a Duty Support run).
+-- the last boss (sent as retail did); Cid's NpcYell 13805 every 8 s while the party watches cutscene 280 (four runs of
+-- five; left out: nobody sees it); coffers (none in a Duty Support run).
+--
+-- Since 2026-11-24 (Bob's marks on `5e9e306`: "cid is not moving to the terminal like he did in retail", and his ask
+-- for everything else retail does here), from the same five runs: Cid's way to the terminal and on the first boss's
+-- floor (CID_*), the members' story lines (LINE_*), the bosses' own (YELL_*), the second boss's 28475 out to an edge
+-- and back, every leap an AoeEffect8 at no one where it comes down (`cast_aims.json`, `aim_action`), and the ten
+-- launchers' 29049 (`launchers.json`: the first five from map effect 4 to the ten's fall, the other five from the
+-- ride's first six falling to map effect 5).
 
 -- Written with the dungeon framework (content/lib/Dungeon.lua, loaded first): its packs, steps and bosses are
 -- declared below, and what only this duty does is in their hooks.
 
-GUIDE = 9168666
+GUIDE = 9168666 -- Cid (BNpcBase 14567)
 NAME_GUIDE = 1486
 TALK_MS = 6000
 
@@ -216,11 +223,81 @@ GAUGE_FROM = 7.5
 GAUGE_SECONDS = 80
 GAUGE_FULL_SECONDS = 9.0 -- n is 1000 nine seconds in: 111 a second
 
+-- Cid, the same in all five runs to a tenth of a yalm: 0.2 s after talk 32920 he runs at 6.0 yalms a second along
+-- the entrance's floor to the magitek terminal (CID_TO_TERMINAL), and as he gets there ActorControl 63 [48]; with
+-- talk 32921 63 [18]. 2.3 s into cutscene 280 he's put on the first boss's floor (ActorSetPos, CID_BOSS1) and 63 [11]
+-- 2.0 s later twice. 0.25 s after the first boss falls he runs on to CID_AFTER_BOSS1 and from there 63 [0] every 2 s.
+CID_SPEED = 6.0
+CID_FROM = { x = 155.78, y = 186.1, z = -4.29 }
+CID_TO_TERMINAL = {
+    { x = 170.37, y = 186.11, z = -10.27 }, { x = 177.9, y = 186.21, z = -18.9 }, { x = 190.0, y = 186.11, z = -24.0 },
+    { x = 198.9, y = 186.05, z = -22.0 }, { x = 200.4, y = 186.24, z = -18.7 }, { x = 199.94, y = 186.48, z = -15.43 },
+    { x = 196.83, y = 186.05, z = -4.84, rotation = -0.526 },
+}
+CID_AFTER_TALK = 0.2
+CID_AT_TERMINAL = 48
+CID_LIFT_OPEN = 18
+CID_BOSS1 = { x = 210.08, y = 76.0, z = -2.04, rotation = -1.592 }
+CID_BOSS1_AFTER = 2.3
+CID_ON_BOSS1_FLOOR = 11
+CID_AFTER_BOSS1 = { { x = 192.07, y = 76.04, z = 0.14 }, { x = 172.96, y = 76.04, z = -0.02, rotation = -1.571 } }
+CID_AFTER_FALL = 0.25
+CID_PULSE_EVERY = 2.0
+CID_CONTROL = 63
+
+-- The members' story lines (NpcYell, `party_npc_yell`): the role retail's party had, else the other's line (the
+-- Conjurer's 14395 or the Lancer's 14394 1.3 to 1.7 s before talk 32920; the Conjurer's 14397 or the Marauder's 14396
+-- as the first boss is pulled; the Thaumaturge's 14398 10.9 to 12.0 s after the hangar (four runs; 26.8 in Connor's);
+-- the Lancer's 14400 or the Marauder's 14399 1.1 s after cutscene 283 (four runs; 12.4 in Connor's); the Conjurer's
+-- 14402 or the Lancer's 14401 as the last boss is pulled.)
+LINE_START = { "healer", 14395, "melee", 14394 }
+LINE_START_BEFORE_TALK = 1.5
+LINE_BOSS1 = { "healer", 14397, "tank", 14396 }
+LINE_HANGAR = { "ranged", 14398 }
+LINE_HANGAR_AFTER = 11.5
+LINE_BOSS2 = { "melee", 14400, "tank", 14399 }
+LINE_BOSS2_AFTER = 1.1
+LINE_BOSS3 = { "healer", 14402, "melee", 14401 }
+
+-- The bosses' own lines (NpcYell, `yell`), each once, 0.1 s before what they go with: the second's 13639 with its
+-- first 28478 and 13640 with its second 28475; the last's 13643 with its first 28486, 13644 with its first 28484,
+-- 13645 with its first 28493 and 13642 2.9 s after its 28499 (all five runs.)
+YELL_BOSS2_28478 = 13639
+YELL_BOSS2_BACK = 13640
+YELL_BOSS3_28486 = 13643
+YELL_BOSS3_28484 = 13644
+YELL_BOSS3_28493 = 13645
+YELL_BOSS3_28499 = 13642
+YELL_AFTER_28499 = 2.9
+
+-- The second boss's 28475 (no cast; its timeline's times): the first of each pair takes it 20 yalms out from the
+-- middle to the west, east, south or north (west six times of eleven, east twice, south twice, north once: nothing
+-- it faced or targeted chose), the second back to the middle; it's there 1.1 s later, facing as it was. ActorControl
+-- 70 [8201044] 1.4 s after the first one only (all five runs.)
+BOSS2_LEAP = 28475
+BOSS2_LEAPS_ONCE = { 45.1, 65.9, 109.4, 133.2 }
+BOSS2_LEAPS_ROUND = { 176.7, 200.5 }
+BOSS2_LEAPS_EVERY = 67.3
+BOSS2_EDGES = { { -20.0, 0.0 }, { 20.0, 0.0 }, { 0.0, 20.0 }, { 0.0, -20.0 } }
+BOSS2_LEAP_LANDS = 1.1
+BOSS2_AIM_BEFORE = 0.5 -- aimed this long before its timeline's 28475 (an update's worth)
+BOSS2_FIRST_LEAP_CONTROL = { 70, 8201044, 1.4 }
+-- The leaps (`aim_action`: where the AoeEffect8 at no one is shown.)
+BOSS1_LEAP = 28467
+BOSS3_LEAP = 28496
+BOSS3_AWAY_FOR = 1.1
+
+-- The launchers (BNpcBase 6358: `launchers.json`, `launcher.rs`), out while their stretch is fought.
+LAUNCHERS_FIRST = { 9082875, 9082876, 9082877, 9082878, 9082880 }
+LAUNCHERS_RIDE = { 9083019, 9083030, 9083041, 9083042, 9083043 }
+RIDE_FIRST_SIX = { 9082022, 9082023, 9082024, 9082025, 9082026, 9082027 }
+
 DUNGEON = Dungeon.new()
 D = DUNGEON
 
 crosses = 0
 adds = 0
+leaps = 0
 part2 = false
 part2_over = false
 part2_ending = false
@@ -242,6 +319,39 @@ end
 
 function talk(director, text)
     director:battle_talk(GUIDE, NAME_GUIDE, text, 0, TALK_MS)
+end
+
+-- A members' story line (LINE_*), `delay` seconds from now.
+function line(director, which, delay)
+    director:party_npc_yell(which[1], which[2], delay or 0, which[3], which[4])
+end
+
+-- Cid runs the way he did (`D:lead`), and does `then` there.
+function cidRuns(director, from, way, after)
+    local legs = {}
+    for _, spot in ipairs(way) do
+        table.insert(legs, { to = spot, speed = CID_SPEED, rotation = spot.rotation })
+    end
+    D:lead(director, GUIDE, from, legs, after)
+end
+
+function cidControl(director, value)
+    director:bnpc_control(GUIDE, CID_CONTROL, { value })
+end
+
+function cidPulse(director)
+    if D.done.duty_over then
+        return
+    end
+    cidControl(director, 0)
+    D:after(CID_PULSE_EVERY, cidPulse)
+end
+
+-- The launchers stand there from the start (unseen) and cast only while `on`.
+function setLaunchers(director, layouts, on)
+    for _, layout in ipairs(layouts) do
+        director:launcher(layout, on)
+    end
 end
 
 function cutscene(director, id, params)
@@ -269,12 +379,17 @@ end
 D:pack({ name = "four_dead", layouts = FOUR, spawns = FIVE,
     on_fall = function(d)
         talk(d, 32921)
+        cidControl(d, CID_LIFT_OPEN)
         d:show_eobj(EOBJ_LIFT1)
     end })
 D:pack({ name = "five_dead", layouts = FIVE, ready = done("four_dead"), effects = { { 2, 2, 1 } }, spawns = TEN })
-D:pack({ name = "ten_dead", layouts = TEN, ready = done("five_dead"), effects = { { 3, 2, 1 } } })
+D:pack({ name = "ten_dead", layouts = TEN, ready = done("five_dead"), effects = { { 3, 2, 1 } },
+    on_fall = function(d) setLaunchers(d, LAUNCHERS_FIRST, false) end })
+D:pack({ name = "ride_six_dead", layouts = RIDE_FIRST_SIX, ready = function() return D.dead[BOSS1] == true end,
+    on_fall = function(d) setLaunchers(d, LAUNCHERS_RIDE, true) end })
 D:pack({ name = "effect_5", layouts = LAST_FIVE, ready = function() return D.dead[BOSS1] == true end,
-    effects = { { 5, 2, 1 } } })
+    effects = { { 5, 2, 1 } },
+    on_fall = function(d) setLaunchers(d, LAUNCHERS_RIDE, false) end })
 
 -- ---- What the party's steps set off ----
 
@@ -285,16 +400,31 @@ end
 
 D:step({ name = "start",
     where = function(m) return m.y > 175 and m.x > WHERE_START_X end,
-    run = function(d) talk(d, 32920) end })
+    run = function(d)
+        line(d, LINE_START)
+        D:after(LINE_START_BEFORE_TALK, function(d2) talk(d2, 32920) end)
+        D:after(LINE_START_BEFORE_TALK + CID_AFTER_TALK, function(d2)
+            cidRuns(d2, CID_FROM, CID_TO_TERMINAL, function(d3) cidControl(d3, CID_AT_TERMINAL) end)
+        end)
+    end })
 D:step({ name = "effect_4", ready = done("five_dead"),
     where = function(m) return m.y > 140 and m.y < 170 and m.z < WHERE_EFFECT_4.z and m.x > WHERE_EFFECT_4.x end,
-    run = function(d) d:map_effect(4, 2, 1) end })
+    run = function(d)
+        d:map_effect(4, 2, 1)
+        setLaunchers(d, LAUNCHERS_FIRST, true)
+    end })
 D:step({ name = "boss1_room", ready = done("lift2"),
     where = function(m) return m.y > 60 and m.y < 90 and m.x < WHERE_BOSS1_X end,
     run = function(d)
         d:objective(0, 1)
         cutscene(d, CUTSCENE_BOSS1, CUTSCENE_BOSS1_PARAMS)
         D:after(BOSS1_AFTER_CUTSCENE, function(d2) D:bringBoss(d2, D:bossById(1)) end)
+        D:after(CID_BOSS1_AFTER, function(d2)
+            local at = CID_BOSS1
+            d2:warp_bnpc(GUIDE, at.x, at.y, at.z, at.rotation)
+            cidControl(d2, CID_ON_BOSS1_FLOOR)
+            D:after(2.0, function(d3) cidControl(d3, CID_ON_BOSS1_FLOOR) end)
+        end)
     end })
 D:step({ name = "below", ready = done("effect_5"),
     where = function(m)
@@ -343,6 +473,8 @@ D:boss({ id = 1, layout = BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = P
     ready = done("boss1_room"),
     on_pull = function(director)
         crosses = 0
+        line(director, LINE_BOSS1)
+        director:aim_action(BOSS1, BOSS1_LEAP, BOSS1_MIDDLE.x, BOSS1_MIDDLE.y, BOSS1_MIDDLE.z)
         D:after(1.0, function(d)
             if D.fight == 1 then
                 d:show_eobj(BOSS1_BEHIND)
@@ -400,6 +532,9 @@ D:boss({ id = 1, layout = BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = P
             d:spawn_bnpc(layout)
         end
         D:after(1.0, function(d2) talk(d2, 32916) end)
+        D:after(CID_AFTER_FALL, function(d2)
+            cidRuns(d2, CID_BOSS1, CID_AFTER_BOSS1, cidPulse)
+        end)
     end })
 
 -- ---- The second boss ----
@@ -410,6 +545,50 @@ D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = P
     ready = done("boss2_room"),
     on_pull = function(director)
         adds = 0
+        leaps = 0
+        local function leap(at)
+            D:after(at - BOSS2_AIM_BEFORE, function(d)
+                if D.fight ~= 2 then
+                    return
+                end
+                leaps = leaps + 1
+                local to = { x = BOSS2_MIDDLE.x, z = BOSS2_MIDDLE.z }
+                if leaps % 2 == 1 then
+                    local edge = BOSS2_EDGES[math.random(#BOSS2_EDGES)]
+                    to = { x = BOSS2_MIDDLE.x + edge[1], z = BOSS2_MIDDLE.z + edge[2] }
+                elseif leaps == 2 then
+                    D:after(BOSS2_AIM_BEFORE - 0.1, function(d2)
+                        if D.fight == 2 then
+                            d2:yell(BOSS2, YELL_BOSS2_BACK)
+                        end
+                    end)
+                end
+                -- Aimed as its timeline's 28475 goes out (the same half-second), so its AoeEffect8 shows where it lands.
+                d:aim_action(BOSS2, BOSS2_LEAP, to.x, BOSS2_MIDDLE.y, to.z)
+                local first = leaps == 1
+                D:after(BOSS2_AIM_BEFORE + BOSS2_LEAP_LANDS, function(d2)
+                    if D.fight == 2 then
+                        d2:jump_bnpc(BOSS2, to.x, BOSS2_MIDDLE.y, to.z, nil, nil, true)
+                    end
+                end)
+                if first then
+                    local control = BOSS2_FIRST_LEAP_CONTROL
+                    D:after(BOSS2_AIM_BEFORE + control[3], function(d2)
+                        if D.fight == 2 then
+                            d2:bnpc_control(BOSS2, control[1], { control[2] })
+                        end
+                    end)
+                end
+            end)
+        end
+        for _, at in ipairs(BOSS2_LEAPS_ONCE) do
+            leap(at)
+        end
+        for round = 0, ROUNDS - 1 do
+            for _, at in ipairs(BOSS2_LEAPS_ROUND) do
+                leap(at + round * BOSS2_LEAPS_EVERY)
+            end
+        end
         for index, row in ipairs(BOSS2_TALKS) do
             D:after(row[1], function(d)
                 if D.fight == 2 then
@@ -422,6 +601,11 @@ D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = P
         end
     end,
     on_cast = {
+        [28478] = function(director)
+            if D:once("yell_28478") then
+                director:yell(BOSS2, YELL_BOSS2_28478)
+            end
+        end,
         -- 0.9 s after each 28479 lands one of BNpcBase 14452 comes (north, then south.)
         [28479] = function(director)
             adds = adds + 1
@@ -445,6 +629,7 @@ D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = P
     on_wipe = function(d)
         d:despawn_bnpc(BOSS2_ADD)
         D.done.talk_32903 = nil
+        D.done.yell_28478 = nil
     end })
 
 -- ---- The last boss ----
@@ -464,8 +649,16 @@ function toTheMiddle(director)
     end
 end
 
+-- Its first of an action: its line (YELL_BOSS3_*), once a fight.
+function bossThreeSays(director, name, yell)
+    if D:once(name) then
+        director:yell(BOSS3, yell)
+    end
+end
+
 -- With the last boss's 28486: a helper's 29779 in the middle and, 3.1 s on, three 14456s' 28487 across it.
 function slash(director)
+    bossThreeSays(director, "yell_28486", YELL_BOSS3_28486)
     local facing = facingFromMiddle()
     D:helpersCast(director, 29779, { { BOSS3_MIDDLE.x, BOSS3_MIDDLE.z, facing } }, BOSS3_MIDDLE.y)
     local spots = {}
@@ -637,6 +830,7 @@ function secondPartEnds(director)
     director:battle_talk(BOSS3, NAME_BOSS3, 32908, 0, 4000)
     director:bnpc_control(BOSS3, 70, { 8201036 })
     at(PART2_ALL, function(d) d:actor_use_action(BOSS3, 28499) end)
+    at(PART2_ALL + YELL_AFTER_28499, function(d) d:yell(BOSS3, YELL_BOSS3_28499) end)
     at(PART2_ALL + 3.0, function(d) d:bnpc_control(BOSS3, 70, { 8201619 }) end)
     at(PART2_ALL + 5.3, function(d)
         d:bnpc_control(BOSS3, 62, { 0, 0 })
@@ -740,8 +934,13 @@ D:boss({ id = 3, layout = BOSS3, middle = BOSS3_MIDDLE, comes_later = true, eobj
         part2 = false
         part2_over = false
         part2_ending = false
+        line(director, LINE_BOSS3)
+        director:aim_action(BOSS3, BOSS3_LEAP, BOSS3_MIDDLE.x, BOSS3_MIDDLE.y, BOSS3_MIDDLE.z)
+        for _, name in ipairs({ "yell_28486", "yell_28484", "yell_28493" }) do
+            D.done[name] = nil
+        end
         for _, at in ipairs(BOSS3_AWAY) do
-            D:after(at + AWAY_FOR, toTheMiddle)
+            D:after(at + BOSS3_AWAY_FOR, toTheMiddle)
         end
         D:after(BOSS3_SLASH_AT, function(d)
             if D.fight == 3 and not part2 then
@@ -754,7 +953,10 @@ D:boss({ id = 3, layout = BOSS3, middle = BOSS3_MIDDLE, comes_later = true, eobj
         if part2 then
             return
         end
-        if action_id == 28484 then
+        if action_id == 28493 then
+            bossThreeSays(director, "yell_28493", YELL_BOSS3_28493)
+        elseif action_id == 28484 then
+            bossThreeSays(director, "yell_28484", YELL_BOSS3_28484)
             D:after(SWORDS_AFTER_28484, function(d)
                 if D.fight == 3 then
                     swordsCome(d, SWORDS_CAST)
@@ -772,6 +974,7 @@ D:boss({ id = 3, layout = BOSS3, middle = BOSS3_MIDDLE, comes_later = true, eobj
     end,
     -- At 1 HP (`lastBossHealth`) or its death: the duty is done.
     on_death = function(d)
+        D:once("duty_over")
         dropLastBossOwn(d)
         d:show_eobj(EOBJ_EXIT)
         cutscene(d, CUTSCENE_END, CUTSCENE_END_PARAMS)
@@ -797,6 +1000,8 @@ D:boss({ id = 3, layout = BOSS3, middle = BOSS3_MIDDLE, comes_later = true, eobj
 
 function onSetup(director)
     director:set_sequence(1)
+    setLaunchers(director, LAUNCHERS_FIRST, false)
+    setLaunchers(director, LAUNCHERS_RIDE, false)
     for _, object in ipairs({ EOBJ_LIFT1, EOBJ_HANGAR, EOBJ_ARMOUR, EOBJ_LAST, EOBJ_AFTER_LAST, EOBJ_EXIT }) do
         director:hide_eobj(object)
     end
@@ -856,6 +1061,8 @@ function onSceneFinished(director, scene)
     playing = nil
     if ended == CUTSCENE_RIDE then
         D:once("ride_over")
+    elseif ended == CUTSCENE_BOSS2 then
+        line(director, LINE_BOSS2, LINE_BOSS2_AFTER)
     elseif ended == CUTSCENE_BOSS3 then
         sendTo(director, BOSS3_TO)
         -- The boss and its own are there 1.7 to 3.9 s after the cutscene ends (as the party arrives.)
@@ -928,6 +1135,7 @@ function onEventActionCast(director, actor_id, target)
         if D:once("hangar") then
             D:after(5.7, function(d) talk(d, 32917) end)
             D:after(12.7, function(d) talk(d, 32918) end)
+            line(director, LINE_HANGAR, LINE_HANGAR_AFTER)
         end
     elseif target == EOBJ_ARMOUR then
         director:mount_player(actor_id, MOUNT_ARMOUR)

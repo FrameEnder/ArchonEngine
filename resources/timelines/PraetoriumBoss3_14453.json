@@ -1,5 +1,8 @@
 {
     "hitbox_radius": 0.5,
+    "animation_locks": {
+        "28496": 1.1
+    },
     "autoattack_action_id": 870,
     "attack_range": 3.0,
     "from_pull": true,
@@ -183,5 +186,5 @@
             "comment": "after the second part (the director's talk 32909): 7.1 s, then every 30 s here (it fell 7 to 12 s after this one in the runs)"
         }
     ],
-    "comment": "The Praetorium's last boss (BNpcBase 14453, BNpcName 2136, layout 9055066): level 50, 93255 HP, there as cutscene 118 ends. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.10) and Bob's 9ba7d981 (2026-11-17, visits 0.14 and 0.16), 50e72631 (2026-11-17, visit 0.5) and 6320ae56 (2026-11-18, visit 0.3), all with Duty Support: its casts were the same to 0.4 s from its pull (battle talk 32904) in the five runs (one left at 103 s), to 132.8 s. Auto-attack 870 (438 and 262); 28495 on everyone (900 and 828), 28494 on its target (986 and 755), 28493 shared (1317 and 1040); what goes with 28486, 28484, 29051 and 28491 is the director's (content/w1d5_re.lua), as is the second part from 139.7 to 142.9 s (talk 32919: it leaves, four of BNpcBase 14455 fight in its place for 77.9 s, then its 28499 on everyone, 1586 and 1400, and talk 32909, from which this timeline's last point runs). It fell 7 to 12 s after the 28495 that follows. Hitbox and range not recorded."
+    "comment": "The Praetorium's last boss (BNpcBase 14453, BNpcName 2136, layout 9055066): level 50, 93255 HP, there as cutscene 118 ends. From Connor's Chronofoil capture af05916c (2026-11-09, visit 0.10) and Bob's 9ba7d981 (2026-11-17, visits 0.14 and 0.16), 50e72631 (2026-11-17, visit 0.5) and 6320ae56 (2026-11-18, visit 0.3), all with Duty Support: its casts were the same to 0.4 s from its pull (battle talk 32904) in the five runs (one left at 103 s), to 132.8 s. Auto-attack 870 (438 and 262); 28495 on everyone (900 and 828), 28494 on its target (986 and 755), 28493 shared (1317 and 1040); what goes with 28486, 28484, 29051 and 28491 is the director's (content/w1d5_re.lua), as is the second part from 139.7 to 142.9 s (talk 32919: it leaves, four of BNpcBase 14455 fight in its place for 77.9 s, then its 28499 on everyone, 1586 and 1400, and talk 32909, from which this timeline's last point runs). It fell 7 to 12 s after the 28495 that follows. Hitbox and range not recorded. Its 28496's lock: 1.1 s (an AoeEffect8 at no one where it comes down, retail's in all five runs; 2026-11-24)."
 }

@@ -1463,6 +1463,68 @@ class CastrumVanguardTest(FrameworkScriptTest):
         self.assertGreaterEqual(self.held_for(28780), 4.7)
 
 
+class PraetoriumTest(FrameworkScriptTest):
+    """The Praetorium against its five retail runs (Bob's marks of 2026-11-24, "cid is not moving to the terminal like
+    he did in retail", and his ask for everything else): Cid's runs and ActorControls, the members' and bosses' lines,
+    the second boss's leaps, the launchers' stretches."""
+
+    SCRIPT = "w1d5_re.lua"
+    CID = 9168666
+
+    def at(self, x, y, z):
+        self.update({"player1": {"x": x, "y": y, "z": z, "id": 11}})
+
+    def test_cid_runs_to_the_terminal_after_talk_32920(self):
+        self.at(165.0, 186.1, -5.0)
+        self.assertEqual(self.named("party_npc_yell")[0][:2], ["healer", 14395])
+        self.assertEqual(self.named("party_npc_yell")[0][3:5], ["melee", 14394])
+        self.assertEqual(self.named("battle_talk"), [])
+        # The updates are 0.1 s apart: talk 32920 at 1.5 s, Cid off at 1.7 s.
+        for _ in range(18):
+            self.at(165.0, 186.1, -5.0)
+        self.assertEqual([args[2] for args in self.named("battle_talk")], [32920])
+        self.assertIn([self.CID], self.named("hold_bnpc"))
+        sweeps = [args for args in self.named("sweep_bnpc") if args[0] == self.CID]
+        self.assertEqual([round(sweeps[0][1], 2), round(sweeps[0][3], 2), sweeps[0][4]], [170.37, -10.27, 6.0])
+        # 66.7 yalms at 6 a second: there by 11.2 s, turned to the terminal, 63 [48].
+        for _ in range(120):
+            self.at(165.0, 186.1, -5.0)
+        sweeps = [args for args in self.named("sweep_bnpc") if args[0] == self.CID]
+        self.assertEqual(len(sweeps), 7)
+        self.assertIn([self.CID, 196.83, 186.05, -4.84, -0.526], self.named("move_bnpc"))
+        controls = [args for args in self.named("bnpc_control") if args[0] == self.CID]
+        self.assertEqual([(args[1], list(args[2].values())) for args in controls], [(63, [48])])
+
+    def test_the_launchers_cast_only_while_their_stretch_is_fought(self):
+        launchers = [args for args in self.named("launcher")]
+        self.assertEqual(len(launchers), 10)
+        self.assertTrue(all(args[1] is False for args in launchers))
+        g = self.lua.globals()
+        g.D.done.five_dead = True
+        del self.calls[:]
+        self.at(230.0, 155.0, -60.0)
+        self.assertEqual(sorted(args[0] for args in self.named("launcher") if args[1]),
+                         [9082875, 9082876, 9082877, 9082878, 9082880])
+
+    def test_the_second_boss_leaps_out_and_back(self):
+        g = self.lua.globals()
+        g.D.fight = 2
+        g.math.random = lambda *_: 3
+        g.D.bossById(g.D, 2).on_pull(self.director)
+        # Leaps at 45.1, 65.9, 109.4 and 133.2 s, the updates 0.1 s apart.
+        for _ in range(1400):
+            self.update({"player1": {"x": -164.0, "y": -104.2, "z": 10.0, "id": 11}})
+        aims = [(round(args[2], 1), round(args[4], 1)) for args in self.named("aim_action") if args[1] == 28475]
+        self.assertEqual(aims[:4], [(-164.0, 20.0), (-164.0, 0.0), (-164.0, 20.0), (-164.0, 0.0)])
+        jumps = [(round(args[1], 1), round(args[3], 1), args[6]) for args in self.named("jump_bnpc")
+                 if args[0] == 9054847]
+        self.assertEqual(jumps[0], (-164.0, 20.0, True))
+        self.assertEqual([args[1:] for args in self.named("bnpc_control") if args[0] == 9054847 and args[1] == 70][0][0],
+                         70)
+        self.assertEqual(len([1 for args in self.named("bnpc_control") if args[0] == 9054847 and args[1] == 70]), 1)
+        self.assertEqual([args[1] for args in self.named("yell") if args[0] == 9054847], [13640])
+
+
 class CastrumLiviaTest(FrameworkScriptTest):
     """Castrum Meridianum's last boss through its volleys (Bob's mark of 2026-11-23: "the same leap issue that cape
     westwind's boss had ... her position in some of the area of effect attacks aren't exactly right"). Retail's, four

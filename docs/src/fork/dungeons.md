@@ -1705,14 +1705,13 @@ layout); the lifts and the other objects are `onGimmickAccessor` with event acti
 Meridianum's device, each working only from its own floor; action 1128 is `PraetoriumArmor_01128.lua` (a set 4500).
 
 **Not known, so guessed or left out**: the event ranges; why the second part began at 139.7 or 142.8 s, and what a
-gauge that fills does (28500, an enrage by Boss Mod's name, was never used); where 28475 takes the second boss (it
-stays where it is); the bosses' clocks past what the runs show (the rounds go on); **a fall at a boss** (not seen: the
+gauge that fills does (28500, an enrage by Boss Mod's name, was never used); which edge 28475 takes the second boss to (one of
+the four at random: see below); the bosses' clocks past what the runs show (the rounds go on); **a fall at a boss** (not seen: the
 party goes back to where the last lift or cutscene put it, `set_start`, the first two bosses' rooms reset themselves
 and the last boss comes back whole with its own; a fall on the way was the entrance on retail, 4 s later, with no
 wipe); whether the 14455s attack between their casts (they do); the members during the ride (they walk; retail's
 weren't read); whether the server lets a mounted player use 1128 (nothing forbids it, untested); ActorControls 20, 62,
-63 and 70 on the last boss (sent as retail did); the ten of BNpcBase 6358 that showed for a moment along the way (left
-out); the knockbacks of 28476, 28480, 28481 and 28482 (their rows weren't read: damage only); BNpcBase 14616, which
+63 and 70 on the last boss (sent as retail did); the knockback of 28482 (its row wasn't read: damage only); BNpcBase 14616, which
 retail spawned as not hostile, is hostile here so that it can be fought.
 
 **Who's there** (drop-in `territory_1044.json`, from `questkit chronofoil --dropin 1044` over the four captures: 55
@@ -1726,6 +1725,47 @@ layouts 1, 2 and 3 for the bosses' helpers, which retail spawned with layout 0).
 clear; and a rehearsed wipe at the first two bosses). One known difference (`known.json`): in 6320ae56 one of the
 four reached 1 HP 0.3 s before the others' 28491 and went at once; the script's second part runs 1.6 s ahead of that
 run's, so there it was already casting.
+
+### The Praetorium against its runs (2026-11-24)
+
+Bob's first run (on `5e9e306`): "Cid is suppose to move to the terminal as we draw aggro, but he just stays where he
+started", and a full look at the rest before the next. The five runs read again for everything the script hadn't
+played (scratch: each actor's moves, ActorControls, NpcYells, casts and effects); what came of it, all in
+`w1d5_re.lua` unless named:
+
+* **Cid** (layout 9168666) runs to the terminal 0.2 s after talk 32920, at 6 yalms a second, by retail's seven
+  waypoints from (155.8, 186.1, -4.3) to (196.8, 186.1, -4.8), turns to -0.526 there and ActorControl 63 `[48]` as he
+  arrives (`D:lead`, `CID_TO_TERMINAL`; 11.2 s in every run). 63 `[18]` as the four by the entrance fall (the lift
+  opening). On the first boss's floor he's put at (210.1, 76.0, -2.0), facing -1.592, 2.3 s after scene 3, with 63
+  `[11]` then and again 2 s on; the boss dead, he runs 0.25 s later by (192.1, 76.0, 0.1) to (173.0, 76.0, 0.0) and
+  turns to -1.571, and from then 63 `[0]` every 2 s till the duty's over (retail's pulse, all five runs).
+* **The members' lines** (`party_npc_yell`: the first role that's in the party says it): 14395 (healer) or 14394
+  (melee) 1.5 s before talk 32920; 14397 or 14396 (tank) at the first boss's pull; 14398 (ranged) 11.5 s after the
+  hangar; 14400 or 14399 1.1 s after cutscene 283; 14402 or 14401 at the last boss's pull.
+* **The bosses' yells** (`yell`, once each a pull): the second boss's 13639 with its first 28478 and 13640 with its
+  second 28475; the last boss's 13643 with 28486, 13644 with 28484, 13645 with 28493, 13642 2.9 s after its 28499.
+* **The second boss's leaps** (28475, no cast, an AoeEffect8 at no one where it lands: `cast_aims.json`'s "none",
+  `aim_action` 0.5 s before): at 45.1, 65.9, 109.4 and 133.2 s, then 176.7 and 200.5 every 67.3 s; the odd ones to an
+  edge 20 yalms out on x or z (one at random: the runs' four went to four), the even ones back to the middle, landing
+  1.1 s in (`jump_bnpc`, keeping its facing); ActorControl 70 `[8201044]` 1.4 s after the first. The first and last
+  bosses' 28467 and 28496 the same way to their middles (lock 2.1 and 1.1 s, the timelines' `animation_locks`).
+* **The launchers**: the ten of BNpcBase 6358 (2589 HP, not hostile, never moving; layouts 9082875-9082878,
+  9082880 and 9083019, 9083030, 9083041-9083043) each cast 29049 on its own spot every 9.5 to 13.2 s (600 to a player,
+  `Launcher_6358.json`; unique damage), **only while their stretch was fought**: the first five from map effect 4
+  to the ten's fall, the other five from the first six of the ride's sixteen falling (9082022-9082027) to map effect
+  5, though the party was near before and after in every run. `launchers.json`'s 1044 entries, the director putting
+  them on and off (`director:launcher`, [Quest battles](quest-battles.md)).
+* **Damage types** (the Action sheet's, the effect's byte): 28473, 28493 and 28494 slashing; 28498 and 29174
+  piercing; 28477, 28480, 28481, 28483, 29175, 29185 and 29186 blunt; Castrum Meridianum's 6498 piercing. Their
+  scripts had made them magic.
+* **Knockbacks** (the effect's `1F` and its row, as retail sent): 28476 and 28481 row 156, 28480 row 70, 29185 and
+  29186 row 3.
+* **Already as retail's**: the bosses' casts and their order in all five runs (their timelines). **Left out**: the
+  enemies' battle chatter (BNpcNames 2124-2130 yell one of three lines every 8 s about half the time; which one and
+  when looks random), Cid's 13805 during cutscene 280 (no one sees it).
+
+Tests `PraetoriumTest` (Cid's run and 63 `[48]`, the launchers' stretches, the second boss's leaps out and back) and
+`the_praetoriums_launchers_cast_only_while_the_director_has_them_on`. **Unplayed.**
 
 ## At a wipe, duty by duty (2026-11-10)
 

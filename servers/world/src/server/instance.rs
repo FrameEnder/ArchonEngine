@@ -315,6 +315,8 @@ pub struct Instance {
     pub action_aims: HashMap<(ObjectId, u32), glam::Vec3A>,
     /// Each launcher's turn (by layout ID) while its party is near (`launcher`.)
     pub launchers: HashMap<u32, crate::server::launcher::LauncherState>,
+    /// Launchers (by layout ID) a director has stopped (`director:launcher`): there, but they don't cast.
+    pub launchers_off: std::collections::HashSet<u32>,
     pub later_director_tasks: Vec<(std::time::Instant, crate::server::director::LuaDirectorTask)>,
     /// The fight here is over (a quest battle won, `npc_behavior::end_fight`): NPCs don't take anyone on again, whatever
     /// hits or heals them.

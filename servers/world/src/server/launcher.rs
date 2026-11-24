@@ -116,6 +116,12 @@ impl Launcher {
         })
     }
 
+    /// Whether it casts: its party is near and the director hasn't put it off (`director:launcher`): the
+    /// Praetorium's cast only while their stretch was fought, though the party was near before and after.
+    pub fn casts(&self, off: &std::collections::HashSet<u32>, party: &[Vec3A]) -> bool {
+        !off.contains(&self.layout) && self.goes_on(party)
+    }
+
     /// Its next spot, `roll` from 0 to 1: one of its spots not within `NOT_AGAIN_WITHIN` of `last`.
     pub fn next_spot(&self, last: Option<Vec3A>, roll: f32) -> Option<Vec3A> {
         let choices: Vec<Vec3A> = self
@@ -180,7 +186,7 @@ pub fn tick(
         }) else {
             continue;
         };
-        if !launcher.goes_on(&party) {
+        if !launcher.casts(&instance.launchers_off, &party) {
             // Away from its road it rests; it begins one of its waits after someone comes (retail's first came within
             // 3 s of the player's coming.)
             instance.launchers.remove(&launcher.layout);
@@ -280,5 +286,28 @@ mod tests {
         // 4.9 or 5.9 s between casts.
         assert_eq!(first.wait(0.1), Duration::from_secs_f32(4.9));
         assert_eq!(first.wait(0.9), Duration::from_secs_f32(5.9));
+    }
+
+    /// Bob's run of 2026-11-24 in the Praetorium and its five retail runs: the ten launchers (BNpcBase 6358) cast 29049
+    /// on their own spot every 9.5 to 13.2 s, only while their stretch was fought; the director puts them on and off.
+    #[test]
+    fn the_praetoriums_launchers_cast_only_while_the_director_has_them_on() {
+        let launchers = launchers(1044);
+        assert_eq!(launchers.len(), 10);
+        assert!(
+            launchers
+                .iter()
+                .all(|l| l.action == 29049 && l.spots.len() == 1)
+        );
+        let first = &launchers[0];
+        let near = [first.spots[0] + Vec3A::new(10.0, 0.0, 0.0)];
+        let mut off = std::collections::HashSet::new();
+        assert!(first.casts(&off, &near));
+        off.insert(first.layout);
+        assert!(!first.casts(&off, &near));
+        off.remove(&first.layout);
+        assert!(!first.casts(&off, &[first.spots[0] + Vec3A::new(80.0, 0.0, 0.0)]));
+        assert!(first.wait(0.0) >= Duration::from_secs_f32(9.5));
+        assert!(first.wait(0.99) <= Duration::from_secs_f32(13.2));
     }
 }

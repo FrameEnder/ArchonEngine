@@ -65,7 +65,9 @@ with `facts.json` (278 facts); and nine minutes in Thanalan.
   mount comes from the object, that its action 1128 can be used and hits, that it survives the warp below and goes
   at the cutscene); the lifts' and objects' places (no layout: each works from its own floor by height); the
   positions that set things off; the last boss's second part (the four of base 14455 at 1 HP, the gauge, its end);
-  the script's name (`w1d5_re`, by analogy).
+  the script's name (`w1d5_re`, by analogy); since 2026-11-24, Cid's runs, the second boss's leaps to the edges and
+  the launchers ([Dungeons](dungeons.md#the-praetorium-against-its-runs-2026-11-24)). Left out: the enemies' battle
+  chatter, Cid's yells during cutscene 280.
 * **Not read yet**: the facts about Duty Support's
   fourth set (72: its Lancer's and the others' kits in Castrum Meridianum and the Praetorium, where it had been
   built from the Porta Decumana alone), the open-world enemies whose timelines lack an action (bases 55, 62, 64,
@@ -1816,7 +1818,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Combat
 
-* Launchers (2026-11-21, untested in game): only those in `resources/data/launchers.json` (Castrum Meridianum's four)
+* Launchers (2026-11-21, untested in game): only those in `resources/data/launchers.json` (Castrum Meridianum's four,
+  the Praetorium's ten)
   go on; another duty's unseen spot-raining NPCs stand idle until they're listed. What sets one going in retail (the
   party's nearness, 12 yalms from its spots, is read from the five runs; a range in the layout may be what it really
   is) isn't known, and a launcher's next spot is any of retail's but the last, not retail's own order.
