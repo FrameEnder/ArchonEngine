@@ -128,7 +128,7 @@ with `facts.json` (278 facts); and nine minutes in Thanalan.
   b9af1bb2 has the whole of it on retail: the Hawthorne Hut's levemete (GuildLeveAssignment 25) giving Leve 573, the
   leve (director 0x8001054e: NPCs answered with an emote, the progress in DirectorVars, its log messages and yells),
   its completion, and Qina Lyehga's turn-in (GuildLeveAssignment 2, scene 5 with [1, 573]) between 221's scenes 3 and
-  4. Next after 221 and 1048.
+  4. What it shows and what's still needed: [Levequests](levequests.md) (no capture has a leve being accepted).
 
 ## Quest battle 82, the Summoner's level 50 quest and Broadening Horizons (2026-11-17)
 
