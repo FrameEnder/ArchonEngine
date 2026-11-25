@@ -3822,6 +3822,48 @@
                         "z": 88.77
                     },
                     "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 1043117,
+                        "type": "event_npc",
+                        "nonpop": false
+                    },
+                    "layout_id": 9283423,
+                    "position": {
+                        "x": 178.59,
+                        "y": 76.0,
+                        "z": 0.0
+                    },
+                    "rotation": -1.5709
+                },
+                {
+                    "data": {
+                        "base_id": 1042680,
+                        "type": "event_npc",
+                        "nonpop": false
+                    },
+                    "layout_id": 9083081,
+                    "position": {
+                        "x": 177.17,
+                        "y": 102.21,
+                        "z": -67.64
+                    },
+                    "rotation": -1.353
+                },
+                {
+                    "data": {
+                        "base_id": 1043118,
+                        "type": "event_npc",
+                        "nonpop": false
+                    },
+                    "layout_id": 9283424,
+                    "position": {
+                        "x": -60.0,
+                        "y": -103.96,
+                        "z": 0.0
+                    },
+                    "rotation": -1.5709
                 }
             ]
         }

@@ -868,6 +868,40 @@ mod tests {
     fn client_zone_ipc_sizes() {
         test_opcodes::<ClientZoneIpcSegment>();
     }
+
+    /// A move on the Praetorium's magitek armour (retail's at 697.9 s in Bob's Chronofoil capture 50e72631, as
+    /// UpdatePositionHandlerInstance; Kawari's client sends it as UpdatePositionHandler): jump state 3. It wasn't
+    /// read, and the server kept Bob where he mounted (his mark of 2026-11-25.)
+    #[test]
+    fn read_a_move_on_the_armour() {
+        use binrw::BinRead;
+        let mut bytes = vec![0x14, 0x00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        bytes[2..4].copy_from_slice(
+            &crate::opcodes::ClientZoneIpcType::UpdatePositionHandler
+                .get_opcode()
+                .to_le_bytes(),
+        );
+        // Rotation, the animation type, state and jump state, the position (146.85, 101.99, -37.53).
+        bytes.extend([0xaf, 0xde, 0x28, 0x40, 0x00, 0x00, 0x03, 0x00]);
+        bytes.extend([
+            0xbf, 0xda, 0x12, 0x43, 0xfc, 0xff, 0xcb, 0x42, 0x64, 0x1a, 0x16, 0xc2,
+        ]);
+        bytes.extend([0, 0, 0, 0]);
+        let size = bytes.len() as u32;
+        let segment =
+            ClientZoneIpcSegment::read_le_args(&mut std::io::Cursor::new(&bytes), (&size,))
+                .unwrap();
+        let ClientZoneIpcData::UpdatePositionHandler {
+            jump_state,
+            position,
+            ..
+        } = segment.data
+        else {
+            panic!("not read as a move: {:?}", segment.data);
+        };
+        assert_eq!(jump_state, crate::common::JumpState::Unk3);
+        assert!((position.0.x - 146.85).abs() < 0.01 && (position.0.z + 37.53).abs() < 0.01);
+    }
     /// Bob's first SaveGlamourPlate of 2026-10-27 (his bundles): plate 1, five pieces from the dresser, the body and
     /// legs dyed in the plate with the dye in the fourth bag's slot 29 (stains 1 and 6.)
     #[test]

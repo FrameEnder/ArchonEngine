@@ -1518,6 +1518,22 @@ class PraetoriumTest(FrameworkScriptTest):
     def at(self, x, y, z):
         self.update({"player1": {"x": x, "y": y, "z": z, "id": 11}})
 
+    def test_the_armours_model_is_spawned(self):
+        # Retail's SpawnNpcs (Bob's capture 50e72631): the armour's model is ENpc 1042680 (layout 9083081), the
+        # others of the LVD_REMAKE_GIMMICK layers 1043117 and 1043118; Kawari never sent them (Bob's marks of
+        # 2026-11-25, "megitek armor still not visible").
+        root = Path(__file__).resolve().parents[3]
+        dropin = json.loads((root / "resources" / "dropins" / "territory_1044.json").read_text())
+        npcs = {
+            o["layout_id"]: (o["data"]["base_id"], o["data"]["nonpop"])
+            for layer in dropin["layers"]
+            for o in layer["objects"]
+            if o["data"]["type"] == "event_npc"
+        }
+        self.assertEqual(
+            npcs, {9283423: (1043117, False), 9083081: (1042680, False), 9283424: (1043118, False)}
+        )
+
     def test_cid_runs_to_the_terminal_after_talk_32920(self):
         self.at(165.0, 186.1, -5.0)
         self.assertEqual(self.named("party_npc_yell")[0][:2], ["healer", 14395])

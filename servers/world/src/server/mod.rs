@@ -507,6 +507,8 @@ impl WorldServer {
             }
 
             instance.directors.push(director);
+            // Fork: its event NPCs are the director's (`Instance::give_event_npcs_to`.)
+            instance.give_event_npcs_to(id);
             // Fork: the entrance circle's barrier keeps everyone in until the duty commences (DutyCommence hides it
             // and takes it away), Player NPCs too: they walked through it, its gimmick being one the director hadn't
             // touched (Bob's mark of 2026-11-20 in Castrum Meridianum: "they do not respect the interior lock of the

@@ -1910,9 +1910,21 @@ director's `warp_player_within`, and the connection's position on any ActorSetPo
 is retail's now too: every move within a duty in Bob's captures (30, in the Praetorium, Castrum Meridianum, the Porta
 Decumana) was PrepareZoning warp type 25 (Event), hide_character 0, fade 1, and the ActorSetPos the same type 1.5 s
 later; Kawari's were Normal, hidden, 2 s. Test `a_player_a_director_moves_is_where_it_moved_them`. **The armour's
-model** isn't explained: Kawari spawned it as retail did (event state 7, shown with ActorControl 106 [0] as the first
-boss fell) but for bit 2 of SpawnObject's flags byte, which retail set on every object of this duty and Kawari on none
-(its meaning isn't known; Kawari's walls show without it). Untested in game.
+model** (his marks again, after that: "megitek armor still not visible", "I can mount it though") isn't its EObj but
+an **event NPC**: retail spawned ENpcBase 1042680 (layout 9083081, ModelChara 2) at (177.17, 102.21, -67.64), facing
+-1.353, as the duty began, with 1043117 (9283423, at (178.59, 76.0, 0.0)) and 1043118 (9283424, at (-60.0, -103.96,
+0.0)), the event NPCs of the LVD_REMAKE_GIMMICK_01 and _02 layers; all three had the director (0x80030056) as handler
+and display flags 0x40008, and came and went with the player's distance (1042680 went at 746.3 s as the party was taken
+below and back at 774.5 s; 1043118 came at 870.6 s, below) (capture 50e72631). Kawari sends a layout's event NPCs only
+from a drop-in, and the duty's had none: they're in `territory_1044.json` now, and a duty's event NPCs carry its
+director and those display flags (`Instance::give_event_npcs_to`). The SpawnObject `flag_4` difference stands
+(meaning unknown). The four event NPCs of LVD_FaithLayout_re (1043391-1043394) are the Duty Support members' at the
+end: retail spawned three of them at 2017.8 s, after the last boss; not here yet. **Moves on the armour**: the client's
+carry jump state 3 (retail's ride: 331 moves, and 64 with 3 another 497; 64 with 1 and 2 elsewhere), which Kawari
+couldn't read, so for nine minutes of riding the server had him where he mounted and his bots, standing by that, never
+moved ("the bots are not in anyway follwoing me since they got here"). `JumpState` reads 3, 65, 66 and 67 now. Retail's
+Duty Support members walked and fought through the ride, unmounted (their 337-380 ActorMoves each). Tests
+`read_a_move_on_the_armour`, `PraetoriumTest.test_the_armours_model_is_spawned`. Untested in game.
 
 ## The Jade Stoa
 

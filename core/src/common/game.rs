@@ -276,10 +276,19 @@ pub enum JumpState {
     GimmickPathMoveBegin = 1,
     /// THe player finishes a gimmick path. Observed during S9 teleportation pads.
     GimmickPathMoveFinish = 2,
+    /// Fork: unknown, sent all through the ride on the Praetorium's magitek armour (Mount 17) and nowhere else
+    /// (Bob's Chronofoil capture 50e72631: 331 of the ride's moves.) Without it the client's moves on the armour
+    /// weren't read, and the server kept the player where they mounted (Bob's mark of 2026-11-25.)
+    Unk3 = 3,
     /// The player is ascending to the apex of the jump.
     Ascending = 16,
     /// Seen while falling off arena edges in UpdatePositionHandlerInstance.
     Unk1 = 64,
+    /// Fork: 64 with 1, 2 and 3 (UpdatePositionHandlerInstance in Bob's Chronofoil capture 50e72631, the Praetorium:
+    /// 1321, 169 and, on the armour, 497 times.)
+    Unk65 = 65,
+    Unk66 = 66,
+    Unk67 = 67,
 }
 
 /// This allows us (and probably the client as well) to determine which event belongs to each sheet, or type of NPC.

@@ -30,8 +30,8 @@ use kawari::{
     },
     config::{Config, get_config},
     ipc::zone::{
-        ActionRequest, ActorControlCategory, Conditions, DutyFinderSetting, ObjectKind,
-        ServerZoneIpcSegment, SpawnNpc, SpawnObject, SpawnPlayer, SpawnTreasure,
+        ActionRequest, ActorControlCategory, Conditions, DisplayFlag, DutyFinderSetting,
+        ObjectKind, ServerZoneIpcSegment, SpawnNpc, SpawnObject, SpawnPlayer, SpawnTreasure,
     },
 };
 use parking_lot::Mutex;
@@ -1160,6 +1160,20 @@ impl Instance {
             .collect::<Vec<_>>()
             .first()
             .copied()
+    }
+
+    /// The layout's event NPCs of a duty are its director's, as retail spawned them: The Praetorium's armour
+    /// (ENpcBase 1042680) and the others of its LVD_REMAKE_GIMMICK layers came with handler 0x80030056 and display
+    /// flags 0x40008 (Bob's Chronofoil capture 50e72631, 2026-11-25).
+    pub fn give_event_npcs_to(&mut self, handler_id: HandlerId) {
+        for actor in self.actors.values_mut() {
+            if let NetworkedActor::Npc { spawn, .. } = actor
+                && spawn.common.object_kind == ObjectKind::EventNpc
+            {
+                spawn.common.handler_id = handler_id;
+                spawn.common.display_flags = DisplayFlag::UNK1 | DisplayFlag::UNK2;
+            }
+        }
     }
 }
 
