@@ -7,6 +7,7 @@
 
 mod luab;
 mod scripts;
+mod sheets;
 
 use std::{
     collections::HashMap,
@@ -46,6 +47,8 @@ USAGE:
     kawari-questdump classes [--out DIR]
     kawari-questdump actions [--out DIR]
     kawari-questdump disasm <FILE.luab> [--listing]
+    kawari-questdump sheet <SHEET> [ROWS] [--where COLUMN=VALUE]
+    kawari-questdump sheets
 
 QUEST can be a quest ID (3854 or 69390), a script ID (XxaFst034_03854) or the quest's name in quotes.
 
@@ -86,10 +89,16 @@ COMMANDS:
               ControlPanel's battle replay (each cast's shape on the map, as the server's area_shape, and each
               push.)
     disasm   Print a readable listing of a compiled script you already have.
+    sheet    Print rows of any Excel sheet as JSON (ROWS: IDs and ranges, e.g. 1043117 or 100-120,5; none for all),
+             each column named as EXDSchema names it, up to 500 rows; --where COLUMN=VALUE keeps only the rows
+             whose column has that value. For looking at the client's data (ArchonEngine ControlPanel's harness).
+             With --out, written to <out>/sheet.json instead.
+    sheets   Print every sheet's name as JSON (with --out, <out>/sheets.json).
 
 OPTIONS:
     --out DIR     Where to write the dumps (default: quest-dumps)
     --listing     Include every instruction, not just each function's summary.
+    --where C=V   With sheet: only the rows whose column C is V.
     --server DIR  With scripts: the server's resources/scripts folder, to dump only what it has scripts for.
     --game DIR    The game's \"game\" folder (the one containing sqpack.) By default it's found the same way
                   the server finds it: config.yaml in the current directory, or auto-detection.";
@@ -99,6 +108,10 @@ struct Options {
     listing: bool,
     game: Option<String>,
     server: Option<PathBuf>,
+    /// `--where COLUMN=VALUE` (`sheet`.)
+    filter: Option<String>,
+    /// Whether `--out` was given (`sheet` and `sheets` then write a file there instead of printing.)
+    out_given: bool,
     positional: Vec<String>,
 }
 
@@ -108,6 +121,8 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
         listing: false,
         game: None,
         server: None,
+        filter: None,
+        out_given: false,
         positional: Vec::new(),
     };
     let mut iter = args.iter();
@@ -115,6 +130,7 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
         match arg.as_str() {
             "--out" => {
                 options.out = PathBuf::from(iter.next().ok_or("--out needs a directory")?);
+                options.out_given = true;
             }
             "--listing" => options.listing = true,
             "--server" => {
@@ -124,6 +140,9 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
             }
             "--game" => {
                 options.game = Some(iter.next().ok_or("--game needs a directory")?.clone());
+            }
+            "--where" => {
+                options.filter = Some(iter.next().ok_or("--where needs COLUMN=VALUE")?.clone());
             }
             _ => options.positional.push(arg.clone()),
         }
@@ -147,6 +166,42 @@ struct QuestEntry {
     place: u16,
     class_category: u8,
     expansion: u8,
+}
+
+/// Prints `value`, or with `--out` writes it there as `file` (a long line is easier to pick up from a file.)
+fn print_or_write(options: &Options, file: &str, value: &Value) -> Result<(), String> {
+    if !options.out_given {
+        println!("{value}");
+        return Ok(());
+    }
+    std::fs::create_dir_all(&options.out)
+        .map_err(|err| format!("couldn't create {}: {err}", options.out.display()))?;
+    let destination = options.out.join(file);
+    std::fs::write(&destination, value.to_string())
+        .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
+    println!("Wrote {}", destination.display());
+    Ok(())
+}
+
+/// The game install's files (and the config's additional folders), for reading.
+fn open_resolver(game: Option<&str>) -> Result<ResourceResolver, String> {
+    let config = get_config();
+    let mut resolver = ResourceResolver::new();
+    for path in &config.filesystem.additional_search_paths {
+        resolver.add_source(UnpackedResource::from_existing(path));
+    }
+    let game_path = match game {
+        Some(path) => path.to_string(),
+        None => config.filesystem.game_path(),
+    };
+    if !Path::new(&game_path).join("sqpack").is_dir() {
+        return Err(format!(
+            "{game_path} doesn't look like the game folder (there's no sqpack folder inside it)"
+        ));
+    }
+    eprintln!("Reading game data from {game_path}");
+    resolver.add_source(SqPackResource::from_existing(&game_path));
+    Ok(resolver)
 }
 
 /// Everything we need from the game data, read once.
@@ -225,21 +280,7 @@ impl Journal {
 impl GameData {
     fn open(game: Option<&str>) -> Result<Self, String> {
         let config = get_config();
-        let mut resolver = ResourceResolver::new();
-        for path in &config.filesystem.additional_search_paths {
-            resolver.add_source(UnpackedResource::from_existing(path));
-        }
-        let game_path = match game {
-            Some(path) => path.to_string(),
-            None => config.filesystem.game_path(),
-        };
-        if !Path::new(&game_path).join("sqpack").is_dir() {
-            return Err(format!(
-                "{game_path} doesn't look like the game folder (there's no sqpack folder inside it)"
-            ));
-        }
-        eprintln!("Reading game data from {game_path}");
-        resolver.add_source(SqPackResource::from_existing(&game_path));
+        let mut resolver = open_resolver(game)?;
 
         let language = config.world.language();
         let quests = QuestSheet::read_from(&mut resolver, language)
@@ -1368,6 +1409,27 @@ fn run(args: &[String]) -> Result<(), String> {
         "help" | "--help" | "-h" => {
             println!("{USAGE}");
             Ok(())
+        }
+        "sheet" => {
+            let (sheet, rows) = match options.positional.as_slice() {
+                [sheet] => (sheet, ""),
+                [sheet, rows] => (sheet, rows.as_str()),
+                _ => return Err(USAGE.to_string()),
+            };
+            let rows = sheets::parse_rows(rows)?;
+            let filter = options
+                .filter
+                .as_deref()
+                .map(sheets::parse_where)
+                .transpose()?;
+            let mut resolver = open_resolver(options.game.as_deref())?;
+            let language = get_config().world.language();
+            let value = sheets::dump(&mut resolver, language, sheet, &rows, filter.as_ref())?;
+            print_or_write(&options, "sheet.json", &value)
+        }
+        "sheets" => {
+            let mut resolver = open_resolver(options.game.as_deref())?;
+            print_or_write(&options, "sheets.json", &sheets::list(&mut resolver)?)
         }
         other => Err(format!("unknown command {other:?}\n\n{USAGE}")),
     }

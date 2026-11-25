@@ -599,6 +599,8 @@ that: the server's state as JSON, as it is now, without a bundle being made, pus
 | `/dashboard/harness/characters`, `/characters/<content id>` | the characters; one's rows and quest summary as a bundle's `characters.json` | `diagnostics._character_state` |
 | `/dashboard/harness/config` | the server's config with secrets removed | `diagnostics._sanitised_config` |
 | `/dashboard/harness/bundles` | the kept bundles | `diagnostics.kept_bundles` |
+| `/dashboard/harness/sheets` (2.34.0) | every Excel sheet of the game install (root.exl), kept 10 minutes | `kawari-questdump sheets` |
+| `/dashboard/harness/sheet/<name>?rows=&where=` (2.34.0) | a sheet's rows, columns named as EXDSchema names them (`#index` where it has none), up to 500: `rows` IDs and ranges, `where` `COLUMN=VALUE` | `kawari-questdump sheet` |
 
 What it holds to:
 
@@ -607,6 +609,14 @@ What it holds to:
 * **The dashboard's sign-in is the only way in**: Bob signs in in the browser the session uses. There's no token
   (one would have to be handed to the session and typed by it, which it doesn't do, and would sit in a URL).
 * **Capped**: lines read and returned, a line's length (4,000), a capture's tail (8 MB), a pattern's length (200).
+
+**The game's data** (2.34.0, Bob, 2026-11-25: "if we extend the API harness ... you could browse the client data in
+its entirety", while Gaius stood in the Praetorium's first boss's arena with retail's packets and Kawari's the same
+and only the sheets left to look at). The two `sheet` routes run the active build's `kawari-questdump` in a
+throwaway container from the server's image with the game install mounted read-only (`questlab._tool_spec`, as Quest
+Lab runs it), writing into a folder of the dumps that's removed once read (`_read_game_data`). A build without the
+`sheet` command says so (build the fork again). What comes back is Square Enix's data: for reading in the browser,
+never for a commit. Not checked against Bob's server before it's deployed.
 
 How a session uses it: open `http://192.168.1.7:7301/dashboard/harness/status` in Bob's Chrome and read the page's
 text. A redirect to the sign-in page means Bob isn't signed in there. The Diagnostics page links to it.

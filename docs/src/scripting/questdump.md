@@ -27,7 +27,18 @@ kawari-questdump disasm quest-dumps/XxaFst034_03854/XxaFst034_03854.luab --listi
 
 # The whole quest graph in one file: names, levels, prerequisites, issuers and areas
 kawari-questdump index
+
+# Any Excel sheet's rows as JSON, each column named as EXDSchema names it (up to 500 rows)
+kawari-questdump sheet ENpcBase 1043117
+kawari-questdump sheet ENpcBase --where Invisibility=1
+kawari-questdump sheets
 ```
+
+`sheet` reads any sheet without a reader for it: its columns' names come from `tools/questdump/sheet_columns.json`
+(EXDSchema's, taken from icarus's generated sources by `tools/questdump/sheet_columns.py`; run it again when icarus is
+updated), a column it doesn't name is `#<index>`. ROWS are IDs and ranges (`1043117`, `100-120,5`; none for all),
+`--where COLUMN=VALUE` keeps the rows with that value. It prints the JSON, or with `--out` writes `sheet.json` (and
+`sheets` `sheets.json`) there: ArchonEngine ControlPanel's harness serves both (`/dashboard/harness/sheet/<name>`).
 
 `index` writes `quest-index.json`. Each quest's `previous` lists the quests that unlock it, and
 `previous_join` says how they combine: `2` means any one of them (the story quests that follow the three
