@@ -2616,10 +2616,12 @@ async fn process_packet(
                             action_type,
                             sequence,
                             rotation,
+                            position,
                             ..
                         } => {
-                            // Handled like an action on themselves, so the client gets its result (ground placement,
-                            // e.g. Asylum's area, isn't done yet.)
+                            // Handled like an action on themselves, aimed where the client aimed it (its area's middle
+                            // and the spot its effect names: `Instance::ground_aims`; ground placement, e.g. Asylum's
+                            // area, isn't done yet.)
                             let request = kawari::ipc::zone::ActionRequest {
                                 action_id: *action_id,
                                 unk1: *unk1,
@@ -2635,10 +2637,11 @@ async fn process_packet(
                             };
                             connection
                                 .handle
-                                .send(ToServer::ActionRequest(
+                                .send(ToServer::ActionOnGround(
                                     connection.id,
                                     connection.player_data.character.actor_id,
                                     request,
+                                    *position,
                                 ))
                                 .await;
                         }

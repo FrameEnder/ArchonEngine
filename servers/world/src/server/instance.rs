@@ -313,6 +313,10 @@ pub struct Instance {
     /// Where an NPC's action at no one is aimed, by NPC and action (`director:aim_action`): the spot its landing
     /// names, where the client plays it to (a leap's landing: Cape Westwind's boss's 28872.)
     pub action_aims: HashMap<(ObjectId, u32), glam::Vec3A>,
+    /// Where a player last aimed an action at the ground (ActionRequestGroundTargeted), by player and action: its
+    /// area's middle and the spot its AoeEffect names, as retail's were (the Praetorium's armour's 1128, Bob's
+    /// Chronofoil capture 6320ae56.)
+    pub ground_aims: HashMap<(ObjectId, u32), glam::Vec3A>,
     /// Each launcher's turn (by layout ID) while its party is near (`launcher`.)
     pub launchers: HashMap<u32, crate::server::launcher::LauncherState>,
     /// Launchers (by layout ID) a director has stopped (`director:launcher`): there, but they don't cast.

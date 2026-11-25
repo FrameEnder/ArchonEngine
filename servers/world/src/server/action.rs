@@ -172,6 +172,20 @@ pub fn handle_action_messages(
         return true;
     }
 
+    if let ToServer::ActionOnGround(from_id, from_actor_id, request, position) = msg {
+        if let Some(instance) = data.lock().find_actor_instance_mut(*from_actor_id) {
+            instance
+                .ground_aims
+                .insert((*from_actor_id, request.action_id), position.0);
+        }
+        return handle_action_messages(
+            data,
+            game_data,
+            network,
+            &ToServer::ActionRequest(*from_id, *from_actor_id, request.clone()),
+        );
+    }
+
     if let ToServer::ActionRequest(from_id, from_actor_id, request) = msg {
         if request.action_type == ActionType::EventItem {
             start_event_item(data, game_data, network, *from_id, *from_actor_id, request);
@@ -2210,12 +2224,24 @@ pub fn execute_action(
                 // target: retail's AoeEffect8 has 0xE0000000 as its animation's target, and the server's named the
                 // helper, an actor the client doesn't draw (Bob's test of 2026-11-18, "some of his AOE don't have
                 // effects"; Connor's Chronofoil capture e834e436.)
-                let aimed_at_someone = aimed_at_someone(
-                    request.target.object_id,
-                    npc_cast_rotation.is_some(),
-                    request.action_id,
-                    action_info.as_ref().map(|info| info.cast_type),
-                );
+                // Aimed at the ground, at no one: retail's AoeEffect8 for the armour's 1128 named 0xE0000000 and the spot
+                // (Bob's Chronofoil capture 6320ae56.)
+                let ground_aim =
+                    data.lock()
+                        .find_actor_instance(from_actor_id)
+                        .and_then(|instance| {
+                            instance
+                                .ground_aims
+                                .get(&(from_actor_id, request.action_id))
+                                .copied()
+                        });
+                let aimed_at_someone = ground_aim.is_none()
+                    && aimed_at_someone(
+                        request.target.object_id,
+                        npc_cast_rotation.is_some(),
+                        request.action_id,
+                        action_info.as_ref().map(|info| info.cast_type),
+                    );
                 // An NPC's action at no one that isn't an area either (a leap: Cape Westwind's boss's 28872, retail's
                 // AoeEffect8 with 0xE0000000 for its animation's target and no targets at all) shows no one: the
                 // server's named the boss himself in an ActionEffect1, and Bob saw no leap, only the move that
@@ -2314,6 +2340,10 @@ pub fn execute_action(
                             .lock()
                             .find_actor_instance(from_actor_id)
                             .and_then(|instance| {
+                                // Where the player aimed it at the ground.
+                                if let Some(aim) = ground_aim {
+                                    return Some(Position(aim));
+                                }
                                 // Where its director aimed it (`director:aim_action`), else where it was cast.
                                 if let Some(aim) = instance
                                     .action_aims
@@ -2903,6 +2933,21 @@ pub(crate) fn status_as_taken(
 /// Applies an area-of-effect action to everyone it hits.
 ///
 /// Damage (and any status effects, if the action deals damage) goes to enemies, while healing (and status effects otherwise) go to the caster and their party.
+/// Where a player's area action is measured from: where they aimed it at the ground, else its target for one with a
+/// range (Cure III), else themselves (Medica).
+fn area_middle(
+    ground_aim: Option<glam::Vec3A>,
+    range: i8,
+    target: Option<Position>,
+    caster: Position,
+) -> Position {
+    match ground_aim {
+        Some(aim) => Position(aim),
+        None if range > 0 => target.unwrap_or(caster),
+        None => caster,
+    }
+}
+
 fn apply_area_of_effect(
     network: Arc<Mutex<NetworkState>>,
     instance: &mut Instance,
@@ -2921,15 +2966,20 @@ fn apply_area_of_effect(
     };
     let caster_position = caster.position();
 
-    // Targeted area-of-effects (e.g. Cure III) are centered on the target, otherwise it's the caster (e.g. Medica.)
-    let center = if info.range > 0 {
+    // Targeted area-of-effects (e.g. Cure III) are centered on the target, otherwise it's the caster (e.g. Medica); one
+    // aimed at the ground where it was aimed (the Praetorium's armour's 1128: retail hit what stood round that spot,
+    // up to 13 yalms from the rider, Bob's Chronofoil capture 6320ae56.)
+    let center = area_middle(
+        instance
+            .ground_aims
+            .get(&(from_actor_id, request.action_id))
+            .copied(),
+        info.range,
         instance
             .find_actor(request.target.object_id)
-            .map(|actor| actor.position())
-            .unwrap_or(caster_position)
-    } else {
-        caster_position
-    };
+            .map(|actor| actor.position()),
+        caster_position,
+    );
     let radius = info.effect_range as f32 + AOE_HITBOX_LENIENCY;
     let distance_to = |actor: &NetworkedActor| actor.position().0.distance(center.0);
 
@@ -4623,6 +4673,19 @@ mod area_tests {
     }
 
     /// An area heal spreads to its target's side (quest battle 86's 1070); a drain's heal is its user's and doesn't.
+    /// The Praetorium's armour's 1128 is aimed at the ground: retail hit what stood round the spot (Bob's Chronofoil
+    /// capture 6320ae56: five round (98.4, -5.9), 10.6 yalms before the rider); Kawari measured it from the rider and
+    /// hit nothing (Bob's mark of 2026-11-25, "magitek canon ... aren't doing anything").
+    #[test]
+    fn an_action_aimed_at_the_ground_is_measured_from_there() {
+        let rider = Position(glam::Vec3A::new(103.2, 67.4, -15.3));
+        let spot = glam::Vec3A::new(98.4, 67.0, -5.9);
+        assert_eq!(area_middle(Some(spot), 25, Some(rider), rider).0, spot);
+        let target = Position(glam::Vec3A::new(1.0, 0.0, 1.0));
+        assert_eq!(area_middle(None, 25, Some(target), rider).0, target.0);
+        assert_eq!(area_middle(None, 0, Some(target), rider).0, rider.0);
+    }
+
     #[test]
     fn area_heals_are_for_the_target() {
         let heal = |unk1| TargetEffect(TargetEffectKind::Heal { unk1, amount: 654 });

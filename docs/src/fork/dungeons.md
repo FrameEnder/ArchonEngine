@@ -1936,7 +1936,13 @@ below (the armour's model went then). Kawari's SpawnNpc for him is retail's but 
 highlight byte (0x80 for retail's 1) and the status list's source IDs; the cutscene's packets are retail's (scene 3,
 [280, 1, 37, 0, 0], the same ActorControls 0x80000016 and 0x80000015), but for the conditions: retail's director
 events set condition 8 (Kawari's `Occupied33`, 143 of 147 InstanceContent and QuestBattle EventStarts in 25 captures),
-Kawari's the quest events' 7. That's retail's now. Whether it's what hides him isn't known.
+Kawari's the quest events' 7. That's retail's now. Whether it's what hides him isn't known. **The armour's actions**
+(his mark of 2026-11-25: "magitek canon and photon stream aren't doing anything to enemy npcs"): the client sends 1128
+(the cannon) as an ActionRequestGroundTargeted with the spot aimed at; Kawari measured its area from the rider and hit
+no one. Retail's hit 1-6 enemies round the spot each use, up to 13 yalms from the rider, with an AoeEffect8 naming
+0xE0000000 and the spot (capture 6320ae56); Kawari's does now (`Instance::ground_aims`, `area_middle` in
+`server/action.rs`), for any player's action aimed at the ground. 1129 (Photon Stream) has no script ("isn't scripted
+yet" in the log twice): none of the three retail runs read used it.
 
 ## The Jade Stoa
 
