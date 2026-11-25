@@ -622,6 +622,18 @@ Meridianum's three, from Boss Mod's arenas. The bots' spots and dodges keep to i
 dodged out past the Magitek Vanguard F-1's ring and through its arena's side. They no longer walk through a wall the
 navmesh goes round after their 2 s either (combat.md, "No walking through a wall the navmesh goes round").
 
+(2026-11-25, Bob's mark at the Praetorium's first boss on `edd693daa`: "the bots just walked outside the arena to avoid
+an unavoidable attack"; "they should always stay in the arena like a real player".) The Praetorium's bosses had no
+floor, and a dodge's way out was checked with `instance_navmesh_path`, which goes straight on from where the navmesh
+stops, however far: its path "reached" any spot, so a spot beyond the room's side walls (at z ±18.8, where retail's
+party never went past z -9.8 or 7.8) passed for one a bot could get to, and the bots ran there through the walls from
+28474, the boss's attack on everyone. Now a dodge (and a spot the duty set for a cast) is taken only with a way there
+along the navmesh all the way, through no gimmick the director has up (`dodge_way`: `Navmesh::find_path` not falling
+short, `Collision::crosses_sealed` on each leg); with none, it stays where it is, and with nowhere out of the attack on
+the floor it braces. The Praetorium's three bosses have floors from where retail's party stood in its five runs
+(`w1d5_re.lua`'s `BOSS1_FLOOR`, `BOSS2_FLOOR`, `BOSS3_FLOOR`; test `PraetoriumTest.test_each_boss_has_its_floor`).
+`dodge_way` has no test of its own (no navmesh in the tests); untested in game.
+
 Bob, 2026-11-10: "have the NPCs act more freely rather than snapping onto the leader until after the death of the
 boss, have them stand in their spots, and move accordingly as needed to stay close to where they need to be."
 

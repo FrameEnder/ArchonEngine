@@ -397,6 +397,40 @@ pub(crate) fn instance_navmesh_path(
     navmesh.calculate_path(from, to, f32::INFINITY)
 }
 
+/// A party member's way to `to` getting out of an area attack (or to a spot its duty set for one): along the navmesh
+/// only, all the way (within `AT_SPOT`), and through no gimmick the director has up (a boss room's wall, which the
+/// navmesh doesn't have: `Collision::crosses_sealed`). None where there's no such way. `instance_navmesh_path` goes
+/// straight on from where the navmesh stops, however far: its path "reached" any spot, so the Praetorium's first
+/// boss's party ran out of his room through its walls from an attack on everyone (Bob's mark of 2026-11-25, "the bots
+/// just walked outside the arena to avoid an unavoidable attack"; "they should always stay in the arena like a real
+/// player"). Without a navmesh, straight there, as ever.
+pub(crate) fn dodge_way(
+    navmesh: &crate::navmesh::Navmesh,
+    collision: Option<&crate::collision::Collision>,
+    from: Vec3A,
+    to: Vec3A,
+) -> Option<Vec<Vec3A>> {
+    if !navmesh.is_available() {
+        return Some(vec![to]);
+    }
+    let (path, short) = navmesh.find_path(from, to);
+    let end = *path.last()?;
+    let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
+    if short || flat(end, to) > AT_SPOT {
+        return None;
+    }
+    if let Some(collision) = collision {
+        let mut at = from;
+        for point in &path {
+            if collision.crosses_sealed(at, *point) {
+                return None;
+            }
+            at = *point;
+        }
+    }
+    Some(path)
+}
+
 /// Boss fights (`boss_fight`, `placement::boss_fight_spot`): how far beyond the edge of what it fights a ranged bot or
 /// healer stands (melee: `MELEE_BEHIND`), how much further it lets that get before it takes a new spot, and how far
 /// round from where that faces (degrees; the first of a kind, the next, the third), from retail's party in Bob's
@@ -4155,9 +4189,9 @@ fn update_party(
             if flat(here, to) <= AT_SPOT {
                 return Some((None, until, react));
             }
-            let path = instance_navmesh_path(navmesh, here, to);
+            let path = dodge_way(navmesh, collision.as_deref(), here, to)?;
             let end = path.last().copied()?;
-            (flat(end, to) <= AT_SPOT).then_some((Some(end), until, react))
+            Some((Some(end), until, react))
         });
         if let Some((to, until, react)) = authored {
             let entry = dodge.get_or_insert(dodge::Dodge {
@@ -4188,17 +4222,13 @@ fn update_party(
             .unwrap_or(here);
             // Only somewhere on the map: on the navmesh, with a path there along it (Bob, 2026-10-24); without a
             // navmesh nowhere is known to be, and it braces instead (below.)
-            let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
             let walkable = |point: Vec3A| {
                 navmesh.is_available()
                     && navmesh.ground_under(point).is_some()
                     && arena.is_none_or(|arena| arena.holds(point))
             };
-            let reachable = |to: Vec3A| {
-                instance_navmesh_path(navmesh, here, to)
-                    .last()
-                    .is_some_and(|end| flat(*end, to) <= AT_SPOT)
-            };
+            let reachable =
+                |to: Vec3A| dodge_way(navmesh, collision.as_deref(), here, to).is_some();
             // The most waves it can be out of: where it stands, the spot it was going to, or a new one.
             let choice = dodge::choose(
                 here,
@@ -4290,8 +4320,11 @@ fn update_party(
                     let mut path = bot.path.clone();
                     let mut reaimed = bot.reaimed;
                     if path.back().is_none_or(|end| flat(*end, to) > AT_SPOT) {
-                        // Along the navmesh only, never straight off it (Bob, 2026-10-24.)
-                        path = instance_navmesh_path(navmesh, here, to).into();
+                        // Along the navmesh only, never straight off it (Bob, 2026-10-24), nor through a wall the
+                        // director has up (`dodge_way`); with no way there now, it stays.
+                        path = dodge_way(navmesh, collision.as_deref(), here, to)
+                            .unwrap_or_default()
+                            .into();
                         reaimed = now;
                     }
                     let walled_for = bot

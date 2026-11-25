@@ -1543,6 +1543,31 @@ class PraetoriumTest(FrameworkScriptTest):
         controls = [args for args in self.named("bnpc_control") if args[0] == self.CID]
         self.assertEqual([(args[1], list(args[2].values())) for args in controls], [(63, [48])])
 
+    def test_each_boss_has_its_floor(self):
+        """Bob's mark of 2026-11-25: with no floor the bots ran out through the first boss's walls from his 28474 (on
+        everyone). Each boss's floor holds where retail's party stood (its five runs' extremes) and not where Kawari's
+        bots went (`dodge::Arena::holds`: half a yalm in from the edge)."""
+        def holds(floor, x, z):
+            if floor["round"]:
+                return ((x - floor["x"]) ** 2 + (z - floor["z"]) ** 2) ** 0.5 <= floor["half_x"] - 0.5
+            return abs(x - floor["x"]) <= floor["half_x"] - 0.5 and abs(z - floor["z"]) <= floor["half_z"] - 0.5
+        floors = {}
+        for boss in self.lua.globals().D.bosses.values():
+            arena = boss.arena
+            self.assertIsNotNone(arena, boss.id)
+            floors[boss.id] = {"x": arena.x, "z": arena.z, "half_x": arena.half_x,
+                               "half_z": arena.half_z or arena.half_x, "round": bool(arena["round"])}
+        self.assertEqual(sorted(floors), [1, 2, 3])
+        for x, z in [(175.4, -9.8), (209.8, 7.8), (192.0, 0.2)]:
+            self.assertTrue(holds(floors[1], x, z), (x, z))
+        for x, z in [(182.8, 18.8), (182.8, -18.8)]:
+            self.assertFalse(holds(floors[1], x, z), (x, z))
+        for x, z in [(-184.0, 0.0), (-143.9, 0.0), (-164.0, -20.0), (-164.0, 20.0)]:
+            self.assertTrue(holds(floors[2], x, z), (x, z))
+        for x, z in [(-575.0, 202.0), (-552.0, 238.0)]:
+            self.assertTrue(holds(floors[3], x, z), (x, z))
+        self.assertFalse(holds(floors[3], -576.0, 220.0))
+
     def test_the_launchers_cast_only_while_their_stretch_is_fought(self):
         launchers = [args for args in self.named("launcher")]
         self.assertEqual(len(launchers), 10)

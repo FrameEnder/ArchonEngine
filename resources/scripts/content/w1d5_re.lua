@@ -122,6 +122,11 @@ BOSS1_BEHIND = 2000789 -- shown a second after its pull
 BOSS1_AHEAD = 2000876 -- gone as it falls
 PLACE_BOSS1 = 451
 BOSS1_MIDDLE = { x = 192.0, y = 76.0, z = 0.2 }
+-- The bosses' floors, which the party bots stand and dodge on and never leave while the boss is fought (the rooms'
+-- ranges aren't known here): where retail's party stood from each boss's first action to its fall, in the five runs
+-- (x 175.4 to 209.8 and z -9.8 to 7.8 here; -9.8 in all five), with `ARENA_MARGIN`'s half yalm. Bob's mark of
+-- 2026-11-25: with none, the bots ran out through this room's walls from 28474, an attack on everyone.
+BOSS1_FLOOR = { x = 192.6, z = -1.0, half_x = 17.75, half_z = 9.35 }
 HELPER_BOSS1 = 1
 HELPERS_BOSS1 = 8
 BGM_AFTER_BOSS1 = 149
@@ -151,6 +156,8 @@ BOSS2_LINE = 2000823
 BOSS2_AHEAD = 2001135
 PLACE_BOSS2 = 454
 BOSS2_MIDDLE = { x = -164.0, y = -104.2, z = 0.0 }
+-- Round: retail's party stood to 20.1 yalms from the middle (22.3 once), from x -184 to -143 and z -20 to 20.
+BOSS2_FLOOR = { x = -164.0, z = 0.0, half_x = 20.6, round = true }
 NAME_BOSS2 = 2135
 HELPER_BOSS2 = 2
 HELPERS_BOSS2 = 8
@@ -180,6 +187,8 @@ BOSS2_ADD_ACTION = 28480
 
 BOSS3 = 9055066
 BOSS3_MIDDLE = { x = -562.0, y = -268.0, z = 220.0 }
+-- Square: retail's party stood from x -575.0 to -552.0 and z 202.0 to 238.0 (each edge in four or five runs.)
+BOSS3_FLOOR = { x = -563.5, z = 220.0, half_x = 12.05, half_z = 18.55 }
 NAME_BOSS3 = 2136
 HELPER_BOSS3 = 3
 HELPERS_BOSS3 = 16
@@ -491,7 +500,7 @@ D:step({ name = "boss2_room", ready = done("ride_over"),
 -- ---- The first boss ----
 
 D:boss({ id = 1, layout = BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = PLACE_BOSS1, middle = BOSS1_MIDDLE,
-    comes_later = true, eobjs_at_setup = false, bgm = false, after_bgm = BGM_AFTER_BOSS1,
+    arena = BOSS1_FLOOR, comes_later = true, eobjs_at_setup = false, bgm = false, after_bgm = BGM_AFTER_BOSS1,
     helpers = { layout = HELPER_BOSS1, count = HELPERS_BOSS1 },
     ready = done("boss1_room"),
     on_pull = function(director)
@@ -563,7 +572,7 @@ D:boss({ id = 1, layout = BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = P
 -- ---- The second boss ----
 
 D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = PLACE_BOSS2, middle = BOSS2_MIDDLE,
-    comes_later = true, eobjs_at_setup = false, bgm = false,
+    arena = BOSS2_FLOOR, comes_later = true, eobjs_at_setup = false, bgm = false,
     helpers = { layout = HELPER_BOSS2, count = HELPERS_BOSS2 },
     ready = done("boss2_room"),
     on_pull = function(director)
@@ -980,7 +989,8 @@ function bringLastBoss(director)
     end
 end
 
-D:boss({ id = 3, layout = BOSS3, middle = BOSS3_MIDDLE, comes_later = true, eobjs_at_setup = false, bgm = false,
+D:boss({ id = 3, layout = BOSS3, middle = BOSS3_MIDDLE, arena = BOSS3_FLOOR,
+    comes_later = true, eobjs_at_setup = false, bgm = false,
     last = true,
     helpers = { layout = HELPER_BOSS3, count = HELPERS_BOSS3 },
     ready = done("last_room"),

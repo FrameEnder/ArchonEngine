@@ -1854,6 +1854,15 @@ Tests `the_praetoriums_blasted_walls_are_barriers`, `a_collision_says_which_barr
 `a_walker_stopped_head_on_steps_round_the_end_of_a_wall`, `a_bot_cut_off_from_its_foe_goes_round_the_way_its_player_walked`. **Untested in game**; whether each of the four has
 collision of its own the navmesh build says ("has no collision of its own here") on Bob's server.
 
+**Bob's mark at the first boss on `edd693daa`** (2026-11-25, "the boss timeline seems right so far, but the bots just
+walked outside the arena to avoid an unavoidable attack"): the bots ran out to (182.8, 76.0, ±18.8) from 28474 (on
+everyone, a 4.7 s cast), through the room's side walls, and then had no navmesh way back. The bosses had no floor, and
+a dodge's way was taken as reaching anywhere. Now each boss has its floor (`BOSS1_FLOOR` and the rest: where retail's
+party stood from each boss's first action to its fall in the five runs: the first's room x 175.4 to 209.8, z -9.8 to
+7.8; the second's round, to 20.1 yalms from its middle; the last's x -575 to -552, z 202 to 238), and a dodge needs a
+way along the navmesh ([Party bots](party-bots.md)). Test `PraetoriumTest.test_each_boss_has_its_floor`. Untested in
+game.
+
 ## The Jade Stoa
 
 ContentFinderCondition 290, territory 746, InstanceContent 20051 (director 0x80034E53), level 70. From Bob's Chronofoil
