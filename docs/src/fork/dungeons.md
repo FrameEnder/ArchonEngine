@@ -1928,7 +1928,15 @@ Duty Support members walked and fought through the ride, unmounted (their 337-38
 mounted** (his mark of 2026-11-25, out of the Praetorium on the armour: "when exiting a duty you shouldn't still be
 mounted"): leaving a duty's or quest battle's zone now gets a player off their mount (`left_content` in
 `zone_connection/zone.rs`); before, only a zone without mounts did, and Northern Thanalan has them. No retail capture
-has a player leave a duty mounted. Test `out_of_a_duty_is_leaving_it`.
+has a player leave a duty mounted. Test `out_of_a_duty_is_leaving_it`. **Gaius in the first boss's arena** (his mark
+of 2026-11-25, after cutscene 280: "why is Gaius's ingame NPC here"): he's ENpc 1043117 (layout 9283423, at (178.59,
+76.0, 0.0)), one of the event NPCs added above. Retail spawned him 0.4 s into each of the three runs read (50e72631,
+6320ae56, 9ba7d981) and never touched him again: no ActorControl, no DeleteActor, not even when the party was taken
+below (the armour's model went then). Kawari's SpawnNpc for him is retail's but for the spawn index, the hair
+highlight byte (0x80 for retail's 1) and the status list's source IDs; the cutscene's packets are retail's (scene 3,
+[280, 1, 37, 0, 0], the same ActorControls 0x80000016 and 0x80000015), but for the conditions: retail's director
+events set condition 8 (Kawari's `Occupied33`, 143 of 147 InstanceContent and QuestBattle EventStarts in 25 captures),
+Kawari's the quest events' 7. That's retail's now. Whether it's what hides him isn't known.
 
 ## The Jade Stoa
 

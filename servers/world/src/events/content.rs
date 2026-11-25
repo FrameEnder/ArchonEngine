@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use kawari::{
     common::{HandlerType, ObjectTypeId},
-    ipc::zone::{EventType, SceneFlags},
+    ipc::zone::{Condition, EventType, SceneFlags},
 };
 
 use crate::{Event, EventHandler, ToServer, ZoneConnection, lua::LuaPlayer};
@@ -87,6 +87,15 @@ pub fn play_not_talk(player: &mut LuaPlayer) {
 
 #[async_trait]
 impl EventHandler for ContentEventHandler {
+    /// A director's events (its cutscenes) set condition 8 (Kawari's `Occupied33`), not the quest events' 7: retail's
+    /// 143 of 147 InstanceContent and QuestBattle EventStarts in 25 of Bob's Chronofoil captures, the Praetorium's
+    /// cutscene 280 among them. Kawari set 7. It's the one difference found round cutscene 280, after which Gaius (ENpc
+    /// 1043117, spawned for the duty's whole length on retail too) stood in the first boss's arena (Bob's mark of
+    /// 2026-11-25); whether it's why isn't known.
+    fn condition(&self) -> Condition {
+        Condition::Occupied33
+    }
+
     async fn on_talk(&self, event: &Event, _target_id: ObjectTypeId, player: &mut LuaPlayer) {
         if event.id.handler_type() == HandlerType::QuestBattle {
             play_not_talk(player);
@@ -296,6 +305,16 @@ impl EventHandler for ContentEntryEventHandler {
 mod tests {
     use super::*;
     use crate::lua::LuaTask;
+
+    /// Retail's condition for a director's cutscene (see `condition`).
+    #[test]
+    fn a_directors_event_is_condition_8() {
+        assert_eq!(
+            ContentEventHandler::new().condition(),
+            Condition::Occupied33
+        );
+        assert_eq!(Condition::Occupied33 as u8, 8);
+    }
 
     /// The prompt for Escape from Castrum Centri's battle said "Level: 1" (Bob's screenshot of 2026-11-14): the
     /// reply named battle 0. Retail's names the battle and counts the losses.
