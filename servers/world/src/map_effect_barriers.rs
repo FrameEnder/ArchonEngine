@@ -97,3 +97,50 @@ mod tests {
         assert_eq!(indices(1043), vec![0, 1, 5, 6]);
     }
 }
+
+/// The states an InstanceContent's map effects begin in (DirectorSetupMapEffects) where retail's aren't all 4
+/// (`resources/data/opening_map_effects.json`): the Praetorium's 6, 7, 15 and 16 begin at 8, 1, 8, 1 and Castrum
+/// Meridianum's 2, 3, 8 and 9 at 1 in every run of Bob's Chronofoil captures; Kawari began every one at 4.
+pub fn opening_states(instance_content: u16) -> Option<Vec<u16>> {
+    static TABLE: OnceLock<HashMap<u16, Vec<u16>>> = OnceLock::new();
+    TABLE
+        .get_or_init(|| {
+            let value: serde_json::Value = serde_json::from_str(include_str!(
+                "../../../resources/data/opening_map_effects.json"
+            ))
+            .unwrap_or_default();
+            value
+                .get("instance_content")
+                .and_then(|t| t.as_object())
+                .into_iter()
+                .flatten()
+                .filter_map(|(id, states)| {
+                    Some((
+                        id.parse().ok()?,
+                        states
+                            .as_array()?
+                            .iter()
+                            .filter_map(|state| state.as_u64().map(|state| state as u16))
+                            .collect(),
+                    ))
+                })
+                .collect()
+        })
+        .get(&instance_content)
+        .cloned()
+}
+
+#[cfg(test)]
+mod opening_tests {
+    use super::*;
+
+    /// Retail's, as each of the Praetorium's four runs began (Bob's captures 50e72631, 6320ae56, 9ba7d981 twice.)
+    #[test]
+    fn the_praetoriums_map_effects_begin_as_retails() {
+        let states = opening_states(86).unwrap();
+        assert_eq!(states.len(), 19);
+        assert_eq!((states[6], states[7], states[15], states[16]), (8, 1, 8, 1));
+        assert_eq!(opening_states(15).unwrap()[2..4], [1, 1]);
+        assert_eq!(opening_states(1), None);
+    }
+}

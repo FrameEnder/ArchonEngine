@@ -5916,6 +5916,13 @@ pub fn send_director_vars(
                         states[i] = 4; // 4 means to play it, I guess?
                     }
                 }
+                // Where retail's begin in other states (`map_effect_barriers::opening_states`.)
+                if director.id.handler_type() == HandlerType::InstanceContent
+                    && let Some(opening) =
+                        crate::map_effect_barriers::opening_states(director.id.event_id() as u16)
+                {
+                    states = opening;
+                }
                 // Keybound Brawler's barrier begins whole, as retail's (`keybound::OPENING_MAP_EFFECTS`.)
                 if instance.content_finder_condition_id == crate::server::keybound::DUTY {
                     states = crate::server::keybound::OPENING_MAP_EFFECTS.to_vec();

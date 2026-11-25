@@ -1936,7 +1936,13 @@ below (the armour's model went then). Kawari's SpawnNpc for him is retail's but 
 highlight byte (0x80 for retail's 1) and the status list's source IDs; the cutscene's packets are retail's (scene 3,
 [280, 1, 37, 0, 0], the same ActorControls 0x80000016 and 0x80000015), but for the conditions: retail's director
 events set condition 8 (Kawari's `Occupied33`, 143 of 147 InstanceContent and QuestBattle EventStarts in 25 captures),
-Kawari's the quest events' 7. That's retail's now. Whether it's what hides him isn't known. **The armour's actions**
+Kawari's the quest events' 7. That's retail's now; it didn't hide him ("gaius is still right there", his mark on
+`49667e838`). The cutscene's ending is retail's too (the Conditions, ActorControl 519 and 504, SetOnlineStatus,
+EventFinish; Kawari sends 504 as ActorControlSelf where retail sent ActorControl, and its online status mask differs).
+Left were the duty's opening map effects: retail's DirectorSetupMapEffects begins 6, 7, 15 and 16 at 8, 1, 8, 1 in all
+four runs, Kawari began every one at 4; they're retail's now (`resources/data/opening_map_effects.json`, Castrum
+Meridianum's 2, 3, 8, 9 at 1 too), and whether that's it isn't known either. Also seen: Kawari's ENpcs carry
+highlights where the sheet's HairHighlight is 1 (customize byte 7 0x80; retail sent the 1 as it is). **The armour's actions**
 (his mark of 2026-11-25: "magitek canon and photon stream aren't doing anything to enemy npcs"): the client sends 1128
 (the cannon) as an ActionRequestGroundTargeted with the spot aimed at; Kawari measured its area from the rider and hit
 no one. Retail's hit 1-6 enemies round the spot each use, up to 13 yalms from the rider, with an AoeEffect8 naming

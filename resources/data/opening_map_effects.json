@@ -1,0 +1,7 @@
+{
+  "comment": "Each duty's map effects' states as it loads (DirectorSetupMapEffects: unk_flag 5, then a state per index), by director (InstanceContent ID), where retail's aren't all 4 (Kawari's default: 4 for every index the ContentDirectorManagedSG has). From Bob's Chronofoil captures (questkit-style scan of every DirectorSetupMapEffects, 2026-11-25): Castrum Meridianum (15) the same in 5 runs, the Praetorium (86) in 4. Numbers only.",
+  "instance_content": {
+    "15": [4, 4, 1, 1, 4, 4, 4, 4, 1, 1, 4, 4, 4, 4, 4],
+    "86": [4, 4, 4, 4, 4, 4, 8, 1, 4, 4, 4, 4, 4, 4, 4, 8, 1, 4, 4]
+  }
+}
