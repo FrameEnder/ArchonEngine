@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-25 | — | Changelog (`a_circle_round_someone_follows_them` formatted). |
+| 2026-11-25 | — | Dungeons (the Swallow's Compass's and Hells' Kier's entrances). |
+| 2026-11-25 | `631134e70` | Changelog (`a_circle_round_someone_follows_them` formatted). |
 | 2026-11-25 | `71df6412e` | Dungeons (Prototype Laser Beta, `helpersOnEach`'s `opts`, `lockon`); combat (a circle round someone follows them); party bots (they spread from each other's). |
 | 2026-11-25 | `feba42ce3` | Dungeons (the Praetorium's first boss's room open until his pull: retail's EObjs and log messages at the seal). |
 | 2026-11-25 | `5e91657f9` | Party bots and combat (a dodge stays in the room); dungeons (Bob's mark at the Praetorium's first boss on `edd693daa`); changelog. |
@@ -640,7 +641,8 @@ Commits on `Latest-Quest` (and, since 2026-11-03, `test-pending`) since the fork
 
 | Commit | Change |
 |---|---|
-| — | `a_circle_round_someone_follows_them` formatted with rustfmt (71df6412e failed `check-changes.sh`'s format check). |
+| — | **Bob's four captures of 2026-11-24 read in** (`questkit chronofoil --layers --save`): their layer keys all in `layer_filters.json`; the two duty entries' circles and facing weren't in the tables, so the check failed: The Swallow's Compass (territory 768: layout 7335282) and Hells' Kier (810: layout 7591191, facing -3.1416) in `resources/data/entrance_circles.json` and `entrance_facing.json`; `tools/questkit/questkit/data/entrances.json` and `layer_keys.json` keep the observations. The captures are catalogued in the diagnostics repository (`notes/chronofoil-index.md`, `notes/captures.json`). |
+| `631134e70` | `a_circle_round_someone_follows_them` formatted with rustfmt (71df6412e failed `check-changes.sh`'s format check). |
 | `71df6412e` | **Prototype Laser Beta: a marker over each of the party and a circle that follows them** (Bob's mark of 2026-11-25: "it should have 2 indicators a ground aoe, and an overhead symbol"). Retail's helpers cast 28472 from the room's middle at each of the party with Lockon 96 (ActorControl 34) over each; Kawari sent no Lockon and landed each circle where its member stood as it began. `Dungeon.lua`: `helpersOnEach(director, action, y, opts)` (`lockon`, `at`), `lockon`; `w1d5_re.lua`: 28472 and 28492 with them. `npc_behavior::area_centre` / `cast_follows` (`NpcCast::target`): a circle round whom a cast names follows them, in `action.rs`'s landing and `dodge::dangers` (`Danger::follows`); `party_bot`: a bot leaves its own out of what it dodges. Tests `PraetoriumTest.test_prototype_laser_beta_marks_each_of_the_party`, `a_circle_round_someone_follows_them`. Untested in game. |
 | `feba42ce3` | **The Praetorium's first boss's room is open until his pull** (Bob, 2026-11-25: "when I got back from the cutscene the arena chamber seal was active when it shouldn't have been"). Retail spawned EObj 2000789 open and closed it at the pull (with log 2012), the wall 15 s later (2013); Kawari spawned it closed. `w1d5_re.lua`: opened at setup, closed at the pull (not a second after), opened after a wipe. Test `PraetoriumTest.test_the_first_boss_s_room_is_open_until_his_pull`. Untested in game. |
 | `5e91657f9` | **The bots dodge inside the boss's room** (Bob's mark at the Praetorium's first boss on `edd693daa`: "the bots just walked outside the arena to avoid an unavoidable attack"; "they should always stay in the arena like a real player"). A dodge's way was checked with a path that goes straight on from where the navmesh stops, so a spot past the room's walls passed for reachable; now `party_bot::dodge_way` (along the navmesh all the way, through no gimmick the director has up) for dodges and the duty's spots for a cast. `w1d5_re.lua`: the three bosses' floors from retail's five runs. Test `PraetoriumTest.test_each_boss_has_its_floor`. Untested in game. |

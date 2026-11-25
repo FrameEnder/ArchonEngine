@@ -205,6 +205,11 @@ with a bound layout retail hid with ActorControl 106 [7], within 15 yalms of the
 | 1044 | The Praetorium | 2000790 | 9058469 | (149.517, 187.039, 0.441) |
 | 1047 | The Howling Eye | 2000274 | 4247837 | (-0.113, -2.029, 17.533) |
 | 1048 | The Porta Decumana | 2007457 | 9088353 | (-758, -400, -600) |
+| 768 | The Swallow's Compass (ContentFinderCondition 536) | 2000182 | 7335282 | (-239.436, -478.4, 120.461) |
+| 810 | Hells' Kier (596; facing -3.1416) | 2007457 | 7591191 | (100.351, 0, 114.804) |
+
+(768 and 810 from Bob's captures 6a0d8d92 and f093fa3e of 2026-11-24, one entry each; neither duty is scripted yet.
+768's first facing came too late to keep.)
 
 The other duty entries in the captures (quest battles, trials, the Hall of the Novice) showed no circle.
 

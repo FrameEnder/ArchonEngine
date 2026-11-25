@@ -235,6 +235,40 @@
    "circle": null
   },
   {
+   "capture": "6a0d8d92",
+   "territory": 768,
+   "content_finder_condition": 536,
+   "position": [
+    -239.436,
+    -478.4,
+    120.461
+   ],
+   "facing": null,
+   "circle": {
+    "base": 2000182,
+    "layout": 7335282,
+    "bound": 7335292,
+    "hidden_after": 30.9
+   }
+  },
+  {
+   "capture": "f093fa3e",
+   "territory": 810,
+   "content_finder_condition": 596,
+   "position": [
+    100.351,
+    0.0,
+    114.804
+   ],
+   "facing": -3.1416,
+   "circle": {
+    "base": 2007457,
+    "layout": 7591191,
+    "bound": 7591190,
+    "hidden_after": 42.8
+   }
+  },
+  {
    "capture": "216f28eb",
    "territory": 1042,
    "content_finder_condition": 11,
