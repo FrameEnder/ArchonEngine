@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-25 | — | Quest Dumps (`sheet`, `sheets`); ArchonEngine ControlPanel (the harness's game data, 2.34.0). |
+| 2026-11-25 | — | ArchonEngine ControlPanel's changelog (2.34.0). |
+| 2026-11-25 | `a610e543a` | Quest Dumps (`sheet`, `sheets`); ArchonEngine ControlPanel (the harness's game data, 2.34.0). |
 | 2026-11-25 | `8ebff05ee` | Dungeons (taken below on the armour, still on it). |
 | 2026-11-25 | `8ef1b0fc1` | Dungeons (Gaius again: the duty's opening map effects); known issues (Gaius). |
 | 2026-11-25 | `49667e838` | Dungeons (the armour's actions aimed at the ground); known issues (Photon Stream). |
@@ -591,6 +592,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-11-25 | `521526b`, `c125898` | 2.34.0: **the harness reads the game's data** (`kawari_web/harness.py`, README): `/dashboard/harness/sheets` (kept 10 minutes) and `/dashboard/harness/sheet/<name>?rows=&where=`, through the active build's `kawari-questdump sheet` (the fork's `a610e543a`) in a throwaway container as Quest Lab runs it; a build without the command says so. `Windows` brought up to `main` (`c125898`; the README's version line kept its wording). |
 | 2026-11-15 | `aa0bc5f`, `441b333` | 2.33.1: the Events page reads `resources/events/fork_events.json` (2.33.0's `resources/data/fork_events.json` is in no build: the page listed nothing) and takes an event's name from its `label`; checked against a build-shaped tree this time. `Windows` brought up to `main` (`441b333`). |
 | 2026-11-15 | `9cfb55e`, `ebcacae` | 2.33.0: **Dashboard → Events** (`kawari_core/events.py`, `kawari_web/events.py`, `templates/dashboard/events.html`, the navigation, the calendar icon, README): the active build's events (`fork_events.json`), each Off, On or Scheduled with a start and an end in UTC, what it's doing now, retail's dates and a button to use them; writes `events.json`. `Windows` brought up to `main` (`ebcacae`; the README's version line kept its wording). |
 | 2026-11-15 | `71086d1`, `8db96d4` | 2.32.0: **Dashboard → Drop rates redone** (`kawari_core/droprates.py` new, `kawari_web/droprates.py`, `templates/dashboard/drop_rates.html`, README): gil and EXP overall and by source; item rates everywhere, by expansion, by kind of content and the open world, for each duty and zone, by the game's groups of item categories and by one category (rules); blanks show what they inherit; what the page can't show is kept through a save. `Windows` brought up to `main` (`8db96d4`; the README's version line kept its wording). |
