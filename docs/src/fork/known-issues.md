@@ -37,8 +37,10 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   without the zone's collision file (not here).
 * **Gaius (ENpc 1043117) stood in the Praetorium's first boss's arena after cutscene 280** (Bob's mark of 2026-11-25).
   Retail spawns him for the whole duty and never hides him with a packet, so the client hides him itself; the one
-  differences found were the cutscene's condition (8 on retail, 7 on Kawari; changing it didn't hide him) and the duty's
-  opening map effects (now retail's, untested). If he still shows, what the client goes by (ENpcBase's Invisibility, the
+  differences found were the cutscene's condition (8 on retail, 7 on Kawari; changing it didn't hide him), the duty's
+  opening map effects (retail's since `8ef1b0fc1`; didn't either) and the director's variables coming before the client
+  had loaded (held back now, untested). His ENpcBase row and his layer hide nothing (read through the harness); left
+  are the order of the spawns (retail's event NPCs before the player's own SpawnPlayer) and ZoneInit's game festivals. If he still shows, what the client goes by (ENpcBase's Invisibility, the
   layout's layer) needs the game's data to look at.
 * **The Praetorium's armour's Photon Stream (1129) does nothing**: none of Bob's three retail runs read (50e72631,
   6320ae56, 9ba7d981) used it, so what it hits and for how much isn't known. A capture of retail using it is needed.

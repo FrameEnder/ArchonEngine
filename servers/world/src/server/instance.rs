@@ -317,6 +317,9 @@ pub struct Instance {
     /// area's middle and the spot its AoeEffect names, as retail's were (the Praetorium's armour's 1128, Bob's
     /// Chronofoil capture 6320ae56.)
     pub ground_aims: HashMap<(ObjectId, u32), glam::Vec3A>,
+    /// The players whose client has asked for the director's variables (ClientTrigger ReadyForDirectorVars, after its
+    /// EnterTerritoryEvent): retail sends DirectorVars to none before (`Instance::vars_ready`.)
+    pub director_vars_ready: HashSet<ObjectId>,
     /// Each launcher's turn (by layout ID) while its party is near (`launcher`.)
     pub launchers: HashMap<u32, crate::server::launcher::LauncherState>,
     /// Launchers (by layout ID) a director has stopped (`director:launcher`): there, but they don't cast.
@@ -1164,6 +1167,21 @@ impl Instance {
             .collect::<Vec<_>>()
             .first()
             .copied()
+    }
+
+    /// The players a director's DirectorVars go to: those whose client has asked for them. Retail's first DirectorVars
+    /// in the Praetorium came 1.5 s in, after the client's EnterTerritoryEvent and after the duty's event NPCs were
+    /// spawned, in each of Bob's runs (50e72631, 6320ae56, 9ba7d981); Kawari sent one with the ZoneInit, before the
+    /// client had loaded, from the script's `set_sequence(1)` at setup (Bob's run of 2026-11-25 on `23467df9a`.)
+    pub fn vars_ready(&self) -> Vec<ObjectId> {
+        self.actors
+            .iter()
+            .filter(|(id, actor)| {
+                matches!(actor, NetworkedActor::Player { .. })
+                    && self.director_vars_ready.contains(id)
+            })
+            .map(|(id, _)| *id)
+            .collect()
     }
 
     /// The layout's event NPCs of a duty are its director's, as retail spawned them: The Praetorium's armour

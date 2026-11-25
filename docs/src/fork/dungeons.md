@@ -1951,7 +1951,15 @@ Bob's 110 captures, the Praetorium's ride taken below among them) and 2 on foot 
 597: nothing in the sheet hides him. His layer (read through the harness's layouts): LVD_REMAKE_GIMMICK_01 is active by
 default, Include [264501, 82292], and its header is the armour's layer's (_02) to the flag; his EventNPC instance
 (9283423) differs from the armour's (9083081) only in the CharacterInstanceObject's third word (0 for him, 1 for the
-armour; Sapphire's reading, `moveAi`). Nothing in the layout hides him either. **The armour's actions**
+armour; Sapphire's reading, `moveAi`). Nothing in the layout hides him either. **The duty's entry against retail's** (Bob's run
+of 2026-11-25 on `23467df9a`, read through the harness's captures by time; his marks: Gaius seen before, during and
+after cutscene 280): retail sent Gaius's and the armour's SpawnNpc 0.4 s in, after the client's FinishLoading and
+before its own SpawnPlayer, and the director's DirectorVars and set-up 1.5 s in, after its EnterTerritoryEvent.
+Kawari sent DirectorVars with the ZoneInit (the script's `set_sequence(1)`, before the client had loaded) and its
+own SpawnPlayer before the event NPCs (0.30 then 0.50 s); it now holds a director's variables until the client asks.
+Also different: ZoneInit's flags (retail 0x2A, Kawari 0x22: CROSS_WORLD), its game festivals (retail none in the
+duty, the FFVII event only among the UI's; Kawari both), and a SpawnNpc of 1043118 with Kawari's ZoneInit, before
+the client loaded. The layer filter key is 0 on both (not Waking Sands-style phasing). **The armour's actions**
 (his mark of 2026-11-25: "magitek canon and photon stream aren't doing anything to enemy npcs"): the client sends 1128
 (the cannon) as an ActionRequestGroundTargeted with the spot aimed at; Kawari measured its area from the rider and hit
 no one. Retail's hit 1-6 enemies round the spot each use, up to 13 yalms from the rider, with an AoeEffect8 naming

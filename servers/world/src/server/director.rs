@@ -3328,12 +3328,8 @@ pub fn director_tick(
                 };
 
                 let mut network = network.lock();
-                for id in instance
-                    .actors
-                    .iter()
-                    .filter(|x| matches!(x.1, NetworkedActor::Player { .. }))
-                    .map(|x| *x.0)
-                {
+                // Only to those whose client has asked for them (`Instance::vars_ready`.)
+                for id in instance.vars_ready() {
                     let Some((handle, _)) = network.get_by_actor_mut(id) else {
                         continue;
                     };
@@ -4054,12 +4050,8 @@ pub fn director_tick(
                 };
 
                 let mut network = network.lock();
-                for id in instance
-                    .actors
-                    .iter()
-                    .filter(|x| matches!(x.1, NetworkedActor::Player { .. }))
-                    .map(|x| *x.0)
-                {
+                // Only to those whose client has asked for them (`Instance::vars_ready`.)
+                for id in instance.vars_ready() {
                     let Some((handle, _)) = network.get_by_actor_mut(id) else {
                         continue;
                     };
@@ -5905,6 +5897,8 @@ pub fn send_director_vars(
         tracing::warn!("Somehow failed to find an instance for actor?");
         return;
     };
+    // Its later DirectorVars go to it too (`Instance::vars_ready`.)
+    instance.director_vars_ready.insert(from_actor_id);
 
     let mut network = network.lock();
     for director in &instance.directors {

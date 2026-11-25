@@ -2198,3 +2198,16 @@ fn a_players_bots_go_with_them_when_a_director_sends_them_on() {
         assert!(at.distance(to) <= 4.0, "{at}");
     }
 }
+
+/// Bob's Praetorium run of 2026-11-25 on `23467df9a`: Kawari sent the director's variables with the ZoneInit, before
+/// the client had loaded (the script's `set_sequence(1)` at setup); retail's first came after the client's
+/// EnterTerritoryEvent, when it asked for them (ReadyForDirectorVars), in all three runs read. A director's variables go
+/// only to players who have asked (`Instance::vars_ready`.)
+#[test]
+fn a_directors_variables_wait_for_the_client_to_ask() {
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [149.5, 187.0, 0.4]);
+    assert!(world.instance.vars_ready().is_empty());
+    world.instance.director_vars_ready.insert(player);
+    assert_eq!(world.instance.vars_ready(), vec![player]);
+}
