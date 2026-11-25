@@ -32,6 +32,9 @@ kawari-questdump index
 kawari-questdump sheet ENpcBase 1043117
 kawari-questdump sheet ENpcBase --where Invisibility=1
 kawari-questdump sheets
+
+# A territory's layout: each layer's header and objects (here the Praetorium's event NPCs)
+kawari-questdump layout 1044 --where kind=EventNPC
 ```
 
 `sheet` reads any sheet without a reader for it: its columns' names come from `tools/questdump/sheet_columns.json`
@@ -39,6 +42,11 @@ kawari-questdump sheets
 updated), a column it doesn't name is `#<index>`. ROWS are IDs and ranges (`1043117`, `100-120,5`; none for all),
 `--where COLUMN=VALUE` keeps the rows with that value. It prints the JSON, or with `--out` writes `sheet.json` (and
 `sheets` `sheets.json`) there: ArchonEngine ControlPanel's harness serves both (`/dashboard/harness/sheet/<name>`).
+
+`layout` reads a territory's LVB and its LGBs (all but bg, vfx and sound, as the server does): each layer's header
+(`active` by default or not, its layer set filter, festival, the flags physis reads) and objects (instance ID, name,
+kind, position, and the object as physis reads it), up to 2,000; `--where object=ID[,ID]`, `layer=` (part of a name),
+`kind=` (part of a kind: `EventNPC`). With `--out`, `layout.json` (the harness's `/dashboard/harness/layout/<territory>`).
 
 `index` writes `quest-index.json`. Each quest's `previous` lists the quests that unlock it, and
 `previous_join` says how they combine: `2` means any one of them (the story quests that follow the three

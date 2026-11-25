@@ -600,6 +600,7 @@ that: the server's state as JSON, as it is now, without a bundle being made, pus
 | `/dashboard/harness/config` | the server's config with secrets removed | `diagnostics._sanitised_config` |
 | `/dashboard/harness/bundles` | the kept bundles | `diagnostics.kept_bundles` |
 | `/dashboard/harness/sheets` (2.34.0) | every Excel sheet of the game install (root.exl), kept 10 minutes | `kawari-questdump sheets` |
+| `/dashboard/harness/layout/<territory>?object=&layer=&kind=` (2.35.0) | a territory's layout: each layer's header (active by default, its filter) and objects, up to 2,000 | `kawari-questdump layout` |
 | `/dashboard/harness/sheet/<name>?rows=&where=` (2.34.0) | a sheet's rows, columns named as EXDSchema names them (`#index` where it has none), up to 500: `rows` IDs and ranges, `where` `COLUMN=VALUE` | `kawari-questdump sheet` |
 
 What it holds to:

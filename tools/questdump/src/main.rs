@@ -5,6 +5,7 @@
 //!
 //! The scripts are Square Enix's game files, so keep the dumps to yourself (the default folder is gitignored.)
 
+mod layout;
 mod luab;
 mod scripts;
 mod sheets;
@@ -49,6 +50,7 @@ USAGE:
     kawari-questdump disasm <FILE.luab> [--listing]
     kawari-questdump sheet <SHEET> [ROWS] [--where COLUMN=VALUE]
     kawari-questdump sheets
+    kawari-questdump layout <TERRITORY> [--where object=ID] [--where layer=NAME] [--where kind=KIND]
 
 QUEST can be a quest ID (3854 or 69390), a script ID (XxaFst034_03854) or the quest's name in quotes.
 
@@ -94,6 +96,10 @@ COMMANDS:
              whose column has that value. For looking at the client's data (ArchonEngine ControlPanel's harness).
              With --out, written to <out>/sheet.json instead.
     sheets   Print every sheet's name as JSON (with --out, <out>/sheets.json).
+    layout   Print a territory's layout as JSON (its LGBs but bg, vfx and sound): each layer's header (active by
+             default or not, its layer set filter, festival) and objects (instance ID, name, kind, position, all
+             physis reads of them), up to 2000 objects. --where object=ID[,ID], layer=NAME (a part of it),
+             kind=KIND (EventNPC, EventObject...). With --out, <out>/layout.json.
 
 OPTIONS:
     --out DIR     Where to write the dumps (default: quest-dumps)
@@ -108,8 +114,8 @@ struct Options {
     listing: bool,
     game: Option<String>,
     server: Option<PathBuf>,
-    /// `--where COLUMN=VALUE` (`sheet`.)
-    filter: Option<String>,
+    /// `--where` terms (`sheet`: COLUMN=VALUE; `layout`: object=, layer=, kind=.)
+    filters: Vec<String>,
     /// Whether `--out` was given (`sheet` and `sheets` then write a file there instead of printing.)
     out_given: bool,
     positional: Vec<String>,
@@ -121,7 +127,7 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
         listing: false,
         game: None,
         server: None,
-        filter: None,
+        filters: Vec::new(),
         out_given: false,
         positional: Vec::new(),
     };
@@ -142,7 +148,9 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
                 options.game = Some(iter.next().ok_or("--game needs a directory")?.clone());
             }
             "--where" => {
-                options.filter = Some(iter.next().ok_or("--where needs COLUMN=VALUE")?.clone());
+                options
+                    .filters
+                    .push(iter.next().ok_or("--where needs KEY=VALUE")?.clone());
             }
             _ => options.positional.push(arg.clone()),
         }
@@ -1418,14 +1426,29 @@ fn run(args: &[String]) -> Result<(), String> {
             };
             let rows = sheets::parse_rows(rows)?;
             let filter = options
-                .filter
-                .as_deref()
-                .map(sheets::parse_where)
+                .filters
+                .first()
+                .map(|spec| sheets::parse_where(spec))
                 .transpose()?;
             let mut resolver = open_resolver(options.game.as_deref())?;
             let language = get_config().world.language();
             let value = sheets::dump(&mut resolver, language, sheet, &rows, filter.as_ref())?;
             print_or_write(&options, "sheet.json", &value)
+        }
+        "layout" => {
+            let [territory] = options.positional.as_slice() else {
+                return Err(USAGE.to_string());
+            };
+            let territory: u32 = territory
+                .parse()
+                .map_err(|_| format!("{territory:?} isn't a TerritoryType ID"))?;
+            let mut filter = layout::Filter::default();
+            for spec in &options.filters {
+                filter.add(spec)?;
+            }
+            let mut resolver = open_resolver(options.game.as_deref())?;
+            let value = layout::dump(&mut resolver, territory, &filter)?;
+            print_or_write(&options, "layout.json", &value)
         }
         "sheets" => {
             let mut resolver = open_resolver(options.game.as_deref())?;
