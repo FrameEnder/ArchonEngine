@@ -1962,8 +1962,9 @@ duty, the FFVII event only among the UI's; Kawari both), and a SpawnNpc of 10431
 the client loaded. The layer filter key is 0 on both (not Waking Sands-style phasing). Holding the
 variables back didn't hide him (Bob, 2026-11-25). **Every retail packet naming him**, in the three runs (50e72631,
 6320ae56, 9ba7d981): his SpawnNpc, and nothing else carries his actor ID, his layout ID (9283423) or his base ID, in
-either direction, for the whole duty. His sheets (ENpcBase; and no Content*, Cutscene*, Director*, Instance*, Dawn*,
-Gimmick* or Lively* sheet names him, those read whole) and his layer hide nothing either. Found on the way:
+either direction, for the whole duty. His ENpcBase row and his layer hide nothing either (a search of the
+Content*, Cutscene*, Director*, Instance*, Dawn*, Gimmick* and Lively* sheets for his IDs read only each one's first 500
+rows and wasn't finished: unchecked). Found on the way:
 UnkDirector1's 28th byte is the duty's ContentGauge row (InstanceContent's Unknown12: 58 here, the last boss's "Blade
 Energy"), now sent as retail does. **The armour's actions**
 (his mark of 2026-11-25: "magitek canon and photon stream aren't doing anything to enemy npcs"): the client sends 1128
