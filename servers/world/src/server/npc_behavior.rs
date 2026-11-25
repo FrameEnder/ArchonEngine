@@ -924,6 +924,16 @@ pub fn npc_behavior(
                             })
                         })
                         .flatten();
+                        // Not through it: round it, as a player steps round the end of a wall its way met head-on
+                        // (`Collision::round_the_corner`; never past a gimmick the director put up.)
+                        let round = (past.is_none()
+                            && goes_anywhere
+                            && walk.blocked
+                            && !walk.sealed
+                            && walled_for >= NPC_WALL_PATIENCE_TICKS
+                            && !collision.crosses_sealed(spawn.common.position.0, next_position))
+                        .then(|| collision.round_the_corner(walk.at, next_position, max_drop))
+                        .flatten();
                         if walk.blocked && walled_for == NPC_WALL_PATIENCE_TICKS {
                             tracing::info!(
                                 "NPC {} (layout {}) held up by a wall at {:?} for {} ticks: {}",
@@ -933,12 +943,18 @@ pub fn npc_behavior(
                                 walled_for,
                                 if past.is_some() {
                                     "walking on through"
+                                } else if round.is_some() {
+                                    "stepping round it"
                                 } else {
                                     "it stays (a gimmick the director put up, a wall the navmesh goes round, or no floor and no navmesh it would step onto, there)"
                                 }
                             );
                         }
-                        if let Some(past) = past {
+                        if let Some(round) = round {
+                            // Still held up: it steps round again next tick if the way's still blocked.
+                            walled.insert(*id);
+                            Position(round)
+                        } else if let Some(past) = past {
                             Position(past)
                         } else {
                             if walk.blocked {

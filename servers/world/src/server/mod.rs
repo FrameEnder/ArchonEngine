@@ -1858,7 +1858,8 @@ fn server_logic_tick(
                     // kawari-navimesh writes the collision last, so the navmesh beside it is the new one.
                     let collision_path = crate::collision::path_for(std::path::Path::new(nvm_path));
                     // An older collision file there is the one being replaced: wait for the new one.
-                    if crate::collision::is_current(&collision_path)
+                    let barriers = crate::map_effect_barriers::indices(instance.zone.id);
+                    if crate::collision::is_current(&collision_path, &barriers)
                         && let Ok(nvm_bytes) = std::fs::read(nvm_path)
                     {
                         if let Some(navmesh) = Navmesh::from_existing(&nvm_bytes) {
@@ -1872,6 +1873,7 @@ fn server_logic_tick(
                         }
                         instance.collision = crate::collision::Collision::load_shared(
                             std::path::Path::new(nvm_path),
+                            &barriers,
                         );
                         navmesh_generations().remove(nvm_path);
                         instance.generate_navmesh = NavmeshGenerationStep::None;

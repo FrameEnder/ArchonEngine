@@ -1417,7 +1417,7 @@ patterns"). Read through the harness (capture zone-1795359118, the server's log)
   `kawari-navimesh` reads the duty's ContentFinderCondition to find them, and read it with no language, which can't be
   read (it has text); it then left them built in without a word. It reads it in the server's language now, says why
   whenever it finds none, collision version 8, and a version 7 file is made again for a zone with barriers
-  (`Collision::may_lack_barriers`). The server warns at the duty's start if one still isn't a gimmick.
+  (`Collision::may_lack_barriers`, since 2026-11-24 `barriers_differ`). The server warns at the duty's start if one still isn't a gimmick.
 
 **Bob's run of 2026-11-23** (on `329afa044`): "enemies with tethers between eachother should all be alerted and
 aggro'd when a enemy with a tether connected to them is aggro'd", "I had to manually aggro each", and "reinforcements
@@ -1793,7 +1793,7 @@ guide to the dungeon checked against the five runs:
   doesn't say an NPC isn't fought: the last boss's four 14455s have it, and are fought.)
 * **The Machinist bot stood idle mid-fight** (Fenkaa Fenlenkaar, at (221.4, 156.0, -43.9), "refused to attack"):
   the server's log has her held up by the zone's collision for 94.5 s on her way to her place by Bob (29 yalms off,
-  past her 25), not attacking meanwhile, then put beside him. Not fixed: see [Known issues](known-issues.md).
+  past her 25), not attacking meanwhile, then put beside him. Fixed with Bob's next marks (below).
 * **The Death Claw** (BNpcBase 14452; the guide: "This claw will tether to one player and slowly move towards them.
   If it reaches its target, it will knock them back"): retail's came at one of the four edges 20 yalms out (north,
   south, east, west, no order: the script had north then south), facing the middle, its SpawnNpc's tether target one
@@ -1820,6 +1820,30 @@ guide to the dungeon checked against the five runs:
 
 Tests `BossWallsOpenAtTheStartTest`, `PraetoriumClawAndEnrageTest`, the leaps' in `PraetoriumTest`,
 `nobody_fights_a_launcher`, `a_path_goes_on_round_its_points_without_stopping`. **Unplayed.**
+
+**Bob's marks on `2f0bfd4`** (2026-11-24, read through the harness): "ally player bots are completely borked in this
+area" (by the first lift's floor) and "no NPC left the open hole to the outside seems the wall that was broken open
+likely did not fully remove it's walls".
+
+* **The blasted walls stayed walls.** The walls the packs blast open (map effects 2 for the five, 3 for the ten, 4
+  further in and 5 for the ride's last five, timeline 2, state 1) are SharedGroups of the duty's
+  ContentDirectorManagedSG no event object owns: `kawari-navimesh` built them into the navmesh and the collision for
+  good, as Castrum Meridianum's way into the Black Eft's room had been, so after the client showed a hole everyone
+  else still had a wall. They're in `map_effect_barriers.json` now (1044: 2, 3, 4, 5), gimmicks sealed as the duty
+  begins and gone with their map effect. Bob's capture had map effect 4 sent 99 s before he left the duty.
+* **Nothing made the navmesh again for them.** A zone's navmesh was made again for barriers only when its collision
+  was version 7; one made after that never was when barriers were added for it. The collision (version 9) lists the
+  map effect indices its build looked for, first in the file, and the server makes the zone's navmesh and collision
+  again when the list isn't `map_effect_barriers.json`'s (`Collision::barriers_differ`, `is_current`; a version 8 file
+  for a zone with barriers too: the Praetorium and Castrum Meridianum once).
+* **Bots and enemies stood at the walls for good**: at (221.4, 156.0, -43.6), (211, 156, -31) and (226, 157, -49.5),
+  "held up by a wall the navmesh goes round ... it stays", the Machinist bot of the run before among them. A walker
+  stopped head-on by a wall the navmesh goes round now steps round its end, as a player does
+  (`Collision::round_the_corner`, [Combat](combat.md)).
+
+Tests `the_praetoriums_blasted_walls_are_barriers`, `a_collision_says_which_barriers_it_was_built_for`,
+`a_walker_stopped_head_on_steps_round_the_end_of_a_wall`. **Untested in game**; whether each of the four has
+collision of its own the navmesh build says ("has no collision of its own here") on Bob's server.
 
 ## The Jade Stoa
 

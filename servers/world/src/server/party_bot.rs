@@ -656,13 +656,25 @@ fn walk_like_a_player(
             }
             // Nor through a wall the navmesh goes round (an arena's side: `navmesh_lets_past`, Bob's mark of
             // 2026-11-22.)
+            // Round it instead, as a player steps round the end of a wall (`Collision::round_the_corner`): it stood
+            // for good where its way met one head-on (Bob's marks of 2026-11-24 in the Praetorium.)
             if !crate::server::npc_behavior::navmesh_lets_past(navmesh, here, to) {
+                let round = collision.round_the_corner(
+                    walk.at,
+                    to,
+                    crate::server::npc_behavior::path_max_drop(here, to),
+                );
                 if patience_ran_out {
                     tracing::info!(
-                        "Party bot at {here}: held up by a wall the navmesh goes round on its way to {to}; it stays"
+                        "Party bot at {here}: held up by a wall the navmesh goes round on its way to {to}; {}",
+                        if round.is_some() {
+                            "stepping round it"
+                        } else {
+                            "it stays"
+                        }
                     );
                 }
-                return (walk.at, true);
+                return (round.unwrap_or(walk.at), true);
             }
             if let Some(gimmick) = walk.gimmick
                 && patience_ran_out
@@ -689,10 +701,23 @@ fn walk_like_a_player(
                 let settled = collision.settle(Vec3A::new(to.x, y, to.z));
                 return (settled, false);
             }
+            let round = collision.round_the_corner(
+                walk.at,
+                to,
+                crate::server::npc_behavior::path_max_drop(here, to),
+            );
             if patience_ran_out {
                 tracing::info!(
-                    "Party bot at {here}: held up by the zone's collision, and no ground on the navmesh or the collision at {to} to go on to"
+                    "Party bot at {here}: held up by the zone's collision, and no ground on the navmesh or the collision at {to} to go on to; {}",
+                    if round.is_some() {
+                        "stepping round it"
+                    } else {
+                        "it stays"
+                    }
                 );
+            }
+            if let Some(round) = round {
+                return (round, true);
             }
         }
         return (walk.at, walk.blocked);

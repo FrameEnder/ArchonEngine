@@ -25,20 +25,13 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
 
 ## Bob's run of the Praetorium on `f3c32e2` (2026-11-24)
 
-* **A bot held up mid-fight by the zone's collision**: the Machinist bot (Fenkaa Fenlenkaar) stood at (221.4, 156.0,
-  -43.9) on the floor below the first lift, 2 yalms above Bob's (154.2), 29 yalms from her target (past her 25), and
-  neither shot nor moved for 35 s; the log: "the zone's collision held it up ... on its way to [210.9, 154.3, -70.9]
-  for 94.5 s; on along the navmesh", then she was put beside Bob (30 yalms behind out of combat). The 2 s
-  `WALL_PATIENCE` that sends an out-of-combat bot on through what the client doesn't have is counted over the fight
-  too, and a ranged bot out of reach and walled stays put. Not reproduced: the zone's collision is built from game
-  files on Bob's server, not here. What to look at next: a bundle from that spot, or the harness's capture of a run
-  where it happens again.
 * **The second boss's ring of lightning** (Harmony's visual guide: touching it inflicts a damage-over-time): nobody
   touched it in the five runs, so its status and area aren't known; map effect 0 shows it and nothing hurts.
 * **Iron Uprising's (28482) knockback**: it hit no one in ten casts, so its row isn't known; it does damage only.
 * **The last boss's enrage** (28500 as the gauge fills with any of the four standing): from the guide, never seen; the
   gauge's full (10000) and 28500's area (the Action sheet's) and amount (more than anyone's HP) are guesses.
-* Untested in game: the walls open at the start, Cid's run in one go, the Death Claw's tether and walk, the second
+* Untested in game: the blasted walls coming down (2, 3, 4, 5) and walkers stepping round a wall's end (Bob's marks on
+  `2f0bfd4`), the walls open at the start, Cid's run in one go, the Death Claw's tether and walk, the second
   boss on its edge facing the middle, Grand Sword at anyone, the launchers left alone.
 
 ## Bob's Chronofoil capture 9ba7d981 (2026-11-17, the end of A Realm Reborn's story)
@@ -880,10 +873,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   96654 to 100185, after 3878 to 1448). Not in `layer_keys.json` yet (the test would fail); 2.x's story isn't played.
 * **Map effects' barriers** (2026-11-21; on Bob's server they never worked until 2026-11-22: `kawari-navimesh` read
   ContentFinderCondition without a language and found none): only those in `resources/data/map_effect_barriers.json`
-  are gimmicks (Castrum Meridianum's 0, 1, 5 and 6, from its script's packs); another duty's barrier a map effect
+  are gimmicks (Castrum Meridianum's 0, 1, 5 and 6, from its script's packs; the Praetorium's 2, 3, 4 and 5 since
+  2026-11-24); another duty's barrier a map effect
   takes down is still built into its collision and navmesh until it's listed. Which [timeline, state] puts one back
   (none seen: Castrum Meridianum's stay down) isn't known. Castrum Meridianum's navmesh and collision are made again
-  on its next entry (collision version 8; a version 7 file only for a zone with barriers), and whether its four
+  whenever its list there changes (collision version 9 lists them; Bob's marks of 2026-11-24), and whether its four
   barriers then have collision of their own is said in the log as it's built ("has no collision of its own here") and
   at the duty's start ("isn't a gimmick"): unchecked until Bob's server builds it. The Black Eft's room is kept by
   `keep_in_room` (a circle of 24 yalms, its line's distance); the second and last bosses' rooms aren't (no complaint,

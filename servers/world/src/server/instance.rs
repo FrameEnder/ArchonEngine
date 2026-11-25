@@ -447,7 +447,8 @@ impl Instance {
                         "Failed to read {nvm_path:?}, monsters will not function correctly!"
                     );
                 }
-                instance.collision = crate::collision::Collision::load_shared(&nvm_path);
+                let barriers = crate::map_effect_barriers::indices(instance.zone.id);
+                instance.collision = crate::collision::Collision::load_shared(&nvm_path, &barriers);
                 // A zone with floors that give a status needs its collision's materials (version 3): an older one
                 // is made again.
                 let needs_materials = crate::server::status_floor::has_floors(instance.zone.id)
@@ -465,12 +466,11 @@ impl Instance {
                 // One made before the collision had the layouts' simple shapes (version 4) or left open doors open
                 // (version 5), or beside a navmesh with 32-bit polygon references (version 6: that navmesh isn't read),
                 // or with a duty's map effect barriers built in (version 7, `map_effect_barriers`): made again too.
-                // Or one from a build that couldn't find the zone's map effect barriers (version 7), for a zone with
-                // some (Castrum Meridianum's, Bob's marks of 2026-11-22.)
-                let has_barriers =
-                    !crate::map_effect_barriers::barriers(instance.zone.id).is_empty();
+                // Or one built for other map effect barriers than the zone's (`barriers_differ`): from a build that
+                // couldn't find them (version 7: Castrum Meridianum's, Bob's marks of 2026-11-22), or before they
+                // were listed in `map_effect_barriers.json` (the Praetorium's, Bob's marks of 2026-11-24.)
                 let older = instance.collision.as_ref().is_some_and(|collision| {
-                    collision.is_older() || (has_barriers && collision.may_lack_barriers())
+                    collision.is_older() || collision.barriers_differ(&barriers)
                 });
                 if older {
                     tracing::info!(

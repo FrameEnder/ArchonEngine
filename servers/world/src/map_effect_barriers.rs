@@ -52,6 +52,15 @@ pub fn barriers(territory: u16) -> Vec<(u32, (u32, u32))> {
     table.get(&territory).cloned().unwrap_or_default()
 }
 
+/// For `territory`, its barriers' map effect indices, sorted: what its navmesh and collision are built for
+/// (`Collision::barriers_differ`.)
+pub fn indices(territory: u16) -> Vec<u32> {
+    barriers(territory)
+        .iter()
+        .map(|(index, _)| *index)
+        .collect()
+}
+
 /// Whether the map effect (`index`, `timeline`, `state`) takes down one of `territory`'s barriers.
 pub fn takes_down(territory: u16, index: u32, timeline: u32, state: u32) -> bool {
     barriers(territory)
@@ -72,5 +81,19 @@ mod tests {
         assert!(!takes_down(1043, 2, 4, 4));
         assert!(!takes_down(1043, 1, 4, 4));
         assert!(barriers(1036).is_empty());
+    }
+
+    #[test]
+    fn the_praetoriums_blasted_walls_are_barriers() {
+        // w1d5_re.lua's map effects 2 (the five dead), 3 (the ten dead), 4 (further in) and 5 (the ride's last five),
+        // timeline 2, state 1: walls blasted open (Bob's marks of 2026-11-24: nobody left by the hole.)
+        assert_eq!(indices(1044), vec![2, 3, 4, 5]);
+        for index in [2, 3, 4, 5] {
+            assert!(takes_down(1044, index, 2, 1));
+        }
+        // The lift (1) and the scenery further on (0, 6 to 18) aren't.
+        assert!(!takes_down(1044, 1, 2, 1));
+        assert!(!takes_down(1044, 8, 2, 1));
+        assert_eq!(indices(1043), vec![0, 1, 5, 6]);
     }
 }

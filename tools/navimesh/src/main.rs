@@ -552,7 +552,10 @@ fn main() {
         navimesh_row.AgentMaxClimb,
         navimesh_row.AgentRadius,
         navimesh_row.AgentMaxSlope,
-    );
+    )
+    // The barriers it was built for, so the world server makes it again when the list changes (the Praetorium's
+    // were added after its navmesh was made, Bob's marks of 2026-11-24.)
+    .with_barriers(kawari_world::map_effect_barriers::indices(zone_id));
     write_whole(
         &kawari_world::collision::path_for(&path),
         &collision.to_bytes(),

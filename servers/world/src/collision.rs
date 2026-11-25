@@ -41,10 +41,15 @@ use glam::Vec3A;
 
 /// The file's first bytes, and the layout's version.
 const MAGIC: &[u8; 4] = b"KCOL";
-const VERSION: u32 = 8;
+const VERSION: u32 = 9;
+/// The version before the file said which map effect barriers its build looked for (`barriers_differ`), still read
+/// (the same layout, without them): made again for a zone with barriers. A zone's barriers added to
+/// `map_effect_barriers.json` after its navmesh was made weren't in it, and nothing made it again: the Praetorium's
+/// blasted walls stayed walls after they fell (Bob's marks of 2026-11-24.)
+const VERSION_BARRIERS_UNLISTED: u32 = 8;
 /// The version whose builds couldn't find a duty's map effect barriers (`kawari-navimesh` read ContentFinderCondition
 /// without a language, which can't be read, and left them built in), still read (the same layout): made again only
-/// for a zone with barriers (`may_lack_barriers`.) Castrum Meridianum's ways stayed walls after they opened (Bob's
+/// for a zone with barriers (`barriers_differ`.) Castrum Meridianum's ways stayed walls after they opened (Bob's
 /// marks of 2026-11-22.)
 const VERSION_BARRIERS_NOT_FOUND: u32 = 7;
 /// The version before the map effects' barriers were gimmicks (`map_effect_barriers`), still read (the same layout):
@@ -130,6 +135,9 @@ pub struct Collision {
     sealed: Vec<bool>,
     /// The file's version (`VERSION` for one built here.)
     version: u32,
+    /// The map effect indices of the barriers its build looked for (`map_effect_barriers`), sorted; None for a file
+    /// from before they were written (version 8 or older.)
+    barriers: Option<Vec<u32>>,
 }
 
 /// Where a walk got to, and whether something stopped it before the end.
@@ -224,6 +232,7 @@ impl Collision {
             owners: owners.into(),
             materials: materials.into(),
             version: VERSION,
+            barriers: Some(Vec::new()),
             ..Default::default()
         };
 
@@ -275,6 +284,12 @@ impl Collision {
         let mut out = Vec::new();
         out.extend_from_slice(MAGIC);
         out.extend_from_slice(&VERSION.to_le_bytes());
+        // The barriers first, so `is_current` reads them with the version.
+        let barriers = self.barriers.as_deref().unwrap_or_default();
+        out.extend_from_slice(&(barriers.len() as u32).to_le_bytes());
+        for index in barriers {
+            out.extend_from_slice(&index.to_le_bytes());
+        }
         let floor_slope = self.floor_cos.acos().to_degrees();
         for value in [
             self.climb,
@@ -327,6 +342,7 @@ impl Collision {
         let version = r.u32()?;
         if ![
             VERSION,
+            VERSION_BARRIERS_UNLISTED,
             VERSION_BARRIERS_NOT_FOUND,
             VERSION_BARRIERS_BUILT_IN,
             VERSION_BESIDE_32_BIT_NAVMESH,
@@ -337,6 +353,15 @@ impl Collision {
         .contains(&version)
         {
             return None;
+        }
+        let mut barriers = None;
+        if version >= VERSION {
+            let count = r.u32()? as usize;
+            let mut list = Vec::with_capacity(count.min(256));
+            for _ in 0..count {
+                list.push(r.u32()?);
+            }
+            barriers = Some(list);
         }
         let climb = r.f32()?;
         let radius = r.f32()?;
@@ -418,22 +443,24 @@ impl Collision {
             owners: owners.into(),
             materials: materials.into(),
             version,
+            barriers,
         };
         collision.find_floors();
         Some(collision)
     }
 
     /// The collision file for a navmesh at `nvm_path`, shared by every instance of the zone. None if there's none
-    /// yet (or it can't be read.)
-    pub fn load_shared(nvm_path: &Path) -> Option<Arc<Self>> {
+    /// yet (or it can't be read.) `barriers` are the map effect indices of the zone's barriers
+    /// (`map_effect_barriers`).
+    pub fn load_shared(nvm_path: &Path, barriers: &[u32]) -> Option<Arc<Self>> {
         static LOADED: OnceLock<Mutex<HashMap<String, Weak<Collision>>>> = OnceLock::new();
         let path = path_for(nvm_path);
         let key = path.to_string_lossy().to_string();
         let mut loaded = LOADED.get_or_init(Default::default).lock().ok()?;
-        // One already loaded, unless it's an older one that's been made again since (any before this version: a
-        // version 7 one of a zone with barriers is made again, `may_lack_barriers`.)
+        // One already loaded, unless it was built for other barriers and has been made again since
+        // (`barriers_differ`.)
         if let Some(collision) = loaded.get(&key).and_then(Weak::upgrade)
-            && (!collision.may_lack_barriers() || !is_current(&path))
+            && (!collision.barriers_differ(barriers) || !is_current(&path, barriers))
         {
             return Some(collision);
         }
@@ -530,10 +557,21 @@ impl Collision {
         self.version < VERSION_BARRIERS_NOT_FOUND
     }
 
-    /// Whether it's from a build that may have left a duty's map effect barriers built in (version 7): made again for
-    /// a zone that has them (`map_effect_barriers`.)
-    pub fn may_lack_barriers(&self) -> bool {
-        self.version < VERSION
+    /// Whether it was built for other map effect barriers than the zone's `barriers` (their indices, sorted): made
+    /// again. A file from before the list was written (version 8 or older: version 7's builds couldn't find them at
+    /// all) differs for a zone that has some; one written since, when the list in `map_effect_barriers.json` changed.
+    pub fn barriers_differ(&self, barriers: &[u32]) -> bool {
+        match &self.barriers {
+            Some(built) => built != barriers,
+            None => !barriers.is_empty(),
+        }
+    }
+
+    /// The map effect indices of the barriers its build looked for (`kawari-navimesh`, from `map_effect_barriers`.)
+    pub fn with_barriers(mut self, mut barriers: Vec<u32>) -> Self {
+        barriers.sort_unstable();
+        self.barriers = Some(barriers);
+        self
     }
 
     /// Whether the file had the triangles' materials (version 3 on.)
@@ -827,6 +865,47 @@ impl Collision {
         }
     }
 
+    /// A step to the side for a walker stopped head-on (the end of a wall, a corner, a ledge's edge) on its way from
+    /// `from` to `to`, as a player steps round one: the first band of angles off its way (35, 70, 105, then 140
+    /// degrees, either side) where a short step (0.5 to 1.5 yalms) goes at least half its length, taking the one that
+    /// ends nearer `to`. Each step is a `walk`, so it goes through no wall, off no ledge deeper than `max_drop`, and past
+    /// no gimmick the director put up. None where nothing goes. Party bots stood for good where their path's straight
+    /// leg met a wall the navmesh goes round: the Praetorium's floor below its first lift, at (221.4, 156.0, -43.6) in
+    /// two of Bob's runs, 35 and 86 s (his marks of 2026-11-24, "ally player bots are completely borked in this area".)
+    pub fn round_the_corner(&self, from: Vec3A, to: Vec3A, max_drop: f32) -> Option<Vec3A> {
+        let way = Vec3A::new(to.x - from.x, 0.0, to.z - from.z);
+        let distance = way.length();
+        if distance < 1e-3 {
+            return None;
+        }
+        let ahead = way / distance;
+        let step = distance.clamp(0.5, 1.5);
+        let across = |a: Vec3A, b: Vec3A| Vec3A::new(b.x - a.x, 0.0, b.z - a.z).length();
+        for degrees in [35.0_f32, 70.0, 105.0, 140.0] {
+            let mut best: Option<(f32, Vec3A)> = None;
+            for side in [1.0_f32, -1.0] {
+                let (sin, cos) = (side * degrees).to_radians().sin_cos();
+                let turned = Vec3A::new(
+                    ahead.x * cos - ahead.z * sin,
+                    0.0,
+                    ahead.x * sin + ahead.z * cos,
+                );
+                let walk = self.walk(from, from + turned * step, max_drop);
+                if walk.sealed || across(from, walk.at) < step * 0.5 {
+                    continue;
+                }
+                let left = across(walk.at, to);
+                if best.is_none_or(|(nearest, _)| left < nearest) {
+                    best = Some((left, walk.at));
+                }
+            }
+            if let Some((_, at)) = best {
+                return Some(at);
+            }
+        }
+        None
+    }
+
     pub fn triangle_count(&self) -> usize {
         self.triangles.len()
     }
@@ -858,16 +937,27 @@ impl<'a> Reader<'a> {
     }
 }
 
-/// Whether the collision file at `path` is one this build reads (its first bytes say so; read cheaply, to wait for a
-/// new one while an older one is being replaced.)
-pub fn is_current(path: &Path) -> bool {
+/// Whether the collision file at `path` is this build's version, built for the zone's map effect `barriers` (their
+/// indices, sorted): its first bytes say so, read cheaply, to wait for a new one while an older one is being replaced.
+pub fn is_current(path: &Path, barriers: &[u32]) -> bool {
     use std::io::Read;
-    let mut head = [0u8; 8];
-    std::fs::File::open(path)
-        .and_then(|mut file| file.read_exact(&mut head))
-        .is_ok()
-        && &head[..4] == MAGIC
-        && head[4..] == VERSION.to_le_bytes()
+    let Ok(mut file) = std::fs::File::open(path) else {
+        return false;
+    };
+    let mut head = [0u8; 12];
+    if file.read_exact(&mut head).is_err()
+        || &head[..4] != MAGIC
+        || head[4..8] != VERSION.to_le_bytes()
+        || head[8..] != (barriers.len() as u32).to_le_bytes()
+    {
+        return false;
+    }
+    let mut listed = vec![0u8; 4 * barriers.len()];
+    file.read_exact(&mut listed).is_ok()
+        && listed
+            .chunks_exact(4)
+            .zip(barriers)
+            .all(|(bytes, index)| bytes == index.to_le_bytes())
 }
 
 /// Where the collision file for a navmesh at `nvm_path` goes.
@@ -997,6 +1087,40 @@ mod tests {
         // At an angle it goes along the wall instead.
         let walk = c.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 8.0), 50.0);
         assert!(walk.at.x < 3.0 && walk.at.z > 6.0, "{walk:?}");
+    }
+
+    /// Bob's marks of 2026-11-24 in the Praetorium: bots walked their path's leg head-on into the end of a wall and
+    /// stood there for good. Stepped round its end, a walker gets past it; through it, never.
+    #[test]
+    fn a_walker_stopped_head_on_steps_round_the_end_of_a_wall() {
+        let c = world(|v, t| {
+            floor_quad(v, t, -10.0, -10.0, 10.0, 10.0, 0.0);
+            wall_x(v, t, 3.0, -10.0, 0.5, 0.0, 4.0);
+        });
+        let goal = Vec3A::new(8.0, 0.0, 0.3);
+        let mut here = Vec3A::new(0.0, 0.0, 0.3);
+        // Head-on, a little short of the wall's end: the walk alone stops at it.
+        let walk = c.walk(here, goal, 50.0);
+        assert!(walk.blocked && walk.at.x < 3.0, "{walk:?}");
+        for _ in 0..20 {
+            let walk = c.walk(here, goal, 50.0);
+            here = if walk.blocked {
+                c.round_the_corner(walk.at, goal, 50.0)
+                    .expect("a way round")
+            } else {
+                walk.at
+            };
+        }
+        assert!((here - goal).length() < 0.1, "{here:?}");
+        // A wall with no end in reach: no step round it goes through it.
+        let closed = world(|v, t| {
+            floor_quad(v, t, -10.0, -10.0, 10.0, 10.0, 0.0);
+            wall_x(v, t, 3.0, -10.0, 10.0, 0.0, 4.0);
+        });
+        let stop = closed.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0).at;
+        if let Some(side) = closed.round_the_corner(stop, Vec3A::new(8.0, 0.0, 0.0), 50.0) {
+            assert!(side.x < 3.0, "{side:?}");
+        }
     }
 
     #[test]
@@ -1136,9 +1260,15 @@ mod tests {
         // In the air: no floor near enough.
         assert_eq!(c.floor_material(0.0, 0.0, 3.5, 2.5), None);
 
+        // An older file: the same layout without the barriers' list (empty here, its count alone.)
+        let older = |version: u32| {
+            let mut bytes = built.to_bytes();
+            bytes.drain(8..12);
+            bytes[4..8].copy_from_slice(&version.to_le_bytes());
+            bytes
+        };
         // A version 2 file (no materials) still reads, without them.
-        let mut old = built.to_bytes();
-        old[4..8].copy_from_slice(&2u32.to_le_bytes());
+        let mut old = older(2);
         old.truncate(old.len() - 8 * built.triangles.len());
         let c = Collision::from_bytes(&old).unwrap();
         assert!(!c.has_materials());
@@ -1146,23 +1276,57 @@ mod tests {
         assert_eq!(c.floor_material(3.0, 3.0, 0.7, -0.3), Some((0.2, 0)));
 
         // A version 3 file (before the simple shapes) reads with its materials, and is made again.
-        let mut three = built.to_bytes();
-        three[4..8].copy_from_slice(&3u32.to_le_bytes());
-        let c = Collision::from_bytes(&three).unwrap();
+        let c = Collision::from_bytes(&older(3)).unwrap();
         assert!(c.has_materials() && c.is_older());
-        // A version 4 file (every door shut) too.
-        three[4..8].copy_from_slice(&4u32.to_le_bytes());
-        assert!(Collision::from_bytes(&three).unwrap().is_older());
-        // A version 5 file (beside a navmesh with 32-bit polygon references) too.
-        three[4..8].copy_from_slice(&5u32.to_le_bytes());
-        assert!(Collision::from_bytes(&three).unwrap().is_older());
-        // A version 7 file (a duty's map effect barriers not found by its build) reads, and isn't older, but may lack
-        // its barriers: made again for a zone that has some.
-        three[4..8].copy_from_slice(&7u32.to_le_bytes());
-        let seven = Collision::from_bytes(&three).unwrap();
-        assert!(!seven.is_older() && seven.may_lack_barriers());
+        // A version 4 file (every door shut) too, and a version 5 one (beside a navmesh with 32-bit polygon
+        // references.)
+        assert!(Collision::from_bytes(&older(4)).unwrap().is_older());
+        assert!(Collision::from_bytes(&older(5)).unwrap().is_older());
+        // Version 7 (a duty's map effect barriers not found by its build) and 8 (found, but not listed) read, and
+        // aren't older, but are made again for a zone that has barriers.
+        for version in [7, 8] {
+            let c = Collision::from_bytes(&older(version)).unwrap();
+            assert!(!c.is_older());
+            assert!(c.barriers_differ(&[2, 3]));
+            assert!(!c.barriers_differ(&[]));
+        }
         let current = Collision::from_bytes(&built.to_bytes()).unwrap();
-        assert!(!current.is_older() && !current.may_lack_barriers());
+        assert!(!current.is_older() && !current.barriers_differ(&[]));
+        assert!(current.barriers_differ(&[2]));
+    }
+
+    #[test]
+    fn a_collision_says_which_barriers_it_was_built_for() {
+        // The Praetorium's blasted walls were added to `map_effect_barriers.json` after its navmesh was made, which
+        // nothing made again (Bob's marks of 2026-11-24): the file lists the barriers its build looked for.
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        floor_quad(&mut v, &mut t, -10.0, -10.0, 10.0, 10.0, 0.0);
+        let built = Collision::build(v, t, Vec::new(), Vec::new(), 0.75, 0.4, 55.0)
+            .with_barriers(vec![5, 2, 4, 3]);
+        let c = Collision::from_bytes(&built.to_bytes()).unwrap();
+        assert!(!c.barriers_differ(&[2, 3, 4, 5]));
+        assert!(c.barriers_differ(&[2, 3]));
+        assert!(c.barriers_differ(&[]));
+        assert_eq!(
+            c.floor_material(0.0, 0.0, 0.5, -0.5).map(|(y, _)| y),
+            Some(0.0)
+        );
+
+        // `is_current` reads the same from the file's first bytes.
+        let dir = std::env::temp_dir().join(format!("kawari-collision-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("zone.nvm.col");
+        std::fs::write(&path, built.to_bytes()).unwrap();
+        assert!(is_current(&path, &[2, 3, 4, 5]));
+        assert!(!is_current(&path, &[2, 3, 4]));
+        assert!(!is_current(&path, &[2, 3, 4, 6]));
+        assert!(!is_current(&path, &[]));
+        let mut eight = built.to_bytes();
+        eight.drain(8..12 + 16);
+        eight[4..8].copy_from_slice(&8u32.to_le_bytes());
+        std::fs::write(&path, &eight).unwrap();
+        assert!(!is_current(&path, &[]));
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
