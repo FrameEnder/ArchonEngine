@@ -3098,7 +3098,10 @@ mod wall_tests {
         let now = Vec3A::new(198.0, 76.0, -12.0);
         let position_of = |id: ObjectId| (id == player).then_some(now);
         assert_eq!(cast_follows(&cast, helper, circle, Some(2)), Some(player));
-        assert_eq!(area_centre(&cast, helper, circle, Some(2), position_of), now);
+        assert_eq!(
+            area_centre(&cast, helper, circle, Some(2), position_of),
+            now
+        );
         // Placed on the ground (CastType 7): where it was aimed.
         assert_eq!(cast_follows(&cast, helper, circle, Some(7)), None);
         assert_eq!(
