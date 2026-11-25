@@ -988,6 +988,7 @@ pub struct LuaDirector {
 
 #[cfg(test)]
 mod battle_talk_source_tests {
+
     use super::*;
 
     /// A battle talk's source is "no one", which a connection turns into the player (`send_ipc_from`): retail's 89
@@ -2242,6 +2243,20 @@ pub struct DirectorData {
 /// captures, `warp_player_within`.)
 const IN_DUTY_WARP_DELAY: Duration = Duration::from_millis(1500);
 
+/// ActorSetPos' `arg` for a player put somewhere: 0 when they're riding (on their own mount or someone's), else 2.
+/// Retail's, in the ActorSetPos to the player with a warp type in Bob's 110 Chronofoil captures: 2 for 399 of the 400
+/// on foot or dead, 0 for all 8 mounted (the Praetorium's ride taken below, type 25, in 4 runs; 4 in the field), 0
+/// and 1 for the two riding pillion. With 2 the client got off the mount: Bob was put below on the Praetorium's armour
+/// and landed on foot, the server still having him on it (his mark of 2026-11-25.)
+pub(crate) fn set_pos_arg(mode: kawari::common::CharacterMode, mount: u16) -> u8 {
+    use kawari::common::CharacterMode;
+    if mount != 0 || matches!(mode, CharacterMode::Mounted | CharacterMode::RidingPillion) {
+        0
+    } else {
+        2
+    }
+}
+
 pub(crate) fn warp_player_within(
     instance: &mut Instance,
     network: &mut NetworkState,
@@ -2273,11 +2288,17 @@ pub(crate) fn warp_player_within(
     else {
         return;
     };
+    let arg = match instance.find_actor(actor_id) {
+        Some(NetworkedActor::Player { spawn, .. }) => {
+            set_pos_arg(spawn.common.mode, spawn.common.current_mount)
+        }
+        _ => 2,
+    };
     let segment = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(ActorSetPos {
         position,
         rotation,
         warp_type: WarpType::Event,
-        arg: 2,
+        arg,
         ..Default::default()
     }));
     instance.insert_task(
@@ -6226,5 +6247,20 @@ mod tests {
         assert!(!unsealed(&director));
         director.on_actor_death(3633631, Position::default());
         assert!(unsealed(&director));
+    }
+}
+
+#[cfg(test)]
+mod set_pos_arg_tests {
+    use super::set_pos_arg;
+
+    /// Riding, the client stays on (retail's 0 for all 8 mounted moves); on foot, 2 (399 of 400.)
+    #[test]
+    fn a_rider_put_somewhere_stays_on() {
+        use kawari::common::CharacterMode;
+        assert_eq!(set_pos_arg(CharacterMode::Mounted, 17), 0);
+        assert_eq!(set_pos_arg(CharacterMode::RidingPillion, 0), 0);
+        assert_eq!(set_pos_arg(CharacterMode::Normal, 0), 2);
+        assert_eq!(set_pos_arg(CharacterMode::Dead, 0), 2);
     }
 }

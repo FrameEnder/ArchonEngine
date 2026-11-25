@@ -1498,12 +1498,18 @@ pub fn do_change_zone(
                 spawn.common.rotation = rotation;
             }
         }
-        // We want to delay sending this to give time for the client to fade out.
+        // We want to delay sending this to give time for the client to fade out. Riding, they stay on (`set_pos_arg`.)
+        let arg = match target_instance.find_actor(actor_id) {
+            Some(NetworkedActor::Player { spawn, .. }) => {
+                crate::server::director::set_pos_arg(spawn.common.mode, spawn.common.current_mount)
+            }
+            _ => 2,
+        };
         let segment = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(ActorSetPos {
             position: exit_position.unwrap_or_default(),
             rotation: exit_rotation.unwrap_or_default(),
             warp_type,
-            arg: 2, // unknown
+            arg,
             ..Default::default()
         }));
         target_instance.insert_task(

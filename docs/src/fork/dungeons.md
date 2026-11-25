@@ -1942,7 +1942,11 @@ EventFinish; Kawari sends 504 as ActorControlSelf where retail sent ActorControl
 Left were the duty's opening map effects: retail's DirectorSetupMapEffects begins 6, 7, 15 and 16 at 8, 1, 8, 1 in all
 four runs, Kawari began every one at 4; they're retail's now (`resources/data/opening_map_effects.json`, Castrum
 Meridianum's 2, 3, 8, 9 at 1 too), and whether that's it isn't known either. Also seen: Kawari's ENpcs carry
-highlights where the sheet's HairHighlight is 1 (customize byte 7 0x80; retail sent the 1 as it is). **The armour's actions**
+highlights where the sheet's HairHighlight is 1 (customize byte 7 0x80; retail sent the 1 as it is). **Taken below on
+the armour** (his mark of 2026-11-25: "I was dismounted in moving to this area"): the server had him mounted still,
+the client got off at the move's ActorSetPos, whose `arg` was 2. Retail's is 0 for a mounted player (all 8 such moves in
+Bob's 110 captures, the Praetorium's ride taken below among them) and 2 on foot (399 of 400); Kawari's is too now
+(`set_pos_arg`). **The armour's actions**
 (his mark of 2026-11-25: "magitek canon and photon stream aren't doing anything to enemy npcs"): the client sends 1128
 (the cannon) as an ActionRequestGroundTargeted with the spot aimed at; Kawari measured its area from the rider and hit
 no one. Retail's hit 1-6 enemies round the spot each use, up to 13 yalms from the rider, with an AoeEffect8 naming
