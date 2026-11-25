@@ -788,7 +788,7 @@ impl Zone {
                             base_id,
                             not_targetable: !targetable,
                             event_state,
-                            entity_id: ObjectId(fastrand::u32(..)),
+                            entity_id: Instance::generate_actor_id(),
                             layout_id: object.instance_id,
                             bind_layout_id: eobj.bound_instance_id,
                             radius: object.transform.scale[0],
@@ -813,7 +813,7 @@ impl Zone {
                             treasure.parent_data.base_id,
                             SpawnTreasure {
                                 base_id: treasure.parent_data.base_id,
-                                entity_id: ObjectId(fastrand::u32(..)),
+                                entity_id: Instance::generate_actor_id(),
                                 layout_id: object.instance_id,
                                 rotation: euler_to_direction(rotation.to_euler(EulerRot::XYZ)),
                                 position: Position(translation.into()),
@@ -833,7 +833,7 @@ impl Zone {
             let spawn = SpawnObject {
                 kind: ObjectKind::EventObj,
                 base_id: EOBJ_HOUSING_ENTRANCE,
-                entity_id: ObjectId(fastrand::u32(..)),
+                entity_id: Instance::generate_actor_id(),
                 radius: 1.0,
                 position: Position(plot.entrance_position),
                 args2: u32::from_le_bytes([0, i as u8, 0, 0]),
@@ -909,7 +909,7 @@ impl Zone {
             let spawn = SpawnObject {
                 kind: ObjectKind::GatheringPoint,
                 base_id: point,
-                entity_id: ObjectId(fastrand::u32(..)),
+                entity_id: Instance::generate_actor_id(),
                 layout_id: layout,
                 radius: 1.0,
                 args1,

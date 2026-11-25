@@ -710,9 +710,15 @@ impl Instance {
         );
     }
 
+    /// An actor ID as retail gives what the server spawns: 0x40000000 and up, one after another (Gaius 0x400024A1 and
+    /// the armour 0x400024B1 in the Praetorium, Bob's Chronofoil capture 35e30205; every NPC and object in his
+    /// captures). A random u32 fell in the client's own range (0xE0000000 and up) one time in eight: two of the
+    /// Praetorium's event objects in Bob's run of 2026-11-25 (0xF19825CB, 0xFE388158).
     pub fn generate_actor_id() -> ObjectId {
-        // TODO: ensure we don't collide with another actor
-        ObjectId(fastrand::u32(..))
+        use std::sync::atomic::{AtomicU32, Ordering};
+        static NEXT: AtomicU32 = AtomicU32::new(1);
+        let next = NEXT.fetch_add(1, Ordering::Relaxed) & 0x0FFF_FFFF;
+        ObjectId(0x4000_0000 | next.max(1))
     }
 
     /// Finds all (alive) players and NPCs. Returns their ids, positions and battalions.

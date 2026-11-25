@@ -2108,7 +2108,7 @@ pub fn execute_action(
                                 DestinationNetwork::ZoneClients,
                             );
 
-                            let pet_actor_id = ObjectId(fastrand::u32(..));
+                            let pet_actor_id = Instance::generate_actor_id();
 
                             let config = get_config();
                             let mut game_data = game_data.lock();

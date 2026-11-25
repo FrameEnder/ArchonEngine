@@ -273,7 +273,7 @@ pub fn fate_tick(
                         let config = get_config();
                         let mut game_data = game_data.lock();
                         instance.insert_npc(
-                            ObjectId(fastrand::u32(..)),
+                            Instance::generate_actor_id(),
                             npc,
                             &config,
                             &mut game_data,
@@ -292,7 +292,7 @@ pub fn fate_tick(
                         let config = get_config();
                         let mut game_data = game_data.lock();
                         instance.insert_npc(
-                            ObjectId(fastrand::u32(..)),
+                            Instance::generate_actor_id(),
                             npc,
                             &config,
                             &mut game_data,

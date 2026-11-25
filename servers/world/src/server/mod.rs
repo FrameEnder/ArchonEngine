@@ -189,6 +189,11 @@ struct WorldServer {
 /// only set where duties' instances are made (`create_instance_for_content`) until 2026-11-12, so quest battles, made
 /// here, never waited: Notorious Biggs' NPCs fought through Bob's opening and hit him three times in it (bundles
 /// 20261111-194208 and 20261112-185310).
+/// A new actor ID for something the server spawns, as retail numbers them (`Instance::generate_actor_id`).
+pub(crate) fn new_actor_id() -> ObjectId {
+    Instance::generate_actor_id()
+}
+
 fn prepare_quest_battle_instance(instance: &mut Instance) {
     instance.fates.clear();
     instance.candiate_fates.clear();

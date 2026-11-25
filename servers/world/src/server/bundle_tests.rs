@@ -2250,3 +2250,20 @@ fn a_directors_variables_wait_for_the_client_to_ask() {
     world.instance.director_vars_ready.insert(player);
     assert_eq!(world.instance.vars_ready(), vec![player]);
 }
+
+/// Bob, on Gaius still standing after cutscene 280 (2026-11-25): retail numbers what the server spawns from
+/// 0x40000000 (Gaius 0x400024A1, capture 35e30205); Kawari's random IDs put two of the Praetorium's event objects in
+/// the client's own range (0xE0000000 and up).
+#[test]
+fn actor_ids_are_retail_s() {
+    use crate::server::instance::Instance;
+    let ids: Vec<u32> = (0..1000).map(|_| Instance::generate_actor_id().0).collect();
+    assert!(
+        ids.iter()
+            .all(|id| id & 0xF000_0000 == 0x4000_0000 && *id != 0x4000_0000)
+    );
+    let mut unique = ids.clone();
+    unique.sort();
+    unique.dedup();
+    assert_eq!(unique.len(), ids.len());
+}

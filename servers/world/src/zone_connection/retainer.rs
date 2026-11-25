@@ -145,7 +145,7 @@ impl ZoneConnection {
         self.send_retainer_state_notice(false).await;
         self.player_data.inventory.retainer = Some(Box::new(retainer.inventory.clone()));
 
-        let actor_id = ObjectId(fastrand::u32(0x4000_0000..0x5000_0000));
+        let actor_id = crate::server::new_actor_id();
         let spawn = {
             let mut game_data = self.game_data.lock();
             retainer.spawn(

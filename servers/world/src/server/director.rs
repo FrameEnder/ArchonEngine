@@ -1068,7 +1068,7 @@ impl UserData for LuaDirector {
         methods.add_method_mut(
             "spawn_bnpc",
             |_, this, (id, x, y, z, rotation): (u32, Option<f32>, Option<f32>, Option<f32>, Option<f32>)| {
-                let actor_id = ObjectId(fastrand::u32(1..0xE000_0000));
+                let actor_id = Instance::generate_actor_id();
                 let at = match (x, y, z) {
                     (Some(x), Some(y), Some(z)) => {
                         Some((Position(glam::Vec3A::new(x, y, z)), rotation))
@@ -1093,7 +1093,7 @@ impl UserData for LuaDirector {
                 Option<f32>,
                 Option<f32>,
             )| {
-                let actor_id = ObjectId(fastrand::u32(1..0xE000_0000));
+                let actor_id = Instance::generate_actor_id();
                 let at = match (x, y, z) {
                     (Some(x), Some(y), Some(z)) => {
                         Some((Position(glam::Vec3A::new(x, y, z)), rotation))
@@ -1138,7 +1138,7 @@ impl UserData for LuaDirector {
         methods.add_method_mut(
             "spawn_bnpc_part",
             |_, this, (id, to, distance): (u32, u32, f32)| {
-                let actor_id = ObjectId(fastrand::u32(1..0xE000_0000));
+                let actor_id = Instance::generate_actor_id();
                 this.tasks.push(LuaDirectorTask::SpawnPartBattleNpc {
                     id,
                     actor_id,
@@ -3287,7 +3287,7 @@ pub fn director_tick(
                         kind: ObjectKind::EventObj,
                         base_id: *base_id,
                         not_targetable: !targetable,
-                        entity_id: ObjectId(fastrand::u32(..)),
+                        entity_id: Instance::generate_actor_id(),
                         handler_id: director_id,
                         radius: 1.0,
                         ..Default::default()
@@ -3606,7 +3606,7 @@ pub fn director_tick(
                 if let Some(mut npc) = instance.zone.get_battle_npc(*bnpc_id) {
                     npc.common.handler_id = director_id;
 
-                    let actor_id = ObjectId(fastrand::u32(..));
+                    let actor_id = Instance::generate_actor_id();
                     let config = get_config();
                     let mut game_data = game_data.lock();
                     instance.insert_npc(actor_id, npc, &config, &mut game_data);

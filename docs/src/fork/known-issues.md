@@ -42,9 +42,10 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   had loaded (held back now, untested). His ENpcBase row and his layer hide nothing (read through the harness); left
   are the order of the spawns (retail's event NPCs before the player's own SpawnPlayer) and ZoneInit's game festivals.
   Kawari Witness (retail and fork runs, `dungeons.md`): retail's client hides him itself at each cutscene's start
-  (render flags 0x2000800) and removes him at cutscene 280's end; the fork's never does. The player's own 519 and 504
-  now go as retail's, before the EventScene (untested in game); if he still shows, the spawn order and the festivals
-  are what's left.
+  (render flags 0x2000800) and removes him at cutscene 280's end. With the player's own 519 and 504 as retail's
+  (`6da0ccd39`) the fork's client hides him too, but still restores him at 280's end, with no packet from either
+  server then and his SpawnNpc as retail's. Retail-numbered actor IDs are the next try (untested); then the party
+  (retail's PartyList), the spawn order and ZoneInit's flags.
 * **The Praetorium's armour's Photon Stream (1129) does nothing**: none of Bob's three retail runs read (50e72631,
   6320ae56, 9ba7d981) used it, so what it hits and for how much isn't known. A capture of retail using it is needed.
 * Untested in game: the blasted walls coming down (2, 3, 4, 5) and walkers stepping round a wall's end (Bob's marks on
