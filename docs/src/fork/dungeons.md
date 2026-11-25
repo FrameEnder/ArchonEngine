@@ -1924,7 +1924,11 @@ carry jump state 3 (retail's ride: 331 moves, and 64 with 3 another 497; 64 with
 couldn't read, so for nine minutes of riding the server had him where he mounted and his bots, standing by that, never
 moved ("the bots are not in anyway follwoing me since they got here"). `JumpState` reads 3, 65, 66 and 67 now. Retail's
 Duty Support members walked and fought through the ride, unmounted (their 337-380 ActorMoves each). Tests
-`read_a_move_on_the_armour`, `PraetoriumTest.test_the_armours_model_is_spawned`. Untested in game.
+`read_a_move_on_the_armour`, `PraetoriumTest.test_the_armours_model_is_spawned`. Untested in game. **Out of the duty
+mounted** (his mark of 2026-11-25, out of the Praetorium on the armour: "when exiting a duty you shouldn't still be
+mounted"): leaving a duty's or quest battle's zone now gets a player off their mount (`left_content` in
+`zone_connection/zone.rs`); before, only a zone without mounts did, and Northern Thanalan has them. No retail capture
+has a player leave a duty mounted. Test `out_of_a_duty_is_leaving_it`.
 
 ## The Jade Stoa
 

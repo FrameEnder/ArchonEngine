@@ -62,6 +62,8 @@ impl ZoneConnection {
     ) {
         self.spawned_in = false;
         self.fate_motivation_npcs.clear();
+        // Out of a duty or quest battle (its director's zone) into another zone.
+        let left_content = left_content(self.content_handler_id, handler_id);
         self.content_handler_id = handler_id;
         // Out of a Duty Finder duty into the world (the ZoneInit's flags below.)
         let left_duty = self.content_finder_condition_id != 0 && content_finder_condition_id == 0;
@@ -89,11 +91,14 @@ impl ZoneConnection {
         // the load none (Bob's Chronofoil captures: into Ul'dah, the Waking Sands, the Twins' Gridania; elsewhere it
         // re-sent the mount.) Kawari kept the mount in the spawn, and they rode through Ul'dah (Bob's bundle
         // 20261029-162434.)
+        // A duty's mount stays in it too: out of the Praetorium on its magitek armour (Mount 17), Bob rode it in
+        // Northern Thanalan (his mark of 2026-11-25: "when exiting a duty you shouldn't still be mounted").
         if self.player_data.volatile.current_mount != 0
-            && !self.game_data.lock().zone_allows_mounts(new_zone_id)
+            && (left_content || !self.game_data.lock().zone_allows_mounts(new_zone_id))
         {
             tracing::info!(
-                "{} rode into zone {new_zone_id}, which has no mounts: dismounted",
+                "{} rode into zone {new_zone_id} (out of a duty: {left_content}), which they can't ride into: \
+                 dismounted",
                 self.player_data.character.name
             );
             self.player_data.volatile.current_mount = 0;
@@ -810,3 +815,29 @@ impl ZoneConnection {
 
 /// LogMessage for a teleport's gil (retail's, with the cost.)
 const TELEPORT_PAID_LOG: u32 = 4590;
+
+/// Whether a zone change takes a player out of the duty or quest battle they were in (its director's zone), whatever
+/// it takes them into.
+fn left_content(old: Option<HandlerId>, new: Option<HandlerId>) -> bool {
+    old.is_some_and(|old| new != Some(old))
+}
+
+#[cfg(test)]
+mod left_content_tests {
+    use super::*;
+
+    /// Out of the Praetorium (InstanceContent 86) into Northern Thanalan, Bob was still on its armour (his mark of
+    /// 2026-11-25): leaving it is leaving content, a zone change within it or in the world isn't.
+    #[test]
+    fn out_of_a_duty_is_leaving_it() {
+        let praetorium = HandlerId::new(HandlerType::InstanceContent, 86);
+        assert!(left_content(Some(praetorium), None));
+        assert!(left_content(
+            Some(praetorium),
+            Some(HandlerId::new(HandlerType::InstanceContent, 15))
+        ));
+        assert!(!left_content(Some(praetorium), Some(praetorium)));
+        assert!(!left_content(None, None));
+        assert!(!left_content(None, Some(praetorium)));
+    }
+}
