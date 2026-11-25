@@ -2221,6 +2221,15 @@ impl GameData {
         Some((model_row_id, customize, row.NpcEquip, row.Behavior))
     }
 
+    /// The InstanceContent's gauge (its ContentGauge row: the sheet's unnamed Unknown12; the Praetorium's 58, "Blade
+    /// Energy"), or 0. Retail names it in UnkDirector1 (`director::unk_director1`.)
+    pub fn instance_content_gauge(&mut self, content_id: u16) -> u8 {
+        self.instance_content_sheet
+            .row(content_id as u32)
+            .map(|row| row.Unknown12)
+            .unwrap_or(0)
+    }
+
     /// Gets the content type for the given InstanceContent.
     /// A duty's clear rewards from its InstanceContent row: the first clear's EXP (the column after FinalBossExp, which
     /// the sheet doesn't name: Sastasha's 18,800, the Tam-Tara Deepcroft's 19,600 and the Copperbell Mines' 24,200, as

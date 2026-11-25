@@ -5886,6 +5886,15 @@ pub fn handle_director_trigger(
     // TODO: send triggers to Lua etc.
 }
 
+/// UnkDirector1 as retail sends it to a player who asks for the director's variables: 0xFF from 12 to 17, the duty's
+/// gauge at 28 (`send_director_vars`.)
+pub(crate) fn unk_director1(gauge: u8) -> [u8; 32] {
+    let mut unk = [0u8; 32];
+    unk[12..18].fill(255);
+    unk[28] = gauge;
+    unk
+}
+
 pub fn send_director_vars(
     data: Arc<Mutex<WorldServer>>,
     network: Arc<Mutex<NetworkState>>,
@@ -5909,11 +5918,18 @@ pub fn send_director_vars(
                 DestinationNetwork::ZoneClients,
             );
 
+            // Its 28th byte is the InstanceContent's gauge (its ContentGauge row, the sheet's Unknown12): retail's in
+            // every duty of Bob's captures (the Praetorium's 58, "Blade Energy" for its last boss; the Ultimate
+            // Weapon's battle 61; 0 where there's none); Kawari sent 38 everywhere, and 1 at byte 8, which retail had
+            // 0 in all but two (Territory 810's 30, 899's 1: not known why.)
+            let gauge = match director.id.handler_type() {
+                HandlerType::InstanceContent => game_data
+                    .lock()
+                    .instance_content_gauge(director.id.event_id() as u16),
+                _ => 38,
+            };
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UnkDirector1 {
-                unk: [
-                    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0, 38, 0, 0, 0,
-                ],
+                unk: unk_director1(gauge),
             });
             network.send_to_by_actor_id(
                 from_actor_id,
@@ -6256,5 +6272,21 @@ mod set_pos_arg_tests {
         assert_eq!(set_pos_arg(CharacterMode::RidingPillion, 0), 0);
         assert_eq!(set_pos_arg(CharacterMode::Normal, 0), 2);
         assert_eq!(set_pos_arg(CharacterMode::Dead, 0), 2);
+    }
+}
+
+#[cfg(test)]
+mod unk_director1_tests {
+    use super::unk_director1;
+
+    /// Retail's for the Praetorium (InstanceContent 86, its gauge 58), all four runs in Bob's captures.
+    #[test]
+    fn the_praetoriums_is_retails() {
+        let retail = "000000000000000000000000ffffffffffff000000000000000000003a000000";
+        let ours: String = unk_director1(58)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        assert_eq!(ours, retail);
     }
 }
