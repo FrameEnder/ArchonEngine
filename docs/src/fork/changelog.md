@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-25 | — | ArchonEngine ControlPanel's changelog (2.35.0). |
+| 2026-11-25 | — | ArchonEngine ControlPanel (2.36.0: captures by time); dungeons (Gaius's layer read: nothing hides him there either). |
+| 2026-11-25 | `23467df9a` | ArchonEngine ControlPanel's changelog (2.35.0). |
 | 2026-11-25 | `02added2b` | Quest Dumps (`layout`); ArchonEngine ControlPanel (the harness's layouts, 2.35.0); dungeons (ENpcBase 1043117 read: nothing hides Gaius in the sheet). |
 | 2026-11-25 | `688b01920` | ArchonEngine ControlPanel's changelog (2.34.0). |
 | 2026-11-25 | `a610e543a` | Quest Dumps (`sheet`, `sheets`); ArchonEngine ControlPanel (the harness's game data, 2.34.0). |
@@ -594,6 +595,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-11-25 | `333d2bf`, `3575dfa` | 2.36.0: **a capture's records from any time in it**: `/dashboard/harness/captures/<file>?from=&to=` (ms, as the records' `t`) reads the whole file line by line (`range_jsonl`) and gives the first that match; without them the last, from the last 8 MB, as before (a duty's entry had fallen outside it, 2026-11-25). `Windows` brought up to `main` (`3575dfa`). |
 | 2026-11-25 | `3204960`, `1279b4e` | 2.35.0: **the harness reads a territory's layout**: `/dashboard/harness/layout/<territory>?object=&layer=&kind=` through the active build's `kawari-questdump layout` (the fork's `02added2b`); `_read_game_data` checks for the command it runs. `Windows` brought up to `main` (`1279b4e`). |
 | 2026-11-25 | `521526b`, `c125898` | 2.34.0: **the harness reads the game's data** (`kawari_web/harness.py`, README): `/dashboard/harness/sheets` (kept 10 minutes) and `/dashboard/harness/sheet/<name>?rows=&where=`, through the active build's `kawari-questdump sheet` (the fork's `a610e543a`) in a throwaway container as Quest Lab runs it; a build without the command says so. `Windows` brought up to `main` (`c125898`; the README's version line kept its wording). |
 | 2026-11-15 | `aa0bc5f`, `441b333` | 2.33.1: the Events page reads `resources/events/fork_events.json` (2.33.0's `resources/data/fork_events.json` is in no build: the page listed nothing) and takes an event's name from its `label`; checked against a build-shaped tree this time. `Windows` brought up to `main` (`441b333`). |

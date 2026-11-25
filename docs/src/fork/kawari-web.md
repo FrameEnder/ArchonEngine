@@ -595,7 +595,7 @@ that: the server's state as JSON, as it is now, without a bundle being made, pus
 | `/dashboard/harness/log?lines=&grep=&since=` | the server's log: `lines` is how far back to read (400 by default, 20,000 at most), `grep` a regular expression, `since` a time of day (`HH:MM[:SS]`, UTC as the log's); the newest 2,000 matches | `diagnostics._server_log` |
 | `/dashboard/harness/log/problems` | the lines that say something went wrong, counted by kind (`PROBLEMS`: panic, restarted, stuck, unstuck, out_of_step, dropped, error; the lines [Stability](stability.md) says to look for) | the same |
 | `/dashboard/harness/captures` | the capture files, newest first | the server's capture folder |
-| `/dashboard/harness/captures/<file>?lines=&name=&dir=` | a capture's last records (200 by default), by packet name or note text (a regular expression) and direction; read from the file's last 8 MB | `tail_jsonl` |
+| `/dashboard/harness/captures/<file>?lines=&name=&dir=&from=&to=` | a capture's last records (200 by default), by packet name or note text (a regular expression) and direction, read from the file's last 8 MB; with `from`/`to` (ms, as the records' `t`; 2.36.0) the first that match in that time, from the whole file | `tail_jsonl`, `range_jsonl` |
 | `/dashboard/harness/characters`, `/characters/<content id>` | the characters; one's rows and quest summary as a bundle's `characters.json` | `diagnostics._character_state` |
 | `/dashboard/harness/config` | the server's config with secrets removed | `diagnostics._sanitised_config` |
 | `/dashboard/harness/bundles` | the kept bundles | `diagnostics.kept_bundles` |

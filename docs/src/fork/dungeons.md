@@ -1948,7 +1948,10 @@ the client got off at the move's ActorSetPos, whose `arg` was 2. Retail's is 0 f
 Bob's 110 captures, the Praetorium's ride taken below among them) and 2 on foot (399 of 400); Kawari's is too now
 (`set_pos_arg`). **Gaius's ENpcBase row** (read through the harness's sheets, 2026-11-25): 1043117 has Invisibility
 0, Important false, no ENpcData, EventHandler 783 (the armour's 1042680 the same; 1043118 67), ModelChara 0, NpcEquip
-597: nothing in the sheet hides him. His layer (LVD_REMAKE_GIMMICK_01) is next (`kawari-questdump layout`). **The armour's actions**
+597: nothing in the sheet hides him. His layer (read through the harness's layouts): LVD_REMAKE_GIMMICK_01 is active by
+default, Include [264501, 82292], and its header is the armour's layer's (_02) to the flag; his EventNPC instance
+(9283423) differs from the armour's (9083081) only in the CharacterInstanceObject's third word (0 for him, 1 for the
+armour; Sapphire's reading, `moveAi`). Nothing in the layout hides him either. **The armour's actions**
 (his mark of 2026-11-25: "magitek canon and photon stream aren't doing anything to enemy npcs"): the client sends 1128
 (the cannon) as an ActionRequestGroundTargeted with the spot aimed at; Kawari measured its area from the rider and hit
 no one. Retail's hit 1-6 enemies round the spot each use, up to 13 yalms from the rider, with an AoeEffect8 naming
