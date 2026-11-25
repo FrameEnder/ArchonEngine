@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-25 | — | Dungeons (UnkDirector1's gauge; every retail packet naming Gaius); known issues (Gaius). |
+| 2026-11-25 | — | kawari-diagnostics (Kawari Witness 0.2.0); known issues (Gaius: how to settle it). |
+| 2026-11-25 | `4461af367`, `10783728f` | Dungeons (UnkDirector1's gauge; every retail packet naming Gaius); known issues (Gaius). |
 | 2026-11-25 | `3f9f1c8cb` | Dungeons (Gaius: the duty's entry against retail's); known issues (Gaius). |
 | 2026-11-25 | `2f1b745e1` | ArchonEngine ControlPanel (2.36.0: captures by time); dungeons (Gaius's layer read: nothing hides him there either). |
 | 2026-11-25 | `23467df9a` | ArchonEngine ControlPanel's changelog (2.35.0). |
@@ -633,6 +634,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-11-25 | `95691a0` | **Kawari Witness 0.2.0**: `visibility` guesses, for what the client shows or hides on its own: every object of the guess's bases in its territory, each coming (render flags, draw object, targetable, event state, mode, where), every change of those and its going, with the time since arriving and whether a cutscene plays. The first, `praetorium-gaius-shown`: Gaius (ENpc 1043117), the armour (1042680) and 1043118 in territory 1044, for a run on retail and one on the fork to compare. Built and published to ProtoPlugins-FFXIV by CI; not run in game yet. |
 | 2026-11-19 | `838dfec` | **Kawari Probe 0.7.2**: the Stuck window (`/kprobe stuck`) and every snapshot's `stuck` record each Scenario Guide click (`AgentScenarioTree`'s ReceiveEvent: its kind and values) and each map the client opens (`AgentMap.OpenMap`: type, map, territory), and `scenario_tree.issuers` gives where the client's own Quest and Level sheets put each guide quest's issuer (Bob, 2026-11-19: the guide's click for A Hero in Need opened no map). Published to ProtoPlugins-FFXIV. |
 | 2026-11-18 | `45996b7` | `drafts/duty-16/` remade over five runs (`questkit sources --duty 16`, Bob's 6320ae56 added): the Praetorium's three bosses and thirteen enemies. Captures 6320ae56 and 2852bd15 aren't attached to release `1` or in `facts/` and `notes/captures.json` yet. |
 | 2026-11-18 | `54062e2` | **Kawari Witness 0.1.1**, after its first run (Bob's two Cape Westwind runs, 86 facts): a fall's aftermath begins with the two seconds before it was noticed (`Watcher.Note`, `recent`); actions a director has an NPC use are known to its base (`tools/make_guesses.py`: the action scripts named as the timeline is, every `*Helper_*` for base 9020); the guesses the run settled are out (`westwind-loop`, `westwind-statuses`, `westwind-28870`, `control-1540`), category 20 is out of `control-30-31`, and `control-63` watches every territory; `guesses.json` remade (42 by hand, 9 timelines, 42 scripts); `README.md` (Versions). |
