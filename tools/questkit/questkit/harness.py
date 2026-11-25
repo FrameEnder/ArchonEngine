@@ -586,6 +586,18 @@ class Harness:
         outcome["finished"] = True  # leaving a duty isn't the quest's event
         return outcome
 
+    def leve_completed(self, leve: int, trace: list | None = None) -> dict:
+        """A levequest the player completed (its Leve row): the server calls `onLeveCompleted` (retail moved Leves of
+        Hawthorne, 221, to its last sequence in the packets that ended Bob's Leve 573, capture b9af1bb2)."""
+        self._new_state(None)
+        trace = trace if trace is not None else []
+        if self.lua.globals().onLeveCompleted is None:
+            raise HarnessError("the script has no onLeveCompleted for the completed leve")
+        first = self._call("onLeveCompleted", leve, self.player)
+        outcome = self._drive(first, {}, trace)
+        outcome["finished"] = True  # a leve isn't the quest's event
+        return outcome
+
     def battle_won(self, sequence: int) -> dict:
         """What a quest battle's director does when it's won: the quest moves to its sequence."""
         if self.world.battle is None:

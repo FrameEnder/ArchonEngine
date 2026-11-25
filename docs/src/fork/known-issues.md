@@ -121,6 +121,15 @@ with `facts.json` (278 facts); and nine minutes in Thanalan.
   before and 6 or 7 for that duty's lines under two of its three speakers. `battle_talk` can send it now; what the
   client draws for 6 and 7 isn't known, and the scripts written before pass 0, as retail did for their lines.
 
+## Levequests (2026-11-25)
+
+* Not built: the levemetes refuse everyone (`events/generic/Levemete.lua`), and there are no leve directors, so
+  nothing calls a quest's `onLeveCompleted` yet and Leves of Hawthorne (221) can't move past sequence 1. Bob's capture
+  b9af1bb2 has the whole of it on retail: the Hawthorne Hut's levemete (GuildLeveAssignment 25) giving Leve 573, the
+  leve (director 0x8001054e: NPCs answered with an emote, the progress in DirectorVars, its log messages and yells),
+  its completion, and Qina Lyehga's turn-in (GuildLeveAssignment 2, scene 5 with [1, 573]) between 221's scenes 3 and
+  4. Next after 221 and 1048.
+
 ## Quest battle 82, the Summoner's level 50 quest and Broadening Horizons (2026-11-17)
 
 * **Primal Burdens** (1096) is unplayed (it passes replay). Its ACTOR sides and objects that weren't used on retail

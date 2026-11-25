@@ -34,7 +34,8 @@ class QuestResult:
 
 
 def describe(step: dict) -> str:
-    for key in ("talk", "event_item", "emote", "action", "kill", "range", "enter_territory", "battle_won", "duty_cleared", "todo"):
+    for key in ("talk", "event_item", "emote", "action", "kill", "range", "enter_territory", "battle_won", "duty_cleared",
+                "leve_completed", "todo"):
         if key in step:
             value = step[key]
             what = f" ({step['what']})" if step.get("what") else ""
@@ -95,9 +96,11 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
                 outcome = harness.battle_won(step["battle_won"])
             elif "duty_cleared" in step:
                 outcome = harness.duty_cleared(step["duty_cleared"], trace)
+            elif "leve_completed" in step:
+                outcome = harness.leve_completed(step["leve_completed"], trace)
             else:
                 problems.append("a step needs one of talk, event_item, emote, action, kill, range, enter_territory, "
-                                "battle_won or duty_cleared")
+                                "battle_won, duty_cleared or leve_completed")
         except HarnessError as error:
             problems.append(str(error))
         except Exception as error:  # Lua errors

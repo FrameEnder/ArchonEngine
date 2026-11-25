@@ -1,0 +1,43 @@
+{
+  "quest": 221,
+  "script": "SubFst071_00221",
+  "source": "Bob's Chronofoil capture b9af1bb2 (2026-11-24)",
+  "from": {"sequence": 1, "vars": "000000000000"},
+  "params": {
+    "ACTOR0": 1000821,
+    "SEQ_0_ACTOR0_1": 0,
+    "SEQ_0_ACTOR0_2": 1,
+    "SEQ_0_ACTOR0_3": 2,
+    "SEQ_2_ACTOR1": 3,
+    "SEQ_3_ACTOR0": 4,
+    "UNLOCK_IMAGE_LEVE": 31,
+    "SEQ_1_ACTOR0": 5,
+    "LEVE": 573,
+    "GL_ASSIGNMENT": 393218
+  },
+  "steps": [
+    {
+      "talk": 1000821,
+      "layout": 1646078,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "notices": []}
+    },
+    {
+      "leve_completed": 573,
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1000821,
+      "layout": 1646078,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
