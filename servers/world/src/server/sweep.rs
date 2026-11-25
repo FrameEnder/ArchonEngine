@@ -203,6 +203,7 @@ impl Sweep {
             caster: at - self.direction_at(now) * self.radius,
             rotation: self.rotation_at(now),
             aimed_at: end,
+            follows: None,
             caster_radius: 0.0,
             until: self.arrives(),
         })

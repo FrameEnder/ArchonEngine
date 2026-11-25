@@ -1562,6 +1562,26 @@ class PraetoriumTest(FrameworkScriptTest):
         boss.on_wipe(self.director)
         self.assertIn([2000789], self.named("hide_eobj"))
 
+    def test_prototype_laser_beta_marks_each_of_the_party(self):
+        """Bob's mark of 2026-11-25: Prototype Laser Beta "should have 2 indicators a ground aoe, and an overhead
+        symbol". Retail, 5.9 s into 28471: the four helpers moved to the room's middle, each cast 28472 at one of the
+        party, and Lockon 96 went over each (ActorControl 34 from them; captures 9ba7d981, 50e72631, 6320ae56)."""
+        g = self.lua.globals()
+        g.D.fight = 1
+        boss = [b for b in g.D.bosses.values() if b.id == 1][0]
+        g.D.bringBoss(g.D, self.director, boss)
+        g.D.helpers = g.D.helpers_of[1]
+        self.at(198.0, 76.0, -12.0)
+        del self.calls[:]
+        boss.on_cast[28471](self.director)
+        for _ in range(13):
+            self.at(198.0, 76.0, -12.0)
+        uses = [args for args in self.named("actor_use_action") if args[1] == 28472]
+        self.assertEqual([args[2] for args in uses], [11])
+        self.assertIn([11, 34, {1: 96, 2: 11}], [[a[0], a[1], dict(a[2].items())] for a in self.named("actor_control")])
+        warps = [args for args in self.named("warp_bnpc") if args[0] == uses[0][0]]
+        self.assertEqual([round(v, 2) for v in warps[-1][1:4]], [192.0, 76.0, 0.18])
+
     def test_each_boss_has_its_floor(self):
         """Bob's mark of 2026-11-25: with no floor the bots ran out through the first boss's walls from his 28474 (on
         everyone). Each boss's floor holds where retail's party stood (its five runs' extremes) and not where Kawari's

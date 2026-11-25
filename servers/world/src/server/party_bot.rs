@@ -4084,8 +4084,6 @@ fn update_party(
     let mut lines: Vec<(ObjectId, u32)> = Vec::new();
     // Enemies' area attacks being cast: everyone in one gets out of it (`dodge.rs`.)
     let dangers: Vec<Danger> = dodge::dangers(instance, &mut game_data.lock(), now);
-    // The waves of them it tries to be out of, all first, then the soonest ones (`dodge::in_turn`.)
-    let in_turn = dodge::in_turn(&dangers);
     // A boss room's floor while its boss is fought: no spot off it counts (`dodge::arena`.)
     let arena = dodge::arena(instance);
     let mut dodges: Vec<(ObjectId, Option<dodge::Dodge>)> = Vec::new();
@@ -4162,7 +4160,16 @@ fn update_party(
         // nowhere out of all of them, out of the ones going off soonest (waiting where it is if it's already out of
         // those), and on to the next once they have; never off a boss room's floor.
         let here = spawn.common.position.0;
-        let threats: Vec<&Danger> = dangers
+        // A circle that follows it (`Danger::follows`) it can't get out of: it keeps out of the others' (Prototype
+        // Laser Beta's, one on each of the party: they spread out), and theirs keep out of its.
+        let theirs: Vec<Danger> = dangers
+            .iter()
+            .filter(|danger| danger.follows != Some(*bot_id))
+            .copied()
+            .collect();
+        // The waves of them it tries to be out of, all first, then the soonest ones (`dodge::in_turn`.)
+        let in_turn = dodge::in_turn(&theirs);
+        let threats: Vec<&Danger> = theirs
             .iter()
             .filter(|danger| danger.catches(here, DODGE_MARGIN))
             .collect();

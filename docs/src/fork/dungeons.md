@@ -50,7 +50,8 @@ gives its duty's facts:
 | `group` (a boss's) | Several that are the boss together: a room for each at setup, pulled with any, fallen with the last (`on_death` gets that one and where it fell); `layout` is the first (Haukke Manor's pair.) |
 | `pulled_by` (a boss's) | Layouts whose being after someone pulls the boss too (Brayflox's first boss's adds), even before the boss is out (the Tam-Tara Deepcroft's packs, whose fall calls their room's boss); after a wipe not till they're after nobody. |
 | `fell(director, boss)` | A boss's fight over without its death (one held at 1 HP: the Praetorium's last; Sastasha's captains running off), once, and it isn't pulled again; `died` calls it. What was due by updates (`after`) goes; what's due on the clock (`inSeconds`) runs on (a wipe takes both.) |
-| `helpersOnEach(director, action, y)` | A helper's cast on each of the party, aimed at them. |
+| `helpersOnEach(director, action, y, opts)` | A helper's cast on each of the party, aimed at them (a circle round them follows them till it goes off: `npc_behavior::area_centre`). `opts.lockon`: a Lockon row over each as the casts begin (`lockon`); `opts.at` = { x, z }: where the helpers stand instead of on each (2026-11-25: the Praetorium's 28472 and 28492, from the room's middle with Lockon 96). |
+| `lockon(director, id, row)` | (2026-11-25) Lockon row `row` over actor `id` (ActorControl 34 [row, id] from them, `director:actor_control`), as retail marks whom an attack is coming for. |
 | `holdTimeline(director, seconds)` | The boss being fought holds its timeline that long (`director:hold_timeline`): its next attack waits until its helpers' attacks from this one have landed, while it auto-attacks as ever. Each of the Magitek Vanguard F-1's attacks (2026-11-22). |
 | `inSeconds(seconds, fn, keep)` | The duty's clock in seconds (`D.clock`, half a second an update): fn(director, health, info) once it's that far on, at the update's start (`after` counts updates and runs at its end); for a duty that keeps its own clock (the Stone Vigil's.) A wipe takes what's due unless `keep` (the Copperbell Mines' rock coming down 10 s after its blast); `dropTimed()` takes it all (the Howling Eye's Garuda falling: none of her plumes after her.) |
 | `schedule(director, rows, still, run)` | A clock table's rows ({ seconds, ... }) at their times, each `run(director, row)` if `still()` holds then: a fight that keeps to one clock from its pull (the Porta Decumana's.) |
@@ -1875,6 +1876,21 @@ the pull. Now it's opened at setup with the walls (`BOSS1_BEHIND`), closed at th
 retail's in Bob's run (2012 at 1201.0 s, 2013 at 1216.5 s). The second boss's room has only its wall (2013, 15 s after
 2012), the last boss's no EObj. Test `PraetoriumTest.test_the_first_boss_s_room_is_open_until_his_pull`. Untested in
 game.
+
+**Prototype Laser Beta** (28471, Bob's mark of 2026-11-25: "it should have 2 indicators a ground aoe, and an overhead
+symbol ... aoe markers on every player that follows the players making it unavoidable ... players who intersect with
+another players position with the marker both get stacked damage"; the wiki: "Circle AoEs will be placed on every
+player, requiring them to spread out"). Retail, 5.9 s into the boss's 28471 every time (captures 9ba7d981, 50e72631,
+6320ae56): the four helpers were set at the room's middle (192.0, 76.0, 0.18), each began a 4.7 s 28472 naming one of
+the party, and in the same batch ActorControl 34 [96, member] from each member (Lockon 96: the marker over them and the
+ring under them); 5.0 s on each 28472 hit its member (one target each: none stood together). The last boss's 28492
+the same, from (-562.0, -268.0, 220.0), Lockon 96. Kawari sent the casts but no Lockon, from helpers put on each
+member, and landed each circle where its member stood as it began. Now `helpersOnEach` with `lockon` and `at`
+(`ON_EACH_BOSS1`, `ON_EACH_BOSS3`), each circle follows its member till it goes off and catches everyone in it there
+(two overlapping: two hits), and the bots keep out of each other's ([Party bots](party-bots.md)). The circle's size
+is the Action sheet's. Tests `PraetoriumTest.test_prototype_laser_beta_marks_each_of_the_party`,
+`a_circle_round_someone_follows_them`. Untested in game: whether the ring under the player is Lockon 96's or the
+cast's own marker isn't known here.
 
 ## The Jade Stoa
 

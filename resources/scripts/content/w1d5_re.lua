@@ -152,6 +152,13 @@ SPOTS_28470 = {
     { { -10.4, -6.0 }, { -6.0, 10.3 }, { 6.0, -10.4 }, { 10.4, 6.0 } },
 }
 AFTER_28471 = 5.9
+-- 28472 (Prototype Laser Beta) and the last boss's 28492: each helper casts from the room's middle at one of the
+-- party, a circle that follows them, with Lockon 96 over them as it begins (captures 9ba7d981, 50e72631 and 6320ae56:
+-- all four helpers moved to the middle first, every time: (192.0, 0.18) and (-562.0, 220.0)). Bob's mark of
+-- 2026-11-25: "it should have 2 indicators a ground aoe, and an overhead symbol".
+LOCKON_SPREAD = 96
+ON_EACH_BOSS1 = { lockon = LOCKON_SPREAD, at = { x = 192.0, z = 0.18 } }
+ON_EACH_BOSS3 = { lockon = LOCKON_SPREAD, at = { x = -562.0, z = 220.0 } }
 
 BOSS2 = 9054847
 BOSS2_WALL = 2000822
@@ -546,7 +553,7 @@ D:boss({ id = 1, layout = BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = P
         [28471] = function(director)
             D:after(AFTER_28471, function(d)
                 if D.fight == 1 then
-                    D:helpersOnEach(d, 28472, BOSS1_MIDDLE.y)
+                    D:helpersOnEach(d, 28472, BOSS1_MIDDLE.y, ON_EACH_BOSS1)
                 end
             end)
         end,
@@ -870,7 +877,7 @@ function secondPart(director)
         if phantomsUse(d, 28491, 2.7, false) then
             D:after(AFTER_28491, function(d2)
                 if D.fight == 3 then
-                    D:helpersOnEach(d2, 28492, BOSS3_MIDDLE.y)
+                    D:helpersOnEach(d2, 28492, BOSS3_MIDDLE.y, ON_EACH_BOSS3)
                 end
             end)
         end
@@ -1036,7 +1043,7 @@ D:boss({ id = 3, layout = BOSS3, middle = BOSS3_MIDDLE, arena = BOSS3_FLOOR,
         elseif action_id == 28491 then
             D:after(AFTER_28491, function(d)
                 if D.fight == 3 then
-                    D:helpersOnEach(d, 28492, BOSS3_MIDDLE.y)
+                    D:helpersOnEach(d, 28492, BOSS3_MIDDLE.y, ON_EACH_BOSS3)
                 end
             end)
         end

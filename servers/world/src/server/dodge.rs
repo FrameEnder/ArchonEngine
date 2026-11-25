@@ -53,8 +53,11 @@ pub struct Danger {
     pub caster: Vec3A,
     /// Which way the caster faced as it started.
     pub rotation: f32,
-    /// Where it was aimed (its target's position then.)
+    /// Where it was aimed (its target's position then; where they are now, for a circle that follows them.)
     pub aimed_at: Vec3A,
+    /// Whom it follows (`npc_behavior::cast_follows`): a circle round one of the party goes where they go, so they
+    /// can't get out of it; the rest keep out of it (Prototype Laser Beta's, on each of them: spread out.)
+    pub follows: Option<ObjectId>,
     pub caster_radius: f32,
     /// When it goes off.
     pub until: Instant,
@@ -199,13 +202,23 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
             {
                 let info = game_data.get_action_info(cast.action_id)?;
                 let shape = info.area_shape()?;
+                // A circle round someone follows them (`npc_behavior::area_centre`.)
+                let follows = crate::server::npc_behavior::cast_follows(
+                    cast,
+                    *id,
+                    shape,
+                    Some(info.cast_type),
+                );
                 Some(Danger {
                     action_id: cast.action_id,
                     shape,
                     caster_id: *id,
                     caster: spawn.common.position.0,
                     rotation: cast.rotation,
-                    aimed_at: cast.target_position,
+                    aimed_at: follows
+                        .and_then(|who| instance.find_actor(who))
+                        .map_or(cast.target_position, |who| who.position().0),
+                    follows,
                     caster_radius: info.area_hitbox(timeline.hitbox_radius),
                     until: cast.until,
                 })
@@ -645,6 +658,7 @@ mod tests {
             caster: Vec3A::ZERO,
             rotation: 0.0, // facing +z
             aimed_at: Vec3A::new(0.0, 0.0, 10.0),
+            follows: None,
             caster_radius: 1.0,
             until: Instant::now() + Duration::from_secs(4),
         }
@@ -847,6 +861,7 @@ mod tests {
             Danger {
                 caster,
                 aimed_at: caster,
+                follows: None,
                 caster_radius: 0.5,
                 until: now + Duration::from_secs_f32(after),
                 ..danger(AreaShape::Circle {
@@ -1091,6 +1106,7 @@ mod tests {
         // A Sheet of Ice on the healer's spot: it dodges by the circle instead.
         let sheet = Danger {
             aimed_at: Vec3A::new(0.0, 0.0, -229.0),
+            follows: None,
             ..danger(AreaShape::Circle {
                 radius: 5.0,
                 on_target: true,

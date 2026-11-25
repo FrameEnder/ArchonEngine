@@ -492,13 +492,31 @@ function Dungeon:helpersCast(director, action, spots, y)
 end
 
 -- A helper's cast on each of the party, from where they stand (aimed at them.)
-function Dungeon:helpersOnEach(director, action, y)
+-- `opts` (all optional): `lockon` = a Lockon row put over each of them as the casts begin (ActorControl 34 from
+-- them, as retail sends it), `at` = { x, z } where the helpers stand instead (retail's Praetorium helpers cast 28472
+-- and 28492 from the room's middle, each named one of the party: a circle round them that follows them, with Lockon
+-- 96 over them; captures 9ba7d981, 50e72631 and 6320ae56.)
+function Dungeon:helpersOnEach(director, action, y, opts)
+    opts = opts or {}
     for _, member in ipairs(self.party) do
-        local helper = self:helperAt(director, member.x, y, member.z)
+        local x, z = member.x, member.z
+        if opts.at then
+            x, z = opts.at.x, opts.at.z
+        end
+        local helper = self:helperAt(director, x, y, z)
         if helper ~= nil then
             director:actor_use_action(helper, action, member.id)
+            if opts.lockon then
+                self:lockon(director, member.id, opts.lockon)
+            end
         end
     end
+end
+
+-- A lock-on marker (Lockon row `row`) over actor `id`, as retail puts one over whom an attack is coming for:
+-- ActorControl 34 [row, id] from them (the Praetorium's spread circles: 96.)
+function Dungeon:lockon(director, id, row)
+    director:actor_control(id, 34, { row, id })
 end
 
 -- Its room comes as the boss does: the wall open, the line shown, its helpers held, its NPCs kept to it.

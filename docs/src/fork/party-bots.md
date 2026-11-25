@@ -634,6 +634,11 @@ the floor it braces. The Praetorium's three bosses have floors from where retail
 (`w1d5_re.lua`'s `BOSS1_FLOOR`, `BOSS2_FLOOR`, `BOSS3_FLOOR`; test `PraetoriumTest.test_each_boss_has_its_floor`).
 `dodge_way` has no test of its own (no navmesh in the tests); untested in game.
 
+(2026-11-25, Prototype Laser Beta.) A circle that follows one of the party (`Danger::follows`: a cast naming them, a
+circle round them) can't be got out of by them, so a bot leaves its own out of what it dodges, and keeps out of the
+others': with one on each of the party, they spread out, and nobody takes two (Bob's mark: "players who intersect with
+another players position with the marker both get stacked damage"). Untested in game.
+
 Bob, 2026-11-10: "have the NPCs act more freely rather than snapping onto the leader until after the death of the
 boss, have them stand in their spots, and move accordingly as needed to stay close to where they need to be."
 

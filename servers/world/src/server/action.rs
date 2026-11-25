@@ -1256,8 +1256,18 @@ pub fn execute_action(
                 is_hostile_effect(effect, other_side) || (!other_side && is_heal_on_target(effect))
             })
         {
+            // A circle round whom it names follows them till it goes off (`npc_behavior::area_centre`.)
             let (rotation, aimed_at) = match own_cast(cast, request.action_id) {
-                Some(cast) => (cast.rotation, cast.target_position),
+                Some(cast) => (
+                    cast.rotation,
+                    crate::server::npc_behavior::area_centre(
+                        cast,
+                        from_actor_id,
+                        shape,
+                        action_info.map(|info| info.cast_type),
+                        |id| instance.find_actor(id).map(|actor| actor.position().0),
+                    ),
+                ),
                 None => (request.rotation1, target.position().0),
             };
             let caught = |position: Vec3A| {

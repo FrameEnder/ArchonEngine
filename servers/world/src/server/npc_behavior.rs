@@ -2097,6 +2097,7 @@ pub fn npc_behavior(
                                 target_position: at,
                                 rotation: spawn.common.rotation,
                                 action_id,
+                                target: on,
                             });
                             new_action_requests.push((*id, request, cast_time_seconds));
                             used_timeline = true;
@@ -2156,6 +2157,7 @@ pub fn npc_behavior(
                                         .unwrap_or(spawn.common.position.0),
                                     rotation: spawn.common.rotation,
                                     action_id: *action_id,
+                                    target: spawn.common.target_id.object_id,
                                 });
                                 new_action_requests.push((*id, request, cast_time_seconds));
                             }
@@ -2286,6 +2288,7 @@ pub fn npc_behavior(
                                 .unwrap_or(spawn.common.position.0),
                             rotation: spawn.common.rotation,
                             action_id,
+                            target,
                         });
                         let request = ActionRequest {
                             action_id,
@@ -2344,6 +2347,7 @@ pub fn npc_behavior(
                         .unwrap_or(spawn.common.position.0),
                     rotation: spawn.common.rotation,
                     action_id: timeline.autoattack_action_id,
+                    target: spawn.common.target_id.object_id,
                 });
                 new_action_requests.push((*id, request, cast_time_seconds));
             }
@@ -3072,6 +3076,53 @@ mod wall_tests {
         assert!(in_sight(None, here, Vec3A::new(4.0, 0.0, 0.0)));
     }
 
+    /// Bob's mark of 2026-11-25 (Prototype Laser Beta): a circle round one of the party follows them till it goes off;
+    /// placed on the ground, round the caster, or another shape, it stays where it was aimed.
+    #[test]
+    fn a_circle_round_someone_follows_them() {
+        use crate::gamedata::AreaShape;
+        let helper = ObjectId(1);
+        let player = ObjectId(2);
+        let cast = NpcCast {
+            until: Instant::now(),
+            length: Duration::from_secs_f32(4.7),
+            target_position: Vec3A::new(190.0, 76.0, -3.0),
+            rotation: 0.0,
+            action_id: 28472,
+            target: player,
+        };
+        let circle = AreaShape::Circle {
+            radius: 5.0,
+            on_target: true,
+        };
+        let now = Vec3A::new(198.0, 76.0, -12.0);
+        let position_of = |id: ObjectId| (id == player).then_some(now);
+        assert_eq!(cast_follows(&cast, helper, circle, Some(2)), Some(player));
+        assert_eq!(area_centre(&cast, helper, circle, Some(2), position_of), now);
+        // Placed on the ground (CastType 7): where it was aimed.
+        assert_eq!(cast_follows(&cast, helper, circle, Some(7)), None);
+        assert_eq!(
+            area_centre(&cast, helper, circle, Some(7), position_of),
+            cast.target_position
+        );
+        // Round the caster itself, or a cone: where it was aimed.
+        let on_itself = NpcCast {
+            target: helper,
+            ..cast
+        };
+        assert_eq!(cast_follows(&on_itself, helper, circle, Some(2)), None);
+        let cone = AreaShape::Cone {
+            radius: 25.0,
+            angle: 90.0,
+        };
+        assert_eq!(cast_follows(&cast, helper, cone, Some(2)), None);
+        // Gone (no position): where it was aimed.
+        assert_eq!(
+            area_centre(&cast, helper, circle, Some(2), |_| None),
+            cast.target_position
+        );
+    }
+
     /// Bob's mark of 2026-11-24 in the Praetorium, "Orra Fenra never cleared the exit of the walkway and is now
     /// broken": the tank bot outside the walkway and an enemy inside went at each other through the wall between
     /// them for two minutes, the navmesh having no way between and their paths going straight on from where it
@@ -3269,6 +3320,53 @@ pub fn cast_aim(aim: CastAim, target: ObjectId, aimed_at: Vec3A) -> (ObjectId, P
     )
 }
 
+/// Where an NPC's area attack is centred: a circle (or ring) round whom its cast names follows them, wherever they go
+/// until it goes off, as the client draws it (its ActorCast names them); anything else is where it was aimed as the
+/// cast began (`NpcCast::target_position`). Retail's Praetorium first boss's helpers' 28472 (Prototype Laser Beta,
+/// "Circle AoEs will be placed on every player, requiring them to spread out") named each of the party (captures
+/// 9ba7d981, 50e72631, 6320ae56), and Bob saw retail's follow the players (his mark of 2026-11-25: "aoe markers on
+/// every player that follows the players making it unavoidable ... players who intersect with another players position
+/// with the marker both get stacked damage"). Kawari's stayed where each player stood as it began.
+pub fn area_centre(
+    cast: &NpcCast,
+    caster: ObjectId,
+    shape: crate::gamedata::AreaShape,
+    cast_type: Option<u8>,
+    position_of: impl Fn(ObjectId) -> Option<Vec3A>,
+) -> Vec3A {
+    cast_follows(cast, caster, shape, cast_type)
+        .and_then(position_of)
+        .unwrap_or(cast.target_position)
+}
+
+/// Whom `cast`'s area follows (`area_centre`): the one it names, for a circle or ring round them that isn't placed on
+/// the ground or round the caster.
+pub fn cast_follows(
+    cast: &NpcCast,
+    caster: ObjectId,
+    shape: crate::gamedata::AreaShape,
+    cast_type: Option<u8>,
+) -> Option<ObjectId> {
+    use crate::gamedata::AreaShape;
+    let round_someone = matches!(
+        shape,
+        AreaShape::Circle {
+            on_target: true,
+            ..
+        } | AreaShape::Donut {
+            on_target: true,
+            ..
+        }
+    );
+    (round_someone
+        && cast.target != caster
+        && cast.target != ObjectId::default()
+        && cast.target.is_valid()
+        && retail_cast_aim(cast.action_id, cast_type) == CastAim::Target
+        && !retail_ground_at_caster(cast.action_id))
+    .then_some(cast.target)
+}
+
 /// What an NPC's cast names (`cast_aim`): its target, itself, or no one (an area placed on the ground.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CastAim {
@@ -3417,6 +3515,7 @@ pub fn npc_use_action(
             target_position,
             rotation,
             action_id,
+            target: target_id,
         });
     }
 

@@ -87,6 +87,8 @@ pub struct NpcCast {
     pub rotation: f32,
     /// What it's casting (party bots get out of enemies' area attacks: `dodge.rs`.)
     pub action_id: u32,
+    /// Whom it names (its ActorCast's target): a circle drawn round someone follows them (`npc_behavior::area_centre`.)
+    pub target: ObjectId,
 }
 
 #[derive(Debug, Clone)]
