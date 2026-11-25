@@ -1863,6 +1863,19 @@ party stood from each boss's first action to its fall in the five runs: the firs
 way along the navmesh ([Party bots](party-bots.md)). Test `PraetoriumTest.test_each_boss_has_its_floor`. Untested in
 game.
 
+**The first boss's room open until his pull** (Bob, 2026-11-25: "the chamber seal for the arena ... initiates 15 seconds
+after aggro is pulled on the boss of the arena ... when I got back from the cutscene the arena chamber seal was active
+when it shouldn't have been"). Retail in four runs (captures 9ba7d981 twice, 50e72631, 6320ae56): cutscene 280 ends,
+the boss is pulled 2.3 to 3.3 s later (the three with the cutscene's end), and in the same packet batch log 2012 ("sealed in 15 seconds") and
+ActorControl 106 [0] on EObj 2000789 (closing it); 15.0 s later log 2013 and 106 [0] on the wall 2000828; at his fall
+log 2014 and 106 [7] on 2000828, the line 2000829 and 2000876. 2000789 and 2000828 were spawned open (event state 7).
+Kawari spawned 2000789 closed and never opened it, so the room was sealed from the start; it showed it a second after
+the pull. Now it's opened at setup with the walls (`BOSS1_BEHIND`), closed at the pull, and opened again after a wipe
+(no retail run wiped there). The server's own seal (2012 at the pull, the wall and 2013 15 s later) was already
+retail's in Bob's run (2012 at 1201.0 s, 2013 at 1216.5 s). The second boss's room has only its wall (2013, 15 s after
+2012), the last boss's no EObj. Test `PraetoriumTest.test_the_first_boss_s_room_is_open_until_his_pull`. Untested in
+game.
+
 ## The Jade Stoa
 
 ContentFinderCondition 290, territory 746, InstanceContent 20051 (director 0x80034E53), level 70. From Bob's Chronofoil

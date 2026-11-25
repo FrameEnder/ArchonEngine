@@ -1543,6 +1543,25 @@ class PraetoriumTest(FrameworkScriptTest):
         controls = [args for args in self.named("bnpc_control") if args[0] == self.CID]
         self.assertEqual([(args[1], list(args[2].values())) for args in controls], [(63, [48])])
 
+    def test_the_first_boss_s_room_is_open_until_his_pull(self):
+        """Bob, 2026-11-25: "when I got back from the cutscene the arena chamber seal was active when it shouldn't have
+        been". Retail spawned 2000789 and the wall 2000828 open (event state 7); 2000789 closed at the pull (with log
+        2012), the wall 15 s later (2013, the server's) and both opened as he fell (captures 9ba7d981, 50e72631,
+        6320ae56)."""
+        hidden = [args[0] for args in self.named("hide_eobj")]
+        for eobj in (2000789, 2000828):
+            self.assertIn(eobj, hidden)
+        self.assertNotIn([2000789], self.named("show_eobj"))
+        g = self.lua.globals()
+        boss = [b for b in g.D.bosses.values() if b.id == 1][0]
+        del self.calls[:]
+        boss.on_pull(self.director)
+        self.assertIn([2000789], self.named("show_eobj"))
+        self.assertNotIn([2000828], self.named("show_eobj"))
+        del self.calls[:]
+        boss.on_wipe(self.director)
+        self.assertIn([2000789], self.named("hide_eobj"))
+
     def test_each_boss_has_its_floor(self):
         """Bob's mark of 2026-11-25: with no floor the bots ran out through the first boss's walls from his 28474 (on
         everyone). Each boss's floor holds where retail's party stood (its five runs' extremes) and not where Kawari's

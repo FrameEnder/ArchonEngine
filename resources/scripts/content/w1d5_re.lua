@@ -118,7 +118,10 @@ WHERE_BOSS2_X = -130.0 -- objective 2 and cutscene 283
 BOSS1 = 9054638
 BOSS1_WALL = 2000828
 BOSS1_LINE = 2000829
-BOSS1_BEHIND = 2000789 -- shown a second after its pull
+-- Open (event state 7) from the start, closed as the first boss is pulled, with log 2012; the wall closes 15 s later
+-- with 2013 (captures 9ba7d981 twice, 50e72631 and 6320ae56). Kawari spawned it closed, so the room was sealed when Bob
+-- came back from cutscene 280 (2026-11-25: "the arena chamber seal was active when it shouldn't have been").
+BOSS1_BEHIND = 2000789
 BOSS1_AHEAD = 2000876 -- gone as it falls
 PLACE_BOSS1 = 451
 BOSS1_MIDDLE = { x = 192.0, y = 76.0, z = 0.2 }
@@ -507,11 +510,7 @@ D:boss({ id = 1, layout = BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = P
         crosses = 0
         line(director, LINE_BOSS1)
         director:aim_action(BOSS1, BOSS1_LEAP, BOSS1_MIDDLE.x, BOSS1_MIDDLE.y, BOSS1_MIDDLE.z)
-        D:after(1.0, function(d)
-            if D.fight == 1 then
-                d:show_eobj(BOSS1_BEHIND)
-            end
-        end)
+        director:show_eobj(BOSS1_BEHIND)
         local function away(at)
             D:after(at + AWAY_FOR, function(d)
                 if D.fight == 1 then
@@ -552,6 +551,10 @@ D:boss({ id = 1, layout = BOSS1, wall = BOSS1_WALL, line = BOSS1_LINE, place = P
             end)
         end,
     },
+    -- Open again with the room after a wipe (none of the five runs wiped here: as the wall, `reopen_rooms_after_wipe`.)
+    on_wipe = function(d)
+        d:hide_eobj(BOSS1_BEHIND)
+    end,
     on_death = function(d)
         d:objective(1, 2)
         d:hide_eobj(BOSS1_AHEAD)
@@ -1075,7 +1078,8 @@ function onSetup(director)
     -- the start and closed them (ActorControl 106 [0]) 15 s into each fight (captures 6320ae56 and af05916c). Kawari
     -- spawned them closed, so the first boss's room was sealed before anyone came (Bob's marks of 2026-11-24: "the
     -- arena that lead to the cutscene was blocked before entering", "the dungeon is literally impossible to play").
-    for _, wall in ipairs({ BOSS1_WALL, BOSS2_WALL }) do
+    -- The first boss's 2000789 too: open (7) at the start, closed at his pull (`BOSS1_BEHIND`.)
+    for _, wall in ipairs({ BOSS1_WALL, BOSS2_WALL, BOSS1_BEHIND }) do
         director:hide_eobj(wall)
     end
     D:setup(director)
