@@ -184,6 +184,8 @@ impl ZoneConnection {
             self.update_online_status().await;
             return;
         }
+        self.send_own_status_icon(OnlineStatus::UsingAChocoboPorter)
+            .await;
         let mut mask = self.get_online_status_mask();
         mask.set_status(OnlineStatus::UsingAChocoboPorter);
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::SetOnlineStatus(mask));

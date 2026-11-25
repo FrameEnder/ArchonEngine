@@ -376,8 +376,18 @@ impl ZoneConnection {
         OnlineStatus::Offline
     }
 
+    /// The player's own SetStatusIcon (504), before their SetOnlineStatus, as retail's came: an ActorControl from them
+    /// (`party::own_status_icon`); everyone around hears it from the server (`ToServer::SetOnlineStatus`.)
+    pub async fn send_own_status_icon(&mut self, icon: OnlineStatus) {
+        let actor_id = self.player_data.character.actor_id;
+        let ipc = ServerZoneIpcSegment::new(crate::server::own_status_icon(icon));
+        self.send_ipc_from(actor_id, ipc).await;
+    }
+
     /// Updates the online status not just on yourself but also informing other players.
     pub async fn update_online_status(&mut self) {
+        self.send_own_status_icon(self.get_actual_online_status())
+            .await;
         let online_status_mask = self.get_online_status_mask();
 
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::SetOnlineStatus(online_status_mask));

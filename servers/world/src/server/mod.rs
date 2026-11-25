@@ -112,6 +112,7 @@ pub(crate) use director::QUEST_BATTLE_ECHO_HP;
 pub use paralysis::STATUS_PARALYSIS;
 use paralysis::paralysis_tick;
 pub use party::{Party, PartyMember};
+pub(crate) use party::{own_cutscene_state, own_status_icon};
 pub use party_bot::BOT_LEVEL;
 pub use party_npc::chosen_members;
 use periodic::periodic_tick;
@@ -4279,7 +4280,8 @@ pub async fn server_main_loop(
                 ToServer::SetOnlineStatus(from_actor_id, online_status) => {
                     let mut network = network.lock();
                     let data = data.lock();
-                    network.send_ac_in_range_inclusive(
+                    // Their own came from their connection (`ZoneConnection::send_own_status_icon`.)
+                    network.send_ac_in_range(
                         &data,
                         from_actor_id,
                         ActorControlCategory::SetStatusIcon {

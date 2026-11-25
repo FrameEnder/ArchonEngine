@@ -24,7 +24,7 @@ use crate::{
         director::{duty_flags_due, engage_npc, ready_to_begin, waits_for_its_opening, won},
         modifiers,
         npc_behavior::{CastAim, cast_aim, out_of_the_fight, retail_cast_aim, unnoticed},
-        party::tell_cutscene_state,
+        party::{own_cutscene_state, own_status_icon, tell_cutscene_state},
         party_bot,
         test_world::{TestWorld, control_from, packet_from},
     },
@@ -767,25 +767,64 @@ fn a_quest_battle_waits_for_its_opening() {
 
 /// Bob, on the known issues: "if something doesn't exist implement it". Retail tells a player's party that they're
 /// watching a cutscene, and when they've finished (ActorControl 519 `[them, 3]`, then `[them, 1]`, from them; the Howling
-/// Eye's party, Bob's Chronofoil capture 09ecf8e7), or the player alone with ActorControlSelf (71045ef2, 41 cutscenes.)
+/// Eye's party, Bob's Chronofoil capture 09ecf8e7.) The player's own comes from their connection
+/// (`own_cutscene_state`), so the server sends a player alone nothing.
 #[test]
 fn a_player_s_cutscene_is_told() {
     let mut world = TestWorld::new();
     let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
     tell_cutscene_state(&mut world.network.lock(), player, true);
     tell_cutscene_state(&mut world.network.lock(), player, false);
-    let states: Vec<u32> = world
-        .sent(player)
-        .iter()
-        .filter_map(|message| match message {
-            FromServer::ActorControlSelf(ActorControlCategory::SetPartyMemberCutsceneFlags {
-                actor_id,
-                unk2,
-            }) if *actor_id == player => Some(*unk2),
-            _ => None,
-        })
-        .collect();
-    assert_eq!(states, vec![3, 1]);
+    assert!(!world.sent(player).iter().any(|message| matches!(
+        message,
+        FromServer::ActorControlSelf(ActorControlCategory::SetPartyMemberCutsceneFlags { .. })
+            | FromServer::ActorControl(_, ActorControlCategory::SetPartyMemberCutsceneFlags { .. })
+    )));
+}
+
+/// Bob, on Gaius standing in the Praetorium after his cutscene: Kawari Witness showed retail's client hiding the
+/// cutscene's ENpcs (render flags 0x2000800) as each cutscene began, and Kawari's never did. Retail's player heard their
+/// 519 and 504 as ActorControls from themselves before the EventScene (Bob's Chronofoil capture 35e30205, in a party);
+/// Kawari sent them as ActorControlSelf after it. Alone, retail's 519 was ActorControlSelf (71045ef2); its 504 never was
+/// (none in 123 captures.)
+#[test]
+fn a_player_s_own_cutscene_controls_are_retail_s() {
+    use kawari::ipc::zone::{OnlineStatus, ServerZoneIpcData};
+    let player = ObjectId(0x1234);
+    let flags = |data: &ServerZoneIpcData| match data {
+        ServerZoneIpcData::ActorControl(control) => (false, control.category.clone()),
+        ServerZoneIpcData::ActorControlSelf(control) => (true, control.category.clone()),
+        other => panic!("{other:?}"),
+    };
+    let start = ActorControlCategory::SetPartyMemberCutsceneFlags {
+        actor_id: player,
+        unk2: 3,
+    };
+    let end = ActorControlCategory::SetPartyMemberCutsceneFlags {
+        actor_id: player,
+        unk2: 1,
+    };
+    assert_eq!(
+        flags(&own_cutscene_state(player, true, true)),
+        (false, start.clone())
+    );
+    assert_eq!(
+        flags(&own_cutscene_state(player, true, false)),
+        (false, end)
+    );
+    assert_eq!(
+        flags(&own_cutscene_state(player, false, true)),
+        (true, start)
+    );
+    assert_eq!(
+        flags(&own_status_icon(OnlineStatus::ViewingCutscene)),
+        (
+            false,
+            ActorControlCategory::SetStatusIcon {
+                icon: OnlineStatus::ViewingCutscene
+            }
+        )
+    );
 }
 
 /// Bob, on the known issues: a key item thrown on the ground (Rock of Rancor's firesand) had its cast bar without

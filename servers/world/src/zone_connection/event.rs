@@ -76,6 +76,12 @@ impl ZoneConnection {
                 .remove_condition(Condition::OccupiedInCutSceneEvent);
         }
         self.send_conditions().await;
+        // Their own 519 now, before the EventScene, as retail's came (`party::own_cutscene_state`); the party's from
+        // the server.
+        let actor_id = self.player_data.character.actor_id;
+        let own = crate::server::own_cutscene_state(actor_id, self.party_id != 0, watching);
+        self.send_ipc_from(actor_id, ServerZoneIpcSegment::new(own))
+            .await;
         self.handle
             .send(ToServer::CutsceneState(
                 self.player_data.character.actor_id,

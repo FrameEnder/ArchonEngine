@@ -40,10 +40,11 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   differences found were the cutscene's condition (8 on retail, 7 on Kawari; changing it didn't hide him), the duty's
   opening map effects (retail's since `8ef1b0fc1`; didn't either) and the director's variables coming before the client
   had loaded (held back now, untested). His ENpcBase row and his layer hide nothing (read through the harness); left
-  are the order of the spawns (retail's event NPCs before the player's own SpawnPlayer) and ZoneInit's game festivals. If he still shows, what the client goes by (ENpcBase's Invisibility, the
-  layout's layer) needs the game's data to look at. Kawari Witness 0.2.0's `praetorium-gaius-shown` writes down what the
-  client does with him (render flags, draw object, targetable) as it does it: a run on retail and one on the fork, to
-  just past cutscene 280, compared, should say which flag retail's client sets and when.
+  are the order of the spawns (retail's event NPCs before the player's own SpawnPlayer) and ZoneInit's game festivals.
+  Kawari Witness (retail and fork runs, `dungeons.md`): retail's client hides him itself at each cutscene's start
+  (render flags 0x2000800) and removes him at cutscene 280's end; the fork's never does. The player's own 519 and 504
+  now go as retail's, before the EventScene (untested in game); if he still shows, the spawn order and the festivals
+  are what's left.
 * **The Praetorium's armour's Photon Stream (1129) does nothing**: none of Bob's three retail runs read (50e72631,
   6320ae56, 9ba7d981) used it, so what it hits and for how much isn't known. A capture of retail using it is needed.
 * Untested in game: the blasted walls coming down (2, 3, 4, 5) and walkers stepping round a wall's end (Bob's marks on

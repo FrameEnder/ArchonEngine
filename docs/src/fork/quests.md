@@ -346,7 +346,11 @@ scene after it), the same with `1`, their usual icon and the bit and condition g
 every member, themselves too; alone, it's ActorControlSelf. A cutscene after a cutscene changes nothing. Kawari didn't
 send any of it until 2026-11-11 (Bob, on the known issues: "if something doesn't exist implement it"); it does now
 (`ZoneConnection::set_watching_cutscene` from `event_scene` and `event_finish`, `party::tell_cutscene_state`, the mask
-in `get_online_status_mask`). Test `a_player_s_cutscene_is_told`.
+in `get_online_status_mask`). Test `a_player_s_cutscene_is_told`. The player's own 519 and 504 came from the server, as
+ActorControlSelf, after the EventScene until 2026-11-25; retail's order is the conditions, 519, 504, SetOnlineStatus,
+then the scene (35e30205), and its 504 is always an ActorControl from the player, never Self (none in 123 captures).
+Their connection sends both now, in that order (`party::own_cutscene_state`, `own_status_icon`,
+`send_own_status_icon`); the server tells the others. Test `a_player_s_own_cutscene_controls_are_retail_s`.
 
 ### Every event sheathes the weapon
 

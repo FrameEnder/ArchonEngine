@@ -14,9 +14,10 @@ use crate::{
 use kawari::{
     common::{CharacterMode, ObjectId, ObjectTypeId, Position},
     ipc::zone::{
-        ActorControlCategory, PartyMemberEntry, PartyMemberPositions, PartyUpdateStatus,
-        ReadyCheckReply, ServerZoneIpcData, ServerZoneIpcSegment, WaymarkPlacementMode,
-        WaymarkPosition, WaymarkPositions, WaymarkPreset,
+        ActorControl, ActorControlCategory, ActorControlSelf, OnlineStatus, PartyMemberEntry,
+        PartyMemberPositions, PartyUpdateStatus, ReadyCheckReply, ServerZoneIpcData,
+        ServerZoneIpcSegment, WaymarkPlacementMode, WaymarkPosition, WaymarkPositions,
+        WaymarkPreset,
     },
 };
 
@@ -1397,25 +1398,48 @@ pub fn handle_party_messages(
     }
 }
 
-/// Retail's ActorControl 519 `[the player, 3]` as a cutscene began and `[the player, 1]` as it ended
-/// (`ZoneConnection::set_watching_cutscene`): from them to their party, themselves too (the Howling Eye's four, Bob's
-/// Chronofoil capture 09ecf8e7), or ActorControlSelf to them alone (71045ef2, 689b15da.)
-pub(crate) fn tell_cutscene_state(network: &mut NetworkState, player: ObjectId, watching: bool) {
-    let category = ActorControlCategory::SetPartyMemberCutsceneFlags {
+/// Retail's ActorControl 519 `[the player, 3]` as a cutscene began and `[the player, 1]` as it ended.
+pub(crate) fn cutscene_flags(player: ObjectId, watching: bool) -> ActorControlCategory {
+    ActorControlCategory::SetPartyMemberCutsceneFlags {
         actor_id: player,
         unk2: if watching { 3 } else { 1 },
-    };
-    match get_party_id_from_actor_id(network, player) {
-        Some(party_id) => network.send_to_party(
+    }
+}
+
+/// What the player's own client gets of their 519, sent by their connection (`ZoneConnection::set_watching_cutscene`)
+/// after the conditions and before the EventScene, as retail's order was (EventStart, Condition, 519, 504,
+/// SetOnlineStatus, EventScene: the Praetorium's every cutscene, Bob's Chronofoil capture 35e30205): an ActorControl
+/// from them in a party (09ecf8e7, 35e30205), ActorControlSelf alone (71045ef2, 689b15da.)
+pub(crate) fn own_cutscene_state(
+    player: ObjectId,
+    in_party: bool,
+    watching: bool,
+) -> ServerZoneIpcData {
+    let category = cutscene_flags(player, watching);
+    if in_party {
+        ServerZoneIpcData::ActorControl(ActorControl { category })
+    } else {
+        ServerZoneIpcData::ActorControlSelf(ActorControlSelf { category })
+    }
+}
+
+/// The player's own 504 (SetStatusIcon): always an ActorControl from them, never ActorControlSelf (14,859 of them
+/// across 123 of Bob's Chronofoil captures, `facts/controls.json` in kawari-diagnostics; none Self.)
+pub(crate) fn own_status_icon(icon: OnlineStatus) -> ServerZoneIpcData {
+    ServerZoneIpcData::ActorControl(ActorControl {
+        category: ActorControlCategory::SetStatusIcon { icon },
+    })
+}
+
+/// The rest of the player's party hears their 519 from them (the Howling Eye's four, Bob's Chronofoil capture
+/// 09ecf8e7); the player's own comes from their connection (`own_cutscene_state`.)
+pub(crate) fn tell_cutscene_state(network: &mut NetworkState, player: ObjectId, watching: bool) {
+    if let Some(party_id) = get_party_id_from_actor_id(network, player) {
+        network.send_to_party(
             party_id,
-            None,
-            FromServer::ActorControl(player, category),
+            Some(player),
+            FromServer::ActorControl(player, cutscene_flags(player, watching)),
             DestinationNetwork::ZoneClients,
-        ),
-        None => network.send_to_by_actor_id(
-            player,
-            FromServer::ActorControlSelf(category),
-            DestinationNetwork::ZoneClients,
-        ),
+        );
     }
 }
