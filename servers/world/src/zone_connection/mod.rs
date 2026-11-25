@@ -600,6 +600,10 @@ impl ZoneConnection {
                     self.layer_filter_key(self.player_data.volatile.zone_id as u16);
             }
             self.layer_filter_shown = set_pos.transition_territory_filter_key;
+            // Where they are from now: the client sends no position until they move (the Praetorium's hangar
+            // object, Bob's marks of 2026-11-25: his `!mark` still had him on the floor he was taken from.)
+            self.player_data.volatile.position = set_pos.position;
+            self.player_data.volatile.rotation = set_pos.rotation as f64;
         }
         // Leaving the Gold Saucer while a GATE is on ends its director, after the PrepareZoning (`leave_gate`.)
         let leaving_gold_saucer =

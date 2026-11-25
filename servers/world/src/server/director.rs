@@ -11,7 +11,7 @@ use kawari::{
         ContentDirectorEvent, DirectorEvent, DirectorTrigger, DutyOption, EventState,
         GimmickAccessorType, GimmickRectEvent, HandlerId, HandlerType,
         InstanceContentDirectorEvent, LeveDirectorEvent, LogMessageType, ObjectId, ObjectTypeId,
-        ObjectTypeKind, Position, PublicContentType, TerritoryIntendedUse, WARP_DELAY, WarpType,
+        ObjectTypeKind, Position, PublicContentType, TerritoryIntendedUse, WarpType,
         timestamp_secs,
     },
     config::get_config,
@@ -2238,17 +2238,25 @@ pub struct DirectorData {
 
 /// A player put somewhere else in the same territory as retail sent it: a normal warp, the character hidden, the
 /// usual fade (the director's `warp_players`, and its shortcut when it points at a spot.)
-fn warp_player_within(
+/// How long after its PrepareZoning retail's move within a duty puts the player there (1.5 s in all 30 of Bob's
+/// captures, `warp_player_within`.)
+const IN_DUTY_WARP_DELAY: Duration = Duration::from_millis(1500);
+
+pub(crate) fn warp_player_within(
     instance: &mut Instance,
     network: &mut NetworkState,
     actor_id: ObjectId,
     position: Position,
     rotation: f32,
 ) {
+    // Retail's moves within a duty (the Praetorium's lifts and hangar, Castrum Meridianum's, the Porta Decumana's: 30
+    // in Bob's captures 9ba7d981, 6320ae56 and 84700114): PrepareZoning with warp type 25 (Event), hide_character 0,
+    // fade 1, and the ActorSetPos the same warp type 1.5 s later (`IN_DUTY_WARP_DELAY`). Kawari's were Normal, hidden,
+    // 2 s.
     let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PrepareZoning(PrepareZoning {
         territory_type_id: instance.zone.id,
-        warp_type: WarpType::Normal,
-        hide_character: 1,
+        warp_type: WarpType::Event,
+        hide_character: 0,
         fade_out_delay: 1,
         ..Default::default()
     }));
@@ -2268,16 +2276,24 @@ fn warp_player_within(
     let segment = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(ActorSetPos {
         position,
         rotation,
-        warp_type: WarpType::Normal,
+        warp_type: WarpType::Event,
         arg: 2,
         ..Default::default()
     }));
     instance.insert_task(
         client_id,
         actor_id,
-        WARP_DELAY,
+        IN_DUTY_WARP_DELAY,
         QueuedTaskData::PacketSegment { segment },
     );
+    // Where the server has them from now on: the client sends no position until they move, so a player who stood
+    // still after the Praetorium's hangar object took them up stayed on the first boss's floor for the server (Bob's
+    // marks of 2026-11-25): their bots were put back there beside them, and the armour refused them, its floor not
+    // theirs.
+    if let Some(NetworkedActor::Player { spawn, .. }) = instance.find_actor_mut(actor_id) {
+        spawn.common.position = position;
+        spawn.common.rotation = rotation;
+    }
 }
 
 /// Where a shortcut takes whoever uses it.

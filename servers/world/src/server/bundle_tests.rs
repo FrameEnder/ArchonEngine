@@ -2148,6 +2148,27 @@ fn a_shown_attack_is_only_shown() {
     assert!(!only_shown(&world.instance, generator, cid));
 }
 
+/// Bob's marks of 2026-11-25 at the Praetorium's hangar: "the player bots did not follow me here", and its armour
+/// refused him. The hangar object moved him up (`director:warp_players`), and the server kept him on the first boss's
+/// floor: the client sends no position until it moves, and he stood still, so his bots were put back beside where he
+/// had been and the armour (which works from the hangar's floor) said no. The server has him where it sent him now.
+#[test]
+fn a_player_a_director_moves_is_where_it_moved_them() {
+    use crate::server::director::warp_player_within;
+    let mut world = TestWorld::new();
+    let leader = world.player(PLAYER, [175.67, 76.0, 2.68]);
+    let to = Vec3A::new(146.86, 102.0, -37.53);
+    warp_player_within(
+        &mut world.instance,
+        &mut world.network.lock(),
+        leader,
+        kawari::common::Position(to),
+        2.654,
+    );
+    let at = world.instance.find_actor(leader).unwrap().position().0;
+    assert_eq!(at, to);
+}
+
 /// Bob's mark of 2026-11-23 in Castrum Meridianum: "player NPCs didn't go with me on teleport normally on duties like
 /// this if a character is teleported then every character is teleported". The cutscene before the last room sent him
 /// in (`director:warp_players`) and left his bots outside its walls. Now each goes with him, to its corner of the

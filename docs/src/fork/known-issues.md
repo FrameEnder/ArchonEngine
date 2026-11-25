@@ -35,6 +35,10 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   (`round_the_corner`, every 5 s); a party bot now goes round the way its player walked, an enemy doesn't. Which wall
   held the tank bot and the enemy outside the walkway, and why the navmesh had no way between them, isn't known
   without the zone's collision file (not here).
+* **The Praetorium's armour (EObj 2012819) showed its nametag and no model** (Bob's mark of 2026-11-25). Spawned and
+  shown as retail's but for SpawnObject's flags bit 2 (`flag_4`, meaning unknown), which retail sets on every object of
+  the duty and Kawari's zone objects never have. Whether it's that, or went with the server not knowing where he was
+  (fixed), isn't known until he looks again.
 * Untested in game: the blasted walls coming down (2, 3, 4, 5) and walkers stepping round a wall's end (Bob's marks on
   `2f0bfd4`), the walls open at the start, Cid's run in one go, the Death Claw's tether and walk, the second
   boss on its edge facing the middle, Grand Sword at anyone, the launchers left alone.

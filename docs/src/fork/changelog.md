@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-25 | — | Levequests (new page: what retail's packets show from Bob's capture b9af1bb2, and what's needed); known issues. |
+| 2026-11-25 | — | Dungeons (the Praetorium's hangar and armour); known issues (the armour's model). |
+| 2026-11-25 | `05497d589` | Levequests (new page: what retail's packets show from Bob's capture b9af1bb2, and what's needed); known issues. |
 | 2026-11-25 | `7eb98f415` | Quests (221, 1048, `onLeveCompleted`); questkit (`leve_completed`); known issues (levequests). |
 | 2026-11-25 | `1aea1db7b` | Dungeons (the Swallow's Compass's and Hells' Kier's entrances). |
 | 2026-11-25 | `631134e70` | Changelog (`a_circle_round_someone_follows_them` formatted). |
@@ -643,6 +644,7 @@ Commits on `Latest-Quest` (and, since 2026-11-03, `test-pending`) since the fork
 
 | Commit | Change |
 |---|---|
+| — | **A player moved within a duty is where the server sent them, and the move is retail's** (Bob's marks of 2026-11-25 at the Praetorium's hangar: "the player bots did not follow me here", the armour refusing him). `warp_player_within` (`director.rs`) never set the player's position, and the client sends none until it moves, so the server kept him on the first boss's floor: his bots were put back there and the armour (from the hangar's floor only) said no. It sets it now, and the connection takes the position of any ActorSetPos for the player (`zone_connection/mod.rs`). The move: PrepareZoning and ActorSetPos with warp type 25 (Event), hide_character 0, 1.5 s apart (`IN_DUTY_WARP_DELAY`), as all 30 of retail's in Bob's captures; it was Normal, hidden, 2 s. Test `a_player_a_director_moves_is_where_it_moved_them`. The armour's missing model isn't explained (known issues). |
 | `7eb98f415` | **Leves of Hawthorne (221) and Ifrit Bleeds, We Can Kill It (1048)** from Bob's captures b9af1bb2 and 9a97b234 and his quest bundle of 2026-11-25. 1048 transcribed (`questkit transcribe`), its three steps retail's. 221 by hand (the capture begins at sequence 1, and its sequence 255 came from a leve): the offer from the listing (unverified), `onLeveCompleted(leve, player)` a new quest hook the levequest system will call (retail moved 221 on as Leve 573 ended), questkit's `leve_completed` fixture step (`harness.py`, `replay.py`) and the fixture's `from`. Fixtures `221.json`, `1048.json`. |
 | `1aea1db7b` | **Bob's four captures of 2026-11-24 read in** (`questkit chronofoil --layers --save`): their layer keys all in `layer_filters.json`; the two duty entries' circles and facing weren't in the tables, so the check failed: The Swallow's Compass (territory 768: layout 7335282) and Hells' Kier (810: layout 7591191, facing -3.1416) in `resources/data/entrance_circles.json` and `entrance_facing.json`; `tools/questkit/questkit/data/entrances.json` and `layer_keys.json` keep the observations. The captures are catalogued in the diagnostics repository (`notes/chronofoil-index.md`, `notes/captures.json`). |
 | `631134e70` | `a_circle_round_someone_follows_them` formatted with rustfmt (71df6412e failed `check-changes.sh`'s format check). |

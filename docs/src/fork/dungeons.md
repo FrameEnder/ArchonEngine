@@ -1897,6 +1897,23 @@ is the Action sheet's. Tests `PraetoriumTest.test_prototype_laser_beta_marks_eac
 `a_circle_round_someone_follows_them`. Untested in game: whether the ring under the player is Lockon 96's or the
 cast's own marker isn't known here.
 
+**The hangar and the armour** (Bob's marks of 2026-11-25 on `05497d589`: "the magitek armor is not visible only it's
+name tag", "the nametag can be selected but that's it ... mount it with all it's capabilities", "the player bots did not
+follow me here"). Read through the harness: the hangar object (EObj 2012815, GimmickAccessor 1038) took him up
+(PrepareZoning, ActorSetPos to (146.86, 102.0, -37.53)) and his bots with him; 3.5 s later they were "47 yalms behind
+... put beside them" back on the first boss's floor, and each use of the armour (2012819, GimmickAccessor 1034) was
+refused at once. **The server kept him where he had been**: a move within a duty (`warp_player_within`) sent the
+packets but never set where the player is, and the client sends no position until it moves, so for the server he stood
+on the first boss's floor (his `!mark`s said (175.67, 76.00, 2.68) from the hangar): the bots' catching up put them
+beside that, and the armour works only from the hangar's floor. Now the server has a player where it sends them (the
+director's `warp_player_within`, and the connection's position on any ActorSetPos for the player). **The move itself**
+is retail's now too: every move within a duty in Bob's captures (30, in the Praetorium, Castrum Meridianum, the Porta
+Decumana) was PrepareZoning warp type 25 (Event), hide_character 0, fade 1, and the ActorSetPos the same type 1.5 s
+later; Kawari's were Normal, hidden, 2 s. Test `a_player_a_director_moves_is_where_it_moved_them`. **The armour's
+model** isn't explained: Kawari spawned it as retail did (event state 7, shown with ActorControl 106 [0] as the first
+boss fell) but for bit 2 of SpawnObject's flags byte, which retail set on every object of this duty and Kawari on none
+(its meaning isn't known; Kawari's walls show without it). Untested in game.
+
 ## The Jade Stoa
 
 ContentFinderCondition 290, territory 746, InstanceContent 20051 (director 0x80034E53), level 70. From Bob's Chronofoil
