@@ -387,6 +387,107 @@ pub fn joins_directly(here: Vec3A, to: Vec3A, path: &[Vec3A]) -> bool {
 /// How near (yalms) the navmesh's path past a wall has to end to where the walker would go (`navmesh_lets_past`.)
 const NAVMESH_PAST_END: f32 = 1.0;
 
+/// How near (yalms) where it's going a way has to end to get there (`straight_on`, `by_the_footsteps`): the navmesh
+/// keeps a walker's width from walls, and someone standing against one is that much off it.
+const WAY_REACHES: f32 = 2.0;
+
+/// Whether a walker can go straight on from `from` to `to` over the zone's collision, as a player would walk it
+/// (`Collision::walk`): it gets within `WAY_REACHES` of `to`. Without a collision, it can.
+///
+/// Where the navmesh stops short of where a walker in a duty is going (Detour's partial path: no way there on it), it
+/// went straight on, however far and through whatever was there (`MAX_OFF_MESH_GAP` is endless in content: the
+/// navmesh has holes the arenas don't). Through a wall that was forever: Bob's mark of 2026-11-24 in the Praetorium,
+/// "Orra Fenra never cleared the exit of the walkway and is now broken" (in combat, "they go pure stupid and ... run at
+/// a wall forever"): the tank bot outside the walkway and an enemy inside, 7 yalms apart, each went at the other
+/// through the wall between them for two minutes. It goes straight on only where it can.
+pub fn straight_on(
+    collision: Option<&crate::collision::Collision>,
+    from: Vec3A,
+    to: Vec3A,
+    max_drop: f32,
+) -> bool {
+    match collision {
+        Some(collision) => flat_distance(collision.walk(from, to, max_drop).at, to) <= WAY_REACHES,
+        None => true,
+    }
+}
+
+/// A walker's way from `a` to `b` for `by_the_footsteps`: the navmesh's path when it gets there, or as far as it goes
+/// and then straight on where the collision lets it walk (`straight_on`); None where neither does.
+pub fn walkers_way(
+    navmesh: &crate::navmesh::Navmesh,
+    collision: Option<&crate::collision::Collision>,
+    a: Vec3A,
+    b: Vec3A,
+) -> Option<Vec<Vec3A>> {
+    let (mut corners, short) = navmesh.find_path(a, b);
+    let end = corners.last().copied().unwrap_or(a);
+    if !corners.is_empty() && !short && flat_distance(end, b) <= WAY_REACHES {
+        return Some(corners);
+    }
+    straight_on(collision, end, b, path_max_drop(end, b)).then(|| {
+        corners.push(b);
+        corners
+    })
+}
+
+/// How many of its player's footsteps nearest it a bot tries to get to (`by_the_footsteps`.)
+const FOOTSTEP_JOIN_TRIES: usize = 6;
+
+/// A party bot's way to `goal` where it has none of its own, the way its player walked (`trail`, their footsteps,
+/// oldest first; `Instance::footsteps`): to the nearest footstep it has a way to, along the footsteps (on or back) to
+/// the one nearest `goal`, and on to `goal` if there's a way from there. `way(a, b)` is a walker's way from `a` to `b`
+/// (the corners after `a`), or None. None when it gets to none of the footsteps, or would end no nearer `goal` than it
+/// is. The ground its player crossed is ground the client let them cross: a bot cut off from whom it fights (the
+/// Praetorium's walkway and the ground outside it, Bob's mark of 2026-11-24) goes round by where they went, as it does
+/// out of combat (`party_bot::along_the_trail`).
+pub fn by_the_footsteps(
+    trail: &[Vec3A],
+    here: Vec3A,
+    goal: Vec3A,
+    mut way: impl FnMut(Vec3A, Vec3A) -> Option<Vec<Vec3A>>,
+) -> Option<VecDeque<Vec3A>> {
+    let (to_goal, _) = trail
+        .iter()
+        .enumerate()
+        .map(|(index, step)| (index, flat_distance(*step, goal)))
+        .min_by(|a, b| a.1.total_cmp(&b.1).then(b.0.cmp(&a.0)))?;
+    let mut nearest: Vec<usize> = (0..trail.len()).collect();
+    nearest.sort_by(|a, b| {
+        flat_distance(trail[*a], here)
+            .total_cmp(&flat_distance(trail[*b], here))
+            .then(b.cmp(a))
+    });
+    let (join, to_join) = nearest
+        .into_iter()
+        .take(FOOTSTEP_JOIN_TRIES)
+        .find_map(|index| way(here, trail[index]).map(|corners| (index, corners)))?;
+    let steps: Vec<Vec3A> = if join <= to_goal {
+        trail[join..=to_goal].to_vec()
+    } else {
+        trail[to_goal..=join].iter().rev().copied().collect()
+    };
+    let last = trail[to_goal];
+    let on = way(last, goal);
+    if on.is_none() && flat_distance(last, goal) + WAY_REACHES >= flat_distance(here, goal) {
+        return None;
+    }
+    let mut path: VecDeque<Vec3A> = VecDeque::new();
+    for point in to_join
+        .into_iter()
+        .chain(steps)
+        .chain(on.into_iter().flatten())
+    {
+        if path
+            .back()
+            .is_none_or(|previous: &Vec3A| flat_distance(*previous, point) >= MIN_STEP)
+        {
+            path.push_back(point);
+        }
+    }
+    Some(path)
+}
+
 /// How near (yalms) an NPC that fights from a spot (`Timeline::fights_from`) has to be to it to stand there: retail's
 /// Magitek Vanguard F-1 stood within a few centimetres of its arena's middle.
 const FIGHTS_FROM_ARRIVE: f32 = 0.5;
@@ -730,9 +831,21 @@ pub fn npc_behavior(
     instance.rooted_npcs.retain(|_, until| *until > busy_now);
     // NPCs whose step a wall or a drop cut short this tick: their path goes on from where they stopped.
     let mut walled: HashSet<ObjectId> = HashSet::new();
+    // Party bots going round the way their player walked instead (`by_the_footsteps`): their new path.
+    let mut reroutes: HashMap<ObjectId, VecDeque<Vec3A>> = HashMap::new();
     // Every NPC a wall stopped this tick, whether or not it then walked on through it (`NPC_WALL_PATIENCE_TICKS`.)
     let mut blocked: HashSet<ObjectId> = HashSet::new();
 
+    // Each party bot's player's footsteps (`Instance::footsteps`), for its way round where it has none
+    // (`by_the_footsteps`.)
+    let bot_trails: HashMap<ObjectId, Vec<Vec3A>> = instance
+        .party_bots
+        .iter()
+        .filter_map(|(id, bot)| {
+            let steps = instance.footsteps.get(&bot.leader)?;
+            Some((*id, steps.iter().copied().collect()))
+        })
+        .collect();
     // const pass
     for (id, actor) in &instance.actors {
         // Kept busy by its director (`director:busy_bnpc`): it stays as it is. Kept where it stands
@@ -897,7 +1010,20 @@ pub fn npc_behavior(
                             OPEN_WORLD_MAX_DROP
                         };
                         let walk = collision.walk(spawn.common.position.0, along, max_drop);
-                        let walled_for = instance.walled_ticks.get(id).copied().unwrap_or_default();
+                        let held_for = instance.walled_ticks.get(id).copied().unwrap_or_default();
+                        // Where its player walked, the client had no wall: a party bot goes on through what the
+                        // zone's collision has there without waiting, as out of combat (`party_bot::TRODDEN_WITHIN`;
+                        // a gimmick the director put up still stops it.)
+                        let walled_for = if bot_trails.get(id).is_some_and(|trail| {
+                            trail.iter().any(|step| {
+                                flat_distance(*step, spawn.common.position.0)
+                                    <= crate::server::party_bot::TRODDEN_WITHIN
+                            })
+                        }) {
+                            held_for.max(NPC_WALL_PATIENCE_TICKS)
+                        } else {
+                            held_for
+                        };
                         if walk.blocked {
                             blocked.insert(*id);
                         }
@@ -924,9 +1050,29 @@ pub fn npc_behavior(
                             })
                         })
                         .flatten();
+                        // A party bot held up off its player's way goes round by it, once its patience runs out
+                        // (`by_the_footsteps`): stepping round the wall's end took Orra Fenra back and forth beside
+                        // the Praetorium's walkway for two minutes (Bob's mark of 2026-11-24.)
+                        let rerouted = (past.is_none()
+                            && walk.blocked
+                            && !walk.sealed
+                            && held_for == NPC_WALL_PATIENCE_TICKS)
+                            .then(|| bot_trails.get(id))
+                            .flatten()
+                            .zip(current_path.back().copied())
+                            .and_then(|(trail, goal)| {
+                                by_the_footsteps(trail, spawn.common.position.0, goal, |a, b| {
+                                    walkers_way(&instance.navmesh, Some(collision), a, b)
+                                })
+                            });
+                        let rerouting = rerouted.is_some();
+                        if let Some(path) = rerouted {
+                            reroutes.insert(*id, path);
+                        }
                         // Not through it: round it, as a player steps round the end of a wall its way met head-on
                         // (`Collision::round_the_corner`; never past a gimmick the director put up.)
                         let round = (past.is_none()
+                            && !rerouting
                             && goes_anywhere
                             && walk.blocked
                             && !walk.sealed
@@ -934,15 +1080,17 @@ pub fn npc_behavior(
                             && !collision.crosses_sealed(spawn.common.position.0, next_position))
                         .then(|| collision.round_the_corner(walk.at, next_position, max_drop))
                         .flatten();
-                        if walk.blocked && walled_for == NPC_WALL_PATIENCE_TICKS {
+                        if walk.blocked && held_for == NPC_WALL_PATIENCE_TICKS {
                             tracing::info!(
                                 "NPC {} (layout {}) held up by a wall at {:?} for {} ticks: {}",
                                 id.0,
                                 spawn.common.layout_id,
                                 spawn.common.position.0,
-                                walled_for,
+                                held_for,
                                 if past.is_some() {
                                     "walking on through"
+                                } else if rerouting {
+                                    "round the way its player walked"
                                 } else if round.is_some() {
                                     "stepping round it"
                                 } else {
@@ -1216,6 +1364,9 @@ pub fn npc_behavior(
             if walled.contains(id) {
                 *last_position = Some(spawn.common.position.0);
                 *current_path_lerp = 0.0;
+            }
+            if let Some(path) = reroutes.remove(id) {
+                *current_path = path;
             }
 
             // NOTE: this is *intentional* as I believe in retail the timing of actions are dependent on when the actor spawned
@@ -1616,21 +1767,61 @@ pub fn npc_behavior(
                         } else {
                             max_off_mesh_gap
                         };
-                        let mut path: VecDeque<Vec3A> = instance
-                            .navmesh
-                            .calculate_path(current_pos, goal, gap)
-                            .into();
+                        let (navmesh_path, short) = instance.navmesh.find_path(current_pos, goal);
+                        let mut path: VecDeque<Vec3A> = navmesh_path.into();
                         // In content no path at all (e.g. starting off the navmesh, among a tree's roots) means walking
                         // straight there: dropping the target there sent To Guard a Guardian's second wave wandering
                         // back to where they appeared, around the tree (2026-10-17 bundle).
                         // Party bots likewise, anywhere: the open world's navmesh has holes too (none around
                         // Summerford Farms' houses), and a bot that can't find a path stood still while its party walked
                         // off (Bob's 2026-10-21 bundle: 550 failed paths, both ends off the mesh.)
+                        // And where the navmesh stops short, straight on from there if it's within `gap`.
                         let party_bot = instance.party_bots.contains_key(id);
-                        if path.is_empty() && (in_content || party_bot || following_owner) {
-                            path.push_back(goal);
+                        let end = path.back().copied().unwrap_or(current_pos);
+                        let straight_on_wanted = if path.is_empty() {
+                            in_content || party_bot || following_owner
+                        } else {
+                            short && Vec3A::distance(end, goal) <= gap
+                        };
+                        // Only where it can walk it (`straight_on`): otherwise a party bot goes round the way its
+                        // player walked (`by_the_footsteps`), and anyone else as near as the navmesh goes.
+                        let mut stopped_short = false;
+                        if straight_on_wanted {
+                            let max_drop = if in_content || party_bot || following_owner {
+                                path_max_drop(end, goal)
+                            } else {
+                                OPEN_WORLD_MAX_DROP
+                            };
+                            if straight_on(sight.as_deref(), end, goal, max_drop) {
+                                path.push_back(goal);
+                            } else {
+                                let navmesh = &instance.navmesh;
+                                let way = |a: Vec3A, b: Vec3A| {
+                                    walkers_way(navmesh, sight.as_deref(), a, b)
+                                };
+                                let round =
+                                    party_bot.then(|| bot_trails.get(id)).flatten().and_then(
+                                        |trail| by_the_footsteps(trail, current_pos, goal, way),
+                                    );
+                                if flat_distance(current_pos, end) > 1.0 || round.is_some() {
+                                    tracing::info!(
+                                        "NPC {} (layout {}) at {current_pos}: the navmesh stops at {end} on its way to {goal}, and a wall is between; {}",
+                                        id.0,
+                                        spawn.common.layout_id,
+                                        if round.is_some() {
+                                            "round the way its player walked"
+                                        } else {
+                                            "as near as the navmesh goes"
+                                        }
+                                    );
+                                }
+                                match round {
+                                    Some(round) => path = round,
+                                    None => stopped_short = true,
+                                }
+                            }
                         }
-                        let found_path = !path.is_empty();
+                        let found_path = !path.is_empty() || stopped_short;
                         // Detour's path starts where it stands: no step there.
                         while path
                             .front()
@@ -2879,6 +3070,87 @@ mod wall_tests {
         // And it sees no one through the wall.
         assert!(!in_sight(Some(&collision), here, Vec3A::new(4.0, 0.0, 0.0)));
         assert!(in_sight(None, here, Vec3A::new(4.0, 0.0, 0.0)));
+    }
+
+    /// Bob's mark of 2026-11-24 in the Praetorium, "Orra Fenra never cleared the exit of the walkway and is now
+    /// broken": the tank bot outside the walkway and an enemy inside went at each other through the wall between
+    /// them for two minutes, the navmesh having no way between and their paths going straight on from where it
+    /// stopped. Nobody goes straight through a wall now, and a bot goes round the way its player walked.
+    #[test]
+    fn a_bot_cut_off_from_its_foe_goes_round_the_way_its_player_walked() {
+        fn quad(v: &mut Vec<[f32; 3]>, t: &mut Vec<[u32; 3]>, corners: [[f32; 3]; 4]) {
+            let i = v.len() as u32;
+            v.extend(corners);
+            t.extend([[i, i + 1, i + 2], [i, i + 2, i + 3]]);
+        }
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        quad(
+            &mut v,
+            &mut t,
+            [
+                [-20.0, 0.0, -20.0],
+                [20.0, 0.0, -20.0],
+                [20.0, 0.0, 20.0],
+                [-20.0, 0.0, 20.0],
+            ],
+        );
+        // A wall along x = 0 from z -20 to 10: the way between its sides is north of it.
+        quad(
+            &mut v,
+            &mut t,
+            [
+                [0.0, 0.0, -20.0],
+                [0.0, 0.0, 10.0],
+                [0.0, 4.0, 10.0],
+                [0.0, 4.0, -20.0],
+            ],
+        );
+        let collision = Collision::build(v, t, Vec::new(), Vec::new(), 0.75, 0.4, 55.0);
+        let here = Vec3A::new(-5.0, 0.0, 0.0);
+        let foe = Vec3A::new(5.0, 0.0, 0.0);
+        assert!(!straight_on(Some(&collision), here, foe, PATH_DROP_MARGIN));
+        assert!(straight_on(
+            Some(&collision),
+            here,
+            Vec3A::new(-5.0, 0.0, 15.0),
+            PATH_DROP_MARGIN
+        ));
+        assert!(straight_on(None, here, foe, PATH_DROP_MARGIN));
+
+        // The player walked from the foe's side north round the wall's end and down to the bot's.
+        let mut trail = Vec::new();
+        let mut walk_to = |from: Vec3A, to: Vec3A| {
+            let steps = (Vec3A::distance(from, to) / 0.7).ceil() as usize;
+            for step in 0..steps {
+                trail.push(from.lerp(to, step as f32 / steps as f32));
+            }
+        };
+        walk_to(Vec3A::new(5.0, 0.0, -5.0), Vec3A::new(5.0, 0.0, 15.0));
+        walk_to(Vec3A::new(5.0, 0.0, 15.0), Vec3A::new(-5.0, 0.0, 15.0));
+        walk_to(Vec3A::new(-5.0, 0.0, 15.0), Vec3A::new(-5.0, 0.0, 2.0));
+        let way = |a: Vec3A, b: Vec3A| {
+            straight_on(Some(&collision), a, b, PATH_DROP_MARGIN).then(|| vec![b])
+        };
+        let path = by_the_footsteps(&trail, here, foe, way).expect("a way round");
+        // Walked as a walker walks, over the collision: it gets to the foe, round the wall's end.
+        let mut at = here;
+        for point in &path {
+            let walk = collision.walk(at, *point, PATH_DROP_MARGIN);
+            assert!(
+                !walk.blocked,
+                "held up at {:?} on the way to {point}",
+                walk.at
+            );
+            at = walk.at;
+        }
+        assert!(flat_distance(at, foe) < 0.1, "{at}");
+        assert!(path.iter().any(|point| point.z > 10.0));
+
+        // A wall with no way round, and footsteps only on the bot's side: no way.
+        let only_here: Vec<Vec3A> = (0..10).map(|z| Vec3A::new(-5.0, 0.0, z as f32)).collect();
+        let none = |_: Vec3A, b: Vec3A| (b.x < 0.0).then(|| vec![b]);
+        assert!(by_the_footsteps(&only_here, here, foe, none).is_none());
+        assert!(by_the_footsteps(&[], here, foe, none).is_none());
     }
 }
 

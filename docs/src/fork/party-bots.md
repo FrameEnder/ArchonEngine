@@ -719,3 +719,25 @@ file: a bot put down by `on_the_players_ground` logs that surface's material, so
 made for Cape Westwind's boss"): since 2026-11-18 anyone with a second surface less than 2 yalms over the floor they
 stood on was put on that surface (`collision::settle`'s `HEADROOM`); now only someone between the two goes up, not
 one standing on the lower ([Combat](combat.md)).
+
+**In combat, round the way their player walked** (2026-11-24, Bob's mark in the Praetorium on `095404aa3`: "Orra Fenra
+never cleared the exit of the walkway and is now broken"; "if they snag anywhere and get into combat they go pure
+stupid and don't know how to actually path through it and go back to run at a wall forever"). Read through the
+harness: the tank bot went out of the walkway by the hole Bob had gone out of, and an enemy of the ten came up from
+the room south of it; 7 yalms apart, a wall between, each walked at the other for two minutes (the log's "stepping
+round it" every 5 s, the capture's ActorMoves going back and forth over a yalm). The navmesh had no way between them,
+and in a duty a path the navmesh can't finish went straight on from where it stopped, however far and through
+whatever was there. Out of combat a bot already went the way its player walked; in combat it's walked as the enemies
+are (`npc_behavior.rs`), which never did. Now:
+
+* where the navmesh stops short, a walker goes straight on only where it can walk it over the collision
+  (`straight_on`); otherwise as near as the navmesh goes (enemies), and a party bot
+* goes round by its player's footsteps (`by_the_footsteps`): its way to the nearest of them it can get to (the
+  navmesh's, or straight on), along them, on or back, to the one nearest whom it's after, and on from there if it can
+  (`walkers_way`). The same when a bot is held up by a wall on its way (its patience run out), before stepping round
+  it;
+* where its player walked (within `TRODDEN_WITHIN`), a bot in combat goes on through what the collision has there
+  without waiting, as out of combat.
+
+Test `a_bot_cut_off_from_its_foe_goes_round_the_way_its_player_walked`. Where the wall between them was, and why the
+navmesh had no way there, isn't known without the collision file; untested in game.

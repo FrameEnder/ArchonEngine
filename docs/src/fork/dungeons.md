@@ -1841,8 +1841,17 @@ likely did not fully remove it's walls".
   stopped head-on by a wall the navmesh goes round now steps round its end, as a player does
   (`Collision::round_the_corner`, [Combat](combat.md)).
 
+* **Bob's run on `095404aa3`** ("better, but the bots are still breaking ... if they snag anywhere and get into combat
+  they go pure stupid"; mark "Orra Fenra never cleared the exit of the walkway"): the navmesh was made again with the
+  barriers (2, 3 and 5 have collision, 4 none), and 2 and 4 came down with their map effects. The tank bot had gone
+  out by the hole west of the walkway (by (233, 156, -33)), where Bob had gone; an enemy of the ten came north out
+  of the room below towards him, and the two walked at each other through a wall for two minutes. In combat a walker
+  no longer goes straight on through a wall where the navmesh stops, and a bot goes round the way its player walked
+  ([Party bots](party-bots.md)). Retail's five runs never left the walkway there (x 236 to 241 from z -21 to -51),
+  nor stood where the two were.
+
 Tests `the_praetoriums_blasted_walls_are_barriers`, `a_collision_says_which_barriers_it_was_built_for`,
-`a_walker_stopped_head_on_steps_round_the_end_of_a_wall`. **Untested in game**; whether each of the four has
+`a_walker_stopped_head_on_steps_round_the_end_of_a_wall`, `a_bot_cut_off_from_its_foe_goes_round_the_way_its_player_walked`. **Untested in game**; whether each of the four has
 collision of its own the navmesh build says ("has no collision of its own here") on Bob's server.
 
 ## The Jade Stoa

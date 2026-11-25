@@ -511,7 +511,7 @@ pub(crate) fn run_along_at(
 /// on ground they walked.
 const FOOTSTEP_EVERY: f32 = 0.7;
 const FOOTSTEPS: usize = 400;
-const TRODDEN_WITHIN: f32 = 1.5;
+pub const TRODDEN_WITHIN: f32 = 1.5;
 /// The trail's nearest step to a bot this far off at most is where it joins it.
 const TRAIL_JOIN: f32 = 4.0;
 

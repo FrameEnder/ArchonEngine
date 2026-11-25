@@ -30,6 +30,11 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
 * **Iron Uprising's (28482) knockback**: it hit no one in ten casts, so its row isn't known; it does damage only.
 * **The last boss's enrage** (28500 as the gauge fills with any of the four standing): from the guide, never seen; the
   gauge's full (10000) and 28500's area (the Action sheet's) and amount (more than anyone's HP) are guesses.
+* **Walkers where the navmesh and the collision disagree** (Bob's run on `095404aa3`): where the navmesh's path itself
+  goes through something the collision has (a wall the navmesh doesn't), a walker still steps round it and back
+  (`round_the_corner`, every 5 s); a party bot now goes round the way its player walked, an enemy doesn't. Which wall
+  held the tank bot and the enemy outside the walkway, and why the navmesh had no way between them, isn't known
+  without the zone's collision file (not here).
 * Untested in game: the blasted walls coming down (2, 3, 4, 5) and walkers stepping round a wall's end (Bob's marks on
   `2f0bfd4`), the walls open at the start, Cid's run in one go, the Death Claw's tether and walk, the second
   boss on its edge facing the middle, Grand Sword at anyone, the launchers left alone.

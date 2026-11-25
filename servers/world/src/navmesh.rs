@@ -183,6 +183,20 @@ impl Navmesh {
     /// Calculates a path from `start_pos` to `end_pos`. When the navmesh doesn't reach `end_pos`, the path walks as far
     /// as it does and then straight on, if that last stretch is at most `max_gap` yalms.
     pub fn calculate_path(&self, start_pos: Vec3A, end_pos: Vec3A, max_gap: f32) -> Vec<Vec3A> {
+        let (mut path, partial) = self.find_path(start_pos, end_pos);
+        // The destination isn't reachable on the navmesh: walk the part that is, then straight on if it's close.
+        if partial {
+            let edge = path.last().copied().unwrap_or(start_pos);
+            if Vec3A::distance(edge, end_pos) <= max_gap {
+                path.push(end_pos);
+            }
+        }
+        path
+    }
+
+    /// The navmesh's path from `start_pos` towards `end_pos` (its corners), and whether it falls short: the
+    /// destination isn't reachable on the navmesh (Detour's partial result), so the path ends as near as it gets.
+    pub fn find_path(&self, start_pos: Vec3A, end_pos: Vec3A) -> (Vec<Vec3A>, bool) {
         unsafe {
             let mut filter = dtQueryFilter {
                 m_areaCost: [1.0; 64],
@@ -238,15 +252,7 @@ impl Navmesh {
                 path.push(Vec3A::from_slice(pos));
             }
 
-            // The destination isn't reachable on the navmesh: walk the part that is, then straight on if it's close.
-            if status & DT_PARTIAL_RESULT != 0 {
-                let edge = path.last().copied().unwrap_or(start_pos);
-                if Vec3A::distance(edge, end_pos) <= max_gap {
-                    path.push(end_pos);
-                }
-            }
-
-            path
+            (path, status & DT_PARTIAL_RESULT != 0)
         }
     }
 
