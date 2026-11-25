@@ -11,6 +11,9 @@ use kawari::common::ObjectId;
 #[derive(Debug, Clone)]
 pub struct SpawnAllocator<const MAX_SIZE: usize, const START_INDEX: usize = 0> {
     pool: [Option<ObjectId>; MAX_SIZE],
+    /// Spaces given up without the client being told (`free_unseen`): its object is still there, and the next spawn
+    /// takes its space and so its place, as retail's did.
+    unseen: [bool; MAX_SIZE],
 }
 
 impl<const MAX_SIZE: usize, const START_INDEX: usize> Default
@@ -28,11 +31,18 @@ impl<const MAX_SIZE: usize, const START_INDEX: usize>
     pub fn new() -> Self {
         Self {
             pool: [None; MAX_SIZE],
+            unseen: [false; MAX_SIZE],
         }
     }
 
-    /// Attempts to reserve a new spawn index, if there isn't a free space returns `None`.
+    /// Attempts to reserve a new spawn index, if there isn't a free space returns `None`. A space given up unseen
+    /// (`free_unseen`) goes first, so what the client still shows there is replaced.
     pub fn reserve(&mut self, object_id: ObjectId) -> Option<u8> {
+        if let Some(i) = self.unseen.iter().position(|unseen| *unseen) {
+            self.unseen[i] = false;
+            self.pool[i] = Some(object_id);
+            return Some(i as u8 + START_INDEX as u8);
+        }
         for (i, space) in self.pool.iter_mut().enumerate() {
             if space.is_none() {
                 *space = Some(object_id);
@@ -55,6 +65,15 @@ impl<const MAX_SIZE: usize, const START_INDEX: usize>
         None
     }
 
+    /// Frees the object's space without the client being told: retail dropped the Praetorium's Gaius so (his spawn
+    /// index went to the next SpawnNpc, 2.4 s into cutscene 280, with no DeleteActor; the client swapped him for it,
+    /// as cutscene 280 ended), and the first boss's helpers after it (Bob's Chronofoil capture 35e30205.)
+    pub fn free_unseen(&mut self, object_id: ObjectId) -> Option<u8> {
+        let index = self.free(object_id)?;
+        self.unseen[index as usize - START_INDEX] = true;
+        Some(index)
+    }
+
     /// Checks if the object exists in the pool.
     pub fn contains(&self, object_id: ObjectId) -> bool {
         self.pool.contains(&Some(object_id))
@@ -68,6 +87,7 @@ impl<const MAX_SIZE: usize, const START_INDEX: usize>
     /// Frees all objects from the pool.
     pub fn clear(&mut self) {
         self.pool = [None; MAX_SIZE];
+        self.unseen = [false; MAX_SIZE];
     }
 }
 
@@ -94,6 +114,19 @@ mod tests {
         assert_eq!(allocator.reserve(ObjectId(0)), Some(0));
         assert_eq!(allocator.reserve(ObjectId(1)), Some(1));
         assert_eq!(allocator.reserve(ObjectId(2)), None); // Reserving a 3rd object should fail still
+    }
+
+    #[test]
+    fn a_space_given_up_unseen_goes_first() {
+        let mut allocator = SpawnAllocator::<4, 1>::new();
+        for id in 0..4 {
+            allocator.reserve(ObjectId(id));
+        }
+        allocator.free(ObjectId(0)); // index 1, the client told
+        assert_eq!(allocator.free_unseen(ObjectId(2)), Some(3));
+        assert_eq!(allocator.reserve(ObjectId(10)), Some(3));
+        assert_eq!(allocator.reserve(ObjectId(11)), Some(1));
+        assert_eq!(allocator.reserve(ObjectId(12)), None);
     }
 
     #[test]

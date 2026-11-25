@@ -106,6 +106,20 @@ impl NetworkState {
         Some(msg)
     }
 
+    /// Takes the actor out without telling the clients, as retail let event NPCs and helpers go: each client keeps
+    /// showing it until its spawn index is given to the next spawn, which replaces it there
+    /// (`SpawnAllocator::free_unseen`.)
+    pub fn let_go_unseen(&mut self, instance: &mut Instance, actor_id: ObjectId) {
+        instance.actors.remove(&actor_id);
+        instance.status_resistance.forget(actor_id);
+        instance.npc_elements.remove(&actor_id);
+        for (_, state) in self.clients.values_mut() {
+            if state.actor_allocator.free_unseen(actor_id).is_none() {
+                state.object_allocator.free_unseen(actor_id);
+            }
+        }
+    }
+
     /// Inform clients that have spawned this actor, that it should be deleted.
     pub fn remove_actor(&mut self, instance: &mut Instance, actor_id: ObjectId) {
         instance.actors.remove(&actor_id);

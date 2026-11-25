@@ -35,17 +35,10 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   (`round_the_corner`, every 5 s); a party bot now goes round the way its player walked, an enemy doesn't. Which wall
   held the tank bot and the enemy outside the walkway, and why the navmesh had no way between them, isn't known
   without the zone's collision file (not here).
-* **Gaius (ENpc 1043117) stood in the Praetorium's first boss's arena after cutscene 280** (Bob's mark of 2026-11-25).
-  Retail spawns him for the whole duty and never hides him with a packet, so the client hides him itself; the one
-  differences found were the cutscene's condition (8 on retail, 7 on Kawari; changing it didn't hide him), the duty's
-  opening map effects (retail's since `8ef1b0fc1`; didn't either) and the director's variables coming before the client
-  had loaded (held back now, untested). His ENpcBase row and his layer hide nothing (read through the harness); left
-  are the order of the spawns (retail's event NPCs before the player's own SpawnPlayer) and ZoneInit's game festivals.
-  Kawari Witness (retail and fork runs, `dungeons.md`): retail's client hides him itself at each cutscene's start
-  (render flags 0x2000800) and removes him at cutscene 280's end. With the player's own 519 and 504 as retail's
-  (`6da0ccd39`) the fork's client hides him too, but still restores him at 280's end, with no packet from either
-  server then and his SpawnNpc as retail's. Retail-numbered actor IDs are the next try (untested); then the party
-  (retail's PartyList), the spawn order and ZoneInit's flags.
+* **Gaius (ENpc 1043117) stood in the Praetorium's first boss's arena after cutscene 280** (Bob's marks of
+  2026-11-25): retail let him go unseen, his spawn index taken by a helper's SpawnNpc 2.4 s into cutscene 280
+  (`dungeons.md`); Kawari does the same since 2026-11-25 (`director:let_go_unseen`), untested in game. The first
+  boss's 9020 helpers went the same way on retail (at 543.8 s); Kawari's still go with DeleteActors.
 * **The Praetorium's armour's Photon Stream (1129) does nothing**: none of Bob's three retail runs read (50e72631,
   6320ae56, 9ba7d981) used it, so what it hits and for how much isn't known. A capture of retail using it is needed.
 * Untested in game: the blasted walls coming down (2, 3, 4, 5) and walkers stepping round a wall's end (Bob's marks on

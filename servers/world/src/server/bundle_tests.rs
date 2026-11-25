@@ -2267,3 +2267,39 @@ fn actor_ids_are_retail_s() {
     unique.dedup();
     assert_eq!(unique.len(), ids.len());
 }
+
+/// Bob, on Gaius still in the Praetorium after cutscene 280 ("the server must send something at some point ... that
+/// WOULD show in the packets from Chronofoil"): it did. 2.4 s into cutscene 280 retail's SpawnNpc for one of the first
+/// boss's helpers took Gaius's spawn index (5) with no DeleteActor before it; the client put the helper in his place
+/// and Gaius was gone as the cutscene ended (capture 35e30205; the helpers went the same way at 543.8 s.) An NPC let go
+/// unseen tells no one, and the next spawn takes its index.
+#[test]
+fn an_npc_let_go_unseen_is_replaced_by_the_next_spawn() {
+    use crate::server::network::NetworkState;
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    world.enemy(ENEMY, [1.0, 0.0, 0.0], 100);
+    let gaius = world.enemy(ENEMY + 1, [2.0, 0.0, 0.0], 100);
+    world.enemy(ENEMY + 2, [3.0, 0.0, 0.0], 100);
+    world.sent(player);
+    let mut network = world.network.lock();
+    network.let_go_unseen(&mut world.instance, gaius);
+    drop(network);
+    assert!(world.instance.find_actor(gaius).is_none());
+    assert!(world.sent(player).is_empty());
+
+    let helper = ObjectId(ENEMY + 3);
+    let actor = world.instance.find_actor(ObjectId(ENEMY)).unwrap().clone();
+    let mut network = world.network.lock();
+    let state = &mut network.clients.values_mut().next().unwrap().1;
+    let index = |state: &mut crate::server::ClientState, id| {
+        match NetworkState::spawn_existing_actor_message(state, id, &actor) {
+            Some(FromServer::ActorSpawn(_, crate::common::SpawnKind::Npc(spawn))) => {
+                spawn.common.spawn_index
+            }
+            other => panic!("{other:?}"),
+        }
+    };
+    assert_eq!(index(state, helper), 2);
+    assert_eq!(index(state, ObjectId(ENEMY + 4)), 4);
+}

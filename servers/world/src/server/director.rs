@@ -104,6 +104,11 @@ pub enum LuaDirectorTask {
     DespawnBattleNpc {
         layout_id: u32,
     },
+    /// Let an NPC (actor or layout ID, an event NPC too) go without telling the clients (`NetworkState::let_go_unseen`):
+    /// the next spawn takes its place, as retail's took the Praetorium's Gaius.
+    LetGoUnseen {
+        who: u32,
+    },
     /// `tick`: damage every 3 s while the actor has the status, from no one (`periodic.rs`): Heart of the Forest's
     /// one who prays under status 324 (quest battle 76.)
     GainEffect {
@@ -1110,6 +1115,10 @@ impl UserData for LuaDirector {
                 Ok(actor_id.0)
             },
         );
+        methods.add_method_mut("let_go_unseen", |_, this, who: u32| {
+            this.tasks.push(LuaDirectorTask::LetGoUnseen { who });
+            Ok(())
+        });
         methods.add_method_mut("despawn_bnpc", |_, this, layout_id: u32| {
             this.tasks
                 .push(LuaDirectorTask::DespawnBattleNpc { layout_id });
@@ -3463,6 +3472,11 @@ pub fn director_tick(
                     tracing::warn!(
                         "Failed to find bnpc {id} for SpawnTetheredBattleNpc, it won't spawn!"
                     );
+                }
+            }
+            LuaDirectorTask::LetGoUnseen { who } => {
+                if let Some(actor_id) = resolve_bnpc(instance, *who) {
+                    network.lock().let_go_unseen(instance, actor_id);
                 }
             }
             LuaDirectorTask::DespawnBattleNpc { layout_id } => {

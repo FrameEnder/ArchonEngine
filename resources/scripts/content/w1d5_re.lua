@@ -136,6 +136,10 @@ BGM_AFTER_BOSS1 = 149
 CUTSCENE_BOSS1 = 280
 CUTSCENE_BOSS1_PARAMS = { 1, 37, 0, 0 }
 BOSS1_AFTER_CUTSCENE = 2.2
+-- Gaius (ENpc 1043117, layout 9283423): retail let him go unseen as the first boss came, 2.4 s into cutscene 280 (his
+-- spawn index went to the boss's helpers' SpawnNpc, no DeleteActor; the client swapped him out as 280 ended: Bob's
+-- Chronofoil capture 35e30205 and his Kawari Witness runs of 2026-11-25.)
+GAIUS = 9283423
 -- Its 28467s (seconds from the pull), as its timeline has them: twice, then two a round of 52.7 s.
 AWAY_FOR = 1.0
 BOSS1_AWAY_ONCE = { 18.3, 38.6 }
@@ -460,7 +464,10 @@ D:step({ name = "boss1_room", ready = done("lift2"),
     run = function(d)
         d:objective(0, 1)
         cutscene(d, CUTSCENE_BOSS1, CUTSCENE_BOSS1_PARAMS)
-        D:after(BOSS1_AFTER_CUTSCENE, function(d2) D:bringBoss(d2, D:bossById(1)) end)
+        D:after(BOSS1_AFTER_CUTSCENE, function(d2)
+            d2:let_go_unseen(GAIUS)
+            D:bringBoss(d2, D:bossById(1))
+        end)
         D:after(CID_BOSS1_AFTER, function(d2)
             local at = CID_BOSS1
             d2:warp_bnpc(GUIDE, at.x, at.y, at.z, at.rotation)
