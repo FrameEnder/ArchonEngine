@@ -1971,8 +1971,13 @@ Energy"), now sent as retail does. **The armour's actions**
 (the cannon) as an ActionRequestGroundTargeted with the spot aimed at; Kawari measured its area from the rider and hit
 no one. Retail's hit 1-6 enemies round the spot each use, up to 13 yalms from the rider, with an AoeEffect8 naming
 0xE0000000 and the spot (capture 6320ae56); Kawari's does now (`Instance::ground_aims`, `area_middle` in
-`server/action.rs`), for any player's action aimed at the ground. 1129 (Photon Stream) has no script ("isn't scripted
-yet" in the log twice): none of the three retail runs read used it.
+`server/action.rs`), for any player's action aimed at the ground. 1129 (Photon Stream), from Bob's capture 35e30205 (2026-11-25, 17 uses of his and 9 of the party's): an
+ActionRequest at the rider himself, an AoeEffect8 (an ActionEffect1 with one hit) at the rider with no target, a line
+from him (the Action sheet's CastType 4, 10 long, XAxisModifier 2 wide), 3000 to each enemy hit (effect kind 3, then
+kind 27 with the action, flags 0x80, as 1128's 4500), 0-2 hit a use. Both lock the rider for 2.1 s every use (Kawari
+gave 0.6), and 1129 gets ActorControlSelf 17 `[57, 1129, 150]` though its Recast100ms is 0 (a weaponskill: the
+shortest GCD). `actions/011/PraetoriumArmor_01129.lua`, `SPECIAL_ANIMATION_LOCKS`, the recast in `server/action.rs`.
+Not played on Kawari.
 
 ## The Jade Stoa
 

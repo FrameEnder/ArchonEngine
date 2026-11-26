@@ -39,8 +39,6 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   2026-11-25): retail let him go unseen, his spawn index taken by a helper's SpawnNpc 2.4 s into cutscene 280
   (`dungeons.md`); Kawari does the same since 2026-11-25 (`director:let_go_unseen`), untested in game. The first
   boss's 9020 helpers went the same way on retail (at 543.8 s); Kawari's still go with DeleteActors.
-* **The Praetorium's armour's Photon Stream (1129) does nothing**: none of Bob's three retail runs read (50e72631,
-  6320ae56, 9ba7d981) used it, so what it hits and for how much isn't known. A capture of retail using it is needed.
 * Untested in game: the blasted walls coming down (2, 3, 4, 5) and walkers stepping round a wall's end (Bob's marks on
   `2f0bfd4`), the walls open at the start, Cid's run in one go, the Death Claw's tether and walk, the second
   boss on its edge facing the middle, Grand Sword at anyone, the launchers left alone.

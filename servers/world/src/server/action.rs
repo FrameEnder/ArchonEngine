@@ -336,7 +336,9 @@ pub fn handle_action_messages(
             && let NetworkedActor::Player { .. } = actor
             && let Some((cooldown_group, recast_100ms, max_charges)) = recast
             && cooldown_group > 0
-            && recast_100ms > 0
+            // A weaponskill or spell with no recast of its own still gets the shortest GCD: the Praetorium's armour's
+            // Photon Stream (1129, Recast100ms 0, group 58) was [57, 1129, 150] every use (Bob's capture 35e30205).
+            && (recast_100ms > 0 || crate::client_rules::recast_uses_speed(category, 1))
         {
             // As the client works it out (`client_rules`, ActionManager.GetAdjustedRecastTime and GetMaxCharges): the
             // row's recast plus its learnt traits' (Enhanced Swiftcast's -20 s...), sped up by speed and haste for a
@@ -3982,7 +3984,10 @@ fn animation_lock(action_type: ActionType, action_id: u32, has_cast_time: bool) 
 }
 
 /// Actions whose animation lock isn't the usual 0.6 s on retail, and theirs.
-const SPECIAL_ANIMATION_LOCKS: [(u32, f32); 20] = [
+const SPECIAL_ANIMATION_LOCKS: [(u32, f32); 22] = [
+    // The Praetorium's armour's Magitek Cannon and Photon Stream: 2.1 every use (52 and 26, Bob's capture 35e30205.)
+    (1128, 2.1),
+    (1129, 2.1),
     (2259, 0.35),
     (2261, 0.35),
     (18805, 0.35),
@@ -4873,6 +4878,18 @@ mod area_tests {
         assert!(at(wide, 9.2, -2.8));
         assert!(!at(wide, -1.1, 4.0));
         assert!(!at(wide, 12.8, -15.2));
+    }
+
+    /// Bob, 2026-11-26: "onto Photon stream". Retail locked the Praetorium's armour's actions for 2.1 s every use
+    /// (capture 35e30205); Kawari gave them the usual 0.6.
+    #[test]
+    fn the_armour_s_actions_lock_as_retail_s() {
+        assert_eq!(animation_lock(ActionType::Action, 1128, false), 2.1);
+        assert_eq!(animation_lock(ActionType::Action, 1129, false), 2.1);
+        assert!(crate::client_rules::recast_uses_speed(
+            ActionCategory::Weaponskill,
+            1
+        ));
     }
 
     #[test]
