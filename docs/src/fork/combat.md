@@ -793,6 +793,12 @@ one tick per effect, each on its own 3 s from when it was applied, and nothing f
 effect joins its target's ticks and each target gets one tick per kind, its effects' total, named after the first
 one's source (`periodic::add_to_totals`, `tick_control`). Test `a_target_s_over_time_effects_tick_together`.
 
+A death calls off the dead one's queued tasks but not its statuses' ends (`kill_actor`): those stay on it while it lies
+and go when they run out. Calling those off too left a bot that fell under Regen with Regen for good after it got up,
+listed at 0.0 s and never ticking (Bob's mark of 2026-11-26: "regen is staying on in rare cases when it reaches 0";
+Regen 18 s at 403.1 s into his run, the bot down at 407.2, Regen still listed at 0.0 from its raise at 438.2 to the
+end). Whether retail takes statuses off at a death isn't read here. Test `a_death_keeps_its_statuses_ends`.
+
 ## Barriers
 
 A barrier absorbs damage before its holder's HP, and retail's EffectResult carries what's left of all of a target's

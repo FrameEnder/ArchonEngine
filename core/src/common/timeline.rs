@@ -217,6 +217,12 @@ pub struct RecordedAmount {
     /// shared between all players in the AoE"): all four of the party in each of Bob's retail casts (capture 35e30205).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub shared_by: Option<u32>,
+    /// For an attack that knocks back those it hits: its Knockback sheet row (the action's script sends it; this is
+    /// for those who see it coming: a party bot gets where the throw keeps it on the floor, `party_bot::braced_spot`.)
+    /// The Praetorium's second boss's Augmented Suffering (28476): row 156, 12 yalms from him in the middle; retail's
+    /// party stood 1.7 to 8.5 yalms from him as it hit (Bob's capture 35e30205), inside the 20-yalm ring after it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub knockback: Option<u16>,
 }
 
 impl RecordedAmount {

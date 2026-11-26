@@ -614,6 +614,24 @@ From Bob's bundle 20261110-182408 (the Stone Vigil, a party of Player NPCs):
   whole party stopped attacking through the whirlwinds, where retail's members and players kept on (both captures).
   Its target's position is filled in for it now (`npc_behavior`'s position pass). Not tested without the game's data.
 
+**Kept on the floor, and braced for a knockback** (Bob's mark of 2026-11-26, "bots are not avoiding the electrocution
+radius around the arena as a result they are taking on more damage then is neccessary and dying"). In his run the
+Praetorium's ring (20 yalms from the second boss's middle) electrocuted the bots 14 times in 3.5 minutes: half of them
+thrown out by a knockback (Augmented Suffering, 28476, from the middle; the Death Claw's 28480), from 16-19 yalms to
+23-30; the rest walked out to 20.0-21.0 on their own (after the claws and the boss on his edge). Three changes:
+* The boss room's floor (`dodge::Arena`) keeps a party bot's walks on it too, not only its dodges and boss spots
+  (`Arena::keep_inside` in `npc_behavior`'s chase), and the second boss's floor ends at the ring (`BOSS2_FLOOR` 20.0,
+  was 20.6: its spots and walks went to 20.1).
+* A knockback the bots see coming (`Danger::knockback`: the caster's timeline gives the action's Knockback row,
+  `RecordedAmount::knockback`; 28476 row 156, 12 yalms) that covers the whole floor (`braces_for`: it catches eight
+  points round its edge) isn't fled; each bot it would throw off the floor goes nearer its caster, on its line, until
+  the throw lands on it (`braced_spot`, half a yalm at a time), and holds there. For the second boss in the middle, within
+  7.5 yalms of him; retail's party stood 1.7 to 8.5 from him as it hit (capture 35e30205). A knockback that can be
+  walked out of is dodged as before.
+* The claw's 28480 has no cast (it strikes as it reaches its quarry), so nothing sees it coming; its quarry may still be
+  thrown out, as retail's Lancer was (to 23.3).
+Test `a_knockback_is_braced_for_on_the_floor`.
+
 ## Boss fights: spots of their own (2026-11-10)
 
 (2026-11-22) A boss room's floor can be a shape where its range isn't known (`director:boss_room` / `spawn_boss`'s

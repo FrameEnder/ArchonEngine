@@ -1273,6 +1273,8 @@ pub fn npc_behavior(
     // Boss rooms whose NPCs keep to them (`Room`), and whom each room's fight is with: a member's target, for the
     // others to be pulled with it.
     let rooms = instance.rooms.clone();
+    // The floor of the boss room being fought (`dodge::arena`): the party bots' walks stop on it.
+    let arena = crate::server::dodge::arena(instance);
     let room_of = |layout_id: u32| {
         rooms
             .iter()
@@ -1784,6 +1786,15 @@ pub fn npc_behavior(
                         let goal = match room_of(spawn.common.layout_id) {
                             Some(room) => rooms[room].keep_inside(goal),
                             None => goal,
+                        };
+                        // A party bot's goes no further than the boss room's floor (`Arena::keep_inside`), as a
+                        // player keeps off what's past it: the Praetorium's bots walked into its ring after the Death
+                        // Claws and the boss on his edge (Bob's mark of 2026-11-26.)
+                        let goal = match &arena {
+                            Some(arena) if instance.party_bots.contains_key(id) => {
+                                arena.keep_inside(goal)
+                            }
+                            _ => goal,
                         };
                         let gap = if following_owner {
                             f32::INFINITY

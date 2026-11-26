@@ -582,8 +582,14 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
         fate.data.on_actor_death();
     }
 
-    // Cancel existing tasks
-    instance.cancel_actor_tasks(actor_id);
+    // Cancel existing tasks, but not its statuses' running out: they stay on it while it lies (a party bot's, to be
+    // raised), so they must still go when they end. With their ends cancelled a bot that died under Regen got up with
+    // it for good, shown at 0 s and never ticking (Bob's mark of 2026-11-26: "regen is staying on in rare cases when it
+    // reaches 0", his capture: Regen 18 s on a bot 4.1 s before it fell, still listed at 0.0 s from its raise on.)
+    instance.retain_tasks(|task| {
+        task.from_actor_id != actor_id
+            || matches!(task.data, QueuedTaskData::LoseStatusEffect { .. })
+    });
     let intended_use = instance.zone.intended_use;
     let quest_spawned = instance.quest_spawned_npcs.remove(&actor_id);
 

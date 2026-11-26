@@ -207,6 +207,7 @@ impl Sweep {
             caster_radius: 0.0,
             until: self.arrives(),
             stack: false,
+            knockback: 0.0,
         })
     }
 }

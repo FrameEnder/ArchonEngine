@@ -1669,8 +1669,12 @@ class PraetoriumTest(FrameworkScriptTest):
             self.assertTrue(holds(floors[1], x, z), (x, z))
         for x, z in [(182.8, 18.8), (182.8, -18.8)]:
             self.assertFalse(holds(floors[1], x, z), (x, z))
-        for x, z in [(-184.0, 0.0), (-143.9, 0.0), (-164.0, -20.0), (-164.0, 20.0)]:
+        # The second boss's floor ends at his ring (20 yalms: it electrocutes, Bob's mark of 2026-11-26); retail's
+        # party went to its edge (20.1 at most but once), so inside it to 19.5.
+        for x, z in [(-183.5, 0.0), (-144.5, 0.0), (-164.0, -19.5), (-164.0, 19.5)]:
             self.assertTrue(holds(floors[2], x, z), (x, z))
+        for x, z in [(-184.0, 0.0), (-164.0, 20.0)]:
+            self.assertFalse(holds(floors[2], x, z), (x, z))
         for x, z in [(-575.0, 202.0), (-552.0, 238.0)]:
             self.assertTrue(holds(floors[3], x, z), (x, z))
         self.assertFalse(holds(floors[3], -576.0, 220.0))

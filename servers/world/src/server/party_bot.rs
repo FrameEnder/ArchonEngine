@@ -4186,7 +4186,11 @@ fn update_party(
         // Laser Beta's, one on each of the party: they spread out), and theirs keep out of its.
         let theirs: Vec<Danger> = dangers
             .iter()
-            .filter(|danger| danger.follows != Some(*bot_id) && !danger.stack)
+            .filter(|danger| {
+                danger.follows != Some(*bot_id)
+                    && !danger.stack
+                    && !arena.is_some_and(|arena| braces_for(danger, &arena))
+            })
             .copied()
             .collect();
         // The waves of them it tries to be out of, all first, then the soonest ones (`dodge::in_turn`.)
@@ -4237,6 +4241,22 @@ fn update_party(
         } else {
             None
         };
+        // A knockback it can't get out of on the boss room's floor (`braces_for`): where the throw keeps it on the
+        // floor, nearer its caster, as retail's party went in to the Praetorium's second boss for his Augmented
+        // Suffering (Bob's mark of 2026-11-26: the bots were thrown into the ring.)
+        let braced = if authored.is_none() && stack.is_none() {
+            arena
+                .and_then(|arena| braced_spot(&dangers, &arena, here))
+                .and_then(|(to, until)| match to {
+                    None => Some((None, until)),
+                    Some(to) => {
+                        let path = dodge_way(navmesh, collision.as_deref(), here, to)?;
+                        Some((Some(path.last().copied()?), until))
+                    }
+                })
+        } else {
+            None
+        };
         if let Some((to, until, react)) = authored {
             let entry = dodge.get_or_insert(dodge::Dodge {
                 to: None,
@@ -4249,7 +4269,7 @@ fn update_party(
             if to.is_some() || entry.to.is_none() {
                 entry.to = to;
             }
-        } else if let Some((to, until)) = stack {
+        } else if let Some((to, until)) = stack.or(braced) {
             let entry = dodge.get_or_insert(dodge::Dodge {
                 to: None,
                 set_off: dodge::authored_set_off(now, STACK_REACTION, fastrand::f32()),
@@ -4360,6 +4380,7 @@ fn update_party(
             if threats.is_empty()
                 && authored.is_none()
                 && stack.is_none()
+                && braced.is_none()
                 && now >= current.until + dodge::LINGER
             {
                 // Over: back to fighting, from where it stands.
@@ -5048,6 +5069,55 @@ fn stack_spot(
     Some((to, danger.until))
 }
 
+/// Whether `danger` is a knockback (`Danger::knockback`) that catches every point round the edge of `arena`: no getting
+/// out of it on the floor, only where its throw lands (`braced_spot`.)
+fn braces_for(danger: &Danger, arena: &dodge::Arena) -> bool {
+    danger.knockback > 0.0
+        && arena
+            .edge()
+            .iter()
+            .all(|point| danger.catches(Vec3A::new(point.x, danger.caster.y, point.z), 0.0))
+}
+
+/// Where a bot at `here` stands for the soonest knockback it can't get out of on the boss room's floor (`braces_for`),
+/// and until when: `None` to hold (its throw from here lands on the floor), else the nearest point towards the caster,
+/// on the same line, from which it does (half a yalm at a time; the caster's own spot if none). The Praetorium's second
+/// boss in the middle of a 20-yalm floor throwing 12: within 7.5 of him (retail's party stood 1.7 to 8.5 from him,
+/// capture 35e30205.)
+fn braced_spot(
+    dangers: &[Danger],
+    arena: &dodge::Arena,
+    here: Vec3A,
+) -> Option<(Option<Vec3A>, Instant)> {
+    let danger = dangers
+        .iter()
+        .filter(|danger| braces_for(danger, arena) && danger.catches(here, 0.0))
+        .min_by_key(|danger| danger.until)?;
+    let lands = |at: Vec3A| {
+        crate::server::action::knocked_back_to(danger.caster, at, danger.rotation, danger.knockback)
+    };
+    if arena.holds(lands(here)) {
+        return Some((None, danger.until));
+    }
+    let source = Vec3A::new(danger.caster.x, here.y, danger.caster.z);
+    let away = Vec3A::new(here.x - source.x, 0.0, here.z - source.z);
+    let distance = away.length();
+    let away = away.try_normalize().unwrap_or(Vec3A::new(
+        danger.rotation.sin(),
+        0.0,
+        danger.rotation.cos(),
+    ));
+    let mut out = distance;
+    while out > 0.0 {
+        out = (out - 0.5).max(0.0);
+        let at = source + away * out;
+        if arena.holds(lands(at)) {
+            return Some((Some(at), danger.until));
+        }
+    }
+    Some((Some(source), danger.until))
+}
+
 /// The first of the enemies fighting the party (or that the director has them fight) that the director has the
 /// damage dealers go for first (`Instance::party_focus`.)
 fn focused(engaged: &[Engaged], focus: &HashSet<ObjectId>) -> Option<ObjectId> {
@@ -5133,6 +5203,69 @@ mod tests {
         assert_eq!(focused(&engaged, &HashSet::from([ObjectId(3)])), None);
     }
 
+    /// Bob's mark of 2026-11-26: "bots are not avoiding the electrocution radius". The Praetorium's second boss in the
+    /// middle of his 20-yalm floor (the ring) throws everyone 12 yalms (Augmented Suffering, row 156): a bot 16 out goes
+    /// in to where the throw keeps it on the floor (within 7.5 of him, retail's party 1.7 to 8.5); one 3 out holds; a
+    /// knockback that can be walked out of, or no floor, is a danger like any other. The floor keeps walks on it too.
+    #[test]
+    fn a_knockback_is_braced_for_on_the_floor() {
+        use crate::gamedata::AreaShape;
+        use crate::server::director::ArenaFloor;
+        let now = Instant::now();
+        let middle = Vec3A::new(-164.0, -104.2, 0.0);
+        let arena = dodge::Arena::from_floor(&ArenaFloor {
+            x: -164.0,
+            z: 0.0,
+            half_x: 20.0,
+            half_z: 20.0,
+            round: true,
+        });
+        let suffering = Danger {
+            action_id: 28476,
+            shape: AreaShape::Circle {
+                radius: 40.0,
+                on_target: false,
+            },
+            caster_id: ObjectId(9),
+            caster: middle,
+            rotation: 0.0,
+            aimed_at: middle,
+            follows: None,
+            caster_radius: 0.5,
+            until: now + Duration::from_secs(4),
+            stack: false,
+            knockback: 12.0,
+        };
+        assert!(braces_for(&suffering, &arena));
+        let out = middle + Vec3A::new(16.0, 0.0, 0.0);
+        let (to, _) = braced_spot(&[suffering], &arena, out).unwrap();
+        let to = to.unwrap();
+        let from_him = Vec3A::new(to.x - middle.x, 0.0, to.z - middle.z).length();
+        assert!((7.0..=7.5).contains(&from_him), "{to:?}");
+        assert!(to.z.abs() < 1e-4 && to.x > middle.x);
+        assert_eq!(
+            braced_spot(&[suffering], &arena, middle + Vec3A::new(3.0, 0.0, 0.0)).map(|(to, _)| to),
+            Some(None)
+        );
+        let small = Danger {
+            shape: AreaShape::Circle {
+                radius: 8.0,
+                on_target: false,
+            },
+            ..suffering
+        };
+        assert!(!braces_for(&small, &arena));
+        assert_eq!(braced_spot(&[small], &arena, out), None);
+        // Walks stop on the floor, half a yalm in from its edge (19.5 from the middle, short of the ring at 20.)
+        let kept = arena.keep_inside(middle + Vec3A::new(0.0, 0.0, 30.0));
+        assert!(
+            (kept.z - 19.5).abs() < 1e-4 && kept.y == middle.y,
+            "{kept:?}"
+        );
+        let inside = middle + Vec3A::new(5.0, 0.0, 5.0);
+        assert_eq!(arena.keep_inside(inside), inside);
+    }
+
     /// Bob's mark of 2026-11-26: "bots don't run to target of augmented shatter". Retail's party all stood in it
     /// (capture 35e30205: four hit, 2-3 yalms apart.)
     #[test]
@@ -5154,6 +5287,7 @@ mod tests {
             caster_radius: 0.0,
             until: now + Duration::from_secs(4),
             stack: true,
+            knockback: 0.0,
         };
         // Its target stays where it is.
         assert_eq!(stack_spot(&[stack], ObjectId(1), target), None);

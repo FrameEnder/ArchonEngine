@@ -183,8 +183,10 @@ BOSS2_AHEAD = 2001135
 OPEN_AT_START = { 9247278, 9058476 }
 PLACE_BOSS2 = 454
 BOSS2_MIDDLE = { x = -164.0, y = -104.2, z = 0.0 }
--- Round: retail's party stood to 20.1 yalms from the middle (22.3 once), from x -184 to -143 and z -20 to 20.
-BOSS2_FLOOR = { x = -164.0, z = 0.0, half_x = 20.6, round = true }
+-- Round: retail's party stood to 20.1 yalms from the middle (22.3 once), from x -184 to -143 and z -20 to 20. The
+-- ring electrocutes from 20.0 (`BOSS2_RING`), so the party's floor ends there: with 20.6 the bots took spots and walks
+-- to 20.1, in it (Bob's mark of 2026-11-26: "bots are not avoiding the electrocution radius").
+BOSS2_FLOOR = { x = -164.0, z = 0.0, half_x = 20.0, round = true }
 NAME_BOSS2 = 2135
 HELPER_BOSS2 = 2
 HELPERS_BOSS2 = 8

@@ -3,7 +3,8 @@
     "recorded_amounts": {
         "28480": {
             "players": 399,
-            "npcs": 310
+            "npcs": 310,
+            "knockback": 70
         }
     },
     "timeline_always_plays": false,

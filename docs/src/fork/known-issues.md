@@ -28,6 +28,8 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
 * **The second boss's ring of lightning**: built from Bob's retail run (`dungeons.md`); whether its 3073 ticks over a
   long stay out there isn't known (no one stayed a second). The Death Claw's strikes after its first are a guess
   (retail's fell 2 s after it).
+* **The Praetorium's ring and the bots** (since the change after `e9e57af74`): the Death Claw's 28480 has no cast, so its
+  quarry can still be thrown into the ring; bracing for Augmented Suffering is untested in game.
 * **Knockbacks on NPCs** (since the change after `18bcc9231`): built from what retail showed of its thrown players; how
   retail moved an NPC it threw (a Duty Support member) isn't in any capture, nor whether the client plays the
   knockback's effect on an NPC by itself (if it does, it also gets the server's two ActorMoves to the same spot).

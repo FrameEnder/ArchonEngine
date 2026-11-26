@@ -64,6 +64,9 @@ pub struct Danger {
     /// An attack split among those it hits (`RecordedAmount::shared_by`, a stack): the party goes into it, with its
     /// target, instead of out of it (Bob's mark of 2026-11-26: "bots don't run to target of augmented shatter".)
     pub stack: bool,
+    /// How far it throws those it hits from its caster (yalms; `RecordedAmount::knockback`'s row, straight away from
+    /// them), or 0.
+    pub knockback: f32,
 }
 
 impl Danger {
@@ -216,6 +219,14 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
                     .recorded_amounts
                     .get(&cast.action_id)
                     .is_some_and(|recorded| recorded.shared_by.is_some());
+                let knockback = timeline
+                    .recorded_amounts
+                    .get(&cast.action_id)
+                    .and_then(|recorded| recorded.knockback)
+                    .and_then(|row| game_data.get_knockback(row))
+                    .filter(|knockback| knockback.direction == 0)
+                    .map(|knockback| knockback.distance)
+                    .unwrap_or(0.0);
                 Some(Danger {
                     action_id: cast.action_id,
                     shape,
@@ -229,6 +240,7 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
                     caster_radius: info.area_hitbox(timeline.hitbox_radius),
                     until: cast.until,
                     stack,
+                    knockback,
                 })
             }
             _ => None,
@@ -286,6 +298,37 @@ impl Arena {
             ),
             round: floor.round,
         }
+    }
+
+    /// `point` if it's on it (`holds`), else the nearest point that is, at its height: where a party bot's walk
+    /// after anyone stops while the boss is fought (`npc_behavior`; the Praetorium's ring electrocuted the bots that
+    /// went past it, Bob's mark of 2026-11-26.)
+    pub fn keep_inside(&self, point: Vec3A) -> Vec3A {
+        if self.holds(point) {
+            return point;
+        }
+        let half = (self.half - Vec2::splat(ARENA_MARGIN)).max(Vec2::ZERO);
+        let offset = Vec2::new(point.x - self.centre.x, point.z - self.centre.z);
+        let inside = if self.round {
+            offset.normalize_or_zero() * half.x
+        } else {
+            offset.clamp(-half, half)
+        };
+        Vec3A::new(self.centre.x + inside.x, point.y, self.centre.z + inside.y)
+    }
+
+    /// Points round its edge, `ARENA_MARGIN` in (eight, every 45 degrees round its middle): a danger that catches
+    /// them all can't be got out of on it.
+    pub fn edge(&self) -> [Vec3A; 8] {
+        std::array::from_fn(|i| {
+            let angle = i as f32 * std::f32::consts::FRAC_PI_4;
+            let far = Vec3A::new(
+                self.centre.x + angle.sin() * 1000.0,
+                0.0,
+                self.centre.z + angle.cos() * 1000.0,
+            );
+            self.keep_inside(far)
+        })
     }
 
     /// Whether `point` is on it, `ARENA_MARGIN` in from its edge.
@@ -670,6 +713,7 @@ mod tests {
             caster_radius: 1.0,
             until: Instant::now() + Duration::from_secs(4),
             stack: false,
+            knockback: 0.0,
         }
     }
 
@@ -874,6 +918,7 @@ mod tests {
                 caster_radius: 0.5,
                 until: now + Duration::from_secs_f32(after),
                 stack: false,
+                knockback: 0.0,
                 ..danger(AreaShape::Circle {
                     radius: 10.0,
                     on_target: false,

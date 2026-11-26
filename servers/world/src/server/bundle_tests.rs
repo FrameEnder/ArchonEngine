@@ -2463,3 +2463,49 @@ fn a_layouts_every_npc_goes_and_takes_the_focus_with_it() {
     assert!(world.instance.find_npcs(CLAW).is_empty());
     assert!(world.instance.party_focus.is_empty());
 }
+
+/// Bob's mark of 2026-11-26 ("regen is staying on in rare cases when it reaches 0"): a bot fell 4.1 s into an 18 s
+/// Regen, and its death cancelled every task of its own, Regen's end with them, so it got up with Regen for good (listed
+/// at 0.0 s, never ticking). A death calls off its other tasks but not its statuses' ends.
+#[test]
+fn a_death_keeps_its_statuses_ends() {
+    use crate::server::instance::QueuedTaskData;
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let bot = world.player_npc(ENEMY, player, [1.0, 0.0, 1.0]);
+    world.instance.insert_task(
+        Default::default(),
+        bot,
+        Duration::from_secs(14),
+        QueuedTaskData::LoseStatusEffect {
+            effect_id: 158,
+            effect_param: 0,
+            effect_source_actor_id: player,
+        },
+    );
+    world.instance.insert_task(
+        Default::default(),
+        bot,
+        Duration::from_secs(30),
+        QueuedTaskData::ResetCombo,
+    );
+    world
+        .instance
+        .find_actor_mut(bot)
+        .unwrap()
+        .get_common_spawn_mut()
+        .health_points = 0;
+    kill_actor(world.network.clone(), &mut world.instance, bot);
+    let own: Vec<_> = world
+        .instance
+        .queued_task
+        .iter()
+        .filter(|task| task.from_actor_id == bot)
+        .map(|task| &task.data)
+        .collect();
+    assert_eq!(own.len(), 1, "{own:?}");
+    assert!(matches!(
+        own[0],
+        QueuedTaskData::LoseStatusEffect { effect_id: 158, .. }
+    ));
+}
