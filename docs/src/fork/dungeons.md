@@ -2004,6 +2004,16 @@ Not played on Kawari.
   (`map_effect_barriers.json`), with the door's own, 6 (1, 4) and 7 (4, 4), sent as it falls. The navmesh is made again
   for the new list the next time the duty is entered.
 
+* *The arm units walking* (Bob's next mark: "should stay in place"): retail's four sent no ActorMove from their spawn
+  to their fall, their 29185, 29186 and auto-attacks all from where they were put (capture 35e30205); Kawari's walked
+  after the party. Their timeline says `fixed` now: an NPC whose timeline is `fixed` never moves or turns
+  (`npc_behavior::stays_put`, with those on a layout object). Test `a_fixed_npc_stays_put`.
+* *"Killed me in two hits"*: no enemy did it. The server's capture has the player's health at 26 after his first
+  Photon Stream and 0 after his second, with no enemy's action on him: a player's line went to its target alone,
+  and 1129 is aimed at the rider. A player's line, cone, cross or donut is an area now (`shaped_area` in
+  `server/action.rs`), from them, the way they faced as they used it, catching enemies by their hitbox; the caster isn't
+  in it. Test `a_player_s_line_is_an_area`.
+
 Tests `PraetoriumTest.test_the_arm_units_come_into_view`, `test_the_armour_below_comes_in_cutscene_392`,
 `an_npc_on_a_layout_object_never_turns`, `the_praetoriums_blasted_walls_are_barriers`. Not played on Kawari. `duty-sim`
 leaves out a script's event NPCs' spawns (a retail run lists battle NPCs only).

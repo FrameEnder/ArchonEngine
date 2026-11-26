@@ -616,6 +616,13 @@ pub(crate) fn attached_to_layout(actor: &NetworkedActor) -> bool {
     matches!(actor, NetworkedActor::Npc { spawn, .. } if spawn.gimmick_id != 0)
 }
 
+/// Whether an NPC never moves or turns: one on a layout object (`attached_to_layout`), or one whose timeline says so
+/// (`Timeline::fixed`.)
+pub(crate) fn stays_put(actor: &NetworkedActor) -> bool {
+    attached_to_layout(actor)
+        || matches!(actor, NetworkedActor::Npc { timeline, .. } if timeline.fixed)
+}
+
 /// An NPC beginning a cast turns to it: an ActorMove where it stands with the cast's facing, as retail sends with
 /// each of a boss's ActorCasts (Cape Westwind's, Bob's Chronofoil capture 178b0de0 of 2026-11-18: one with every
 /// cast, same position, new rotation.) With every one: the first version sent it only when the NPC's facing
@@ -630,13 +637,13 @@ pub(crate) fn face_for_cast(
     id: ObjectId,
     rotation: f32,
 ) {
+    // (Not one that stays put: `stays_put`.)
+    if instance.find_actor(id).is_some_and(stays_put) {
+        return;
+    }
     let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(id) else {
         return;
     };
-    // (Not one that's part of a layout object: `attached_to_layout`.)
-    if spawn.gimmick_id != 0 {
-        return;
-    }
     spawn.common.rotation = rotation;
     let position = spawn.common.position;
     network.send_in_range_instance(
@@ -866,7 +873,7 @@ pub fn npc_behavior(
         // moves or turns. Retail's cermet blast door in the Praetorium (BNpcBase 14616, on SharedGroup 4189149) sent no
         // ActorMove in its whole fight (capture 35e30205); Kawari's walked and turned 18 times (Bob's mark of
         // 2026-11-26: "treated as an enemy npc rather than a stationary door").
-        if attached_to_layout(actor) {
+        if stays_put(actor) {
             continue;
         }
         // A director's helper does only what it's told (`director:hold_bnpc`); a world bot only what `world_bots.rs`

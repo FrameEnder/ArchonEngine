@@ -1949,9 +1949,9 @@ pub fn execute_action(
             // Players' (and party bots') area actions hit every enemy (or ally) inside; enemies' are handled above, on
             // their target.
             let caster_is_player = plays_as_player(instance, from_actor_id);
-            if let Some(info) =
-                action_info.filter(|info| info.is_area_of_effect() && caster_is_player)
-            {
+            if let Some(info) = action_info.filter(|info| {
+                (info.is_area_of_effect() || shaped_area(info).is_some()) && caster_is_player
+            }) {
                 // Fill in the damage element shown to the client.
                 {
                     let mut game_data = game_data.lock();
@@ -2937,6 +2937,31 @@ pub(crate) fn status_as_taken(
 /// Damage (and any status effects, if the action deals damage) goes to enemies, while healing (and status effects otherwise) go to the caster and their party.
 /// Where a player's area action is measured from: where they aimed it at the ground, else its target for one with a
 /// range (Cure III), else themselves (Medica).
+/// A player's area action that isn't a circle: a line, cone, cross or donut from them (the Action sheet's CastType,
+/// `ActionInfo::area_shape`). Until 2026-11-26 only circles were areas for players; the rest landed on the target
+/// alone, so the Praetorium's armour's Photon Stream (1129, a 10 by 2 line, aimed at the rider himself) hit the rider
+/// for its 3000 and killed him in two uses (Bob's mark: "they killed me in two hits"; the server's capture has his
+/// health at 26 after the first, 0 after the second, with no enemy's action on him), where retail's hit the enemies
+/// in the line (capture 35e30205).
+fn shaped_area(info: &ActionInfo) -> Option<AreaShape> {
+    match info.area_shape()? {
+        AreaShape::Circle { .. } => None,
+        shape => Some(shape),
+    }
+}
+
+/// How far past an area's edge it catches someone: an enemy's hitbox (its timeline's, else `UNKNOWN_HITBOX_RADIUS`),
+/// a player's or a bot's.
+fn area_reach(actor: &NetworkedActor) -> f32 {
+    match actor {
+        NetworkedActor::Npc { timeline, .. } if timeline.hitbox_radius > 0.0 => {
+            timeline.hitbox_radius
+        }
+        NetworkedActor::Npc { .. } => UNKNOWN_HITBOX_RADIUS,
+        _ => PLAYER_HITBOX_RADIUS,
+    }
+}
+
 fn area_middle(
     ground_aim: Option<glam::Vec3A>,
     range: i8,
@@ -2984,6 +3009,22 @@ fn apply_area_of_effect(
     );
     let radius = info.effect_range as f32 + AOE_HITBOX_LENIENCY;
     let distance_to = |actor: &NetworkedActor| actor.position().0.distance(center.0);
+    // A line, cone, cross or donut from the caster, the way they faced as they used it, as the client draws it; a
+    // circle as before.
+    let shape = shaped_area(info);
+    let caster_hitbox = info.area_hitbox(PLAYER_HITBOX_RADIUS);
+    let inside = |actor: &NetworkedActor| match shape {
+        Some(shape) => in_area_with_reach(
+            shape,
+            caster_position.0,
+            request.rotation1,
+            center.0,
+            actor.position().0,
+            caster_hitbox,
+            area_reach(actor),
+        ),
+        None => distance_to(actor) <= radius,
+    };
 
     let has_damage = effects_builder
         .effects
@@ -3003,7 +3044,7 @@ fn apply_area_of_effect(
     let mut hostiles: Vec<(ObjectId, f32)> = instance
         .actors
         .iter()
-        .filter(|(_, actor)| is_living_enemy(actor, caster_enemies) && distance_to(actor) <= radius)
+        .filter(|(_, actor)| is_living_enemy(actor, caster_enemies) && inside(actor))
         .filter(|(id, actor)| !beyond_area_actions(instance, **id, actor))
         .map(|(id, actor)| (*id, distance_to(actor)))
         .collect();
@@ -3037,7 +3078,7 @@ fn apply_area_of_effect(
         if let Some(actor) = instance.find_actor(id)
             && (matches!(actor, NetworkedActor::Player { .. }) || bots.contains(&id))
             && actor.get_common_spawn().health_points > 0
-            && distance_to(actor) <= radius
+            && inside(actor)
         {
             friendlies.push(id);
         }
@@ -4878,6 +4919,48 @@ mod area_tests {
         assert!(at(wide, 9.2, -2.8));
         assert!(!at(wide, -1.1, 4.0));
         assert!(!at(wide, 12.8, -15.2));
+    }
+
+    /// Bob's mark of 2026-11-26: "they killed me in two hits". His own Photon Stream (1129, a line aimed at himself)
+    /// landed on him: a player's line went to its target alone. A line, cone, cross or donut is an area now, with the
+    /// caster outside it, and retail's hits are in it (an enemy 8.75 ahead and 1.06 aside, capture 35e30205).
+    #[test]
+    fn a_player_s_line_is_an_area() {
+        let photon_stream = ActionInfo {
+            cast_type: 4,
+            effect_range: 10,
+            x_axis_modifier: 2,
+            ..Default::default()
+        };
+        let line = shaped_area(&photon_stream).expect("a line");
+        assert_eq!(
+            line,
+            AreaShape::Line {
+                length: 10.0,
+                width: 2.0
+            }
+        );
+        let circle = ActionInfo {
+            cast_type: 2,
+            effect_range: 5,
+            ..Default::default()
+        };
+        assert!(shaped_area(&circle).is_none());
+        let caught = |forward: f32, side: f32, reach: f32| {
+            in_area_with_reach(
+                line,
+                Vec3A::ZERO,
+                0.0,
+                Vec3A::ZERO,
+                Vec3A::new(side, 0.0, forward),
+                photon_stream.area_hitbox(PLAYER_HITBOX_RADIUS),
+                reach,
+            )
+        };
+        assert!(caught(8.75, 1.06, UNKNOWN_HITBOX_RADIUS));
+        assert!(caught(10.05, -0.71, UNKNOWN_HITBOX_RADIUS));
+        assert!(!caught(-6.0, 0.0, UNKNOWN_HITBOX_RADIUS));
+        assert!(!caught(5.0, 6.0, UNKNOWN_HITBOX_RADIUS));
     }
 
     /// Bob, 2026-11-26: "onto Photon stream". Retail locked the Praetorium's armour's actions for 2.1 s every use

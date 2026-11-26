@@ -2333,3 +2333,27 @@ fn an_npc_on_a_layout_object_never_turns() {
     );
     assert!(world.sent(player).is_empty());
 }
+
+/// Bob's mark of 2026-11-26: "the proto ultima unit should not be moving around like it is it should stay in place".
+/// Retail's four arm units (14566) sent no ActorMove from spawn to fall (capture 35e30205); their timeline says so
+/// (`fixed`), and one that's fixed stays put.
+#[test]
+fn a_fixed_npc_stays_put() {
+    use crate::server::npc_behavior::{face_for_cast, stays_put};
+    let timeline: kawari::common::Timeline = serde_json::from_str(
+        &std::fs::read_to_string("../../resources/timelines/PraetoriumEnemy_14566.json").unwrap(),
+    )
+    .unwrap();
+    assert!(timeline.fixed);
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let unit = world.enemy(ENEMY, [5.0, 0.0, 0.0], 12116);
+    assert!(!stays_put(world.instance.find_actor(unit).unwrap()));
+    if let Some(NetworkedActor::Npc { timeline: own, .. }) = world.instance.find_actor_mut(unit) {
+        *own = timeline;
+    }
+    assert!(stays_put(world.instance.find_actor(unit).unwrap()));
+    world.sent(player);
+    face_for_cast(&mut world.network.lock(), &mut world.instance, unit, 1.0);
+    assert!(world.sent(player).is_empty());
+}

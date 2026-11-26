@@ -60,6 +60,12 @@ pub struct Timeline {
     /// that did in the captures (walked to their arena's middle and held it) and fails where a timeline lacks it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fights_from: Option<[f32; 3]>,
+    /// This NPC never moves or turns: it fights from where it was put, facing where it was put. Retail's Proto Ultima
+    /// arm units in the Praetorium (BNpcBase 14566) sent no ActorMove from their spawn to their fall, their 29185 and
+    /// 29186 and auto-attacks all from there (Bob's Chronofoil capture 35e30205, all four); Kawari's walked about after
+    /// the party (Bob's mark of 2026-11-26, "should stay in place").
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub fixed: bool,
 }
 
 /// The lines an NPC shouts as it uses one of its actions, as retail sent them: ActorControl 73 `[line]` from the NPC,
@@ -526,6 +532,7 @@ mod tests {
                 rotation: None,
                 shouts: BTreeMap::default(),
                 fights_from: None,
+                fixed: false,
                 from_pull: false,
                 timepoints: vec![Timepoint {
                     time: 20.0,
