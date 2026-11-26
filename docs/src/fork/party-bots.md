@@ -732,6 +732,20 @@ from now on). Whether the surface over Castrum Meridianum's road is one of them 
 file: a bot put down by `on_the_players_ground` logs that surface's material, so the next run says. Test
 `invisible_walls_and_holes_are_never_floors`.
 
+**Material 0x2006 is passed through** (Bob's screenshots and marks of 2026-11-26, the Praetorium's rubble outside the
+blasted wall at about (238, 157, -39): "adds bumps to the ground that the bots are visibly getting stuck on"). Read
+through the ControlPanel's harness (2.37.0 serves the collision file): the rubble is 525 triangles of material 0x2006,
+150.4 to 160.3 high over a floor of 0x7006 at about 157. Bob walked the way the bots were held on, (238.06, -39.42) to
+(236.79, -41.04), at 157.0-157.3, through rubble faces 0.6 to 1.4 yalms over his feet, standing on the 0x7006 under it.
+Across four of his captures (about 3700 moves) his body went through 0x2006 faces 31 times and through no other
+material that isn't a gimmick's, though he passed walls of 0x2000, 0x7000, 0x7006 and 0x7400 hundreds of times; of
+his 165 positions over the rubble, 148 stood on the 0x7006 under it and 15 had rubble over his feet. So
+`collision::passable_material` (0x2006 in the low 16 bits; which bit says so isn't known) is no wall and no floor for
+any walker, and `kawari-navimesh` leaves it out of the navmesh; a collision file of version 9 or older that has some
+is made again (version 10), so the Praetorium's navmesh, which went round the rubble, is made again on its next visit.
+The bump guess of `434e6863a` was wrong (the rubble isn't low; it's not there for the client). Test
+`the_praetoriums_rubble_is_passed_through`.
+
 "Standing in the air" itself was the floor (Bob, the same day: "literally standing in the air about 1 yalm … a fix you
 made for Cape Westwind's boss"): since 2026-11-18 anyone with a second surface less than 2 yalms over the floor they
 stood on was put on that surface (`collision::settle`'s `HEADROOM`); now only someone between the two goes up, not

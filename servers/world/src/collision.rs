@@ -41,7 +41,10 @@ use glam::Vec3A;
 
 /// The file's first bytes, and the layout's version.
 const MAGIC: &[u8; 4] = b"KCOL";
-const VERSION: u32 = 9;
+const VERSION: u32 = 10;
+/// The version before the passable materials (`passable_material`) were left out of the navmesh, still read (the same
+/// layout): a zone with some is made again.
+const VERSION_PASSABLE_IN_NAVMESH: u32 = 9;
 /// The version before the file said which map effect barriers its build looked for (`barriers_differ`), still read
 /// (the same layout, without them): made again for a zone with barriers. A zone's barriers added to
 /// `map_effect_barriers.json` after its navmesh was made weren't in it, and nothing made it again: the Praetorium's
@@ -71,6 +74,17 @@ const VERSION_WITHOUT_SHAPES: u32 = 3;
 /// (unknown, a version 2 file) is walkable.
 pub fn walkable_material(material: u64) -> bool {
     material & 0x200_0000 == 0 && material & 0x1F != 0x11
+}
+
+/// Whether a triangle of this collision material is no obstacle at all: not a wall, not a floor (the player's client
+/// walks through it.) 0x2006 is the Praetorium's rubble outside the blasted wall: in four of Bob's captures (about 3700
+/// of the player's moves there and elsewhere in the duty, 2026-11-26) his body went through its faces 31 times, 0.6 to
+/// 1.4 yalms over his feet, and he stood on the floor under it (0x7006), never on it; he went through no other
+/// material that isn't a gimmick's, though he passed 0x2000, 0x7000, 0x7006 and 0x7400 walls hundreds of times. The
+/// bots were held by it ("adds bumps to the ground that the bots are visibly getting stuck on"). Which bit says so
+/// isn't known (0x2006 is 0x7006's floor without 0x5000, 0x2000's wall with 0x6), so only the whole value is read.
+pub fn passable_material(material: u64) -> bool {
+    material & 0xFFFF == 0x2006
 }
 
 /// The version before materials, still read (without them.)
@@ -276,8 +290,10 @@ impl Collision {
             .enumerate()
             .map(|(index, tri)| {
                 let n = normal(&self.vertices, tri).normalize_or_zero();
+                let material = self.materials.get(index).copied().unwrap_or(0);
                 n.y.abs() >= self.floor_cos
-                    && walkable_material(self.materials.get(index).copied().unwrap_or(0))
+                    && walkable_material(material)
+                    && !passable_material(material)
             })
             .collect::<Vec<_>>()
             .into();
@@ -346,6 +362,7 @@ impl Collision {
         let version = r.u32()?;
         if ![
             VERSION,
+            VERSION_PASSABLE_IN_NAVMESH,
             VERSION_BARRIERS_UNLISTED,
             VERSION_BARRIERS_NOT_FOUND,
             VERSION_BARRIERS_BUILT_IN,
@@ -359,7 +376,7 @@ impl Collision {
             return None;
         }
         let mut barriers = None;
-        if version >= VERSION {
+        if version >= VERSION_PASSABLE_IN_NAVMESH {
             let count = r.u32()? as usize;
             let mut list = Vec::with_capacity(count.min(256));
             for _ in 0..count {
@@ -557,8 +574,11 @@ impl Collision {
 
     /// Whether it's from an older file, made before the open doors were left open (version 4) or the simple shapes
     /// were in it (version 3 or 2): the zone's navmesh and collision are made again.
+    /// Or one whose navmesh was made with the passable materials in it (version 9 or older, `passable_material`) when
+    /// it has any: its navmesh went round the Praetorium's rubble.
     pub fn is_older(&self) -> bool {
         self.version < VERSION_BARRIERS_NOT_FOUND
+            || (self.version < VERSION && self.materials.iter().any(|m| passable_material(*m)))
     }
 
     /// Whether it was built for other map effect barriers than the zone's `barriers` (their indices, sorted): made
@@ -607,8 +627,12 @@ impl Collision {
         best
     }
 
-    /// Whether triangle `index` belongs to a gimmick that's gone here.
+    /// Whether triangle `index` belongs to a gimmick that's gone here, or is of a material nothing bumps into
+    /// (`passable_material`).
     fn is_gone(&self, index: u32) -> bool {
+        if passable_material(self.materials.get(index as usize).copied().unwrap_or(0)) {
+            return true;
+        }
         let owner = self.owners.get(index as usize).copied().unwrap_or(0);
         owner != 0 && self.gone.get(owner as usize - 1).copied().unwrap_or(false)
     }
@@ -1274,6 +1298,45 @@ mod tests {
             f32::INFINITY,
         );
         assert_eq!(walk.at.y, 88.0, "{walk:?}");
+    }
+
+    /// Bob's screenshots and marks of 2026-11-26: the Praetorium's rubble (0x2006) held the bots, though his own
+    /// body went through it (four captures). It's no wall and no floor; another material is both, and a version 9
+    /// file with it is made again (its navmesh went round it), one without isn't.
+    #[test]
+    fn the_praetoriums_rubble_is_passed_through() {
+        assert!(passable_material(0x2006));
+        assert!(
+            !passable_material(0x2000) && !passable_material(0x7006) && !passable_material(0x3006)
+        );
+        for (material, passable) in [(0x2006, true), (0x2000, false)] {
+            let (mut v, mut t) = (Vec::new(), Vec::new());
+            floor_quad(&mut v, &mut t, -10.0, -10.0, 10.0, 10.0, 0.0);
+            let floor = t.len();
+            // A lump 1 yalm high from x 1 to 2 across the way (its top a floor, its sides walls.)
+            for (x0, x1, y) in [(1.0, 2.0, 1.0)] {
+                floor_quad(&mut v, &mut t, x0, -10.0, x1, 10.0, y);
+                for x in [x0, x1] {
+                    let base = v.len() as u32;
+                    v.extend([[x, 0.0, -10.0], [x, 0.0, 10.0], [x, y, 10.0], [x, y, -10.0]]);
+                    t.extend([[base, base + 1, base + 2], [base, base + 2, base + 3]]);
+                }
+            }
+            let mut materials = vec![0x7006; floor];
+            materials.resize(t.len(), material);
+            let built = Collision::build(v, t, Vec::new(), materials, 0.6, 0.5, 56.0);
+            let c = Collision::from_bytes(&built.to_bytes()).unwrap();
+            let walk = c.walk(Vec3A::new(-2.0, 0.0, 0.0), Vec3A::new(5.0, 0.0, 0.0), 1.0);
+            assert_eq!(walk.at.x > 4.9, passable, "{material:#x}: {walk:?}");
+            assert_eq!(
+                c.floor(1.5, 0.0, 1.2, -0.5),
+                Some(if passable { 0.0 } else { 1.0 })
+            );
+            let mut nine = built.to_bytes();
+            nine[4..8].copy_from_slice(&VERSION_PASSABLE_IN_NAVMESH.to_le_bytes());
+            assert_eq!(Collision::from_bytes(&nine).unwrap().is_older(), passable);
+            assert!(!c.is_older());
+        }
     }
 
     #[test]

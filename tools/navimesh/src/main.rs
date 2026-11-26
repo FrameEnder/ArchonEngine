@@ -271,8 +271,13 @@ fn main() {
     // And each of those triangles' collision material (`walkable_material`.)
     let mut tile_materials: Vec<Vec<u64>> = vec![Vec::new(); (tile_width * tile_height) as usize];
     for (index, (tri, owner)) in geometry.triangles.iter().zip(&geometry.owners).enumerate() {
-        // Gimmicks come and go: the navmesh goes through them (the collision stops walkers while they stand.)
-        if *owner != 0 {
+        // Gimmicks come and go: the navmesh goes through them (the collision stops walkers while they stand.) A
+        // material nothing bumps into (`passable_material`: the Praetorium's rubble) is no ground or wall either.
+        if *owner != 0
+            || kawari_world::collision::passable_material(
+                geometry.materials.get(index).copied().unwrap_or(0),
+            )
+        {
             continue;
         }
         let (mut lo, mut hi) = ([f32::MAX; 2], [f32::MIN; 2]);
