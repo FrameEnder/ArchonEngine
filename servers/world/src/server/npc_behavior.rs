@@ -697,6 +697,9 @@ pub fn npc_behavior(
     if instance.enemy_ai_disabled || !instance.navmesh.is_available() {
         return;
     }
+    // Before the duty begins, or while a player a director moved is still arriving, everyone waits
+    // (`Instance::everyone_waits`.)
+    let everyone_waits = instance.everyone_waits();
 
     let mut actor_moves = Vec::new();
     let mut target_actor_pos = HashMap::new();
@@ -879,10 +882,7 @@ pub fn npc_behavior(
         // A director's helper does only what it's told (`director:hold_bnpc`); a world bot only what `world_bots.rs`
         // has it do.
         // Before the duty begins, everyone waits (`Instance::awaiting_commence`.)
-        if instance.held_npcs.contains(id)
-            || instance.world_bots.contains(id)
-            || instance.awaiting_commence
-        {
+        if instance.held_npcs.contains(id) || instance.world_bots.contains(id) || everyone_waits {
             continue;
         }
         // A party bot out of combat walks itself (server/party_bot.rs.) One waiting out an area attack still acts
@@ -1323,10 +1323,7 @@ pub fn npc_behavior(
         // A director's helper does only what it's told: it neither moves, notices, fights nor follows a timeline
         // (`director:hold_bnpc`; retail's boss helpers stood where they were put and only cast.) Nor does a world bot.
         // Before the duty begins, everyone waits (`Instance::awaiting_commence`.)
-        if instance.held_npcs.contains(id)
-            || instance.world_bots.contains(id)
-            || instance.awaiting_commence
-        {
+        if instance.held_npcs.contains(id) || instance.world_bots.contains(id) || everyone_waits {
             continue;
         }
         // A bot walking itself is left alone, unless it's waiting out an area attack, where it still acts (it doesn't

@@ -195,6 +195,10 @@ pub struct Instance {
     /// The event objects (layout IDs) the director has shown here, whose gimmicks nobody gets through (a boss room
     /// sealed): see `seal_gimmick`.
     pub gimmicks_sealed: HashSet<u32>,
+    /// The players a director's cutscene (`play_cutscene`) went to who haven't finished it yet: its script hears of
+    /// its end (`onSceneFinished`) once the last has (Bob's mark of 2026-11-26 in the Praetorium: "bots did not wait for
+    /// all players to leave the cutscene before attacking": the last boss came at the first player's end.)
+    pub cutscene_watchers: HashSet<ObjectId>,
     /// The zone data.
     pub zone: Zone,
     /// The zone's current weather.
@@ -248,6 +252,9 @@ pub struct Instance {
     /// Duty Finder's bots fought while he watched the Howling Eye's opening.)
     pub awaiting_commence: bool,
     pub ready_to_commence: HashSet<ObjectId>,
+    /// Players a director moved (`warp_player_within`: PrepareZoning, then their client's ZoneIn), until they're in, at
+    /// most `ARRIVAL_PATIENCE`: meanwhile everyone waits, as before the duty begins (`everyone_waits`).
+    pub arriving: HashMap<ObjectId, std::time::Instant>,
     /// NPCs a director is sending along a line, hurting as they go (`director:sweep_bnpc`, `server/sweep.rs`.)
     pub sweeps: Vec<crate::server::sweep::Sweep>,
     /// Aggressive BNpcs (by layout ID) a director has told not to notice anyone who comes close: they fight only when
@@ -823,6 +830,13 @@ impl Instance {
             self.timed_gathering_spawned
                 .insert(layout, (spawn.entity_id, start));
         }
+    }
+
+    /// Whether the enemies and the party's bots wait: the duty hasn't begun (`awaiting_commence`), or a player a
+    /// director moved is still in their loading screen (`arriving`).
+    pub fn everyone_waits(&self) -> bool {
+        let now = std::time::Instant::now();
+        self.awaiting_commence || self.arriving.values().any(|until| *until > now)
     }
 
     /// An event object (by layout ID) hidden or removed here (`gone`), or shown again: the shared groups it controls

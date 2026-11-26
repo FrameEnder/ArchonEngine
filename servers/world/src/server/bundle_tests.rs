@@ -2540,3 +2540,56 @@ fn a_death_strips_its_statuses() {
         "retail sent no LoseEffect at a death: {sent:?}"
     );
 }
+
+/// Bob's mark of 2026-11-26 in the Praetorium ("the battle is stalled after the death of the phantom gaius's"): the
+/// script's `actor_use_action(BOSS3, …)` names the boss by layout ID, and the director looked only for an actor of that
+/// ID, so its 28496, 28497, 28499 and 28500 were never used ("Failed to find actor 9055066 for ActorUseAction!").
+/// Any actor by its actor ID, else a battle NPC by its layout.
+#[test]
+fn a_directors_action_names_its_npc_by_layout_too() {
+    use crate::server::director::actor_or_bnpc;
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let boss = world.enemy(ENEMY, [2.0, 0.0, 2.0], 93255);
+    if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(boss) {
+        spawn.common.layout_id = 9055066;
+    }
+    assert_eq!(actor_or_bnpc(&world.instance, 9055066), Some(boss));
+    assert_eq!(actor_or_bnpc(&world.instance, boss.0), Some(boss));
+    assert_eq!(actor_or_bnpc(&world.instance, player.0), Some(player));
+    assert_eq!(actor_or_bnpc(&world.instance, 9055067), None);
+}
+
+/// Bob's mark of 2026-11-26 ("bots did not wait for all players to leave the cutscene before attacking"): after
+/// cutscene 118 the director moved him to the last room (PrepareZoning, his ZoneIn 5.1 s later), and the boss came and
+/// the bots fought it while he was still loading. Everyone waits while a player a director moved is arriving, at most
+/// `ARRIVAL_PATIENCE`; and a director's cutscene ends for its script once the last player it went to has finished it.
+#[test]
+fn everyone_waits_for_a_player_arriving_and_a_cutscene_ends_with_the_last() {
+    use crate::server::director::{ARRIVAL_PATIENCE, last_to_finish};
+    let mut world = TestWorld::new();
+    let one = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let two = world.player(PLAYER + 1, [1.0, 0.0, 0.0]);
+    assert!(!world.instance.everyone_waits());
+    world
+        .instance
+        .arriving
+        .insert(one, std::time::Instant::now() + ARRIVAL_PATIENCE);
+    assert!(world.instance.everyone_waits());
+    world.instance.arriving.remove(&one);
+    assert!(!world.instance.everyone_waits());
+    // One that never came in stops nobody past its patience.
+    world
+        .instance
+        .arriving
+        .insert(one, std::time::Instant::now() - Duration::from_secs(1));
+    assert!(!world.instance.everyone_waits());
+
+    world.instance.cutscene_watchers = [one, two].into();
+    assert!(!last_to_finish(&mut world.instance, one));
+    assert!(last_to_finish(&mut world.instance, two));
+    // A scene not of the director's cutscene ends at once; one whose other watcher left ends with the last here.
+    assert!(last_to_finish(&mut world.instance, one));
+    world.instance.cutscene_watchers = [one, ObjectId(0x1000_0099)].into();
+    assert!(last_to_finish(&mut world.instance, one));
+}

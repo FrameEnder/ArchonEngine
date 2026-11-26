@@ -1518,6 +1518,54 @@ class PraetoriumLastBossTest(FrameworkScriptTest):
         self.assertAlmostEqual(boss[0][3], 220.0)
 
 
+class PraetoriumSecondPartEndsTest(FrameworkScriptTest):
+    """Bob's mark of 2026-11-26: "the battle is stalled after the death of the phantom gaius's also the party should be
+    wiped on the next attack delt after the death of the phantoms if the blade energy is at 100". The four on the
+    party's hater list as they come; the part ends after the last of them goes however late (every 10 s after the
+    runs' 67.9, 77.9, 87.9), with 28499, or 28500 (the wipe) if the gauge got full; the gauge stops as they're down."""
+
+    SCRIPT = "w1d5_re.lua"
+
+    def run_part(self, floored_at):
+        g = self.lua.globals()
+        g.D.fight = 3
+        g.bringLastBoss(self.director)
+        phantoms = list(g.phantoms.values())
+        player = {"x": -560, "y": -268, "z": 220, "id": 1}
+        boss = {"x": -566, "y": -268, "z": 213, "hp": 9000, "max_hp": 93255}
+        self.update({"player": player, 9055066: boss})
+        del self.calls[:]
+        g.secondPart(self.director)
+        gauges = []
+        for tick in range(1, int(200 * 2)):
+            info = {"player": player, 9055066: boss}
+            if tick / 2 >= floored_at:
+                for phantom in phantoms:
+                    info["actor%d" % phantom] = {"x": -554, "y": -268, "z": 210, "hp": 1, "max_hp": 7715}
+            before = len(self.named("command"))
+            self.update(info)
+            gauges += [args[1] for args in self.named("command")[before:] if args[0] == 0x8000000C]
+        return phantoms, gauges
+
+    def test_the_four_are_on_the_party_and_it_ends_after_them(self):
+        phantoms, gauges = self.run_part(50.0)
+        self.assertEqual(sorted(a[0] for a in self.named("set_hate")), sorted(phantoms))
+        self.assertIn(32908, [a[2] for a in self.named("battle_talk")])
+        used = [a[1] for a in self.named("actor_use_action") if a[0] == 9055066]
+        self.assertIn(28499, used)
+        self.assertNotIn(28500, used)
+        # The gauge stopped as they went down (before its full), and went away after.
+        values = [list(v.values())[1] for v in gauges]
+        self.assertLess(max(v for v in values if v != 0xFFFFFFFF), 10000)
+
+    def test_late_with_the_gauge_full_its_attack_wipes(self):
+        _, gauges = self.run_part(130.0)
+        self.assertIn(32908, [a[2] for a in self.named("battle_talk")])
+        used = [a[1] for a in self.named("actor_use_action") if a[0] == 9055066]
+        self.assertIn(28500, used)
+        self.assertNotIn(28499, used)
+
+
 class PraetoriumShortcutTest(FrameworkScriptTest):
     """The first boss's door (2000789, layout 9058468) is named by its layout ID: the shortcut by the magitek terminal
     (9058476) has the same EObj ID, and the server took either for it, so the shortcut showed after the first boss's
@@ -1886,10 +1934,12 @@ class PraetoriumClawAndEnrageTest(FrameworkScriptTest):
                 self.lua.execute("for _, p in ipairs(phantoms) do floored[p] = true end")
             self.update(player)
 
-    def test_the_gauge_full_with_the_four_standing_wipes_the_party(self):
+    def test_the_gauge_full_with_the_four_standing_waits_for_them(self):
+        # Full, it stays so; the part ends (with 28500, the wipe) only once the four are down (Bob, 2026-11-26:
+        # `PraetoriumSecondPartEndsTest`). Before, 28500 came at the full and the part never ended.
         self.second_part()
         uses = [args[1] for args in self.named("actor_use_action") if args[0] == self.BOSS3]
-        self.assertIn(28500, uses)
+        self.assertNotIn(28500, uses)
         self.assertNotIn(28499, uses)
         gauge = [args[1] for args in self.named("command") if args[1][1] == 58]
         self.assertEqual(max(n[2] for n in gauge if n[2] != 0xFFFFFFFF), 10000)

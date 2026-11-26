@@ -3264,7 +3264,10 @@ pub fn update(
     // Before the duty begins the bots stand where they came in, inside the entrance circle, and do nothing
     // (`Instance::awaiting_commence`): they went off and fought the Howling Eye's Garuda through Bob's opening (Bob's
     // bundle 20261111-112150.)
-    let waiting = instance.awaiting_commence;
+    // Nor while their player is arriving where a director moved them (`Instance::arriving`): the Praetorium's last boss
+    // came as Bob's loading screen after cutscene 118 was up, and the bots fought it without him (his mark of
+    // 2026-11-26: "bots did not wait for all players to leave the cutscene before attacking".)
+    let waiting = instance.everyone_waits();
 
     // Bots whose player left (or that are gone themselves) leave too.
     let gone: Vec<ObjectId> = instance

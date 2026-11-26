@@ -1857,6 +1857,10 @@ pub fn handle_zone_messages(
             // HACK: maybe there's states where you're dead, zone in and yet not a raise?
             let mut data = data.lock();
             let mut is_raise = false;
+            // In: whoever waited for them goes on (`Instance::arriving`.)
+            if let Some(instance) = data.find_actor_instance_mut(*from_actor_id) {
+                instance.arriving.remove(from_actor_id);
+            }
             if let Some(instance) = data.find_actor_instance_mut(*from_actor_id)
                 && let Some(actor) = instance.find_actor_mut(*from_actor_id)
             {

@@ -142,6 +142,12 @@ in its open state). Now only a gimmick the director has put up (`show_eobj`: a b
 `WALL_PATIENCE` way past it, and the log says so (`held up by the gimmick of event object …, which the director hasn't
 touched; on past it`).
 
+**They wait while their player arrives** (2026-11-26, Bob's mark in the Praetorium: "bots did not wait for all players
+to leave the cutscene before attacking"): a player a director moves within a duty (`warp_player_within`) is `arriving`
+until their ZoneIn, at most `ARRIVAL_PATIENCE` (20 s); meanwhile the bots and the enemies wait, as before the duty begins
+(`Instance::everyone_waits`). The Praetorium's last boss came during Bob's loading screen after cutscene 118 and the
+bots fought it without him.
+
 **A gimmick no one spawns has floors but no walls** (2026-11-26, Bob's mark in the Praetorium: "bots got stuck on
 barrier untill the 2 second fallback kicked in ... that's not acceptable"): the Praetorium's collision has the gimmicks of
 event objects in layers its own layer set doesn't turn on (the old Praetorium's), which the world server never spawns

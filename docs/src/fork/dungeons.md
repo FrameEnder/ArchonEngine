@@ -1705,7 +1705,7 @@ first too) take places at the corners of a rectangle 15 by 20 round the middle a
 | 49.9 | Their 28491, and the 28492s 3.9 s in |
 | | **Each of the four doesn't fall**: at 1 HP it goes (ActorControl 54 `[0]`, ActionTimeline 7737) once it's free: at once, or 2.2 s after the cast it was in (all sixteen in four runs) |
 | 67.9 or 77.9 | **It ends**: talk 32908 and ActorControl 70 `[8201036]`. 67.9 s in the one run where all four were at 1 HP by then (66.1 s), 77.9 in the three where the last got there at 68.4, 70.1 and 76.7 s: a look every 10 s here (67.9, 77.9, 87.9), and at the gauge's full (97.5 s) |
-| 97.5 | **The gauge full with any of the four up**: its 28500 wipes the party (2026-11-24, from Harmony's visual guide; no run let it fill: the full, 10000, and 28500's area and amount, more than anyone's HP, are guesses) |
+| 97.5 | **The gauge full**: it stays full until the last of the four goes; the part then ends as below (looked for every 10 s after 87.9), with the boss's 28500 in place of 28499, which wipes the party (2026-11-26, Bob: "if at 100 the next big attack that happens immediately after the phantoms are all killed should wipe the party otherwise deal damage"; Harmony's visual guide the same; no run let it fill: the full, 10000, and 28500's area and amount, more than anyone's HP, are guesses). Before, 28500 came at the full with any of the four up and nothing looked again: with the four down 99.5 s in, Bob's fight stood still |
 | +2.1 | Its 28499 on everyone (605 to 1650: what scales it wasn't read) |
 | +5.1, +7.4 | ActorControls 70 `[8201619]`, then 62 and 63 `[0]`; the gauge gone (0xFFFFFFFF) at +9.1 |
 | +12.2 | Talk 32909, it can be targeted, and fights on: 28495 7.1 s later. It was at 1 HP 7 to 12 s after that cast began |
@@ -1739,6 +1739,27 @@ name tags and aren't selectable"; read from his retail capture 35e30205 against 
   2, and it fills their MP (2800): neither shows.
 * Retail's party took them down 21, 27, 47 and 53 s into the part; Kawari's bots took 51, 105 and 144 s, the fourth
   never, and the party wiped: the bots were dying (below).
+
+**What stalled the second part, and the bots' part in it** (Bob's marks of 2026-11-26 on `e89e114a7`: "the battle is
+stalled after the death of the phantom gaius's", "they don't seem to see them as a threat", "bots did not wait for all
+players to leave the cutscene before attacking"):
+
+* `actor_use_action` looked its actor up by actor ID only, and the script names the boss by layout ID: every one of the
+  boss's 28496, 28497, 28499 and 28500 failed ("Failed to find actor 9055066 for ActorUseAction!"). It takes either now
+  (`director::actor_or_bnpc`, as `actor_control` did). Test `a_directors_action_names_its_npc_by_layout_too`.
+* The four reached 1 HP 33, 61, 90 and 100 s into the part, past the gauge's full: the look at the full saw them up,
+  sent the (failing) 28500, and nothing looked again. Now the part's end is looked for every 10 s until the four are
+  down, the gauge stays at its full meanwhile, and the end's attack is 28500 if it got full (`gauge_full`), 28499 if
+  not. Tests `PraetoriumSecondPartEndsTest`.
+* The four had no one on their hater list till someone hit them, so the bots (who fight what has one of the party on
+  its list, `party_bot`'s `engaged`) stood by; retail sent a FirstAttack from each as they came and the party's
+  HaterList went to five. Now each is set on one of the party as it comes (`set_hate`, the one its 28498 goes for).
+* After cutscene 118 the director moves the party to the last room (PrepareZoning, as retail); Bob's ZoneIn came 5.1 s
+  later, and the boss, there 1.5 s after the cutscene, fought the bots through his loading screen. A player a
+  director moves (`warp_player_within`) is now `arriving` until their ZoneIn (20 s at most), and meanwhile the enemies
+  and the party's bots wait as before the duty begins (`Instance::everyone_waits`). And a director's cutscene ends for
+  its script (`onSceneFinished`) once the last player it went to has finished it (`cutscene_watchers`), not the first.
+  Test `everyone_waits_for_a_player_arriving_and_a_cutscene_ends_with_the_last`.
 
 **The last room's floor isn't in the navmesh** (same marks: "bots are falling left and right"): the floor the last boss
 is fought on is the gimmick of event object 4334405 (EObj 2001766, its bound shared group 4175265), which sits in a layer

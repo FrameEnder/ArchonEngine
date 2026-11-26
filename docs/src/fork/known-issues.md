@@ -36,8 +36,12 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   Only Direction 0 (away from the source) is built; the Speed column is taken as yalms a second. Untested in game, as
   are the bots going into Augmented Shatter and the reset after a wipe with a Death Claw up.
 * **Iron Uprising's (28482) knockback**: it hit no one in ten casts, so its row isn't known; it does damage only.
-* **The last boss's enrage** (28500 as the gauge fills with any of the four standing): from the guide, never seen; the
-  gauge's full (10000) and 28500's area (the Action sheet's) and amount (more than anyone's HP) are guesses.
+* **The last boss's enrage** (28500 at the part's end when the gauge got full, since the change after `e89e114a7`):
+  from Bob and the guide, never seen in a capture; the gauge's full (10000) and 28500's area (the Action sheet's) and
+  amount (more than anyone's HP) are guesses, as is the end looked for every 10 s past the runs' 87.9 s. Whether
+  28499's damage scales with the gauge below its full isn't known (605 to 1650 in the runs).
+* **Everyone waits for a player a director moved** (since the same change): every in-duty move does this now (the
+  lifts too), for as long as the client takes to send its ZoneIn (20 s at most). Untested in game.
 * **Walkers where the navmesh and the collision disagree** (Bob's run on `095404aa3`): where the navmesh's path itself
   goes through something the collision has (a wall the navmesh doesn't), a walker still steps round it and back
   (`round_the_corner`, every 5 s); a party bot now goes round the way its player walked, an enemy doesn't. Which wall

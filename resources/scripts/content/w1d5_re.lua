@@ -297,12 +297,13 @@ PART_AFTER = 32909
 PHANTOMS_AT = { { -554.5, 210.0 }, { -554.5, 230.0 }, { -569.5, 210.0 }, { -569.5, 230.0 } }
 PART2_PHANTOMS = 5.0
 PART2_BOSS_LEAPS = 1.2
-PART2_ROOTED = 120.0 -- longer than the part can last (its gauge fills 97.5 s in)
+PART2_ROOTED = 300.0 -- the four rooted this long, and the part's end looked for until then (its gauge fills 97.5 s in)
 PART2_ON_EACH = { 11.8, 34.9, 63.0 }
 PART2_SWORDS = { 16.8, 48.9, 68.0 }
 PART2_ROWS = 27.8
 PART2_SPREAD = 49.9
 PART2_ENDS = { 67.9, 77.9, 87.9 }
+PART2_LOOK_EVERY = 10.0
 -- From its end (talk 32908): 28499 on everyone, the gauge gone, and the boss back (talk 32909.)
 PART2_ALL = 2.1
 PART2_GAUGE_GONE = 9.1
@@ -313,10 +314,11 @@ COMMAND_GAUGE = 0x8000000C
 GAUGE = 58
 GAUGE_FROM = 7.5
 GAUGE_FULL_SECONDS = 9.0 -- n is 1000 nine seconds in: 111 a second
--- Full at 10000 (a guess: 100 %, as the client's gauge shows hundredths; it stopped at 64 to 77 % in the runs), 90 s on,
--- when, with any of the four still standing, the boss's 28500 wipes the party (Harmony's visual guide: "If all four
--- phantoms haven't been destroyed before the blade energy gauge has reached 100% ... this attack will instantly wipe
--- the party"; none of the five runs let it fill.)
+-- Full at 10000 (a guess: 100 %, as the client's gauge shows hundredths; it stopped at 64 to 77 % in the runs), 90 s on.
+-- Full, it stays so until the last of the four goes, and the attack at the part's end is the boss's 28500 instead of
+-- 28499, which wipes the party (Bob, 2026-11-26; Harmony's visual guide: "If all four phantoms haven't been destroyed
+-- before the blade energy gauge has reached 100% ... this attack will instantly wipe the party"; none of the five runs
+-- let it fill.)
 GAUGE_FULL = 10000
 GAUGE_SECONDS = 90
 ENRAGE = 28500
@@ -898,9 +900,16 @@ function secondPart(director)
         d:actor_use_action(BOSS3, 28496)
         local boss = D.info and D.info[BOSS3]
         local from_x, from_z = boss and boss.x or BOSS3_MIDDLE.x, boss and boss.z or BOSS3_MIDDLE.z
-        for _, phantom in ipairs(phantoms) do
+        for index, phantom in ipairs(phantoms) do
             d:warp_bnpc(phantom, from_x, BOSS3_MIDDLE.y, from_z, SWORDS_FACING)
             d:set_targetable(phantom, true)
+            -- On the party's hater list as they come (retail's FirstAttack from each and a HaterList of five at once):
+            -- one of the party each, as their 28498s go. With none, the bots saw nothing to fight until someone hit
+            -- one (Bob's mark of 2026-11-26: "they don't seem to see them as a threat").
+            local member = D.party[(index - 1) % math.max(1, #D.party) + 1]
+            if member ~= nil then
+                d:set_hate(phantom, member.id)
+            end
             -- In the fight (the party goes for them), but rooted and with no auto-attacks: they only cast.
             d:release_bnpc(phantom)
             d:root_bnpc(phantom, PART2_ROOTED)
@@ -928,35 +937,38 @@ function secondPart(director)
         d:bnpc_control(BOSS3, 62, { 0, 1 })
         d:bnpc_control(BOSS3, 63, { 27 })
     end)
-    -- The gauge, a second at a time while any of the four is above 1 HP.
+    -- The gauge, a second at a time while any of the four is above 1 HP: it stops as the last of them goes, and stays
+    -- at its full once there.
+    gauge_full = false
     for second = 0, GAUGE_SECONDS do
         local n = math.floor(second * 1000 / GAUGE_FULL_SECONDS)
         at(GAUGE_FROM + second, function(d)
             if not allFloored() then
                 d:command(COMMAND_GAUGE, { GAUGE, n })
+                if n >= GAUGE_FULL then
+                    gauge_full = true
+                end
             end
         end)
     end
-    -- It ends at the first of these with all four at 1 HP (67.9 s once, 77.9 three times in the runs); with any of them
-    -- still up as the gauge fills, the boss's 28500 wipes the party.
+    -- It ends at the first of these with all four at 1 HP (67.9 s once, 77.9 three times in the runs), and every 10 s
+    -- after them until it does: with the gauge full it waits for the four as well, and its attack then wipes the party
+    -- (`secondPartEnds`). Before, a look at the gauge's full with any of the four up used 28500 and nothing looked again:
+    -- the four down 99.5 s in, the fight stood still (Bob's mark of 2026-11-26: "the battle is stalled").
+    local ends = {}
     for _, seconds in ipairs(PART2_ENDS) do
+        table.insert(ends, seconds)
+    end
+    for seconds = PART2_ENDS[#PART2_ENDS] + PART2_LOOK_EVERY, PART2_ROOTED, PART2_LOOK_EVERY do
+        table.insert(ends, seconds)
+    end
+    for _, seconds in ipairs(ends) do
         at(seconds, function(d)
             if allFloored() and not part2_ending then
                 secondPartEnds(d)
             end
         end)
     end
-    at(GAUGE_FROM + GAUGE_FULL * GAUGE_FULL_SECONDS / 1000, function(d)
-        if part2_ending then
-            return
-        end
-        if allFloored() then
-            -- (All four down since the last look: it ends now.)
-            secondPartEnds(d)
-        else
-            d:actor_use_action(BOSS3, ENRAGE)
-        end
-    end)
     for _, seconds in ipairs(PART2_ON_EACH) do
         at(seconds, function(d) phantomsUse(d, 28498, 4.7, true) end)
     end
@@ -999,7 +1011,10 @@ function secondPartEnds(director)
     end
     director:battle_talk(BOSS3, NAME_BOSS3, 32908, 0, 4000)
     director:bnpc_control(BOSS3, 70, { 8201036 })
-    at(PART2_ALL, function(d) d:actor_use_action(BOSS3, 28499) end)
+    -- 28499 on everyone; with the gauge full, 28500 instead, which wipes the party (Bob, 2026-11-26: "if at 100 the next
+    -- big attack that happens immediately after the phantoms are all killed should wipe the party otherwise deal
+    -- damage as is shown in the retail captures").
+    at(PART2_ALL, function(d) d:actor_use_action(BOSS3, gauge_full and ENRAGE or 28499) end)
     at(PART2_ALL + YELL_AFTER_28499, function(d) d:yell(BOSS3, YELL_BOSS3_28499) end)
     at(PART2_ALL + 3.0, function(d) d:bnpc_control(BOSS3, 70, { 8201619 }) end)
     at(PART2_ALL + 5.3, function(d)

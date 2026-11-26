@@ -691,6 +691,31 @@ pub enum LuaDirectorTask {
     },
 }
 
+/// Whether `player` finishing a scene is the end of it for the director (`Instance::cutscene_watchers`): the last of
+/// those its cutscene went to who are still here, or a scene that wasn't one of those (a player's own.)
+pub(crate) fn last_to_finish(instance: &mut Instance, player: ObjectId) -> bool {
+    if !instance.cutscene_watchers.remove(&player) {
+        return true;
+    }
+    let here: std::collections::HashSet<ObjectId> = instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+        .map(|(id, _)| *id)
+        .collect();
+    instance.cutscene_watchers.retain(|id| here.contains(id));
+    instance.cutscene_watchers.is_empty()
+}
+
+/// Any actor by its actor ID (a player too), or failing that a BNpc by layout ID.
+pub(crate) fn actor_or_bnpc(instance: &Instance, who: u32) -> Option<ObjectId> {
+    if instance.find_actor(ObjectId(who)).is_some() {
+        Some(ObjectId(who))
+    } else {
+        resolve_bnpc(instance, who)
+    }
+}
+
 /// A BNpc by actor ID, or failing that by layout ID.
 fn resolve_bnpc(instance: &Instance, who: u32) -> Option<ObjectId> {
     match instance.find_actor(ObjectId(who)) {
@@ -2274,6 +2299,10 @@ pub(crate) fn set_pos_arg(mode: kawari::common::CharacterMode, mount: u16) -> u8
     }
 }
 
+/// How long everyone waits at most for a player a director moved to be in (their ZoneIn): Bob's came 5.1 s after the
+/// Praetorium's warp after cutscene 118 (2026-11-26).
+pub(crate) const ARRIVAL_PATIENCE: Duration = Duration::from_secs(20);
+
 pub(crate) fn warp_player_within(
     instance: &mut Instance,
     network: &mut NetworkState,
@@ -2285,6 +2314,9 @@ pub(crate) fn warp_player_within(
     // in Bob's captures 9ba7d981, 6320ae56 and 84700114): PrepareZoning with warp type 25 (Event), hide_character 0,
     // fade 1, and the ActorSetPos the same warp type 1.5 s later (`IN_DUTY_WARP_DELAY`). Kawari's were Normal, hidden,
     // 2 s.
+    instance
+        .arriving
+        .insert(actor_id, std::time::Instant::now() + ARRIVAL_PATIENCE);
     let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PrepareZoning(PrepareZoning {
         territory_type_id: instance.zone.id,
         warp_type: WarpType::Event,
@@ -4240,6 +4272,12 @@ pub fn director_tick(
                 cutscene_id,
                 params,
             } => {
+                instance.cutscene_watchers = instance
+                    .actors
+                    .iter()
+                    .filter(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+                    .map(|(id, _)| *id)
+                    .collect();
                 let mut network = network.lock();
                 network.send_to_instance(
                     ObjectId::default(),
@@ -4935,12 +4973,7 @@ pub fn director_tick(
                 category,
                 params,
             } => {
-                let actor_id = if instance.find_actor(ObjectId(*who)).is_some() {
-                    Some(ObjectId(*who))
-                } else {
-                    resolve_bnpc(instance, *who)
-                };
-                let Some(actor_id) = actor_id else {
+                let Some(actor_id) = actor_or_bnpc(instance, *who) else {
                     tracing::warn!("Failed to find {who} for actor_control!");
                     continue;
                 };
@@ -5078,11 +5111,13 @@ pub fn director_tick(
                 action_id,
                 target,
             } => {
-                let actor_id = ObjectId(*actor_id);
-                if instance.find_actor(actor_id).is_none() {
-                    tracing::warn!("Failed to find actor {actor_id} for ActorUseAction!");
+                // An actor ID, or a layout ID (a boss named by its layout: the Praetorium's last boss's 28496, 28497,
+                // 28499 and 28500 were never used, so its second part never ended, Bob's mark of 2026-11-26.)
+                let who = *actor_id;
+                let Some(actor_id) = actor_or_bnpc(instance, who) else {
+                    tracing::warn!("Failed to find actor {who} for ActorUseAction!");
                     continue;
-                }
+                };
                 let target_id = target.map(ObjectId).unwrap_or(actor_id);
                 crate::server::npc_behavior::npc_use_action(
                     &network, &game_data, instance, actor_id, *action_id, target_id,
@@ -5531,7 +5566,9 @@ pub fn handle_director_messages(
             let Some(instance) = data.find_actor_instance_mut(*from_actor_id) else {
                 return true;
             };
-            if let Some(director) = instance.directors.first_mut() {
+            if last_to_finish(instance, *from_actor_id)
+                && let Some(director) = instance.directors.first_mut()
+            {
                 director.scene_finished(*scene);
             }
             // Keybound Brawler's result and way out (`keybound.rs`.)
