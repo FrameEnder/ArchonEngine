@@ -1737,6 +1737,37 @@ class PraetoriumClawAndEnrageTest(FrameworkScriptTest):
             self.update({**party, f"actor{claw}": {"x": -160.0, "y": -104.2, "z": 8.2}})
         self.assertEqual(len([args for args in self.named("actor_use_action") if args[0] == claw]), 1)
         self.assertEqual(len([args for args in self.named("sweep_bnpc") if args[0] == claw]), count)
+        # The damage dealers go for it (Bob, 2026-11-26: "dps should turn focus to it".)
+        self.assertIn([claw], self.named("focus_bnpc"))
+        # Still tethered, it stands again (4.9 s from just after it struck) and goes after them again: there still,
+        # a second 28480 (Bob, 2026-11-26: "never repeats until dead").
+        for _ in range(2):
+            self.update({**party, f"actor{claw}": {"x": -160.0, "y": -104.2, "z": 8.2}})
+        self.assertEqual([args for args in self.named("actor_use_action") if args[0] == claw],
+                         [[claw, 28480, 21], [claw, 28480, 21]])
+
+    def test_the_ring_electrocutes(self):
+        """Bob, 2026-11-26: "the continuous circular AOE around the field should be giving an effect electrocution
+        when walked into". Retail: Electrocution 3073 out on the ring (20 yalms from the middle), then 3074 for 15 s,
+        270 a tick, as they come back (capture 35e30205)."""
+        g = self.lua.globals()
+        g.D.fight = 2
+        out = {"player1": {"x": -143.6, "y": -104.2, "z": 0.0, "id": 11}}
+        inside = {"player1": {"x": -150.0, "y": -104.2, "z": 0.0, "id": 11}}
+        self.update(inside)
+        self.assertEqual(self.named("gain_effect"), [])
+        self.update(out)
+        self.assertEqual(self.named("gain_effect"), [[11, 3073, 0, 0]])
+        self.update(out)
+        self.assertEqual(len(self.named("gain_effect")), 1)
+        self.update(inside)
+        self.assertEqual(self.named("lose_effect"), [[11, 3073]])
+        self.assertEqual(self.named("gain_effect")[-1], [11, 3074, 0, 15, 270])
+        # Outside the fight, nothing.
+        del self.calls[:]
+        g.D.fight = None
+        self.update(out)
+        self.assertEqual(self.named("gain_effect"), [])
 
     def second_part(self, floored_at=None):
         """The second part from its talk, the four floored at `floored_at` seconds (never if None)."""

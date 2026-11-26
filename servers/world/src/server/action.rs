@@ -1465,7 +1465,14 @@ pub fn execute_action(
             common_spawn.level,
         );
         let miss_percent = npc_miss_percent(target_level, caster_level);
-        let recorded = recorded_for(request.target.object_id);
+        // An attack split among those it hits (`RecordedAmount::shared_by`): each takes its share.
+        let share = match actor {
+            NetworkedActor::Npc { timeline, .. } => {
+                timeline.share_factor(request.action_id, 1 + area_bystanders.len())
+            }
+            _ => 1.0,
+        };
+        let recorded = recorded_for(request.target.object_id).map(|amount| amount * share);
 
         if let Some(recorded) = recorded
             && let Some(effects_builder) = &mut effects_builder
@@ -1505,7 +1512,7 @@ pub fn execute_action(
                     _ => None,
                 })
                 .sum();
-            let recorded = recorded_for(*id);
+            let recorded = recorded_for(*id).map(|amount| amount * share);
             // An area heal (no damage) heals each as much as the recording says.
             if let Some(recorded) = recorded
                 && damage == 0

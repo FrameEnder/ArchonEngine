@@ -25,8 +25,9 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
 
 ## Bob's run of the Praetorium on `f3c32e2` (2026-11-24)
 
-* **The second boss's ring of lightning** (Harmony's visual guide: touching it inflicts a damage-over-time): nobody
-  touched it in the five runs, so its status and area aren't known; map effect 0 shows it and nothing hurts.
+* **The second boss's ring of lightning**: built from Bob's retail run (`dungeons.md`); whether its 3073 ticks over a
+  long stay out there isn't known (no one stayed a second). The Death Claw's strikes after its first are a guess
+  (retail's fell 2 s after it).
 * **Iron Uprising's (28482) knockback**: it hit no one in ten casts, so its row isn't known; it does damage only.
 * **The last boss's enrage** (28500 as the gauge fills with any of the four standing): from the guide, never seen; the
   gauge's full (10000) and 28500's area (the Action sheet's) and amount (more than anyone's HP) are guesses.

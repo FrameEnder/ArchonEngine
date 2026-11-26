@@ -1820,9 +1820,37 @@ guide to the dungeon checked against the five runs:
 * **Already as the guide says**: Ceruleum Vent, Prototype Laser Alpha and Beta, Spine Shatter, Augmented Shatter,
   Augmented Suffering (its knockback from the middle), Wheel of Suffering, Horridus Bellum, Terminus Est, Phantasmata,
   Innocence, Festina Lente, Ductus, Hand of the Empire, the four's Heirsbane.
-* **Not built, no data**: the ring of lightning ether round the second boss's room (the guide: a damage-over-time to
-  whoever touches it; nobody did in the runs, so its status isn't known; map effect 0 shows it and nothing hurts);
-  Iron Uprising's knockback (it hit no one in ten casts).
+* **Not built, no data**: Iron Uprising's knockback (it hit no one in ten casts).
+
+**The second boss, from Bob's retail run** (capture 35e30205, 2026-11-25, a party of four players; his note of
+2026-11-26):
+
+* *The ring* ("should be giving an effect electrocution when walked into"): the player out at 20.4 yalms from the
+  middle (-164, 0) had Electrocution 3073 (GainEffect from himself, no end, from no one) 0.15 s on; a Lancer the claw
+  knocked out to 23.3 the same. Coming back in, 3073 went and 3074 came, 15 s from no one, ticking 260-279 every 3 s
+  (ActorControl 1541, ten ticks, 270 on average); nothing hit them as they touched it. The script does so for every one
+  of the party while the boss is fought (`ring`, `BOSS2_RING` 20.0; `gain_effect`'s tick). Whether 3073 itself ticks
+  over a long stay out there isn't known (neither stayed a second).
+* *Augmented Shatter* (28477, "doesn't show its visual effect"; "more damage the less people stand near"): retail
+  marked its target as the cast began, ActorControl 34 `[62]` from them (lock-on 62; the tank-buster 28483's is 218),
+  and its four hits, one on each of the party stacked on the target, were 805, 981, 399 (the tank) and 896. Kawari
+  sent no marker and hit each in it for the whole amount. Now the timeline gives `lockon` 62, and its recorded amounts
+  are one of four's share (`RecordedAmount::shared_by`: each hit is the amount times four over how many it hits:
+  alone, four times as much).
+* *The Death Claw* ("does one attack that pushes its target, but never repeats until dead"; "dps should turn focus to
+  it"): retail's damage dealer hit the first 2.3 s after it came and the second 4.8 s after, and both fell 8 and 11.5 s
+  after coming, each after its one 28480; each stood where it struck for the 2 s it lived on. Kawari's struck and then
+  stood 22 s, nobody hitting it (Bob's mark). Now its pursuit begins again after each strike, standing 4.9 s first as
+  it did at the start (`clawAfter`: a guess, past what retail's lived to show), and the party's damage dealers go for
+  it first (`director:focus_bnpc`, `Instance::party_focus`).
+* *The way past the first two arm units* (Bob's mark of 2026-11-26, "bots are walking out of bounds"): held by the
+  first at z -49 (as the bots were, at (80.5, -49.4)), retail's party went south 0.5 s after map effect 12 (the first's
+  fall), and west past the second 1.3 s after 13; both are barriers now (`map_effect_barriers.json`). The bots had been
+  walking through the server's wall there after their 2 s patience, out of bounds.
+
+Tests `PraetoriumClawAndEnrageTest.test_the_ring_electrocutes`, the claw's (its second strike and `focus_bnpc`),
+`augmented_shatter_is_shared`, `damage_dealers_go_for_the_focus`, `the_praetoriums_blasted_walls_are_barriers`.
+**Unplayed.**
 
 Tests `BossWallsOpenAtTheStartTest`, `PraetoriumClawAndEnrageTest`, the leaps' in `PraetoriumTest`,
 `nobody_fights_a_launcher`, `a_path_goes_on_round_its_points_without_stopping`. **Unplayed.**

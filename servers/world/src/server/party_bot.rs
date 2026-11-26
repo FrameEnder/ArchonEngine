@@ -3944,7 +3944,8 @@ fn update_party(
                 timeline,
                 ..
             } if spawn.common.health_points > 0
-                && enmity.keys().any(|hated| members.contains(hated)) =>
+                && (enmity.keys().any(|hated| members.contains(hated))
+                    || instance.party_focus.contains(id)) =>
             {
                 let after = enmity
                     .iter()
@@ -4660,10 +4661,15 @@ fn update_party(
                 target
             }
             BotRole::Dps | BotRole::Healer => {
-                // What the tank (or the player) is attacking.
+                // A damage dealer goes for what the director says first (`Instance::party_focus`: the Praetorium's
+                // Death Claw), then what the tank (or the player) is attacking.
+                let focus = (bot.role == BotRole::Dps)
+                    .then(|| focused(&engaged, &instance.party_focus))
+                    .flatten();
                 let tank_target =
                     tank.and_then(|tank| tank_target(&engaged, tank, &bots, leader_target));
-                tank_target
+                focus
+                    .or(tank_target)
                     .or(leader_target.filter(|id| is_engaged(*id)))
                     .or(current.filter(|id| is_engaged(*id)))
                     .or_else(|| engaged.first().map(|enemy| enemy.id))
@@ -4986,6 +4992,15 @@ fn update_party(
     }
 }
 
+/// The first of the enemies fighting the party (or that the director has them fight) that the director has the
+/// damage dealers go for first (`Instance::party_focus`.)
+fn focused(engaged: &[Engaged], focus: &HashSet<ObjectId>) -> Option<ObjectId> {
+    engaged
+        .iter()
+        .find(|enemy| focus.contains(&enemy.id))
+        .map(|enemy| enemy.id)
+}
+
 /// What the tank is attacking, if it's fighting the party: a tank bot's own target, or the player's.
 fn tank_target(
     engaged: &[Engaged],
@@ -5040,6 +5055,27 @@ mod tests {
     }
 
     use super::*;
+
+    /// Bob, 2026-11-26, on the Praetorium's Death Claw: "dps should turn focus to it, and attack it when it appears".
+    /// Retail's damage dealer hit each 2.3 and 4.8 s after it came (capture 35e30205).
+    #[test]
+    fn damage_dealers_go_for_the_focus() {
+        let enemy = |id: u32| Engaged {
+            id: ObjectId(id),
+            position: Vec3A::ZERO,
+            after: None,
+            hitbox: 0.5,
+            rotation: 0.0,
+        };
+        let engaged = [enemy(1), enemy(2)];
+        assert_eq!(focused(&engaged, &HashSet::new()), None);
+        assert_eq!(
+            focused(&engaged, &HashSet::from([ObjectId(2)])),
+            Some(ObjectId(2))
+        );
+        // One that's gone isn't gone after.
+        assert_eq!(focused(&engaged, &HashSet::from([ObjectId(3)])), None);
+    }
 
     #[test]
     fn every_race_the_creator_offers() {

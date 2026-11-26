@@ -205,6 +205,31 @@ BOSS2_ADD_STANDS = 4.9
 BOSS2_ADD_SPEED = 3.0
 BOSS2_ADD_REACH = 3.5
 BOSS2_ADD_ACTION = 28480
+-- A Death Claw after the one it's tethered to: it stands `BOSS2_ADD_STANDS`, walks after them and, reaching them,
+-- knocks them back (28480); then, still tethered, it stands and goes after them again till it falls (Bob,
+-- 2026-11-26: "never repeats until dead". Retail's stood on where it struck for the 2 s each lived after it, capture
+-- 35e30205, so the stand before each go is the one it began with.)
+function clawAfter(director, claw, quarry)
+    D:pursue(director, claw, quarry, { speed = BOSS2_ADD_SPEED, after = BOSS2_ADD_STANDS, reach = BOSS2_ADD_REACH,
+                                       action = BOSS2_ADD_ACTION,
+                                       on_reach = function()
+                                           D:after(0.1, function(d)
+                                               if D.fight == 2 and D.info ~= nil and D.info["actor" .. claw] ~= nil then
+                                                   clawAfter(d, claw, quarry)
+                                               end
+                                           end)
+                                       end })
+end
+
+-- The ring of lightning round the second boss's room (map effect 0 shows it as the fight begins): one of the party
+-- who goes 20 yalms from its middle has Electrocution 3073 (no end, from no one) while out there, and as they come
+-- back 3074 for 15 s, losing 260-279 every 3 s (Bob's Chronofoil capture 35e30205: he at 20.4 yalms, 0.15 s on; a
+-- Lancer knocked out to 23.3 by the Death Claw; ten ticks, 270 on average; nothing hit them as they touched it.)
+BOSS2_RING = 20.0
+BOSS2_RING_STATUS = 3073
+BOSS2_RING_AFTER = 3074
+BOSS2_RING_AFTER_FOR = 15.0
+BOSS2_RING_TICK = 270
 
 BOSS3 = 9055066
 BOSS3_MIDDLE = { x = -562.0, y = -268.0, z = 220.0 }
@@ -695,8 +720,10 @@ D:boss({ id = 2, layout = BOSS2, wall = BOSS2_WALL, line = BOSS2_LINE, place = P
                     local facing = math.atan(BOSS2_MIDDLE.x - at[1], BOSS2_MIDDLE.z - at[3])
                     local claw = d:spawn_tethered_bnpc(BOSS2_ADD, quarry.id, BOSS2_ADD_TETHER, at[1], at[2], at[3],
                                                        facing)
-                    D:pursue(d, claw, quarry.id, { speed = BOSS2_ADD_SPEED, after = BOSS2_ADD_STANDS,
-                                                   reach = BOSS2_ADD_REACH, action = BOSS2_ADD_ACTION })
+                    clawAfter(d, claw, quarry.id)
+                    -- Retail's damage dealer went for it at once (hits 2.3 and 4.8 s after each came; both fell in 8
+                    -- to 12 s, capture 35e30205.)
+                    d:focus_bnpc(claw)
                 end
             end)
         end,
@@ -1119,7 +1146,31 @@ function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
     D:cast(director, layout_id, action_id, actor_id, x, y, z)
 end
 
+-- Who's out on the ring (actor ID: true), as `BOSS2_RING` says.
+ringed = {}
+
+function ring(director)
+    local on = D.fight == 2
+    for _, member in ipairs(D.party or {}) do
+        if member.id ~= nil then
+            local dx, dz = member.x - BOSS2_MIDDLE.x, member.z - BOSS2_MIDDLE.z
+            local out = on and math.sqrt(dx * dx + dz * dz) >= BOSS2_RING
+            if out and not ringed[member.id] then
+                ringed[member.id] = true
+                director:gain_effect(member.id, BOSS2_RING_STATUS, 0, 0)
+            elseif ringed[member.id] and not out then
+                ringed[member.id] = nil
+                director:lose_effect(member.id, BOSS2_RING_STATUS)
+                if on then
+                    director:gain_effect(member.id, BOSS2_RING_AFTER, 0, BOSS2_RING_AFTER_FOR, BOSS2_RING_TICK)
+                end
+            end
+        end
+    end
+end
+
 local function between(director)
+    ring(director)
     if D.fight == 3 then
         lastBossHealth(director, D.info)
     end

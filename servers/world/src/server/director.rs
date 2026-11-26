@@ -104,6 +104,10 @@ pub enum LuaDirectorTask {
     DespawnBattleNpc {
         layout_id: u32,
     },
+    /// Have the party's damage dealers go for an NPC (actor or layout ID) first (`Instance::party_focus`.)
+    FocusBattleNpc {
+        who: u32,
+    },
     /// Let an NPC (actor or layout ID, an event NPC too) go without telling the clients (`NetworkState::let_go_unseen`):
     /// the next spawn takes its place, as retail's took the Praetorium's Gaius.
     LetGoUnseen {
@@ -1115,6 +1119,10 @@ impl UserData for LuaDirector {
                 Ok(actor_id.0)
             },
         );
+        methods.add_method_mut("focus_bnpc", |_, this, who: u32| {
+            this.tasks.push(LuaDirectorTask::FocusBattleNpc { who });
+            Ok(())
+        });
         methods.add_method_mut("let_go_unseen", |_, this, who: u32| {
             this.tasks.push(LuaDirectorTask::LetGoUnseen { who });
             Ok(())
@@ -3477,6 +3485,11 @@ pub fn director_tick(
                     tracing::warn!(
                         "Failed to find bnpc {id} for SpawnTetheredBattleNpc, it won't spawn!"
                     );
+                }
+            }
+            LuaDirectorTask::FocusBattleNpc { who } => {
+                if let Some(actor_id) = resolve_bnpc(instance, *who) {
+                    instance.party_focus.insert(actor_id);
                 }
             }
             LuaDirectorTask::LetGoUnseen { who } => {

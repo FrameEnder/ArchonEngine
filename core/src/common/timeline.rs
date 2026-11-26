@@ -211,6 +211,12 @@ pub struct RecordedAmount {
     /// (17 hits on players in Bob's three runs fitted to a line, 1161 − 36.1 per yalm.)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub by_distance: Vec<(f32, f32)>,
+    /// For an attack whose damage is split evenly among everyone it hits (a stack marker): how many it hit when these
+    /// amounts were recorded, each amount one share. Each of those it hits takes the amount times this over how many
+    /// it hit: alone, the whole. The Praetorium's second boss's Augmented Shatter (28477; the guide: "the damage is
+    /// shared between all players in the AoE"): all four of the party in each of Bob's retail casts (capture 35e30205).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shared_by: Option<u32>,
 }
 
 impl RecordedAmount {
@@ -256,6 +262,19 @@ impl Timeline {
             recorded.players
         } else {
             recorded.npcs
+        }
+    }
+
+    /// How much of each hit's recorded amount an attack split among those it hits does when it hits `hits` of them
+    /// (`RecordedAmount::shared_by`): 1 for one that isn't split.
+    pub fn share_factor(&self, action_id: u32, hits: usize) -> f32 {
+        match self
+            .recorded_amounts
+            .get(&action_id)
+            .and_then(|recorded| recorded.shared_by)
+        {
+            Some(by) if hits > 0 => by as f32 / hits as f32,
+            _ => 1.0,
         }
     }
 
@@ -462,6 +481,29 @@ fn is_default_facing(facing: &TimepointFacing) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Bob, 2026-11-26: Augmented Shatter "is suppose to do more damage the less people stand near the effected
+    /// target ... the damage is spread evenly between everyone standing by the target". The Praetorium's second boss's
+    /// timeline has it shared by four, its target marked with lock-on 62.
+    #[test]
+    fn augmented_shatter_is_shared() {
+        let timeline: Timeline = serde_json::from_str(
+            &std::fs::read_to_string("../resources/timelines/PraetoriumBoss2_14451.json").unwrap(),
+        )
+        .unwrap();
+        assert_eq!(timeline.share_factor(28477, 4), 1.0);
+        assert_eq!(timeline.share_factor(28477, 1), 4.0);
+        assert_eq!(timeline.share_factor(28477, 2), 2.0);
+        assert_eq!(timeline.share_factor(28483, 1), 1.0);
+        assert!(timeline.timepoints.iter().any(|point| matches!(
+            point.data,
+            TimepointData::Action {
+                action_id: 28477,
+                lockon: Some(62),
+                ..
+            }
+        )));
+    }
 
     #[test]
     fn shouts_go_through_their_lines_in_order() {
