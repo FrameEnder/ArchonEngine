@@ -1862,6 +1862,16 @@ guide to the dungeon checked against the five runs:
   a wall" at (-135.3, -0.5), the bots at x -132.8). Now `despawn_bnpc` by layout takes every one, and a wipe (or the
   NPC's removal) clears the focus.
 
+* *The way west after the boss* (Bob's mark of 2026-11-26 on `f2b92b29e`: "the barrier to the next area did not lift
+  when the battle of the last boss was done, also I can visibly see a shortcut that shouldn't be active yet next to the
+  magitek terminal"): retail spawned 2000826 (layout 9247278, at (-216.2, -0.0)) and a second 2000789 (9058476, by the
+  terminal at (-237.2, -21.6)) with event state 7 (open, not shown) and never sent either an ActorControl 106; its
+  party walked west past x -207 11 s after cutscene 284. Kawari spawned both in their layout's state (shut, shown), so
+  the way was barred and the other stood by the terminal. Every other EObj the duty spawned matched retail's state.
+  Now `onSetup` opens both by layout ID (`OPEN_AT_START`; `hide_eobj` by base takes one copy, and each base has
+  another). Test `BossWallsOpenAtTheStartTest.test_the_praetoriums_way_west_starts_open`. The state is SpawnObject's
+  byte 38 (event_state), read from both captures.
+
 Tests `PraetoriumClawAndEnrageTest.test_the_ring_electrocutes`, the claw's (its second strike and `focus_bnpc`),
 `augmented_shatter_is_shared`, `damage_dealers_go_for_the_focus`, `the_praetoriums_blasted_walls_are_barriers`,
 `the_rest_go_into_a_stack`, `a_knockback_throws_an_npc`, `a_layouts_every_npc_goes_and_takes_the_focus_with_it`.

@@ -1437,6 +1437,29 @@ class BossWallsOpenAtTheStartTest(unittest.TestCase):
                                      f"{script.name}: boss {boss.id}'s wall {boss.wall} isn't opened at the start")
         self.assertIn("w1d5_re.lua", checked)
 
+    def test_the_praetoriums_way_west_starts_open(self):
+        """Bob's mark of 2026-11-26 ("the barrier to the next area did not lift"): retail spawned 2000826 (layout
+        9247278) and the 2000789 by the terminal (9058476) open and never touched them (capture 35e30205)."""
+        try:
+            from lupa import LuaRuntime
+        except ImportError:
+            self.skipTest("lupa isn't installed")
+        from questkit import repo
+        lua = LuaRuntime(unpack_returned_tuples=True)
+        lua.execute((repo.SCRIPTS / "content" / "lib" / "Dungeon.lua").read_text())
+        lua.execute((repo.SCRIPTS / "content" / "w1d5_re.lua").read_text())
+        calls = []
+        lua.globals().LOG = lambda name, *args: calls.append((name, args[0] if args else None))
+        director = lua.eval("""setmetatable({}, { __index = function(self, name)
+            return function(d, ...) LOG(name, ...) end
+        end })""")
+        lua.globals().onSetup(director)
+        for layout in (9247278, 9058476):
+            self.assertIn(("hide_eobj", layout), calls)
+            self.assertNotIn(("show_eobj", layout), calls)
+        script = (repo.SCRIPTS / "content" / "w1d5_re.lua").read_text()
+        self.assertNotIn("show_eobj(9247278", script)
+
 
 class CopperbellBossesTest(FrameworkScriptTest):
     """The Copperbell Mines' script on the dungeon framework: each boss brought with its helpers, its round on its

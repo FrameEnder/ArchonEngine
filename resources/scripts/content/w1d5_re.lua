@@ -175,6 +175,12 @@ BOSS2 = 9054847
 BOSS2_WALL = 2000822
 BOSS2_LINE = 2000823
 BOSS2_AHEAD = 2001135
+-- Two that retail spawned open (event state 7) and never touched, by layout (their bases have other copies): the
+-- second boss's way west, 2000826 at (-216.2, -0.0), and a 2000789 by the terminal at (-237.2, -21.6) (Bob's capture
+-- 35e30205: his party walked west through the first 113 s after the boss fell). Kawari spawned both shut: the way was
+-- barred after the boss and the other stood by the terminal (Bob's mark of 2026-11-26: "the barrier to the next area
+-- did not lift ... a shortcut that shouldn't be active yet next to the magitek terminal").
+OPEN_AT_START = { 9247278, 9058476 }
 PLACE_BOSS2 = 454
 BOSS2_MIDDLE = { x = -164.0, y = -104.2, z = 0.0 }
 -- Round: retail's party stood to 20.1 yalms from the middle (22.3 once), from x -184 to -143 and z -20 to 20.
@@ -1135,6 +1141,9 @@ function onSetup(director)
     -- The first boss's 2000789 too: open (7) at the start, closed at his pull (`BOSS1_BEHIND`.)
     for _, wall in ipairs({ BOSS1_WALL, BOSS2_WALL, BOSS1_BEHIND }) do
         director:hide_eobj(wall)
+    end
+    for _, layout in ipairs(OPEN_AT_START) do
+        director:hide_eobj(layout)
     end
     D:setup(director)
 end
