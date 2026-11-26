@@ -1914,6 +1914,13 @@ guide to the dungeon checked against the five runs:
   Now `onSetup` opens both by layout ID (`OPEN_AT_START`; `hide_eobj` by base takes one copy, and each base has
   another). Test `BossWallsOpenAtTheStartTest.test_the_praetoriums_way_west_starts_open`. The state is SpawnObject's
   byte 38 (event_state), read from both captures.
+  That wasn't the whole of it (Bob's screenshot of 2026-11-26 on `6cfc75108`: "Shortcut" standing by the terminal
+  after the second boss, "this is not how retail had this shortcut"): the first boss's door was named by its EObj ID
+  (`BOSS1_BEHIND = 2000789`), and `find_object_by_eobj_or_layout_id` takes the first object with that EObj ID among the
+  instance's actors, whose order differs instance to instance. In some runs the first boss's pull showed (shut) the
+  terminal's shortcut instead of the door, and the door stayed open. Retail showed the shortcut in none of its runs.
+  `BOSS1_BEHIND` is the door's layout ID now (9058468), and the server warns when an EObj ID a director names matches
+  more than one object there ("EObj ID … names N objects here"). Test `PraetoriumShortcutTest`.
 
 Tests `PraetoriumClawAndEnrageTest.test_the_ring_electrocutes`, the claw's (its second strike and `focus_bnpc`),
 `augmented_shatter_is_shared`, `damage_dealers_go_for_the_focus`, `the_praetoriums_blasted_walls_are_barriers`,

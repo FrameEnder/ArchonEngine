@@ -1118,7 +1118,20 @@ impl Instance {
     /// Returns the actor ID (if any) of a spawned EObj by its EObj ID or, if none has that, its layout ID: some
     /// duties' boss walls share their EObj ID with a line beside them (the Copperbell Mines' first two), so a script
     /// tells them apart by layout ID.
+    /// An EObj ID two objects here share names whichever comes first (the actors' order, which differs instance to
+    /// instance): said, so the script names the one it means by layout ID (the Praetorium's 2000789, the first boss's
+    /// door and the shortcut by the magitek terminal: the pull showed the shortcut, Bob's marks of 2026-11-26.)
     pub fn find_object_by_eobj_or_layout_id(&self, id: u32) -> Option<ObjectId> {
+        let sharing = self
+            .actors
+            .values()
+            .filter(|actor| matches!(actor, NetworkedActor::Object { object, .. } if object.base_id == id))
+            .count();
+        if sharing > 1 {
+            tracing::warn!(
+                "EObj ID {id} names {sharing} objects here: one of them is taken, any of them; a director should name it by layout ID"
+            );
+        }
         self.find_object_by_eobj_id(id).or_else(|| {
             self.actors
                 .iter()

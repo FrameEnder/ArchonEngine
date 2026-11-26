@@ -128,7 +128,11 @@ BOSS1_LINE = 2000829
 -- Open (event state 7) from the start, closed as the first boss is pulled, with log 2012; the wall closes 15 s later
 -- with 2013 (captures 9ba7d981 twice, 50e72631 and 6320ae56). Kawari spawned it closed, so the room was sealed when Bob
 -- came back from cutscene 280 (2026-11-25: "the arena chamber seal was active when it shouldn't have been").
-BOSS1_BEHIND = 2000789
+-- By layout ID: 2000789 is also the shortcut by the magitek terminal (9058476), and by its EObj ID the server took
+-- whichever of the two it met first, so the first boss's pull could show the shortcut instead (Bob's marks of 2026-11-26,
+-- "a shortcut that shouldn't be active yet next to the magitek terminal", and again with a screenshot after the second
+-- boss: retail never showed it in any run).
+BOSS1_BEHIND = 9058468
 BOSS1_AHEAD = 2000876 -- gone as it falls
 PLACE_BOSS1 = 451
 BOSS1_MIDDLE = { x = 192.0, y = 76.0, z = 0.2 }

@@ -1518,6 +1518,23 @@ class PraetoriumLastBossTest(FrameworkScriptTest):
         self.assertAlmostEqual(boss[0][3], 220.0)
 
 
+class PraetoriumShortcutTest(FrameworkScriptTest):
+    """The first boss's door (2000789, layout 9058468) is named by its layout ID: the shortcut by the magitek terminal
+    (9058476) has the same EObj ID, and the server took either for it, so the shortcut showed after the first boss's
+    pull. Retail spawned the shortcut open and never touched it (capture 35e30205; Bob's marks of 2026-11-26)."""
+
+    SCRIPT = "w1d5_re.lua"
+
+    def test_the_terminals_shortcut_is_never_shown(self):
+        g = self.lua.globals()
+        self.assertIn(["hide_eobj", [9058476]], [[n, a] for n, a in self.calls])
+        script = (__import__("questkit").repo.SCRIPTS / "content" / self.SCRIPT).read_text()
+        self.assertNotIn("_eobj(2000789", script)
+        self.assertEqual(g.BOSS1_BEHIND, 9058468)
+        for name in ("show_eobj", "hide_eobj"):
+            self.assertNotIn([2000789], self.named(name))
+
+
 class CopperbellBossesTest(FrameworkScriptTest):
     """The Copperbell Mines' script on the dungeon framework: each boss brought with its helpers, its round on its
     cast, its helpers let go (or not) as it falls; a rock's blast still comes down after a wipe. `duty-sim` doesn't
@@ -1672,20 +1689,20 @@ class PraetoriumTest(FrameworkScriptTest):
         """Bob, 2026-11-25: "when I got back from the cutscene the arena chamber seal was active when it shouldn't have
         been". Retail spawned 2000789 and the wall 2000828 open (event state 7); 2000789 closed at the pull (with log
         2012), the wall 15 s later (2013, the server's) and both opened as he fell (captures 9ba7d981, 50e72631,
-        6320ae56)."""
+        6320ae56). 2000789 by its layout ID, 9058468: the shortcut by the terminal shares the EObj ID."""
         hidden = [args[0] for args in self.named("hide_eobj")]
-        for eobj in (2000789, 2000828):
+        for eobj in (9058468, 2000828):
             self.assertIn(eobj, hidden)
-        self.assertNotIn([2000789], self.named("show_eobj"))
+        self.assertNotIn([9058468], self.named("show_eobj"))
         g = self.lua.globals()
         boss = [b for b in g.D.bosses.values() if b.id == 1][0]
         del self.calls[:]
         boss.on_pull(self.director)
-        self.assertIn([2000789], self.named("show_eobj"))
+        self.assertIn([9058468], self.named("show_eobj"))
         self.assertNotIn([2000828], self.named("show_eobj"))
         del self.calls[:]
         boss.on_wipe(self.director)
-        self.assertIn([2000789], self.named("hide_eobj"))
+        self.assertIn([9058468], self.named("hide_eobj"))
 
     def test_prototype_laser_beta_marks_each_of_the_party(self):
         """Bob's mark of 2026-11-25: Prototype Laser Beta "should have 2 indicators a ground aoe, and an overhead
