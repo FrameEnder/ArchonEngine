@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-26 | — | Combat (over a bump); known issues (rubble). |
+| 2026-11-26 | — | ArchonEngine ControlPanel (2.37.0: navmesh files in the harness); known issues (the rubble: the bump guess didn't help). |
+| 2026-11-26 | `434e6863a` | Combat (over a bump); known issues (rubble). |
 | 2026-11-26 | `a334fb5b3` | Dungeons (the arm units still; Photon Stream on its rider); known issues (rubble). |
 | 2026-11-26 | `18ce959fa` | Dungeons (the Praetorium below the ride: arm units, the armour below, the cermet blast door, its way's walls); known issues. |
 | 2026-11-26 | `b530b3e78` | Dungeons (Photon Stream from capture 35e30205); known issues (Photon Stream gone). |
@@ -605,6 +606,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-11-26 | `6ee1a03`, `3cfd212` | 2.37.0: **the navmeshes and collision files in the harness**: `/dashboard/harness/navmesh?find=` lists what kawari-navimesh made, `/dashboard/harness/navmesh/<path>` gives one as it is, so a session can walk a bot over the zone's real collision (the Praetorium's rubble: the guess in `434e6863a` didn't help). `Windows` brought up to `main` (`3cfd212`). |
 | 2026-11-25 | `333d2bf`, `3575dfa` | 2.36.0: **a capture's records from any time in it**: `/dashboard/harness/captures/<file>?from=&to=` (ms, as the records' `t`) reads the whole file line by line (`range_jsonl`) and gives the first that match; without them the last, from the last 8 MB, as before (a duty's entry had fallen outside it, 2026-11-25). `Windows` brought up to `main` (`3575dfa`). |
 | 2026-11-25 | `3204960`, `1279b4e` | 2.35.0: **the harness reads a territory's layout**: `/dashboard/harness/layout/<territory>?object=&layer=&kind=` through the active build's `kawari-questdump layout` (the fork's `02added2b`); `_read_game_data` checks for the command it runs. `Windows` brought up to `main` (`1279b4e`). |
 | 2026-11-25 | `521526b`, `c125898` | 2.34.0: **the harness reads the game's data** (`kawari_web/harness.py`, README): `/dashboard/harness/sheets` (kept 10 minutes) and `/dashboard/harness/sheet/<name>?rows=&where=`, through the active build's `kawari-questdump sheet` (the fork's `a610e543a`) in a throwaway container as Quest Lab runs it; a build without the command says so. `Windows` brought up to `main` (`c125898`; the README's version line kept its wording). |

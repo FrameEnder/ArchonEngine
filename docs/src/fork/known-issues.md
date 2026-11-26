@@ -45,14 +45,13 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   2026-11-26): the arm units coming into view, the armour below in cutscene 392, the cermet blast door on its door and
   still, and the way west to it open (map effects 14 and 18) with the door's own (6 and 7). Whether 6 and 7 have
   collision isn't known (`kawari-navimesh` logs the SharedGroups that have none).
-* **The Praetorium's bots and the rubble** (Bob's mark of 2026-11-26): a bump the navmesh walks over no longer holds
-  a bot (`combat.md`, "Over a bump"); untested in game. Enemies chasing over it still wait 2 s at each piece.
-
-## Bob's Chronofoil capture 9ba7d981 (2026-11-17, the end of A Realm Reborn's story)
-
-Three hours: Operation Archon to The Ultimate Weapon with Cape Westwind twice, Castrum Meridianum, the Praetorium
-twice, the Porta Decumana and the last quest battle twice, then the Waking Sands and some of what follows.
-
+* **The Praetorium's bots and the rubble** (Bob's marks and screenshots of 2026-11-26, the rubble outside the blasted
+  wall at about (238, 157, -39)): still held. `434e6863a` (a bump only the low test stops, where the navmesh goes
+  straight on, isn't a wall) changed nothing: on `434e6863a` the log has the bots "held up by a wall the navmesh goes
+  round" there (the navmesh goes round the rubble too), stepping round it and held again every second or two, and
+  one put down from 1.3 yalms up on a piece (11:03-11:04 UTC). The rubble's collision is there for the navmesh as
+  for the walk; what the player's client does with it isn't. The ControlPanel's harness serves the collision file
+  since 2.37.0, to walk a bot over it here.
 * **Read so far**: the Waking Sands' layer keys (92223, 92224); the five quests' steps (second fixtures, all
   matching); The Ultimate Weapon's reward (flying, riding speed); Cape Westwind's two runs (`quest-battles.md`).
 * **The Ultimate Weapon's last battle** (5061) is unplayed. The director's `hold_wipe` and `revive_players` are
