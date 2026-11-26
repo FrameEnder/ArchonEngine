@@ -1069,7 +1069,7 @@ impl GameData {
             fate_event_range_lookup.insert(row.Location, id);
         }
 
-        Self {
+        let mut data = Self {
             resource: resource_resolver,
             item_sheet,
             classjob_exp_indexes,
@@ -1132,7 +1132,9 @@ impl GameData {
             gimmick_accessor_sheet,
             trait_sheet,
             gfate_sheet,
-        }
+        };
+        data.note_statuses_kept_at_a_death();
+        data
     }
 
     /// Gets the starting city-state from a given class/job id.
@@ -4118,6 +4120,23 @@ impl GameData {
                 .is_some_and(|starters| starters.contains(&(action_id as u16)))
     }
 
+    /// Reads which statuses a death leaves on (`stays_at_a_death`): the Status sheet's IsPermanent ones.
+    fn note_statuses_kept_at_a_death(&mut self) {
+        let Ok(sheet) = icarus::Status::StatusSheet::read_from(
+            &mut self.resource,
+            get_config().world.language(),
+        ) else {
+            return;
+        };
+        let permanent: std::collections::HashSet<u16> = sheet
+            .into_iter()
+            .flatten_subrows()
+            .filter(|(_, row)| row.IsPermanent)
+            .map(|(id, _)| id as u16)
+            .collect();
+        let _ = PERMANENT_STATUSES.set(permanent);
+    }
+
     /// Whether a status can be removed by Esuna and the like (Status.CanDispel.)
     pub fn is_dispellable(&mut self, status_id: u16) -> bool {
         if self.dispellable_statuses.is_none() {
@@ -5431,6 +5450,30 @@ struct QuestIssuer {
 /// 2026-11-12: 152 71151, 165 71021, 1057 71141), against which the sheet's MapIconAvailable is checked at startup to
 /// find the offset (Questionable takes NPC icons as NpcIconAvailable plus one.)
 const RETAIL_QUEST_MAP_ICONS: [(u32, u32); 3] = [(152, 71151), (165, 71021), (1057, 71141)];
+
+/// The Status sheet's IsPermanent statuses, read as the game data is (`GameData::note_statuses_kept_at_a_death`).
+static PERMANENT_STATUSES: std::sync::OnceLock<std::collections::HashSet<u16>> =
+    std::sync::OnceLock::new();
+
+/// Weakness and Brink of Death: the raise's, kept through a death (dying with Weakness gives Brink of Death at the next
+/// raise.)
+const KEPT_FOR_THE_NEXT_RAISE: [u16; 2] = [43, 44];
+
+/// Whether a death leaves this status on: one the Status sheet marks IsPermanent, or the raise's Weakness and Brink of
+/// Death; every other goes at once. Retail, Bob's Chronofoil captures (2026-06 to 2026-10): at 22 of his deaths every
+/// timed status was gone from the first StatusEffectList at the death (Regen 158, Medica II 150, Vulnerability Up
+/// 1789, Damage Up 687, 1099, 202, 240, 1218, 1911, 1912, 1297, 1822, 1848, 2618, 317), with no LoseEffect for any, and
+/// The Echo (42), Epic Echo (2734) and EXP Bonus (1050), IsPermanent, were still listed after it. Without the game data
+/// (tests), those that never run out stay.
+pub fn stays_at_a_death(status_id: u16, never_ends: bool) -> bool {
+    if KEPT_FOR_THE_NEXT_RAISE.contains(&status_id) {
+        return true;
+    }
+    match PERMANENT_STATUSES.get() {
+        Some(permanent) => permanent.contains(&status_id),
+        None => never_ends,
+    }
+}
 
 /// A Knockback sheet row (`GameData::get_knockback`.)
 #[derive(Debug, Clone, Copy, PartialEq)]

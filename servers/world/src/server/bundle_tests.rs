@@ -2464,25 +2464,39 @@ fn a_layouts_every_npc_goes_and_takes_the_focus_with_it() {
     assert!(world.instance.party_focus.is_empty());
 }
 
-/// Bob's mark of 2026-11-26 ("regen is staying on in rare cases when it reaches 0"): a bot fell 4.1 s into an 18 s
-/// Regen, and its death cancelled every task of its own, Regen's end with them, so it got up with Regen for good (listed
-/// at 0.0 s, never ticking). A death calls off its other tasks but not its statuses' ends.
+/// Bob's mark of 2026-11-26 ("regen is staying on in rare cases when it reaches 0") and his word that "all statuses
+/// are stripped when you die save for one ... related to being revived": a bot fell 4.1 s into an 18 s Regen, its death
+/// cancelled every task of its own, Regen's end with them, and it got up with Regen for good (listed at 0.0 s). Retail
+/// (his captures' 22 deaths): every timed status gone from the list at the death, no LoseEffect, the permanent ones
+/// kept. Now a death strips its statuses and their ends, keeping Weakness (the raise's, with its end) and those that
+/// never run out (IsPermanent, without the game data here); its other tasks go.
 #[test]
-fn a_death_keeps_its_statuses_ends() {
+fn a_death_strips_its_statuses() {
     use crate::server::instance::QueuedTaskData;
     let mut world = TestWorld::new();
     let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
     let bot = world.player_npc(ENEMY, player, [1.0, 0.0, 1.0]);
-    world.instance.insert_task(
-        Default::default(),
-        bot,
-        Duration::from_secs(14),
-        QueuedTaskData::LoseStatusEffect {
-            effect_id: 158,
-            effect_param: 0,
-            effect_source_actor_id: player,
-        },
-    );
+    if let Some(effects) = world
+        .instance
+        .find_actor_mut(bot)
+        .and_then(|actor| actor.status_effects_mut())
+    {
+        effects.add(158, 0, 18.0, player);
+        effects.add(43, 0, 100.0, bot);
+        effects.add(1050, 0, 0.0, bot);
+    }
+    for (id, seconds) in [(158, 14), (43, 96)] {
+        world.instance.insert_task(
+            Default::default(),
+            bot,
+            Duration::from_secs(seconds),
+            QueuedTaskData::LoseStatusEffect {
+                effect_id: id,
+                effect_param: 0,
+                effect_source_actor_id: player,
+            },
+        );
+    }
     world.instance.insert_task(
         Default::default(),
         bot,
@@ -2495,7 +2509,16 @@ fn a_death_keeps_its_statuses_ends() {
         .unwrap()
         .get_common_spawn_mut()
         .health_points = 0;
+    world.sent(player);
     kill_actor(world.network.clone(), &mut world.instance, bot);
+    let effects = world
+        .instance
+        .find_actor(bot)
+        .and_then(|actor| actor.status_effects())
+        .unwrap();
+    let mut left: Vec<u16> = effects.ids().collect();
+    left.sort();
+    assert_eq!(left, vec![43, 1050]);
     let own: Vec<_> = world
         .instance
         .queued_task
@@ -2506,6 +2529,14 @@ fn a_death_keeps_its_statuses_ends() {
     assert_eq!(own.len(), 1, "{own:?}");
     assert!(matches!(
         own[0],
-        QueuedTaskData::LoseStatusEffect { effect_id: 158, .. }
+        QueuedTaskData::LoseStatusEffect { effect_id: 43, .. }
     ));
+    let sent = world.sent(player);
+    assert!(
+        !sent.iter().any(|m| matches!(
+            m,
+            FromServer::ActorControl(_, ActorControlCategory::LoseEffect { .. })
+        )),
+        "retail sent no LoseEffect at a death: {sent:?}"
+    );
 }

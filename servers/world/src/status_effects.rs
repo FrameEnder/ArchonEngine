@@ -96,6 +96,14 @@ impl StatusEffects {
         }
     }
 
+    /// Whether an effect it has never runs out (added with a duration of 0.)
+    pub fn never_ends(&self, effect_id: u16) -> bool {
+        self.status_effects
+            .iter()
+            .position(|effect| effect.effect_id == effect_id)
+            .is_some_and(|i| self.expires[i].is_none())
+    }
+
     pub fn remove(&mut self, effect_id: u16) {
         if let Some(i) = self
             .status_effects

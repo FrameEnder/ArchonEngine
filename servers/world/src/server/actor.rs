@@ -432,6 +432,34 @@ pub fn set_shared_group_timeline_state(
 
 // Sends the ActorControls to inform the actor that they're dead.
 pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, actor_id: ObjectId) {
+    // Its statuses go, all but the permanent ones and the raise's (`gamedata::stays_at_a_death`), and their ends with
+    // them; the status list shows it, with no LoseEffect for any, as retail's (Bob: "all statuses are stripped when you
+    // die save for one ... related to being revived"; his captures' 22 deaths.)
+    let stripped: Vec<u16> = instance
+        .find_actor(actor_id)
+        .and_then(|actor| actor.status_effects())
+        .map(|effects| {
+            effects
+                .ids()
+                .filter(|id| !crate::gamedata::stays_at_a_death(*id, effects.never_ends(*id)))
+                .collect()
+        })
+        .unwrap_or_default();
+    if !stripped.is_empty() {
+        if let Some(effects) = instance
+            .find_actor_mut(actor_id)
+            .and_then(|actor| actor.status_effects_mut())
+        {
+            for id in &stripped {
+                effects.remove(*id);
+            }
+        }
+        instance.retain_tasks(|task| {
+            !(task.from_actor_id == actor_id
+                && matches!(task.data, QueuedTaskData::LoseStatusEffect { effect_id, .. } if stripped.contains(&effect_id)))
+        });
+        crate::server::effect::process_effects_list(network.clone(), instance, actor_id);
+    }
     // An NPC that dies mid-cast: the cast is cut off, and everyone sees its bar go (retail: ActorControl 15 with 540, 1,
     // the action, 1, just before the death animation; the Copperbell Mines' second boss, Bob's captures of 2026-10-25.)
     let cancelled = if matches!(
@@ -582,10 +610,10 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
         fate.data.on_actor_death();
     }
 
-    // Cancel existing tasks, but not its statuses' running out: they stay on it while it lies (a party bot's, to be
-    // raised), so they must still go when they end. With their ends cancelled a bot that died under Regen got up with
-    // it for good, shown at 0 s and never ticking (Bob's mark of 2026-11-26: "regen is staying on in rare cases when it
-    // reaches 0", his capture: Regen 18 s on a bot 4.1 s before it fell, still listed at 0.0 s from its raise on.)
+    // Cancel existing tasks, but not the ends of the statuses it keeps (Weakness): they stay on it while it lies, so
+    // they must still go when they end. With their ends cancelled and the statuses left on, a bot that died under Regen
+    // got up with it for good, shown at 0 s and never ticking (Bob's mark of 2026-11-26: "regen is staying on in rare
+    // cases when it reaches 0"; Regen 18 s on a bot 4.1 s before it fell, still listed at 0.0 s from its raise on.)
     instance.retain_tasks(|task| {
         task.from_actor_id != actor_id
             || matches!(task.data, QueuedTaskData::LoseStatusEffect { .. })

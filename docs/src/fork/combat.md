@@ -793,11 +793,16 @@ one tick per effect, each on its own 3 s from when it was applied, and nothing f
 effect joins its target's ticks and each target gets one tick per kind, its effects' total, named after the first
 one's source (`periodic::add_to_totals`, `tick_control`). Test `a_target_s_over_time_effects_tick_together`.
 
-A death calls off the dead one's queued tasks but not its statuses' ends (`kill_actor`): those stay on it while it lies
-and go when they run out. Calling those off too left a bot that fell under Regen with Regen for good after it got up,
-listed at 0.0 s and never ticking (Bob's mark of 2026-11-26: "regen is staying on in rare cases when it reaches 0";
-Regen 18 s at 403.1 s into his run, the bot down at 407.2, Regen still listed at 0.0 from its raise at 438.2 to the
-end). Whether retail takes statuses off at a death isn't read here. Test `a_death_keeps_its_statuses_ends`.
+**A death strips the statuses** (`kill_actor`, `gamedata::stays_at_a_death`): all but those the Status sheet marks
+IsPermanent and the raise's Weakness (43) and Brink of Death (44), kept so the next raise gives Brink; their ends go
+with them, and the status list shows it, with no LoseEffect for any. Retail, Bob's Chronofoil captures (June to
+October 2026): at 22 of his deaths every timed status was gone from the first StatusEffectList at the death (Regen 158,
+Medica II 150, Vulnerability Up 1789, Damage Up 687, Healing Potency Up 1099, 202, 240, 1218, 1911, 1912, 1297, 1822,
+1848, 2618, 317), no LoseEffect came, and The Echo (42), Epic Echo (2734) and EXP Bonus (1050), all IsPermanent, were
+still listed after it and after the raise; Bob: "all statuses are stripped when you die save for one ... related to
+being revived". Before, a death left the statuses on and called off their ends, so a bot that fell under Regen got up
+with it for good, listed at 0.0 s and never ticking (his mark of 2026-11-26). Whether Weakness itself stays in the
+list while dead isn't in a capture; it's kept for the raise. Test `a_death_strips_its_statuses`.
 
 ## Barriers
 
