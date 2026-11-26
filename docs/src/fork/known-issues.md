@@ -53,6 +53,15 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   2026-11-26): the arm units coming into view, the armour below in cutscene 392, the cermet blast door on its door and
   still, and the way west to it open (map effects 14 and 18) with the door's own (6 and 7). Whether 6 and 7 have
   collision isn't known (`kawari-navimesh` logs the SharedGroups that have none).
+* **The Praetorium's last boss** (since the change after `01d721e6d`, `dungeons.md`): the swords and the four come out
+  and go as retail's packets show, the four rooted and holding their auto-attacks, the boss in the middle; its room's
+  floor is in the navmesh once it's made again (the next visit, a minute or so). Untested in game. Not built: retail's
+  ToggleWeapon and SetBattle on the swords and the four at the pull, their FirstAttack as they come out, and the four
+  turning to their targets (they face the middle). Whether the four "extra" figures Bob saw were the swords that never
+  vanished isn't known; the four wait at (-575, 228) from the boss's arrival as retail's did, with the same spawn.
+* **Unspawned objects' gimmicks** (`party-bots.md`): their walls are taken to stop nobody and their floors to hold, from
+  two cases in the Praetorium (4305499's barrier, 4334405's floor); a shared group whose walls stand for players with
+  no object spawned would now let NPCs through.
 * **The Praetorium's rubble** (material 0x2006) is passed through since the change after `f2b92b29e` (`party-bots.md`):
   untested in game. Only that one value is known to be passable; other duties' debris may use another. The
   Praetorium's navmesh and collision are made again on the next visit (a minute or so).

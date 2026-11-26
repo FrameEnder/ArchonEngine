@@ -132,6 +132,10 @@ pub struct Zone {
     pub exit_eobjs: Vec<u32>,
     /// The duty's shortcuts (`is_duty_shortcut`): spawned hidden, shown when the director points them somewhere.
     pub shortcut_eobjs: Vec<u32>,
+    /// Every event object (layout ID) in the zone's layers that are on (`get_event_objects`), spawned or not. The
+    /// collision has the gimmicks of the others too (layers no layer set turns on, as the Praetorium's from before its
+    /// remake), never spawned: see `Instance::mark_unspawned_gimmicks`.
+    pub layer_eobjs: HashSet<u32>,
 }
 
 /// Whether this event object's gimmick is the duty exit (its EObj Data a GimmickAccessor of the DutyExit kind.)
@@ -737,6 +741,24 @@ impl Zone {
     /// Returns a list of event objects to spawn by default. If `explorer_mode`, replaces the shortcut object.
     ///
     /// For example, the Gold Saucer arcade machines or shortcuts in dungeons.
+    /// Notes the event objects in its layers that are on (`layer_eobjs`), spawned or not.
+    pub fn note_layer_eobjs(&mut self) {
+        let mut eobjs = HashSet::new();
+        for layer_group in &self.layer_groups {
+            for layer in &layer_group.chunks[0].layers {
+                if !layer.header.has_layer_set(self.layer_set as u32) {
+                    continue;
+                }
+                for object in &layer.objects {
+                    if let LayerEntryData::EventObject(_) = &object.data {
+                        eobjs.insert(object.instance_id);
+                    }
+                }
+            }
+        }
+        self.layer_eobjs = eobjs;
+    }
+
     pub fn get_event_objects(
         &mut self,
         game_data: &mut GameData,

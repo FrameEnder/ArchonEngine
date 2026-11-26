@@ -1461,6 +1461,63 @@ class BossWallsOpenAtTheStartTest(unittest.TestCase):
         self.assertNotIn("show_eobj(9247278", script)
 
 
+class PraetoriumLastBossTest(FrameworkScriptTest):
+    """The Praetorium's last boss's swords and four come out as retail's did (capture 35e30205): an ActorSetPos to one
+    spot (the room's middle; the boss's own spot), 28485 there, and half a second on a jump each to its place; the four
+    stay rooted at the corners with no auto-attacks, and the boss leaps to the middle. Bob's marks of 2026-11-26:
+    "Phantom Gaius is not acting as they should", "he doesn't spawn the same either"."""
+
+    SCRIPT = "w1d5_re.lua"
+
+    def tick(self, n, boss_at=(-566.16, 212.97)):
+        for _ in range(n):
+            self.update({"player": {"x": -560, "y": -268, "z": 220, "id": 1},
+                         9055066: {"x": boss_at[0], "y": -268, "z": boss_at[1], "hp": 50000, "max_hp": 93255}})
+
+    def test_swords_and_the_four_come_out_as_retails(self):
+        g = self.lua.globals()
+        g.D.fight = 3
+        g.bringLastBoss(self.director)
+        phantoms = list(g.phantoms.values())
+        swords = list(g.swords.values())
+        self.assertEqual((len(phantoms), len(swords)), (4, 5))
+        self.tick(1)
+
+        del self.calls[:]
+        g.swordsCome(self.director, 4.9)
+        warps = [args for args in self.named("warp_bnpc") if args[0] in swords]
+        self.assertEqual(len(warps), 5)
+        self.assertTrue(all(abs(a[1] + 562) < 0.01 and abs(a[3] - 220) < 0.01 for a in warps), warps)
+        self.assertEqual(sorted(a[0] for a in self.named("actor_use_action") if a[1] == 28485), sorted(swords))
+        self.assertFalse(self.named("jump_bnpc"))
+        # (Called outside an update, as a test does, `D:after` waits one more.)
+        self.tick(1)
+        self.assertFalse(self.named("jump_bnpc"))
+        self.tick(1)
+        jumps = [args for args in self.named("jump_bnpc") if args[0] in swords]
+        self.assertEqual(len(jumps), 5)
+        self.assertTrue(all(abs(a[1] + 576.6) < 0.01 for a in jumps), jumps)
+
+        del self.calls[:]
+        g.secondPart(self.director)
+        self.tick(11)
+        warps = [args for args in self.named("warp_bnpc") if args[0] in phantoms]
+        self.assertEqual(len(warps), 4)
+        self.assertTrue(all(abs(a[1] + 566.16) < 0.01 and abs(a[3] - 212.97) < 0.01 for a in warps), warps)
+        self.assertEqual(sorted(a[0] for a in self.named("actor_use_action") if a[1] == 28485), sorted(phantoms))
+        self.assertEqual(sorted(a[0] for a in self.named("root_bnpc")), sorted(phantoms))
+        self.assertEqual(sorted(a[0] for a in self.named("hold_attacks") if a[1]), sorted(phantoms))
+        self.assertFalse([a for a in self.named("jump_bnpc") if a[0] in phantoms])
+        self.tick(1)
+        corners = sorted((a[1], a[3]) for a in self.named("jump_bnpc") if a[0] in phantoms)
+        self.assertEqual(corners, sorted((x, z) for x, z in ((-554.5, 210.0), (-554.5, 230.0), (-569.5, 210.0), (-569.5, 230.0))))
+        self.tick(1)
+        boss = [a for a in self.named("jump_bnpc") if a[0] == 9055066]
+        self.assertEqual(len(boss), 1)
+        self.assertAlmostEqual(boss[0][1], -562.0)
+        self.assertAlmostEqual(boss[0][3], 220.0)
+
+
 class CopperbellBossesTest(FrameworkScriptTest):
     """The Copperbell Mines' script on the dungeon framework: each boss brought with its helpers, its round on its
     cast, its helpers let go (or not) as it falls; a rock's blast still comes down after a wipe. `duty-sim` doesn't

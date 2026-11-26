@@ -158,6 +158,30 @@ fn main() {
         );
     }
 
+    // The event objects the world server spawns here (those in the layer set's layers, `Zone::layer_eobjs`). A
+    // gimmick of one that isn't (in a layer of another territory's set) is as its shared group stands in the layout:
+    // its floors are ground, its walls stop nobody (`Collision::set_gimmick_unspawned`). The Praetorium's last boss's
+    // floor is the gimmick of 4334405 (2001766), from the old Praetorium's layers: it had no navmesh, and the bots
+    // dodged nothing on it (Bob's marks of 2026-11-26: "bots are falling left and right").
+    let mut spawned: std::collections::HashSet<u32> = std::collections::HashSet::new();
+    for (_, lgb) in &lgbs {
+        for chunk in &lgb.chunks {
+            for layer in &chunk.layers {
+                if layer_set.is_some_and(|id| !layer.header.has_layer_set(id as u32)) {
+                    continue;
+                }
+                for object in &layer.objects {
+                    if let LayerEntryData::EventObject(_) = &object.data {
+                        spawned.insert(object.instance_id);
+                    }
+                }
+            }
+        }
+    }
+    let unspawned = |owner: u32| {
+        layer_set.is_some() && !spawned.contains(&owner) && !barrier_layouts.contains(&owner)
+    };
+
     let mut outside_layer_set = 0;
     for (_, lgb) in &lgbs {
         for chunk in &lgb.chunks {
@@ -258,6 +282,12 @@ fn main() {
     let border_size = walkable_radius + 3;
     let tile_cell_size = tile_size as f32 * cell_size;
     let max_slope = navimesh_row.AgentMaxSlope;
+    let floor_cos = max_slope.to_radians().cos();
+    let is_floor = |tri: &[u32; 3]| {
+        let [a, b, c] = tri.map(|i| Vec3A::from(geometry.vertices[i as usize]));
+        let n = (b - a).cross(c - a).normalize_or_zero();
+        n.y.abs() >= floor_cos
+    };
     // Recast counts climbs in cell heights (it was in cell sizes.)
     let walkable_climb = (navimesh_row.AgentMaxClimb / cell_height).floor() as i32;
     let walkable_height = (navimesh_row.AgentHeight / cell_height).ceil() as i32;
@@ -272,8 +302,9 @@ fn main() {
     let mut tile_materials: Vec<Vec<u64>> = vec![Vec::new(); (tile_width * tile_height) as usize];
     for (index, (tri, owner)) in geometry.triangles.iter().zip(&geometry.owners).enumerate() {
         // Gimmicks come and go: the navmesh goes through them (the collision stops walkers while they stand.) A
-        // material nothing bumps into (`passable_material`: the Praetorium's rubble) is no ground or wall either.
-        if *owner != 0
+        // material nothing bumps into (`passable_material`: the Praetorium's rubble) is no ground or wall either. An
+        // unspawned object's gimmick's floors are ground (`unspawned`.)
+        if (*owner != 0 && !(unspawned(*owner) && is_floor(tri)))
             || kawari_world::collision::passable_material(
                 geometry.materials.get(index).copied().unwrap_or(0),
             )

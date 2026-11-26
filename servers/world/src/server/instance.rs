@@ -426,6 +426,7 @@ impl Instance {
             ..Default::default()
         };
 
+        instance.zone.note_layer_eobjs();
         let config = get_config();
         if config.filesystem.navimesh_path.is_empty() {
             tracing::warn!("Navimesh path is not set! Monsters will not function correctly!");
@@ -482,8 +483,12 @@ impl Instance {
                 // Or one built for other map effect barriers than the zone's (`barriers_differ`): from a build that
                 // couldn't find them (version 7: Castrum Meridianum's, Bob's marks of 2026-11-22), or before they
                 // were listed in `map_effect_barriers.json` (the Praetorium's, Bob's marks of 2026-11-24.)
+                // Or one whose navmesh left out the floors of event objects never spawned here (version 10: the
+                // Praetorium's last boss's, `Collision::lacks_unspawned_floors`.)
                 let older = instance.collision.as_ref().is_some_and(|collision| {
-                    collision.is_older() || collision.barriers_differ(&barriers)
+                    collision.is_older()
+                        || collision.barriers_differ(&barriers)
+                        || collision.lacks_unspawned_floors(&instance.zone.layer_eobjs)
                 });
                 if older {
                     tracing::info!(
@@ -524,6 +529,7 @@ impl Instance {
                 instance.set_gimmick_gone(layout_id, true);
             }
         }
+        instance.mark_unspawned_gimmicks();
 
         // Load initial NPCs into instance
         if !explorer_mode {
@@ -873,8 +879,38 @@ impl Instance {
         }
     }
 
+    /// The collision's gimmicks of event objects that aren't in this zone's layers that are on (`Zone::layer_eobjs`)
+    /// are as the client has them, never spawned: their walls are no obstacle, their floors stay
+    /// (`Collision::set_gimmick_unspawned`). The Praetorium's collision has gimmicks from before its remake (layers in
+    /// no layer set of its own): 4305499's barrier (2000824) at (-184.6, -2.1) held the bots up on the way west until
+    /// `WALL_PATIENCE` ran out (Bob's mark of 2026-11-26: "bots got stuck on barrier untill the 2 second fallback kicked
+    /// in"), where nobody else was stopped; the last boss's floor is 4334405's gimmick, which everyone stands on.
+    pub fn mark_unspawned_gimmicks(&mut self) {
+        let Some(collision) = &self.collision else {
+            return;
+        };
+        let unspawned: Vec<u32> = collision
+            .gimmicks()
+            .iter()
+            .copied()
+            .filter(|layout_id| *layout_id != 0 && !self.zone.layer_eobjs.contains(layout_id))
+            .collect();
+        if unspawned.is_empty() {
+            return;
+        }
+        let mut ours = (**collision).clone();
+        for layout_id in &unspawned {
+            ours.set_gimmick_unspawned(*layout_id, true);
+        }
+        self.collision = Some(Arc::new(ours));
+        tracing::info!(
+            "The gimmicks of event objects {unspawned:?} (layout IDs), never spawned here, have their floors and no walls in this instance's collision"
+        );
+    }
+
     /// A collision just loaded: the gimmicks already gone here go from it too.
     pub fn collision_loaded(&mut self) {
+        self.mark_unspawned_gimmicks();
         // Its floors' materials are found again.
         self.status_floors = None;
         let Some(collision) = &self.collision else {
@@ -1293,6 +1329,110 @@ mod tests {
             layout_id,
             ..Default::default()
         }
+    }
+
+    /// Bob's mark of 2026-11-26 in the Praetorium: the gimmick of 4305499 (2000824), in a layer no layer set turns on,
+    /// held the bots up on the way west until their patience ran out. A gimmick of an event object outside the zone's
+    /// layers that are on has no walls (nobody was stopped by it), but its floors stay (the last boss's floor is the
+    /// gimmick of 4334405, never spawned either); one inside stays whole until the director hides it.
+    #[test]
+    fn an_unspawned_gimmick_has_floors_but_no_walls() {
+        use crate::collision::Collision;
+        use glam::Vec3A;
+        let quad = |v: &mut Vec<[f32; 3]>,
+                    t: &mut Vec<[u32; 3]>,
+                    a: [f32; 3],
+                    b: [f32; 3],
+                    c: [f32; 3],
+                    d: [f32; 3]| {
+            let i = v.len() as u32;
+            v.extend([a, b, c, d]);
+            t.extend([[i, i + 1, i + 2], [i, i + 2, i + 3]]);
+        };
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        // The floor is 4334405's; walls across x = 3 (4305499's) and x = -3 (9247278's).
+        quad(
+            &mut v,
+            &mut t,
+            [-10.0, 0.0, -10.0],
+            [10.0, 0.0, -10.0],
+            [10.0, 0.0, 10.0],
+            [-10.0, 0.0, 10.0],
+        );
+        quad(
+            &mut v,
+            &mut t,
+            [3.0, 0.0, -10.0],
+            [3.0, 0.0, 10.0],
+            [3.0, 4.0, 10.0],
+            [3.0, 4.0, -10.0],
+        );
+        quad(
+            &mut v,
+            &mut t,
+            [-3.0, 0.0, -10.0],
+            [-3.0, 0.0, 10.0],
+            [-3.0, 4.0, 10.0],
+            [-3.0, 4.0, -10.0],
+        );
+        let owners = vec![4334405, 4334405, 4305499, 4305499, 9247278, 9247278];
+        let mut instance = Instance::default();
+        instance.zone.layer_eobjs.insert(9247278);
+        instance.collision = Some(Arc::new(Collision::build(
+            v,
+            t,
+            owners,
+            Vec::new(),
+            0.75,
+            0.4,
+            55.0,
+        )));
+        instance.mark_unspawned_gimmicks();
+        let collision = instance.collision.clone().unwrap();
+        let east = collision.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0);
+        assert!(
+            !east.blocked && (east.at.x - 8.0).abs() < 0.01 && east.at.y.abs() < 0.01,
+            "{east:?}"
+        );
+        let west = collision.walk(Vec3A::ZERO, Vec3A::new(-8.0, 0.0, 0.0), 50.0);
+        assert_eq!(west.gimmick, Some(9247278));
+        assert_eq!(collision.settle(Vec3A::new(5.0, 0.3, 5.0)).y, 0.0);
+        // A collision loaded again is marked too.
+        instance.collision = Some(Arc::new(Collision::build(
+            vec![
+                [3.0, 0.0, -10.0],
+                [3.0, 0.0, 10.0],
+                [3.0, 4.0, 10.0],
+                [3.0, 4.0, -10.0],
+                [-10.0, 0.0, -10.0],
+                [10.0, 0.0, -10.0],
+                [10.0, 0.0, 10.0],
+                [-10.0, 0.0, 10.0],
+            ],
+            vec![[0, 1, 2], [0, 2, 3], [4, 5, 6], [4, 6, 7]],
+            vec![4305499, 4305499, 0, 0],
+            Vec::new(),
+            0.75,
+            0.4,
+            55.0,
+        )));
+        instance.collision_loaded();
+        let east =
+            instance
+                .collision
+                .clone()
+                .unwrap()
+                .walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0);
+        assert!(!east.blocked, "{east:?}");
+        // Put up by the director (a map effect's barrier, no event object's), it stands.
+        instance.seal_gimmick(4305499);
+        let sealed =
+            instance
+                .collision
+                .clone()
+                .unwrap()
+                .walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0);
+        assert!(sealed.blocked && sealed.sealed, "{sealed:?}");
     }
 
     /// Bob's mark of 2026-11-19 in Castrum Meridianum, "stuck in circular barrier": its way to the last hall (EObj

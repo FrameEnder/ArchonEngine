@@ -3465,7 +3465,7 @@ pub fn director_tick(
                     let target = if instance.find_actor(ObjectId(*to)).is_some() {
                         Some(ObjectId(*to))
                     } else {
-                        instance.find_npc(*to).map(|(target, _)| target)
+                        resolve_bnpc(instance, *to)
                     };
                     match target {
                         Some(target) => {
@@ -3701,7 +3701,7 @@ pub fn director_tick(
                 layout_id,
                 invulnerable,
             } => {
-                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                let Some(actor_id) = resolve_bnpc(instance, *layout_id) else {
                     tracing::warn!("Failed to find bnpc {layout_id} for SetInvulnerable!");
                     continue;
                 };
@@ -3899,12 +3899,12 @@ pub fn director_tick(
                 action_id,
                 target,
             } => {
-                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                let Some(actor_id) = resolve_bnpc(instance, *layout_id) else {
                     tracing::warn!("Failed to find bnpc {layout_id} for UseAction!");
                     continue;
                 };
                 let target_id = match target {
-                    Some(target) => instance.find_npc(*target).map(|(id, _)| id),
+                    Some(target) => resolve_bnpc(instance, *target),
                     None => instance
                         .actors
                         .iter()
@@ -3990,10 +3990,7 @@ pub fn director_tick(
                 kind,
                 style,
             } => {
-                let actor_id = instance
-                    .find_npc(*layout_id)
-                    .map(|(actor_id, _)| actor_id)
-                    .unwrap_or_default();
+                let actor_id = resolve_bnpc(instance, *layout_id).unwrap_or_default();
                 let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::DirectorPopupMessage {
                     actor_id: ObjectTypeId {
                         object_id: actor_id,
@@ -4025,7 +4022,7 @@ pub fn director_tick(
                 layout_id,
                 timeline_id,
             } => {
-                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                let Some(actor_id) = resolve_bnpc(instance, *layout_id) else {
                     continue;
                 };
                 let mut network = network.lock();
@@ -4055,7 +4052,7 @@ pub fn director_tick(
                 layout_id,
                 npc_yell_id,
             } => {
-                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                let Some(actor_id) = resolve_bnpc(instance, *layout_id) else {
                     continue;
                 };
                 let name_id = game_data
@@ -4134,7 +4131,7 @@ pub fn director_tick(
                 });
             }
             LuaDirectorTask::SetAttackRange { layout_id, yalms } => {
-                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                let Some(actor_id) = resolve_bnpc(instance, *layout_id) else {
                     tracing::warn!("Failed to find bnpc {layout_id} for SetAttackRange!");
                     continue;
                 };
@@ -4157,11 +4154,11 @@ pub fn director_tick(
                 let anchor_ids: Vec<ObjectId> = anchors
                     .iter()
                     .filter_map(|anchor| match anchor {
-                        Some(anchor) => instance.find_npc(*anchor).map(|(id, _)| id),
+                        Some(anchor) => resolve_bnpc(instance, *anchor),
                         None => player,
                     })
                     .collect();
-                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                let Some(actor_id) = resolve_bnpc(instance, *layout_id) else {
                     tracing::warn!("Failed to find bnpc {layout_id} for KeepNear!");
                     continue;
                 };
@@ -4182,8 +4179,8 @@ pub fn director_tick(
                 tank,
                 yalms,
             } => {
-                let tank_id = instance.find_npc(*tank).map(|(id, _)| id);
-                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                let tank_id = resolve_bnpc(instance, *tank);
+                let Some(actor_id) = resolve_bnpc(instance, *layout_id) else {
                     tracing::warn!("Failed to find bnpc {layout_id} for StandBehind!");
                     continue;
                 };
@@ -4206,7 +4203,7 @@ pub fn director_tick(
                 // One it was set on that's gone (the Howling Eye's monolith a razor plume was sent at, broken
                 // already: Bob's bundle 20261111-112150) leaves it on the player.
                 let target_id = match target {
-                    Some(target) => instance.find_npc(*target).map(|(id, _)| id).or(player),
+                    Some(target) => resolve_bnpc(instance, *target).or(player),
                     None => player,
                 };
                 let Some(target_id) = target_id else {

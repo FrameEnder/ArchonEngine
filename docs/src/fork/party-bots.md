@@ -142,6 +142,18 @@ in its open state). Now only a gimmick the director has put up (`show_eobj`: a b
 `WALL_PATIENCE` way past it, and the log says so (`held up by the gimmick of event object …, which the director hasn't
 touched; on past it`).
 
+**A gimmick no one spawns has floors but no walls** (2026-11-26, Bob's mark in the Praetorium: "bots got stuck on
+barrier untill the 2 second fallback kicked in ... that's not acceptable"): the Praetorium's collision has the gimmicks of
+event objects in layers its own layer set doesn't turn on (the old Praetorium's), which the world server never spawns
+and retail didn't either (capture 35e30205). One, 4305499 (EObj 2000824) at (-184.6, -2.1) on the way west from the
+second boss, held the bots for `WALL_PATIENCE` though Bob had walked through it; another, 4334405, is the last boss's
+floor, which everyone stands on. So the client has such a shared group as its layout leaves it, and what's known says
+its walls stop nobody and its floors hold. `Zone::layer_eobjs` lists the event objects in the territory's layers that
+are on; any other object's gimmick is marked unspawned in each instance's collision (`Instance::mark_unspawned_gimmicks`,
+`Collision::set_gimmick_unspawned`): its walls are no obstacle (unless the director puts it up: a map effect's barrier
+is no event object's), its floors stay; and `kawari-navimesh` builds those floors into the navmesh (the last boss's room
+had none). The log names them as each instance is made. Test `an_unspawned_gimmick_has_floors_but_no_walls`.
+
 **Not off a ledge its way doesn't go** (2026-11-02, Bob's Haukke Manor bundle): a bot steps down only as far as its
 path goes down and 3 yalms more (`npc_behavior::path_max_drop`), not as far as a player can drop. The tank bot, cutting
 a corner of its path at (-32, 0, 45) into a sunken space beside it (floor at -3.2: Kawari's collision had no railing

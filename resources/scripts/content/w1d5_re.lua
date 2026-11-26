@@ -266,6 +266,11 @@ SWORDS_AFTER_28484 = 3.1
 SWORDS_X = -576.6
 SWORDS_Z = { { 206.0, 214.0, 222.0, 230.0, 238.0 }, { 202.0, 210.0, 218.0, 226.0, 234.0 } }
 SWORDS_FACING = 1.571
+-- How retail brought them out (capture 35e30205, all five each time; the four of 14455 the same way): ActorSetPos to
+-- one spot (the swords the room's middle, the four the boss's own spot), 28485 there at no one (an AoeEffect8 0.09 s
+-- later), and 0.49 s after the ActorSetPos a SnapNextMove and an ActorMove each to its place. Kawari put them straight
+-- at their places with a 28485 at themselves (Bob's mark of 2026-11-26: "he doesn't spawn the same either").
+APPEAR_SNAP = 0.5
 -- From the 14454s' going to their places: their 28486, ActionTimeline 7737, and the 14456s' 28488.
 SWORDS_SHOW = 1.8
 SWORDS_TIMELINE = 3.8
@@ -287,6 +292,8 @@ PART_SECOND = 32919
 PART_AFTER = 32909
 PHANTOMS_AT = { { -554.5, 210.0 }, { -554.5, 230.0 }, { -569.5, 210.0 }, { -569.5, 230.0 } }
 PART2_PHANTOMS = 5.0
+PART2_BOSS_LEAPS = 1.2
+PART2_ROOTED = 120.0 -- longer than the part can last (its gauge fills 97.5 s in)
 PART2_ON_EACH = { 11.8, 34.9, 63.0 }
 PART2_SWORDS = { 16.8, 48.9, 68.0 }
 PART2_ROWS = 27.8
@@ -297,6 +304,7 @@ PART2_ALL = 2.1
 PART2_GAUGE_GONE = 9.1
 PART2_BACK = 12.2
 PHANTOM_LOCK = 2.2
+PHANTOM_GONE_AFTER = 1.3
 COMMAND_GAUGE = 0x8000000C
 GAUGE = 58
 GAUGE_FROM = 7.5
@@ -817,10 +825,17 @@ end
 -- The five 14454s go to the west edge and show themselves; the 14456s' 28488 from their places follow.
 function swordsCome(director, cast_after)
     local places = SWORDS_Z[math.random(#SWORDS_Z)]
-    for index, sword in ipairs(swords) do
-        director:warp_bnpc(sword, SWORDS_X, BOSS3_MIDDLE.y, places[index], SWORDS_FACING)
+    for _, sword in ipairs(swords) do
+        director:warp_bnpc(sword, BOSS3_MIDDLE.x, BOSS3_MIDDLE.y, BOSS3_MIDDLE.z, SWORDS_FACING)
         director:actor_use_action(sword, 28485)
     end
+    D:after(APPEAR_SNAP, function(d)
+        if D.fight == 3 then
+            for index, sword in ipairs(swords) do
+                d:jump_bnpc(sword, SWORDS_X, BOSS3_MIDDLE.y, places[index], SWORDS_FACING)
+            end
+        end
+    end)
     D:after(SWORDS_SHOW, function(d)
         if D.fight == 3 then
             for _, sword in ipairs(swords) do
@@ -870,20 +885,41 @@ function secondPart(director)
             end
         end)
     end
+    -- The four come out of the boss (`APPEAR_SNAP`) and stay at the room's corners, turning only to face: they never
+    -- auto-attacked or walked in retail's runs, only cast (capture 35e30205). Kawari let them go to chase the party
+    -- (Bob's mark of 2026-11-26: "Phantom Gaius is not acting as they should like they would in retail").
     at(PART2_PHANTOMS, function(d)
         d:set_targetable(BOSS3, false)
         d:hold_bnpc(BOSS3)
         d:actor_use_action(BOSS3, 28496)
-        for index, phantom in ipairs(phantoms) do
-            local spot = PHANTOMS_AT[index]
-            d:warp_bnpc(phantom, spot[1], BOSS3_MIDDLE.y, spot[2], 0.0)
-            d:actor_use_action(phantom, 28485)
+        local boss = D.info and D.info[BOSS3]
+        local from_x, from_z = boss and boss.x or BOSS3_MIDDLE.x, boss and boss.z or BOSS3_MIDDLE.z
+        for _, phantom in ipairs(phantoms) do
+            d:warp_bnpc(phantom, from_x, BOSS3_MIDDLE.y, from_z, SWORDS_FACING)
             d:set_targetable(phantom, true)
+            -- In the fight (the party goes for them), but rooted and with no auto-attacks: they only cast.
             d:release_bnpc(phantom)
+            d:root_bnpc(phantom, PART2_ROOTED)
+            d:hold_attacks(phantom, true)
+            d:actor_use_action(phantom, 28485)
         end
     end)
-    at(PART2_PHANTOMS + 1.6, function(d)
+    at(PART2_PHANTOMS + APPEAR_SNAP, function(d)
+        for index, phantom in ipairs(phantoms) do
+            local spot = PHANTOMS_AT[index]
+            local facing = math.atan(BOSS3_MIDDLE.x - spot[1], BOSS3_MIDDLE.z - spot[2])
+            d:jump_bnpc(phantom, spot[1], BOSS3_MIDDLE.y, spot[2], facing)
+        end
+    end)
+    -- The boss itself leaps to the room's middle 1.2 s after its 28496 and stays there, facing east, untargetable,
+    -- through the part (SnapNextMove and ActorMove to (-562, 220) at 1708.05, its 28497 at 1708.32).
+    at(PART2_PHANTOMS + PART2_BOSS_LEAPS, function(d)
+        d:jump_bnpc(BOSS3, BOSS3_MIDDLE.x, BOSS3_MIDDLE.y, BOSS3_MIDDLE.z, SWORDS_FACING)
+    end)
+    at(PART2_PHANTOMS + 1.5, function(d)
         d:actor_use_action(BOSS3, 28497)
+    end)
+    at(PART2_PHANTOMS + 1.6, function(d)
         d:bnpc_control(BOSS3, 20, { 2552, 388 })
         d:bnpc_control(BOSS3, 62, { 0, 1 })
         d:bnpc_control(BOSS3, 63, { 27 })
@@ -1014,7 +1050,8 @@ function lastBossHealth(director, info)
             director:set_targetable(phantom, false)
             director:hold_bnpc(phantom)
             director:play_action_timeline(phantom, 7737)
-            D:after(1.5, function(d) d:despawn_bnpc(phantom) end)
+            -- Retail's went 1.2 to 1.5 s after their 7737 (1.3 on average, four in capture 35e30205.)
+            D:after(PHANTOM_GONE_AFTER, function(d) d:despawn_bnpc(phantom) end)
         end
     end
     local boss = info[BOSS3]

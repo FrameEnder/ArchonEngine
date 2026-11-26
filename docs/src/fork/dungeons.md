@@ -1710,6 +1710,49 @@ first too) take places at the corners of a rectangle 15 by 20 round the middle a
 | +5.1, +7.4 | ActorControls 70 `[8201619]`, then 62 and 63 `[0]`; the gauge gone (0xFFFFFFFF) at +9.1 |
 | +12.2 | Talk 32909, it can be targeted, and fights on: 28495 7.1 s later. It was at 1 HP 7 to 12 s after that cast began |
 
+**How the swords and the four come out, and go** (2026-11-26, Bob's marks: "Phantom Gaius is not acting as they should
+like they would in retail", "he doesn't spawn the same either, and there seems to be 4 extra versions that do not have
+name tags and aren't selectable"; read from his retail capture 35e30205 against the server's capture of his run on
+`ab990f215`):
+
+* Retail's packets, all five swords at once each time (and the four the same way): an ActorSetPos of all of them to one
+  spot, the swords to the room's middle (-562, 220), the four to the boss's own spot ((-566.2, 213.0) that run); 0.09 s
+  later 28485 at no one (an AoeEffect8 with 0xE0000000, 24 of 24); 0.49 s after the ActorSetPos a SnapNextMove
+  (ActorControl 239) and an ActorMove each to its place. The swords' 28486 (an ActionEffect1 at itself) 1.9 s after
+  the ActorSetPos, their ActionTimeline 7737 (ActorControl 407, the vanish) at 3.96 s. Kawari put them straight at
+  their places with a 28485 at themselves (an ActionEffect1), and sent **no 7737 ever**: the director's
+  `play_action_timeline` looked its NPC up by layout ID only, and the swords are actor IDs (`spawn_bnpc`'s), so the
+  five stood at the west edge for the rest of the fight. `resolve_bnpc` (an actor ID or a layout ID) is now what every
+  director task by NPC uses (`set_invulnerable`, `use_action`, `play_action_timeline`, `yell`, `battle_talk`,
+  `set_attack_range`, `keep_near`, `stand_behind`, `set_hate`): the same failure gave "Failed to find actor 9055066 for
+  ActorUseAction!" in the log. `swordsCome` and the second part now do retail's (`APPEAR_SNAP`); 28485 is in
+  `cast_aims.json`'s "none".
+* The four in retail's run sent only turns from the corners (ActorMoves with the same spot), never an auto-attack, and
+  cast only 28498 (on a member each), 29051 and 28491. Kawari's were let go (`release_bnpc`) and auto-attacked whoever
+  hated them. Now they're let go into the fight (the party goes for them) but rooted (`root_bnpc`, 120 s) with their
+  auto-attacks held (`hold_attacks`), facing the middle.
+* The boss, untargetable, leapt to the room's middle 1.2 s after its 28496 (SnapNextMove and an ActorMove to
+  (-562, 220) facing east), cast 28497 at itself 0.27 s later, and stayed there; Kawari's stayed where it was.
+* Each of the four at 1 HP: ActorControl 54 `[0]`, its 7737 0.09 s later, its DeleteActor 1.2 to 1.5 s after that
+  (1.3 here, `PHANTOM_GONE_AFTER`; 1.5 before). Their spawns match retail's in everything the client draws (display
+  flags 0x20008, the same model, name and position (-575, 228/232)); retail's character flags are 3 where Kawari's are
+  2, and it fills their MP (2800): neither shows.
+* Retail's party took them down 21, 27, 47 and 53 s into the part; Kawari's bots took 51, 105 and 144 s, the fourth
+  never, and the party wiped: the bots were dying (below).
+
+**The last room's floor isn't in the navmesh** (same marks: "bots are falling left and right"): the floor the last boss
+is fought on is the gimmick of event object 4334405 (EObj 2001766, its bound shared group 4175265), which sits in a layer
+of the old Praetorium's layer set (82292, territory 224), so neither Kawari nor retail spawns it; its shared group is in
+the territory's own layers and the client has it. `kawari-navimesh` left every gimmick's triangles out of the navmesh,
+so the room had no navmesh at all (the harness's navmesh file: its tiles there hold only slopes 50 yalms over and under
+it): the bots, which dodge only to somewhere on the navmesh with a path along it, dodged nothing in the whole fight
+(29052 14 times, 28488 6, 28492 13), and paths failed with "start poly: 0". Now the floors of an unspawned object's
+gimmick are built into the navmesh (`spawned`, `unspawned` in `kawari-navimesh`), and the collision (version 11; a
+version 10 file of a zone with such floors is made again: `Collision::lacks_unspawned_floors`) keeps them. With a
+navmesh, the dodges get out of every row and every line from anywhere on the floor
+(`dodge::tests::the_praetoriums_rows_can_all_be_dodged`, `the_praetoriums_lines_can_all_be_dodged`, a dodger run
+through retail's casts at the slowest reaction).
+
 **What was built for it** (2026-11-18): `director:mount_player(actor_id, mount)` (a player put on a mount by an
 object as a quest's event does, `ZoneConnection::mount_by_event`, or taken off it with 0: `FromServer::MountByEvent`);
 `info["actor" .. id]` in `onUpdate` (every living NPC by its actor ID too: several from one layout are one entry by

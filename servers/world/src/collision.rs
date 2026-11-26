@@ -41,7 +41,11 @@ use glam::Vec3A;
 
 /// The file's first bytes, and the layout's version.
 const MAGIC: &[u8; 4] = b"KCOL";
-const VERSION: u32 = 10;
+const VERSION: u32 = 11;
+/// The version whose navmesh left out the floors of unspawned event objects' gimmicks (`set_gimmick_unspawned`), still
+/// read (the same layout): made again for a zone that has such floors (`lacks_unspawned_floors`). The Praetorium's last
+/// boss's floor (4334405's gimmick) had no navmesh (Bob's marks of 2026-11-26.)
+const VERSION_UNSPAWNED_FLOORS_LEFT_OUT: u32 = 10;
 /// The version before the passable materials (`passable_material`) were left out of the navmesh, still read (the same
 /// layout): a zone with some is made again.
 const VERSION_PASSABLE_IN_NAVMESH: u32 = 9;
@@ -147,6 +151,9 @@ pub struct Collision {
     gone: Vec<bool>,
     /// Which gimmicks the director has put up here (shown: a boss room sealed), which nobody gets through.
     sealed: Vec<bool>,
+    /// Which gimmicks belong to event objects that aren't in the zone's layers that are on (`set_gimmick_unspawned`):
+    /// their floors are there, their walls aren't.
+    unspawned: Vec<bool>,
     /// The file's version (`VERSION` for one built here.)
     version: u32,
     /// The map effect indices of the barriers its build looked for (`map_effect_barriers`), sorted; None for a file
@@ -246,6 +253,7 @@ impl Collision {
             vertices: vertices.into(),
             gone: vec![false; gimmicks.len()],
             sealed: vec![false; gimmicks.len()],
+            unspawned: vec![false; gimmicks.len()],
             gimmicks: gimmicks.into(),
             owners: owners.into(),
             materials: materials.into(),
@@ -362,6 +370,7 @@ impl Collision {
         let version = r.u32()?;
         if ![
             VERSION,
+            VERSION_UNSPAWNED_FLOORS_LEFT_OUT,
             VERSION_PASSABLE_IN_NAVMESH,
             VERSION_BARRIERS_UNLISTED,
             VERSION_BARRIERS_NOT_FOUND,
@@ -460,6 +469,7 @@ impl Collision {
             floors: Arc::new([]),
             gone: vec![false; gimmicks.len()],
             sealed: vec![false; gimmicks.len()],
+            unspawned: vec![false; gimmicks.len()],
             gimmicks: gimmicks.into(),
             owners: owners.into(),
             materials: materials.into(),
@@ -578,7 +588,19 @@ impl Collision {
     /// it has any: its navmesh went round the Praetorium's rubble.
     pub fn is_older(&self) -> bool {
         self.version < VERSION_BARRIERS_NOT_FOUND
-            || (self.version < VERSION && self.materials.iter().any(|m| passable_material(*m)))
+            || (self.version < VERSION_UNSPAWNED_FLOORS_LEFT_OUT
+                && self.materials.iter().any(|m| passable_material(*m)))
+    }
+
+    /// Whether its navmesh was made without the floors of the gimmicks of event objects that aren't `spawned` (the
+    /// zone's layers' that are on, `Zone::layer_eobjs`), when it has some (version 10 or older): made again.
+    pub fn lacks_unspawned_floors(&self, spawned: &std::collections::HashSet<u32>) -> bool {
+        self.version < VERSION
+            && self.owners.iter().enumerate().any(|(index, owner)| {
+                *owner != 0
+                    && self.floors.get(index).copied().unwrap_or(false)
+                    && !spawned.contains(&self.gimmicks[*owner as usize - 1])
+            })
     }
 
     /// Whether it was built for other map effect barriers than the zone's `barriers` (their indices, sorted): made
@@ -637,10 +659,33 @@ impl Collision {
         owner != 0 && self.gone.get(owner as usize - 1).copied().unwrap_or(false)
     }
 
+    /// Whether triangle `index` is a wall of a gimmick whose event object isn't spawned (`set_gimmick_unspawned`), and
+    /// that the director hasn't put up (a map effect's barrier is no event object's, and stands until it's taken down.)
+    fn is_unspawned_wall(&self, index: u32) -> bool {
+        let owner = self.owners.get(index as usize).copied().unwrap_or(0);
+        owner != 0
+            && !self.floors.get(index as usize).copied().unwrap_or(false)
+            && self
+                .unspawned
+                .get(owner as usize - 1)
+                .copied()
+                .unwrap_or(false)
+            && !self
+                .sealed
+                .get(owner as usize - 1)
+                .copied()
+                .unwrap_or(false)
+    }
+
     /// The layout ID of triangle `index`'s gimmick, if it belongs to one.
     fn gimmick_of(&self, index: u32) -> Option<u32> {
         let owner = self.owners.get(index as usize).copied().unwrap_or(0);
         (owner != 0).then(|| self.gimmicks[owner as usize - 1])
+    }
+
+    /// The event objects (layout IDs) with gimmicks here.
+    pub fn gimmicks(&self) -> &[u32] {
+        &self.gimmicks
     }
 
     /// Whether the event object with this layout ID has a gimmick here.
@@ -657,6 +702,17 @@ impl Collision {
         let changed = self.gone[index] != gone;
         self.gone[index] = gone;
         changed
+    }
+
+    /// Marks the gimmick of the event object with this layout ID as one whose object is never spawned here (in a layer
+    /// no layer set turns on): its walls are no obstacle, its floors stay. The client has such a gimmick's shared group
+    /// as it stands in its layout: the Praetorium's barrier 4305499 (2000824) stopped nobody (Bob walked west through
+    /// it after the second boss; retail spawned it in none of its runs, capture 35e30205), while the last boss's floor
+    /// is the gimmick of 4334405 (2001766), also never spawned, and everyone stands on it.
+    pub fn set_gimmick_unspawned(&mut self, layout_id: u32, unspawned: bool) {
+        if let Some(index) = self.gimmicks.iter().position(|g| *g == layout_id) {
+            self.unspawned[index] = unspawned;
+        }
     }
 
     /// Marks the gimmick of the event object with this layout ID as put up by the director (`sealed`) or not.
@@ -776,7 +832,7 @@ impl Collision {
                     continue;
                 }
                 seen.push(*index);
-                if self.is_gone(*index) {
+                if self.is_gone(*index) || self.is_unspawned_wall(*index) {
                     continue;
                 }
                 let [a, b, c] = self.triangle(*index);
@@ -1511,6 +1567,26 @@ mod tests {
         // Gone (opened), it's no wall at all.
         c.set_gimmick_gone(77, true);
         assert!(c.sees(here, beyond) && !c.crosses_sealed(here, beyond));
+    }
+
+    /// The Praetorium's last boss's floor is the gimmick of 4334405, never spawned: a version 10 file's navmesh left
+    /// it out, so it's made again; one that has only spawned objects' gimmicks, or a floorless one, isn't.
+    #[test]
+    fn a_navmesh_without_unspawned_floors_is_made_again() {
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        floor_quad(&mut v, &mut t, -10.0, -10.0, 10.0, 10.0, 0.0);
+        wall_x(&mut v, &mut t, 3.0, -10.0, 10.0, 0.0, 4.0);
+        let owners = vec![4334405, 4334405, 4305499, 4305499];
+        let mut c = Collision::build(v, t, owners, Vec::new(), 0.75, 0.4, 55.0);
+        let spawned: std::collections::HashSet<u32> = [4305499].into();
+        assert!(!c.lacks_unspawned_floors(&spawned));
+        c.version = VERSION_UNSPAWNED_FLOORS_LEFT_OUT;
+        assert!(c.lacks_unspawned_floors(&spawned));
+        let both: std::collections::HashSet<u32> = [4305499, 4334405].into();
+        assert!(!c.lacks_unspawned_floors(&both));
+        // Only its walls unspawned: nothing was left out.
+        let floor: std::collections::HashSet<u32> = [4334405].into();
+        assert!(!c.lacks_unspawned_floors(&floor));
     }
 
     #[test]

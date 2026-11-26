@@ -1169,4 +1169,206 @@ mod tests {
         };
         assert!(authored_spot(&[], Some(&cue), &[sheet], "healer", 0, now).is_none());
     }
+
+    /// A dodger through a schedule of area attacks (each known from its cast's start, `(start, danger)`), as
+    /// `party_bot` does it: every half second it chooses (`in_turn`, `choose`) among those it knows, sets off a
+    /// reaction after noticing (`set_off_at`, the slowest), and runs at `NPC_RUN_SPEED`. The attacks that caught it as
+    /// they went off.
+    fn run_through(
+        start: Vec3A,
+        arena: &Arena,
+        schedule: &[(f32, Danger)],
+        t0: Instant,
+    ) -> Vec<u32> {
+        let speed = crate::server::npc_behavior::NPC_RUN_SPEED;
+        let end = schedule
+            .iter()
+            .map(|(_, danger)| danger.until)
+            .max()
+            .unwrap();
+        let mut here = start;
+        let mut current: Option<Dodge> = None;
+        let mut hit = Vec::new();
+        let mut gone: Vec<usize> = Vec::new();
+        let mut now = t0;
+        while now <= end + Duration::from_millis(500) {
+            // Those that went off since the last tick.
+            for (index, (_, danger)) in schedule.iter().enumerate() {
+                if danger.until <= now && !gone.contains(&index) {
+                    gone.push(index);
+                    if danger.catches(here, 0.0) {
+                        hit.push(danger.action_id);
+                    }
+                }
+            }
+            let known: Vec<Danger> = schedule
+                .iter()
+                .filter(|(start, danger)| {
+                    t0 + Duration::from_secs_f32(*start) <= now && danger.until > now
+                })
+                .map(|(_, danger)| *danger)
+                .collect();
+            let threats: Vec<&Danger> = known
+                .iter()
+                .filter(|d| d.catches(here, DODGE_MARGIN))
+                .collect();
+            if !threats.is_empty() {
+                let until = threats.iter().map(|d| d.until).max().unwrap();
+                let choice = choose(
+                    here,
+                    arena.keep_inside(here),
+                    &in_turn(&known),
+                    current.and_then(|c| c.to),
+                    |p| arena.holds(p),
+                    |spots| spots.into_iter().next(),
+                );
+                let spot = match choice {
+                    Choice::Go(to) => Some(to),
+                    _ => None,
+                };
+                let distance = spot.map(|to| here.distance(to)).unwrap_or(0.0);
+                let entry = current.get_or_insert(Dodge {
+                    to: None,
+                    set_off: set_off_at(now, until, distance, speed, 1.0),
+                    until,
+                    holding: false,
+                });
+                entry.until = entry.until.max(until);
+                entry.to = spot;
+            } else if current.is_some_and(|c| now >= c.until + LINGER) {
+                current = None;
+            }
+            // Half a second's run.
+            if let Some(c) = current
+                && now >= c.set_off
+                && let Some(to) = c.to
+            {
+                let way = Vec3A::new(to.x - here.x, 0.0, to.z - here.z);
+                let step = speed * 0.5;
+                here = if way.length() <= step {
+                    Vec3A::new(to.x, here.y, to.z)
+                } else {
+                    here + way.normalize() * step
+                };
+            }
+            now += Duration::from_millis(500);
+        }
+        hit
+    }
+
+    /// Bob's mark of 2026-11-26 in the Praetorium: "bots are falling left and right". The last boss's rows of 29052
+    /// (circles of 8 round helpers, three a row, four rows 2 s apart, each a 5 s cast: `ROWS` in w1d5_re.lua, as
+    /// retail cast them) hit the bots 14 times in a run; retail's party took none of them (capture 35e30205). A dodger
+    /// anywhere on the floor gets out of every row, both ways round.
+    #[test]
+    fn the_praetoriums_rows_can_all_be_dodged() {
+        let arena = Arena::from_floor(&crate::server::director::ArenaFloor {
+            x: -563.5,
+            z: 220.0,
+            half_x: 12.05,
+            half_z: 18.55,
+            round: false,
+        });
+        let rows: [[(f32, f32); 3]; 4] = [
+            [(-573.0, 203.0), (-562.0, 237.0), (-551.0, 203.0)],
+            [(-573.0, 214.5), (-562.0, 225.5), (-551.0, 214.5)],
+            [(-573.0, 225.5), (-562.0, 214.5), (-551.0, 225.5)],
+            [(-573.0, 237.0), (-562.0, 203.0), (-551.0, 237.0)],
+        ];
+        let y = -268.0;
+        for reversed in [false, true] {
+            for start_x in [-573.0, -567.0, -562.0, -556.0, -552.0] {
+                for start_z in [203.0, 210.0, 216.0, 220.0, 226.0, 232.0, 237.0] {
+                    let t0 = Instant::now();
+                    let mut schedule = Vec::new();
+                    for index in 0..4 {
+                        let row = rows[if reversed { 3 - index } else { index }];
+                        let start = index as f32 * 2.0;
+                        for (x, z) in row {
+                            let spot = Vec3A::new(x, y, z);
+                            schedule.push((
+                                start,
+                                Danger {
+                                    action_id: 29052,
+                                    shape: AreaShape::Circle {
+                                        radius: 8.0,
+                                        on_target: true,
+                                    },
+                                    caster_id: ObjectId(index as u32 + 1),
+                                    caster: spot,
+                                    rotation: 0.0,
+                                    aimed_at: spot,
+                                    follows: None,
+                                    caster_radius: 0.5,
+                                    until: t0 + Duration::from_secs_f32(start + 5.0),
+                                    stack: false,
+                                    knockback: 0.0,
+                                },
+                            ));
+                        }
+                    }
+                    let from = Vec3A::new(start_x, y, start_z);
+                    let hit = run_through(from, &arena, &schedule, t0);
+                    assert!(
+                        hit.is_empty(),
+                        "from {from:?} (reversed {reversed}): hit {} times",
+                        hit.len()
+                    );
+                }
+            }
+        }
+    }
+
+    /// The same run's 28488s (lines 40 long and 4 wide, east across the room from five blades at its west edge, 8
+    /// apart, a 3 s cast) hit the bots 6 times; a dodger anywhere on the floor steps between them.
+    #[test]
+    fn the_praetoriums_lines_can_all_be_dodged() {
+        let arena = Arena::from_floor(&crate::server::director::ArenaFloor {
+            x: -563.5,
+            z: 220.0,
+            half_x: 12.05,
+            half_z: 18.55,
+            round: false,
+        });
+        let y = -268.0;
+        for places in [
+            [206.0, 214.0, 222.0, 230.0, 238.0],
+            [202.0, 210.0, 218.0, 226.0, 234.0],
+        ] {
+            for start_x in [-573.0, -562.0, -553.0] {
+                for start_z in [202.0, 206.0, 211.0, 218.0, 226.0, 233.0, 238.0] {
+                    let t0 = Instant::now();
+                    let schedule: Vec<(f32, Danger)> = places
+                        .iter()
+                        .enumerate()
+                        .map(|(index, z)| {
+                            let at = Vec3A::new(-576.6, y, *z);
+                            (
+                                0.0,
+                                Danger {
+                                    action_id: 28488,
+                                    shape: AreaShape::Line {
+                                        length: 40.0,
+                                        width: 4.0,
+                                    },
+                                    caster_id: ObjectId(index as u32 + 1),
+                                    caster: at,
+                                    rotation: std::f32::consts::FRAC_PI_2,
+                                    aimed_at: at,
+                                    follows: None,
+                                    caster_radius: 0.5,
+                                    until: t0 + Duration::from_secs(3),
+                                    stack: false,
+                                    knockback: 0.0,
+                                },
+                            )
+                        })
+                        .collect();
+                    let from = Vec3A::new(start_x, y, start_z);
+                    let hit = run_through(from, &arena, &schedule, t0);
+                    assert!(hit.is_empty(), "from {from:?}: hit {} times", hit.len());
+                }
+            }
+        }
+    }
 }
