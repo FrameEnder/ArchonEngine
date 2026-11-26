@@ -967,6 +967,8 @@ fn server_logic_tick(
             loot::tick(&mut network.lock(), instance);
             // BNpcs a director spawned hidden come into view.
             director::update_appearances(&mut network.lock(), instance, std::time::Instant::now());
+            // NPCs a knockback threw fly and land.
+            action::update_knockbacks(&mut network.lock(), instance, std::time::Instant::now());
             // Unseen launchers rain their attack on their spots while the party is near (`launcher`.)
             launcher::tick(&network, &game_data, instance);
             let mut haters = HashMap::new();

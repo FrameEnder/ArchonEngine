@@ -698,6 +698,21 @@ Every tick (500 ms) the first ready entry is used:
 A rotation's action replaces that tick's auto-attack; casts work as for any NPC action (it stands still while casting).
 Heals on allies stay in the content's Lua (`runHeals`), since they pick a target other than the NPC's own.
 
+## Knockbacks on NPCs (`server/action.rs`)
+
+An action's knockback (`TargetEffectKind::Knockback`, effect kind 31, its value a Knockback sheet row: Distance,
+Speed, Direction) is played by the client for its own player: retail's thrown player sent UpdatePositionHandlerInstance
+with the KNOCKBACK move flag (0x08) about 1.0 s after the AoeEffect8, and the server showed the others an ActorMove
+flagged KNOCKBACK as they set off and one without the flag where they landed (Bob's Chronofoil capture 35e30205,
+Augmented Suffering at 1109.2 s: 0.84-1.02 s after it, 12 yalms in 0.4-0.7 s). Nothing moved an NPC (a party bot, a
+Duty Support member). Now an NPC's action that knocks back an NPC throws it on the server (`knock_back_npc`, called
+after the bystanders are hit): straight away from the source (Direction 0; one on the source goes the way it faces,
+`knocked_back_to`), Distance yalms across the collision (`Collision::walk`, sliding along walls, never off a ledge;
+without collision, nowhere if the navmesh has no ground there), `KNOCKBACK_DELAY` (0.9 s) after the hit; it's busy
+(`Instance::busy_npcs`, which party bots now heed too) until it lands, Distance over Speed seconds on (Speed taken as
+yalms a second). `update_knockbacks` (each world tick) sets its position and sends the two ActorMoves. Other
+directions aren't built (logged at debug), nor a player's knockback on an enemy. Test `a_knockback_throws_an_npc`.
+
 ## Fall damage (`server/fall.rs`)
 
 Retail's falls (Bob's Chronofoil captures, 2026-10-28: 49 falls that hurt and 470 landings that didn't, levels 6 to

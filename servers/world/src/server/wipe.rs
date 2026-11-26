@@ -342,6 +342,9 @@ pub fn wipe_tick(
         instance.later_director_tasks.clear();
         instance.sweeps.clear();
         instance.party_cue = None;
+        // Nor is what the director had the damage dealers go for (`Instance::party_focus`): with it, they went back
+        // after a Death Claw left standing (Bob's mark of 2026-11-26, "resetting was a complete failure".)
+        instance.party_focus.clear();
         if let Some(director) = instance.directors.first_mut() {
             director.call_hook("onPartyWipe");
         }

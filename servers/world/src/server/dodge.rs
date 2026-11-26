@@ -61,6 +61,9 @@ pub struct Danger {
     pub caster_radius: f32,
     /// When it goes off.
     pub until: Instant,
+    /// An attack split among those it hits (`RecordedAmount::shared_by`, a stack): the party goes into it, with its
+    /// target, instead of out of it (Bob's mark of 2026-11-26: "bots don't run to target of augmented shatter".)
+    pub stack: bool,
 }
 
 impl Danger {
@@ -209,6 +212,10 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
                     shape,
                     Some(info.cast_type),
                 );
+                let stack = timeline
+                    .recorded_amounts
+                    .get(&cast.action_id)
+                    .is_some_and(|recorded| recorded.shared_by.is_some());
                 Some(Danger {
                     action_id: cast.action_id,
                     shape,
@@ -221,6 +228,7 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
                     follows,
                     caster_radius: info.area_hitbox(timeline.hitbox_radius),
                     until: cast.until,
+                    stack,
                 })
             }
             _ => None,
@@ -661,6 +669,7 @@ mod tests {
             follows: None,
             caster_radius: 1.0,
             until: Instant::now() + Duration::from_secs(4),
+            stack: false,
         }
     }
 
@@ -864,6 +873,7 @@ mod tests {
                 follows: None,
                 caster_radius: 0.5,
                 until: now + Duration::from_secs_f32(after),
+                stack: false,
                 ..danger(AreaShape::Circle {
                     radius: 10.0,
                     on_target: false,

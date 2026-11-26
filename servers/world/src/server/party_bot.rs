@@ -457,6 +457,11 @@ fn boss_spot_kind(bot: &PartyBot) -> usize {
 
 /// A bot this close to its formation spot is there.
 const AT_SPOT: f32 = 0.6;
+/// Into a stack (`Danger::stack`) until this far inside its edge, so its target's moving about doesn't leave it out.
+const STACK_INSIDE: f32 = 1.0;
+/// How soon after a stack's cast starts the rest set off into it: the dodge reaction (`dodge::REACTION_SECONDS`;
+/// retail's Augmented Shatter hit all four of the party together, 2-3 yalms apart, in Bob's Chronofoil capture 35e30205.)
+const STACK_REACTION: (f32, f32) = dodge::REACTION_SECONDS;
 /// How many of the best safe spots a dodger looks for a navmesh path to before it gives up and braces instead.
 const DODGE_PATHS_TRIED: usize = 8;
 /// The spot moved this far from where it was walking: it sets off for the new one.
@@ -4131,6 +4136,14 @@ fn update_party(
     let collision = instance.collision.clone();
     let navmesh = &instance.navmesh;
     for (bot_id, bot) in &bots {
+        // Being thrown by a knockback (`action::knock_back_npc`): it does nothing until it lands.
+        if instance
+            .busy_npcs
+            .get(bot_id)
+            .is_some_and(|until| *until > now)
+        {
+            continue;
+        }
         let Some(NetworkedActor::Npc {
             spawn,
             last_position,
@@ -4173,7 +4186,7 @@ fn update_party(
         // Laser Beta's, one on each of the party: they spread out), and theirs keep out of its.
         let theirs: Vec<Danger> = dangers
             .iter()
-            .filter(|danger| danger.follows != Some(*bot_id))
+            .filter(|danger| danger.follows != Some(*bot_id) && !danger.stack)
             .copied()
             .collect();
         // The waves of them it tries to be out of, all first, then the soonest ones (`dodge::in_turn`.)
@@ -4209,6 +4222,21 @@ fn update_party(
             let end = path.last().copied()?;
             Some((Some(end), until, react))
         });
+        // A stack (`Danger::stack`: Augmented Shatter, split among those it hits) on one of the rest: in with them, as
+        // retail's party did, so each takes a share (Bob's mark of 2026-11-26: "bots don't run to target of augmented
+        // shatter ... that means more damage for everyone"). Its own target stays where it is; the rest go where the
+        // target is now (it follows them), and hold once they're well inside it.
+        let stack = if authored.is_none() {
+            stack_spot(&dangers, *bot_id, here).and_then(|(to, until)| match to {
+                None => Some((None, until)),
+                Some(to) => {
+                    let path = dodge_way(navmesh, collision.as_deref(), here, to)?;
+                    Some((Some(path.last().copied()?), until))
+                }
+            })
+        } else {
+            None
+        };
         if let Some((to, until, react)) = authored {
             let entry = dodge.get_or_insert(dodge::Dodge {
                 to: None,
@@ -4221,6 +4249,15 @@ fn update_party(
             if to.is_some() || entry.to.is_none() {
                 entry.to = to;
             }
+        } else if let Some((to, until)) = stack {
+            let entry = dodge.get_or_insert(dodge::Dodge {
+                to: None,
+                set_off: dodge::authored_set_off(now, STACK_REACTION, fastrand::f32()),
+                until,
+                holding: false,
+            });
+            entry.until = entry.until.max(until);
+            entry.to = to;
         } else if !threats.is_empty() {
             let until = threats
                 .iter()
@@ -4320,7 +4357,11 @@ fn update_party(
         }
         let mut dodging = false;
         if let Some(current) = dodge {
-            if threats.is_empty() && authored.is_none() && now >= current.until + dodge::LINGER {
+            if threats.is_empty()
+                && authored.is_none()
+                && stack.is_none()
+                && now >= current.until + dodge::LINGER
+            {
                 // Over: back to fighting, from where it stands.
                 dodge = None;
                 navmesh_path.clear();
@@ -4992,6 +5033,21 @@ fn update_party(
     }
 }
 
+/// Where a bot goes for the soonest stack being cast on one of the rest (`Danger::stack`), and until when: `None` to
+/// hold (well inside it already), else where its target is now. Nothing for its own (it stays put) or with none.
+fn stack_spot(
+    dangers: &[Danger],
+    bot_id: ObjectId,
+    here: Vec3A,
+) -> Option<(Option<Vec3A>, Instant)> {
+    let danger = dangers
+        .iter()
+        .filter(|danger| danger.stack && danger.follows != Some(bot_id))
+        .min_by_key(|danger| danger.until)?;
+    let to = (!danger.catches(here, -STACK_INSIDE)).then_some(danger.aimed_at);
+    Some((to, danger.until))
+}
+
 /// The first of the enemies fighting the party (or that the director has them fight) that the director has the
 /// damage dealers go for first (`Instance::party_focus`.)
 fn focused(engaged: &[Engaged], focus: &HashSet<ObjectId>) -> Option<ObjectId> {
@@ -5075,6 +5131,48 @@ mod tests {
         );
         // One that's gone isn't gone after.
         assert_eq!(focused(&engaged, &HashSet::from([ObjectId(3)])), None);
+    }
+
+    /// Bob's mark of 2026-11-26: "bots don't run to target of augmented shatter". Retail's party all stood in it
+    /// (capture 35e30205: four hit, 2-3 yalms apart.)
+    #[test]
+    fn the_rest_go_into_a_stack() {
+        use crate::gamedata::AreaShape;
+        let now = Instant::now();
+        let target = Vec3A::new(10.0, 0.0, 0.0);
+        let stack = Danger {
+            action_id: 28477,
+            shape: AreaShape::Circle {
+                radius: 6.0,
+                on_target: true,
+            },
+            caster_id: ObjectId(9),
+            caster: Vec3A::ZERO,
+            rotation: 0.0,
+            aimed_at: target,
+            follows: Some(ObjectId(1)),
+            caster_radius: 0.0,
+            until: now + Duration::from_secs(4),
+            stack: true,
+        };
+        // Its target stays where it is.
+        assert_eq!(stack_spot(&[stack], ObjectId(1), target), None);
+        // Another, away from it, goes to it; one well inside it holds.
+        let far = Vec3A::new(-10.0, 0.0, 0.0);
+        assert_eq!(
+            stack_spot(&[stack], ObjectId(2), far).and_then(|(to, _)| to),
+            Some(target)
+        );
+        assert_eq!(
+            stack_spot(&[stack], ObjectId(2), Vec3A::new(8.0, 0.0, 0.0)).map(|(to, _)| to),
+            Some(None)
+        );
+        // Anything else isn't a stack.
+        let spread = Danger {
+            stack: false,
+            ..stack
+        };
+        assert_eq!(stack_spot(&[spread], ObjectId(2), far), None);
     }
 
     #[test]

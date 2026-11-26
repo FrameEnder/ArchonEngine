@@ -113,6 +113,7 @@ impl NetworkState {
         instance.actors.remove(&actor_id);
         instance.status_resistance.forget(actor_id);
         instance.npc_elements.remove(&actor_id);
+        instance.party_focus.remove(&actor_id);
         for (_, state) in self.clients.values_mut() {
             if state.actor_allocator.free_unseen(actor_id).is_none() {
                 state.object_allocator.free_unseen(actor_id);
@@ -125,6 +126,7 @@ impl NetworkState {
         instance.actors.remove(&actor_id);
         instance.status_resistance.forget(actor_id);
         instance.npc_elements.remove(&actor_id);
+        instance.party_focus.remove(&actor_id);
 
         for (id, (handle, state)) in &mut self.clients {
             let id = *id;

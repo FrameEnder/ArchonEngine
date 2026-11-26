@@ -261,6 +261,8 @@ pub struct Instance {
     pub walled_ticks: HashMap<ObjectId, u32>,
     /// NPCs a director spawned hidden that come into view a little later (`director:appear_bnpc`.)
     pub pending_appearances: Vec<crate::server::director::PendingAppearance>,
+    /// NPCs an action's knockback is throwing, until they've landed (`action::knock_back_npc`.)
+    pub knockbacks: Vec<crate::server::action::Knockback>,
     /// Keybound Brawler's game, in its duty (`server/keybound.rs`.)
     pub keybound: Option<crate::server::keybound::Game>,
     /// The GATE the Gold Saucer is showing (its screens, its entrance's NPC), see `server/gate.rs`.
@@ -1051,6 +1053,17 @@ impl Instance {
         }
 
         None
+    }
+
+    /// Every NPC of a layout (a director may spawn one layout more than once: `director:spawn_tethered_bnpc`.)
+    pub fn find_npcs(&self, layout_id: u32) -> Vec<ObjectId> {
+        self.actors
+            .iter()
+            .filter(|(_, actor)| {
+                matches!(actor, NetworkedActor::Npc { spawn, .. } if spawn.common.layout_id == layout_id)
+            })
+            .map(|(id, _)| *id)
+            .collect()
     }
 
     /// Returns the actor ID (if any) of the spawned EObj by it's EObj ID.

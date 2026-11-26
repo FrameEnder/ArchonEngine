@@ -28,6 +28,11 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
 * **The second boss's ring of lightning**: built from Bob's retail run (`dungeons.md`); whether its 3073 ticks over a
   long stay out there isn't known (no one stayed a second). The Death Claw's strikes after its first are a guess
   (retail's fell 2 s after it).
+* **Knockbacks on NPCs** (since the change after `18bcc9231`): built from what retail showed of its thrown players; how
+  retail moved an NPC it threw (a Duty Support member) isn't in any capture, nor whether the client plays the
+  knockback's effect on an NPC by itself (if it does, it also gets the server's two ActorMoves to the same spot).
+  Only Direction 0 (away from the source) is built; the Speed column is taken as yalms a second. Untested in game, as
+  are the bots going into Augmented Shatter and the reset after a wipe with a Death Claw up.
 * **Iron Uprising's (28482) knockback**: it hit no one in ten casts, so its row isn't known; it does damage only.
 * **The last boss's enrage** (28500 as the gauge fills with any of the four standing): from the guide, never seen; the
   gauge's full (10000) and 28500's area (the Action sheet's) and amount (more than anyone's HP) are guesses.

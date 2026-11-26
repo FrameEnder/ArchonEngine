@@ -2204,6 +2204,32 @@ pub fn execute_action(
                         main_shown + index >= MAX_AOE_PACKET_TARGETS,
                     );
                 }
+                // An enemy's knockback moves the NPCs it lands on (party bots, Duty Support members): a player's client
+                // moves its own player, but nothing moved an NPC (`knock_back_npc`.)
+                if matches!(
+                    instance.actors.get(&from_actor_id),
+                    Some(NetworkedActor::Npc { .. })
+                ) {
+                    let mut game_data = game_data.lock();
+                    if request.target.object_id != from_actor_id {
+                        knock_back_npc(
+                            instance,
+                            &mut game_data,
+                            from_actor_id,
+                            request.target.object_id,
+                            &effects_builder.effects,
+                        );
+                    }
+                    for (target_id, effects) in &area_bystanders {
+                        knock_back_npc(
+                            instance,
+                            &mut game_data,
+                            from_actor_id,
+                            *target_id,
+                            effects,
+                        );
+                    }
+                }
             }
         }
 
@@ -5124,6 +5150,164 @@ pub fn toss_target(
             unk1: instance.tosses,
         },
     );
+}
+
+/// Where a knockback straight away from `source` (the Knockback sheet's direction 0) throws someone at `here`,
+/// `distance` yalms across the ground; one standing on the source goes the way it faces (`facing`.)
+pub fn knocked_back_to(source: Vec3A, here: Vec3A, facing: f32, distance: f32) -> Vec3A {
+    let away = Vec3A::new(here.x - source.x, 0.0, here.z - source.z)
+        .try_normalize()
+        .unwrap_or(Vec3A::new(facing.sin(), 0.0, facing.cos()));
+    here + away * distance
+}
+
+/// How long after an action's effect its knockback throws someone: retail's party were thrown 0.84-1.02 s after
+/// Augmented Suffering's AoeEffect8 (Bob's Chronofoil capture 35e30205, 1109.2 s into the Praetorium: the player's own
+/// UpdatePositionHandlerInstance with the KNOCKBACK flag 1.01 s after it, two others' ActorMoves with it 0.84 and
+/// 1.02 s after.)
+pub const KNOCKBACK_DELAY: Duration = Duration::from_millis(900);
+
+/// An NPC a knockback is throwing (`knock_back_npc`, `update_knockbacks`.)
+#[derive(Debug, Clone, Copy)]
+pub struct Knockback {
+    pub actor: ObjectId,
+    /// When it sets off (`KNOCKBACK_DELAY` after the hit), and when it lands.
+    pub starts: Instant,
+    pub lands: Instant,
+    pub to: Vec3A,
+    pub rotation: f32,
+    pub started: bool,
+}
+
+/// An NPC hit by an action's knockback (`TargetEffectKind::Knockback`) goes where it throws them, as a player's client
+/// moves its player: the Knockback sheet's row, straight away from the one who hit it, across the ground (sliding along
+/// walls, never off a ledge: `Collision::walk`), `KNOCKBACK_DELAY` after the hit, and it does nothing else until it
+/// lands (`Instance::busy_npcs`; the row's Speed taken as yalms a second: retail's thrown players went their 12
+/// yalms of row 156 in 0.4-0.7 s.) The Praetorium's second boss's 28476 (row 156, 12 yalms) and his Death Claw's 28480
+/// (row 70, 20) threw retail's party apart; Kawari's bots stood where they were (Bob's mark of 2026-11-26: "nor are
+/// they effected by the knockback of augmented suffering".) Other directions (towards a point, the way the source
+/// faces) aren't built yet.
+pub fn knock_back_npc(
+    instance: &mut Instance,
+    game_data: &mut GameData,
+    from_actor_id: ObjectId,
+    target_id: ObjectId,
+    effects: &[TargetEffect],
+) {
+    let Some(row) = effects.iter().find_map(|effect| match effect.0 {
+        TargetEffectKind::Knockback { knockback_id, .. } => Some(knockback_id),
+        _ => None,
+    }) else {
+        return;
+    };
+    let Some(knockback) = game_data.get_knockback(row) else {
+        return;
+    };
+    if knockback.direction != 0 || knockback.distance <= 0.0 {
+        tracing::debug!(
+            "Knockback row {row} (direction {}) isn't moved on the server",
+            knockback.direction
+        );
+        return;
+    }
+    let Some(source) = instance
+        .find_actor(from_actor_id)
+        .map(|actor| actor.position().0)
+    else {
+        return;
+    };
+    let Some(NetworkedActor::Npc { spawn, .. }) = instance.actors.get(&target_id) else {
+        return;
+    };
+    let here = spawn.common.position.0;
+    let rotation = spawn.common.rotation;
+    let to = knocked_back_to(source, here, rotation, knockback.distance);
+    let landed = match instance.collision.as_deref() {
+        Some(collision) => {
+            collision
+                .walk(here, to, crate::server::npc_behavior::PATH_DROP_MARGIN)
+                .at
+        }
+        // Without the collision, as far as the navmesh's ground goes, else nowhere.
+        None if instance.navmesh.is_available() && instance.navmesh.ground_under(to).is_none() => {
+            here
+        }
+        None => to,
+    };
+    let moved = Vec3A::new(landed.x - here.x, 0.0, landed.z - here.z).length();
+    let starts = Instant::now() + KNOCKBACK_DELAY;
+    let lands = starts + Duration::from_secs_f32(moved / knockback.speed.max(1.0));
+    instance
+        .knockbacks
+        .retain(|pending| pending.actor != target_id);
+    instance.knockbacks.push(Knockback {
+        actor: target_id,
+        starts,
+        lands,
+        to: landed,
+        rotation,
+        started: false,
+    });
+    instance.busy_npcs.insert(target_id, lands);
+}
+
+/// Throws the NPCs whose knockback has come (`knock_back_npc`) and lands them: as retail showed a thrown player to the
+/// others, an ActorMove with the KNOCKBACK flag as they set off and one without it where they landed (capture 35e30205,
+/// 1110.0-1110.7 s.) Its walk is set aside, so it goes on from where it landed.
+pub fn update_knockbacks(network: &mut NetworkState, instance: &mut Instance, now: Instant) {
+    if instance.knockbacks.is_empty() {
+        return;
+    }
+    let mut pending = std::mem::take(&mut instance.knockbacks);
+    let mut moves = Vec::new();
+    pending.retain_mut(|knockback| {
+        if !knockback.started && knockback.starts <= now {
+            knockback.started = true;
+            moves.push((*knockback, kawari::common::MoveAnimationType::KNOCKBACK));
+        }
+        if knockback.lands <= now {
+            moves.push((*knockback, kawari::common::MoveAnimationType::empty()));
+            return false;
+        }
+        true
+    });
+    instance.knockbacks = pending;
+    for (knockback, flag) in moves {
+        let Some(NetworkedActor::Npc {
+            spawn,
+            navmesh_path,
+            navmesh_path_lerp,
+            last_position,
+            ..
+        }) = instance.actors.get_mut(&knockback.actor)
+        else {
+            continue;
+        };
+        if spawn.common.health_points == 0 {
+            continue;
+        }
+        spawn.common.position = Position(knockback.to);
+        navmesh_path.clear();
+        *navmesh_path_lerp = 0.0;
+        *last_position = None;
+        if let Some(bot) = instance.party_bots.get_mut(&knockback.actor) {
+            bot.path.clear();
+        }
+        network.send_in_range_instance(
+            knockback.actor,
+            instance,
+            FromServer::ActorMove(
+                knockback.actor,
+                Position(knockback.to),
+                knockback.rotation,
+                flag,
+                kawari::common::MoveAnimationState::None,
+                kawari::common::JumpState::NoneOrFalling,
+                None,
+            ),
+            DestinationNetwork::ZoneClients,
+        );
+    }
 }
 
 pub(crate) fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_percent: u8) {

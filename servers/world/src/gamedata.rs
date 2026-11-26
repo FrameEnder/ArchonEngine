@@ -1861,6 +1861,20 @@ impl GameData {
         })
     }
 
+    /// A Knockback sheet row (an action's knockback effect, `TargetEffectKind::Knockback`): how far it throws its
+    /// target (yalms), how fast (yalms a second) and which way (0: straight away from the one who hit them.)
+    pub fn get_knockback(&mut self, row: u16) -> Option<Knockback> {
+        let sheet = self.kept_sheet(|resource| {
+            icarus::Knockback::KnockbackSheet::read_from(resource, Language::None)
+        })?;
+        let row = sheet.row(row as u32)?;
+        Some(Knockback {
+            distance: row.Distance as f32,
+            speed: row.Speed as f32,
+            direction: row.Direction,
+        })
+    }
+
     pub fn get_casttime(&mut self, action_id: u32) -> Option<(ActionCategory, u32)> {
         let row = self.action_sheet.row(action_id)?;
 
@@ -5417,6 +5431,14 @@ struct QuestIssuer {
 /// 2026-11-12: 152 71151, 165 71021, 1057 71141), against which the sheet's MapIconAvailable is checked at startup to
 /// find the offset (Questionable takes NPC icons as NpcIconAvailable plus one.)
 const RETAIL_QUEST_MAP_ICONS: [(u32, u32); 3] = [(152, 71151), (165, 71021), (1057, 71141)];
+
+/// A Knockback sheet row (`GameData::get_knockback`.)
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Knockback {
+    pub distance: f32,
+    pub speed: f32,
+    pub direction: u8,
+}
 
 /// The PlaceNames `quest` (its full ID) raises the riding speed at, from `(MountSpeed row, territory, PlaceName, the
 /// row's Quest)`: in the MountSpeed rows' order, each place once. The Ultimate Weapon (70058) has rows 15, 25, 26 and

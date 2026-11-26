@@ -2357,3 +2357,109 @@ fn a_fixed_npc_stays_put() {
     face_for_cast(&mut world.network.lock(), &mut world.instance, unit, 1.0);
     assert!(world.sent(player).is_empty());
 }
+
+/// Bob's mark of 2026-11-26: the bots weren't "effected by the knockback of augmented suffering". Retail threw its
+/// party 12 yalms (Knockback row 156) 0.84-1.02 s after the AoeEffect8, and showed each thrown one to the others with
+/// an ActorMove flagged KNOCKBACK as they set off and an unflagged one where they landed (capture 35e30205). A thrown
+/// NPC does nothing on its own until it lands.
+#[test]
+fn a_knockback_throws_an_npc() {
+    use crate::server::action::{KNOCKBACK_DELAY, Knockback, knocked_back_to, update_knockbacks};
+    use kawari::common::MoveAnimationType;
+    use std::time::Instant;
+    // Straight away from the source, its distance across the ground.
+    let to = knocked_back_to(
+        glam::Vec3A::new(0.0, 5.0, 0.0),
+        glam::Vec3A::new(3.0, 0.0, 4.0),
+        0.0,
+        12.0,
+    );
+    assert!((to - glam::Vec3A::new(3.0 + 7.2, 0.0, 4.0 + 9.6)).length() < 1e-4);
+    // On the source: the way it faces.
+    let to = knocked_back_to(glam::Vec3A::ZERO, glam::Vec3A::ZERO, 0.0, 12.0);
+    assert!((to - glam::Vec3A::new(0.0, 0.0, 12.0)).length() < 1e-4);
+
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let bot = world.enemy(ENEMY, [1.0, 0.0, 1.0], 500);
+    let hit = Instant::now();
+    let landing = glam::Vec3A::new(1.0, 0.0, 13.0);
+    world.instance.knockbacks.push(Knockback {
+        actor: bot,
+        starts: hit + KNOCKBACK_DELAY,
+        lands: hit + KNOCKBACK_DELAY + Duration::from_millis(600),
+        to: landing,
+        rotation: 0.0,
+        started: false,
+    });
+    world.sent(player);
+    let moves = |world: &mut TestWorld| -> Vec<MoveAnimationType> {
+        world
+            .sent(player)
+            .into_iter()
+            .filter_map(|message| match message {
+                FromServer::ActorMove(id, at, _, flag, ..) if id == bot => {
+                    assert!((at.0 - landing).length() < 1e-4);
+                    Some(flag)
+                }
+                _ => None,
+            })
+            .collect()
+    };
+    update_knockbacks(&mut world.network.lock(), &mut world.instance, hit);
+    assert!(moves(&mut world).is_empty());
+    update_knockbacks(
+        &mut world.network.lock(),
+        &mut world.instance,
+        hit + KNOCKBACK_DELAY,
+    );
+    assert_eq!(moves(&mut world), vec![MoveAnimationType::KNOCKBACK]);
+    assert_eq!(
+        world
+            .instance
+            .find_actor(bot)
+            .map(|actor| actor.position().0),
+        Some(landing)
+    );
+    update_knockbacks(
+        &mut world.network.lock(),
+        &mut world.instance,
+        hit + KNOCKBACK_DELAY + Duration::from_millis(600),
+    );
+    assert_eq!(moves(&mut world), vec![MoveAnimationType::empty()]);
+    assert!(world.instance.knockbacks.is_empty());
+}
+
+/// Bob's marks of 2026-11-26 ("bots gaining aggro on boss not resetting properly", "resetting was a complete
+/// failure"): after the wipe a Death Claw (0x4000009E) was still there, 80 s on, and the director's focus on it still
+/// held, so the reset party ran back to the boss's room after it. Every NPC of a layout is found (the claws are all one),
+/// and one taken away is no one's focus.
+#[test]
+fn a_layouts_every_npc_goes_and_takes_the_focus_with_it() {
+    const CLAW: u32 = 9054848;
+    let mut world = TestWorld::new();
+    let _player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let claws: Vec<ObjectId> = (0..2)
+        .map(|n| {
+            let claw = world.enemy(ENEMY + n, [n as f32, 0.0, 0.0], 500);
+            if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(claw) {
+                spawn.common.layout_id = CLAW;
+            }
+            claw
+        })
+        .collect();
+    let mut found = world.instance.find_npcs(CLAW);
+    found.sort_by_key(|id| id.0);
+    let mut expected = claws.clone();
+    expected.sort_by_key(|id| id.0);
+    assert_eq!(found, expected);
+    world.instance.party_focus.insert(claws[1]);
+    for claw in &claws {
+        world
+            .network
+            .lock()
+            .remove_actor(&mut world.instance, *claw);
+    }
+    assert!(world.instance.find_npcs(CLAW).is_empty());
+    assert!(world.instance.party_focus.is_empty());
+}

@@ -1847,9 +1847,24 @@ guide to the dungeon checked against the five runs:
   first at z -49 (as the bots were, at (80.5, -49.4)), retail's party went south 0.5 s after map effect 12 (the first's
   fall), and west past the second 1.3 s after 13; both are barriers now (`map_effect_barriers.json`). The bots had been
   walking through the server's wall there after their 2 s patience, out of bounds.
+* *Into the stack* (Bob's mark on `18bcc9231`, "bots don't run to target of augmented shatter"): its hits on retail
+  were all on the party stood 2-3 yalms apart at its target; Kawari's bots ran out of it, as from any area attack, so
+  its target took it alone (four shares). Now an attack with `shared_by` is a stack (`Danger::stack`): the rest go to
+  its target, set off as from a dodge, and hold once 1 yalm inside it (`party_bot::stack_spot`).
+* *The knockbacks* ("nor are they effected by the knockback of augmented suffering"): 28476 (row 156, 12 yalms) and the
+  claw's 28480 (row 70, 20) threw retail's party; the player's client moves its player, and nothing moved the bots.
+  Now they're thrown on the server (`combat.md`, "Knockbacks on NPCs"). Retail's thrown players moved 0.84-1.02 s after
+  28476's AoeEffect8 and went their 12 yalms in 0.4-0.7 s (1109.2 s into capture 35e30205).
+* *The reset* ("bots gaining aggro on boss not resetting properly", "resetting was a complete failure"): after the wipe
+  at 15:03:26 one Death Claw, 0x4000009E, was still there (deleted for the player 80 s later), since `despawn_bnpc` by
+  layout took only one of the claws, and the director's focus on it (`Instance::party_focus`) still held, so the reset
+  bots ran from beside the player back to the boss's room, where the boss's wall stopped them and the boss ("held up by
+  a wall" at (-135.3, -0.5), the bots at x -132.8). Now `despawn_bnpc` by layout takes every one, and a wipe (or the
+  NPC's removal) clears the focus.
 
 Tests `PraetoriumClawAndEnrageTest.test_the_ring_electrocutes`, the claw's (its second strike and `focus_bnpc`),
-`augmented_shatter_is_shared`, `damage_dealers_go_for_the_focus`, `the_praetoriums_blasted_walls_are_barriers`.
+`augmented_shatter_is_shared`, `damage_dealers_go_for_the_focus`, `the_praetoriums_blasted_walls_are_barriers`,
+`the_rest_go_into_a_stack`, `a_knockback_throws_an_npc`, `a_layouts_every_npc_goes_and_takes_the_focus_with_it`.
 **Unplayed.**
 
 Tests `BossWallsOpenAtTheStartTest`, `PraetoriumClawAndEnrageTest`, the leaps' in `PraetoriumTest`,

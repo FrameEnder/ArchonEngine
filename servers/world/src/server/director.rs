@@ -3498,9 +3498,18 @@ pub fn director_tick(
                 }
             }
             LuaDirectorTask::DespawnBattleNpc { layout_id } => {
-                // An actor ID (from `spawn_bnpc`) or a layout ID.
-                if let Some(actor_id) = resolve_bnpc(instance, *layout_id) {
-                    network.lock().remove_actor(instance, actor_id);
+                // An actor ID (from `spawn_bnpc`), or a layout ID: every one of it. The Praetorium's second boss's
+                // Death Claws are all one layout, one more with each 28479; the wipe's `despawn_bnpc` took one of them
+                // away and left the other fighting, so the reset party went back after it (Bob's marks of
+                // 2026-11-26: "bots gaining aggro on boss not resetting properly"; 0x4000009E outlived the wipe by
+                // 80 s in his capture.)
+                let ids: Vec<ObjectId> = match instance.find_actor(ObjectId(*layout_id)) {
+                    Some(NetworkedActor::Npc { .. }) => vec![ObjectId(*layout_id)],
+                    _ => instance.find_npcs(*layout_id),
+                };
+                let mut network = network.lock();
+                for actor_id in ids {
+                    network.remove_actor(instance, actor_id);
                 }
             }
             LuaDirectorTask::GainEffect {
