@@ -102,7 +102,14 @@ LAST_FIVE = { 9082028, 9082029, 9082030, 9082031, 9082032 }
 BELOW = { 9168161, 9168162, 9168163, 9168164, 9168175, 9168176, 9168177 }
 BELOW_THREE = { 9168162, 9168163, 9168164 }
 WALKERS = { 9082092, 9082093, 9082094, 9082095 }
+-- The arm units spawn hidden (display flags 0x40028) and come into view 0.58-0.85 s on with ActionTimeline 142
+-- (ActorControl 36 `[1, 142]`, then 54 `[1]`; Bob's Chronofoil capture 35e30205, each of the four.)
+WALKER_APPEARS = 142
 WALKER_LAST = 9089992
+-- The armour standing below (ENpc 1043118, layout 9283424): retail spawned it 2.3 s into cutscene 392 (capture
+-- 35e30205), not before.
+ARMOUR_BELOW = 9283424
+ARMOUR_BELOW_AFTER = 2.3
 
 -- Where the party was as retail set these off (no layout dump: see above.)
 WHERE_START_X = 159.0 -- east of this at the entrance (ten yalms in): talk 32920 (2.1 to 54 s after the start)
@@ -400,6 +407,12 @@ function setLaunchers(director, layouts, on)
     end
 end
 
+-- An arm unit, brought into view as retail's came (`WALKER_APPEARS`.)
+function spawnWalker(director, layout_id)
+    director:spawn_bnpc(layout_id)
+    director:appear_bnpc(layout_id, WALKER_APPEARS)
+end
+
 function cutscene(director, id, params)
     playing = id
     director:play_cutscene(id, params)
@@ -492,19 +505,19 @@ D:step({ name = "effect_8", ready = riding,
     where = function(m) return m.player and m.y < -90 and m.x < 95 and m.z < WHERE_EFFECT_8_Z end,
     run = function(d)
         d:map_effect(8, 2, 1)
-        d:spawn_bnpc(WALKERS[1])
+        spawnWalker(d, WALKERS[1])
     end })
 D:step({ name = "effect_9", ready = function() return riding() and D:allDead(BELOW_THREE) end,
     where = function(m) return m.player and m.y < -90 and m.x < WHERE_EFFECT_9_X end,
     run = function(d)
         d:map_effect(9, 2, 1)
-        d:spawn_bnpc(WALKERS[2])
+        spawnWalker(d, WALKERS[2])
     end })
 D:step({ name = "effect_10", ready = function() return riding() and D.done.effect_9 and D:allDead(BELOW) end,
     where = function(m) return m.player and m.y < -90 and m.x < WHERE_EFFECT_10_X end,
     run = function(d)
         d:map_effect(10, 2, 1)
-        d:spawn_bnpc(WALKERS[3])
+        spawnWalker(d, WALKERS[3])
     end })
 D:step({ name = "boss2_room", ready = done("ride_over"),
     where = function(m) return m.y < -90 and m.x < WHERE_BOSS2_X end,
@@ -1128,7 +1141,7 @@ function onActorDeath(director, layout_id, position)
         director:map_effect(13, 1, 1)
     elseif layout_id == WALKERS[3] then
         director:map_effect(11, 2, 1)
-        D:after(0.6, function(d) d:spawn_bnpc(WALKERS[4]) end)
+        D:after(0.6, function(d) spawnWalker(d, WALKERS[4]) end)
     elseif layout_id == WALKERS[4] then
         director:map_effect(14, 1, 1)
         director:map_effect(18, 2, 1)
@@ -1144,6 +1157,7 @@ function onActorDeath(director, layout_id, position)
             end
         end)
         D:after(2.0, function(d) d:map_effect(7, 4, 4) end)
+        D:after(ARMOUR_BELOW_AFTER, function(d) d:spawn_bnpc(ARMOUR_BELOW) end)
     end
 end
 

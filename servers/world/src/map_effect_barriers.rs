@@ -87,11 +87,17 @@ mod tests {
     fn the_praetoriums_blasted_walls_are_barriers() {
         // w1d5_re.lua's map effects 2 (the five dead), 3 (the ten dead), 4 (further in) and 5 (the ride's last five),
         // timeline 2, state 1: walls blasted open (Bob's marks of 2026-11-24: nobody left by the hole.)
-        assert_eq!(indices(1044), vec![2, 3, 4, 5]);
+        assert_eq!(indices(1044), vec![2, 3, 4, 5, 6, 7, 14, 18]);
         for index in [2, 3, 4, 5] {
             assert!(takes_down(1044, index, 2, 1));
         }
-        // The lift (1) and the scenery further on (0, 6 to 18) aren't.
+        // Below (Bob's mark of 2026-11-26, "bots stuck behind invisible wall"): the way west to the cermet blast door
+        // as the fourth arm unit falls (14 and 18), and the door as it falls (6 and 7).
+        assert!(takes_down(1044, 14, 1, 1));
+        assert!(takes_down(1044, 18, 2, 1));
+        assert!(takes_down(1044, 6, 1, 4));
+        assert!(takes_down(1044, 7, 4, 4));
+        // The lift (1) and the arm units' hatches (8 to 13) aren't.
         assert!(!takes_down(1044, 1, 2, 1));
         assert!(!takes_down(1044, 8, 2, 1));
         assert_eq!(indices(1043), vec![0, 1, 5, 6]);

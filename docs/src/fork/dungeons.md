@@ -1979,6 +1979,35 @@ gave 0.6), and 1129 gets ActorControlSelf 17 `[57, 1129, 150]` though its Recast
 shortest GCD). `actions/011/PraetoriumArmor_01129.lua`, `SPECIAL_ANIMATION_LOCKS`, the recast in `server/action.rs`.
 Not played on Kawari.
 
+**Below, after the ride** (Bob's marks of 2026-11-26, read with his capture 35e30205):
+
+* *The arm units* ("still invisible"): the four Proto Ultima arm units (BNpcBase 14566, layouts 9082092-9082095) spawn
+  hidden (display flags 0x40028), as Kawari sent them, but retail brought each into view 0.58-0.85 s on: ActorControl 36
+  `[1, 142]` (Appear, fading in with ActionTimeline 142), then 54 `[1]` (targetable). Kawari never did. Now
+  `spawnWalker` (`director:appear_bnpc` with `WALKER_APPEARS`, its default 0.75 s).
+* *The armour below* ("visible before the cutscene"): ENpc 1043118 (layout 9283424, at (-60.0, -103.96, 0.0)) was
+  spawned by retail 2.3 s into cutscene 392, as the cermet blast door fell; Kawari had it out from the start (the
+  drop-in). It's `nonpop` now and the script spawns it then (`ARMOUR_BELOW`); an event NPC a director spawns gets its
+  director and display flags 0x40008 as the others (`LuaDirectorTask::SpawnBattleNpc`).
+* *The cermet blast door* ("treated as an enemy npc rather then a stationary door", "placed in a specific spot on the
+  door itself"): retail spawned BNpcBase 14616 (BNpcName 2132, layout 9089992) with `gimmick_id` 4189149, its
+  SharedGroup (ContentDirectorManagedSG 77's index 7, the door the client sets it on), and in its whole fight it sent no
+  ActorMove, ActionEffect or ActorCast: only its engagement (ActorControls 4 and 0, its target, FirstAttack) and its
+  fall. Kawari spawned it with no gimmick, and it walked, turned (18 ActorMoves) and auto-attacked (12 ActionEffect1s).
+  Now the drop-in names its gimmick, its timeline (`PraetoriumDoor_14616.json`) has no auto-attack, and an NPC spawned
+  onto a layout object never moves or turns (`npc_behavior::attached_to_layout`, also for `face_for_cast`). Retail's
+  character flags were 1 (no HOSTILE); Kawari's stay 2, since the server's auto-attack and hitbox go by HOSTILE.
+* *Walls the client had taken away* ("bots stuck behind invisible wall"): Kawari's bots were held at x -36 and at x
+  -47.2 for 47 s on their way west to the door, after the client had opened the way. Retail's party first went west
+  of x -36.2 at 658.6-660.9 s, 2.1 s after map effects 14 (timeline 1, state 1) and 18 (2, 1), which come as the fourth
+  arm unit falls; their SharedGroups were built into Kawari's collision. They're barriers now
+  (`map_effect_barriers.json`), with the door's own, 6 (1, 4) and 7 (4, 4), sent as it falls. The navmesh is made again
+  for the new list the next time the duty is entered.
+
+Tests `PraetoriumTest.test_the_arm_units_come_into_view`, `test_the_armour_below_comes_in_cutscene_392`,
+`an_npc_on_a_layout_object_never_turns`, `the_praetoriums_blasted_walls_are_barriers`. Not played on Kawari. `duty-sim`
+leaves out a script's event NPCs' spawns (a retail run lists battle NPCs only).
+
 ## The Jade Stoa
 
 ContentFinderCondition 290, territory 746, InstanceContent 20051 (director 0x80034E53), level 70. From Bob's Chronofoil

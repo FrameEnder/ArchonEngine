@@ -41,7 +41,10 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   boss's 9020 helpers went the same way on retail (at 543.8 s); Kawari's still go with DeleteActors.
 * Untested in game: the blasted walls coming down (2, 3, 4, 5) and walkers stepping round a wall's end (Bob's marks on
   `2f0bfd4`), the walls open at the start, Cid's run in one go, the Death Claw's tether and walk, the second
-  boss on its edge facing the middle, Grand Sword at anyone, the launchers left alone.
+  boss on its edge facing the middle, Grand Sword at anyone, the launchers left alone; below (Bob's marks of
+  2026-11-26): the arm units coming into view, the armour below in cutscene 392, the cermet blast door on its door and
+  still, and the way west to it open (map effects 14 and 18) with the door's own (6 and 7). Whether 6 and 7 have
+  collision isn't known (`kawari-navimesh` logs the SharedGroups that have none).
 
 ## Bob's Chronofoil capture 9ba7d981 (2026-11-17, the end of A Realm Reborn's story)
 

@@ -611,6 +611,11 @@ pub(crate) fn auto_attacks(held: bool) -> bool {
     !held
 }
 
+/// Whether an NPC is spawned onto a layout object (`SpawnNpc::gimmick_id`), and so stays as that object is.
+pub(crate) fn attached_to_layout(actor: &NetworkedActor) -> bool {
+    matches!(actor, NetworkedActor::Npc { spawn, .. } if spawn.gimmick_id != 0)
+}
+
 /// An NPC beginning a cast turns to it: an ActorMove where it stands with the cast's facing, as retail sends with
 /// each of a boss's ActorCasts (Cape Westwind's, Bob's Chronofoil capture 178b0de0 of 2026-11-18: one with every
 /// cast, same position, new rotation.) With every one: the first version sent it only when the NPC's facing
@@ -628,6 +633,10 @@ pub(crate) fn face_for_cast(
     let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(id) else {
         return;
     };
+    // (Not one that's part of a layout object: `attached_to_layout`.)
+    if spawn.gimmick_id != 0 {
+        return;
+    }
     spawn.common.rotation = rotation;
     let position = spawn.common.position;
     network.send_in_range_instance(
@@ -851,6 +860,13 @@ pub fn npc_behavior(
         // Kept busy by its director (`director:busy_bnpc`): it stays as it is. Kept where it stands
         // (`director:root_bnpc`): it doesn't move (its actions are the mut pass's.)
         if instance.busy_npcs.contains_key(id) || instance.rooted_npcs.contains_key(id) {
+            continue;
+        }
+        // Part of a layout object (its SpawnNpc's `gimmick_id`: the client sets it on that object's model): it never
+        // moves or turns. Retail's cermet blast door in the Praetorium (BNpcBase 14616, on SharedGroup 4189149) sent no
+        // ActorMove in its whole fight (capture 35e30205); Kawari's walked and turned 18 times (Bob's mark of
+        // 2026-11-26: "treated as an enemy npc rather than a stationary door").
+        if attached_to_layout(actor) {
             continue;
         }
         // A director's helper does only what it's told (`director:hold_bnpc`); a world bot only what `world_bots.rs`

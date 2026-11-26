@@ -1,0 +1,6 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The Praetorium's cermet blast door (BNpcBase 14616, BNpcName 2132, layout 9089992), level 50, 34951 HP, spawned onto its SharedGroup (gimmick 4189149) as the fourth arm unit falls. From Bob's Chronofoil capture 35e30205 (2026-11-25): in its whole fight it sent no ActorMove, ActionEffect or ActorCast, only its engagement (ActorControls 4 and 0, its target, FirstAttack) and its fall. Hitbox not recorded."
+}

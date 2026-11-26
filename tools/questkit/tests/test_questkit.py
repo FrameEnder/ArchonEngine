@@ -1531,8 +1531,37 @@ class PraetoriumTest(FrameworkScriptTest):
             if o["data"]["type"] == "event_npc"
         }
         self.assertEqual(
-            npcs, {9283423: (1043117, False), 9083081: (1042680, False), 9283424: (1043118, False)}
+            npcs, {9283423: (1043117, False), 9083081: (1042680, False), 9283424: (1043118, True)}
         )
+
+    def test_the_arm_units_come_into_view(self):
+        """Bob's mark of 2026-11-26: "the Proto Ultima Arm Unit's are still invisible". Retail spawned each hidden and
+        brought it into view 0.58-0.85 s on with ActionTimeline 142 (ActorControl 36 `[1, 142]`, capture 35e30205)."""
+        g = self.lua.globals()
+        del self.calls[:]
+        g.spawnWalker(self.director, g.WALKERS[1])
+        self.assertEqual(self.named("appear_bnpc"), [[9082092, 142]])
+        del self.calls[:]
+        g.onActorDeath(self.director, g.WALKERS[3], self.lua.table_from({"x": 0, "y": 0, "z": 0}))
+        for _ in range(2):
+            self.at(-36.0, -103.4, 0.0)
+        self.assertIn([9082095], self.named("spawn_bnpc"))
+        self.assertIn([9082095, 142], self.named("appear_bnpc"))
+
+    def test_the_armour_below_comes_in_cutscene_392(self):
+        """Bob's mark of 2026-11-26: "the magitek armor on the ground is visible before the cutscene". Retail spawned
+        ENpc 1043118 (layout 9283424) 2.3 s into cutscene 392, as the cermet blast door fell (capture 35e30205)."""
+        g = self.lua.globals()
+        del self.calls[:]
+        g.onActorDeath(self.director, g.WALKER_LAST, self.lua.table_from({"x": 0, "y": 0, "z": 0}))
+        self.assertIn([392, {1: 1, 2: 0, 3: 0, 4: 0}],
+                      [[a[0], dict(a[1].items())] for a in self.named("play_cutscene")])
+        for _ in range(4):
+            self.at(-60.0, -104.0, 0.0)
+        self.assertNotIn([9283424], self.named("spawn_bnpc"))
+        for _ in range(2):
+            self.at(-60.0, -104.0, 0.0)
+        self.assertIn([9283424], self.named("spawn_bnpc"))
 
     def test_cid_runs_to_the_terminal_after_talk_32920(self):
         self.at(165.0, 186.1, -5.0)

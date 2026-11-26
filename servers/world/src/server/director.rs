@@ -3420,6 +3420,11 @@ pub fn director_tick(
             LuaDirectorTask::SpawnBattleNpc { id, actor_id, at } => {
                 if let Some(mut npc) = instance.zone.get_battle_npc(*id) {
                     npc.common.handler_id = director_id;
+                    // A duty's event NPC spawned later is its director's as the others are (`give_event_npcs_to`):
+                    // retail's armour below in the Praetorium (1043118), 2.3 s into cutscene 392, display flags 0x40008.
+                    if npc.common.object_kind == ObjectKind::EventNpc {
+                        npc.common.display_flags = DisplayFlag::UNK1 | DisplayFlag::UNK2;
+                    }
                     if let Some((position, rotation)) = at {
                         npc.common.position = *position;
                         if let Some(rotation) = rotation {

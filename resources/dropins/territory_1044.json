@@ -3293,7 +3293,7 @@
                 {
                     "data": {
                         "base_id": 14616,
-                        "gimmick_id": 0,
+                        "gimmick_id": 4189149,
                         "hostile": true,
                         "hp": 34951,
                         "level": 50,
@@ -3855,7 +3855,7 @@
                     "data": {
                         "base_id": 1043118,
                         "type": "event_npc",
-                        "nonpop": false
+                        "nonpop": true
                     },
                     "layout_id": 9283424,
                     "position": {

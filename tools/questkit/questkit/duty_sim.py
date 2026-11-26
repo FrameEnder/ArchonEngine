@@ -665,7 +665,8 @@ _DROPIN_KINDS = None
 
 def _dropin_kinds() -> tuple[set[int], set[int]]:
     """The drop-ins' battle NPCs by layout ID: those out from the start (not `nonpop`), and the helpers (BNpcBase
-    9020.)"""
+    9020) with the event NPCs: a retail run lists battle NPCs only, so neither has a spawn there to match (the
+    Praetorium's armour below, 1043118, which the script brings out in cutscene 392.)"""
     global _DROPIN_KINDS
     if _DROPIN_KINDS is None:
         pops, helpers = set(), set()
@@ -673,7 +674,7 @@ def _dropin_kinds() -> tuple[set[int], set[int]]:
             for layer in json.loads(path.read_text()).get("layers", []):
                 for obj in layer.get("objects", []):
                     data = obj.get("data", {})
-                    if data.get("base_id") == HELPER_BASE:
+                    if data.get("base_id") == HELPER_BASE or data.get("type") == "event_npc":
                         helpers.add(obj.get("layout_id"))
                     elif not data.get("nonpop"):
                         pops.add(obj.get("layout_id"))

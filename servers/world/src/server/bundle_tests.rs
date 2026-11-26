@@ -2303,3 +2303,33 @@ fn an_npc_let_go_unseen_is_replaced_by_the_next_spawn() {
     assert_eq!(index(state, helper), 2);
     assert_eq!(index(state, ObjectId(ENEMY + 4)), 4);
 }
+
+/// Bob's mark of 2026-11-26: the Praetorium's cermet blast door "is treated as an enemy npc rather then a stationary
+/// door". Retail spawned it onto its SharedGroup (gimmick 4189149) and it never moved or turned (no ActorMove in its
+/// fight, capture 35e30205); Kawari's walked and turned 18 times. One spawned onto a layout object stays as it is.
+#[test]
+fn an_npc_on_a_layout_object_never_turns() {
+    use crate::server::npc_behavior::{attached_to_layout, face_for_cast};
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let door = world.enemy(ENEMY, [5.0, 0.0, 0.0], 34951);
+    assert!(!attached_to_layout(
+        world.instance.find_actor(door).unwrap()
+    ));
+    if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(door) {
+        spawn.gimmick_id = 4189149;
+    }
+    assert!(attached_to_layout(world.instance.find_actor(door).unwrap()));
+    world.sent(player);
+    face_for_cast(&mut world.network.lock(), &mut world.instance, door, 1.0);
+    assert_eq!(
+        world
+            .instance
+            .find_actor(door)
+            .unwrap()
+            .get_common_spawn()
+            .rotation,
+        0.0
+    );
+    assert!(world.sent(player).is_empty());
+}
