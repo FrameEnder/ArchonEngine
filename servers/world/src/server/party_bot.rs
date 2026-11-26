@@ -667,7 +667,15 @@ fn walk_like_a_player(
         // Said once, as its patience runs out, for the bundles.
         let patience_ran_out = walled_for >= WALL_PATIENCE
             && walled_for < WALL_PATIENCE + Duration::from_secs_f32(BEHAVIOR_TICK_SECONDS);
-        if walk.blocked && walled_for >= WALL_PATIENCE {
+        // A bump the navmesh walks over is no wall: a player steps over it. Low (only `Walk::low`), not a gimmick, and
+        // on the navmesh's way: the Praetorium's rubble outside its blasted wall held the bots 2-3 s at each piece,
+        // about 10 s in all (Bob's mark and screenshot of 2026-11-26: "it adds bumps to the ground that the bots are
+        // visibly getting stuck on"; the log's "held it up at (244.5, 156.1, -37.3)".)
+        let bump = walk.blocked
+            && walk.low
+            && walk.gimmick.is_none()
+            && crate::server::npc_behavior::navmesh_lets_past(navmesh, here, to);
+        if walk.blocked && (walled_for >= WALL_PATIENCE || bump) {
             if let Some(gimmick) = walk.gimmick
                 && walk.sealed
             {

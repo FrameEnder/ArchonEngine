@@ -151,12 +151,16 @@ pub struct Walk {
     /// can't get through either. Other gimmicks standing can be ones players walk through (Bob's Copperbell Mines
     /// bundle of 2026-10-27: 9288834 by the first lift, never hidden, held the bots until they were put beside him.)
     pub sealed: bool,
+    /// Whether what stopped it is low: in the way just over its climb (`WALL_HEIGHTS`' first) but not at a body's
+    /// height: a bump, as the Praetorium's rubble outside its blasted wall (Bob's mark and screenshot of 2026-11-26).
+    pub low: bool,
 }
 
 /// Why a step can't be taken.
 enum Stop {
-    /// A wall, facing this way across the ground, and the gimmick it belongs to (its layout ID), if it does.
-    Wall(Vec3A, Option<u32>),
+    /// A wall, facing this way across the ground, the gimmick it belongs to (its layout ID), if it does, and whether
+    /// it's only low (`Walk::low`.)
+    Wall(Vec3A, Option<u32>, bool),
     /// No floor to stand on: a step too high, a drop too deep, or nothing there at all.
     NoFloor,
 }
@@ -798,11 +802,17 @@ impl Collision {
     fn step(&self, at: Vec3A, way: Vec3A, max_drop: f32) -> Result<Vec3A, Stop> {
         let next = at + way;
         let ahead = way.normalize_or_zero() * self.radius;
-        for height in WALL_HEIGHTS {
-            let up = Vec3A::new(0.0, self.climb + height, 0.0);
-            if let Some((facing, gimmick)) = self.hit(at + up, next + ahead + up) {
-                return Err(Stop::Wall(facing, gimmick));
-            }
+        let hits: Vec<Option<(Vec3A, Option<u32>)>> = WALL_HEIGHTS
+            .iter()
+            .map(|height| {
+                let up = Vec3A::new(0.0, self.climb + height, 0.0);
+                self.hit(at + up, next + ahead + up)
+            })
+            .collect();
+        if let Some(index) = hits.iter().position(Option::is_some) {
+            let (facing, gimmick) = hits[index].unwrap();
+            let low = hits[1..].iter().all(Option::is_none);
+            return Err(Stop::Wall(facing, gimmick, low));
         }
         match self.body_floor(next.x, next.z, at.y + self.climb, at.y - max_drop) {
             Some(y) => Ok(Vec3A::new(next.x, y, next.z)),
@@ -823,6 +833,7 @@ impl Collision {
                 blocked: false,
                 gimmick: None,
                 sealed: false,
+                low: false,
             };
         }
         let steps = (distance / SUBSTEP).ceil().max(1.0);
@@ -830,7 +841,7 @@ impl Collision {
         for _ in 0..steps as usize {
             match self.step(at, each, max_drop) {
                 Ok(next) => at = next,
-                Err(Stop::Wall(facing, gimmick)) => {
+                Err(Stop::Wall(facing, gimmick, low)) => {
                     // Along the wall: what's left of the step once the part into it is taken off.
                     let along = each - facing * each.dot(facing);
                     match (along.length() > each.length() * 0.2)
@@ -843,6 +854,7 @@ impl Collision {
                                 blocked: true,
                                 gimmick,
                                 sealed: gimmick.is_some_and(|layout_id| self.is_sealed(layout_id)),
+                                low,
                             };
                         }
                     }
@@ -853,6 +865,7 @@ impl Collision {
                         blocked: true,
                         gimmick: None,
                         sealed: false,
+                        low: false,
                     };
                 }
             }
@@ -862,6 +875,7 @@ impl Collision {
             blocked: false,
             gimmick: None,
             sealed: false,
+            low: false,
         }
     }
 
@@ -1121,6 +1135,25 @@ mod tests {
         if let Some(side) = closed.round_the_corner(stop, Vec3A::new(8.0, 0.0, 0.0), 50.0) {
             assert!(side.x < 3.0, "{side:?}");
         }
+    }
+
+    /// Bob's mark and screenshot of 2026-11-26: the Praetorium's rubble "adds bumps to the ground that the bots are
+    /// visibly getting stuck on". A piece over the climb but under a body's height stops a walk as low (`Walk::low`),
+    /// which a bot steps over where the navmesh does; a wall doesn't.
+    #[test]
+    fn a_bump_stops_a_walk_as_low() {
+        let c = world(|v, t| {
+            floor_quad(v, t, -10.0, -10.0, 10.0, 10.0, 0.0);
+            wall_x(v, t, 3.0, -10.0, 10.0, 0.0, 1.0);
+        });
+        let walk = c.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0);
+        assert!(walk.blocked && walk.low, "{walk:?}");
+        let c = world(|v, t| {
+            floor_quad(v, t, -10.0, -10.0, 10.0, 10.0, 0.0);
+            wall_x(v, t, 3.0, -10.0, 10.0, 0.0, 4.0);
+        });
+        let walk = c.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0);
+        assert!(walk.blocked && !walk.low, "{walk:?}");
     }
 
     #[test]

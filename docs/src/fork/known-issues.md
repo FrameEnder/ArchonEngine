@@ -45,11 +45,8 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   2026-11-26): the arm units coming into view, the armour below in cutscene 392, the cermet blast door on its door and
   still, and the way west to it open (map effects 14 and 18) with the door's own (6 and 7). Whether 6 and 7 have
   collision isn't known (`kawari-navimesh` logs the SharedGroups that have none).
-* **The Praetorium's bots held by rubble** (Bob's mark of 2026-11-26 at (248.1, 153.7, -48.7), "bots are getting stuck
-  on tiny rubble"): the log has the three bots held by the zone's collision at (244.5, 156.1, -37.3) on their way down
-  to (255, 151.5, -55), 2-3 s at a time for about 10 s, each time going on along the navmesh. Something there is a
-  wall to `Collision::walk` (its wall heights, 0.1 and 1.4 yalms over the climb) that the navmesh steps over; what it
-  is isn't known here (no collision file in the session). Not fixed.
+* **The Praetorium's bots and the rubble** (Bob's mark of 2026-11-26): a bump the navmesh walks over no longer holds
+  a bot (`combat.md`, "Over a bump"); untested in game. Enemies chasing over it still wait 2 s at each piece.
 
 ## Bob's Chronofoil capture 9ba7d981 (2026-11-17, the end of A Realm Reborn's story)
 
