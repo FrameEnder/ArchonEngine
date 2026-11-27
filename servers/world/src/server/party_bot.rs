@@ -498,6 +498,27 @@ pub struct KnownAction {
     pub recast: f32,
     pub hostile: bool,
     pub mp_cost: u32,
+    /// The sheet's Range: yalms between the edges (-1 a melee attack's 3, 0 none: on itself or round it.)
+    pub range: i8,
+}
+
+/// How far an action reaches between the user's and its target's edges (`KnownAction::range`), if it's used on
+/// another.
+pub fn action_reach(range: i8) -> Option<f32> {
+    match range {
+        ..0 => Some(3.0),
+        0 => None,
+        yalms => Some(yalms as f32),
+    }
+}
+
+/// Past the edge's reach of the action, the target `rotation_distance` away (from its edge, as if its hitbox were a
+/// player's: the user's and its target's edges are a player's hitbox apart beyond that.) A little allowance, as the
+/// client gives a player's.
+pub fn out_of_reach(range: i8, rotation_distance: f32) -> bool {
+    action_reach(range).is_some_and(|reach| {
+        rotation_distance - crate::server::action::PLAYER_HITBOX_RADIUS * 2.0 > reach + 0.5
+    })
 }
 
 /// What an action's script says about it, as far as choosing goes: its `POTENCY`, and its `DURATION` if it puts a
@@ -2258,6 +2279,7 @@ fn spawn_bot(
                     recast: action.recast,
                     hostile: action.hostile,
                     mp_cost: action.mp_cost,
+                    range: action.range,
                 })
                 .collect(),
             role,

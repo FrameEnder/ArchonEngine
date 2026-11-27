@@ -169,7 +169,17 @@ in, past the gauge's full. What the server's capture of the run showed, and what
 * **Quicker reactions**: dodges set off 0.2-0.4 s after a cast starts (`REACTION_SECONDS`, 0.5-0.9 before), and the
   tank answers a loose enemy in about a second.
 
-Test `party_bots_fight_as_experts`; `PraetoriumFourInTurnTest`. Not checked in game; how much quicker the four go isn't
+* **Out of reach, they use what reaches** (Bob, 2026-11-27: the idle stretches are the bots dodging "and just stand
+  there for a second or two ... players ... would also try their best to use distance attacks if they can't get in
+  close"). A bot with a rotation script uses it from up to 26 yalms of its target's edge (`BOT_ROTATION_REACH`), not
+  only within its attack range; what it picks must reach from there (`out_of_reach`, from the sheet's Range: -1 a
+  weaponskill's 3 yalms between the edges, plus the half-yalm a client allows). So a melee bot kept off its target
+  (out of an area attack, or by its rows) uses its ranged attack (Unmend, Harpe, Tomahawk, Enpi and the rest, which
+  each script already picks when `View:in_melee` says no), and `View:in_melee` agrees with the server: 4.5 from the
+  target's edge as `b.distance` measures it (6 middle to middle before, which let a script choose a weaponskill that
+  couldn't reach). Auto-attacks and the timelines still need the attack range. After an area attack goes off a dodger
+  stays 0.3 s (`LINGER`, 1.3 s before, as retail's players did) before going back in, acting from where it is.
+* Test `party_bots_fight_as_experts`; `PraetoriumFourInTurnTest`. Not checked in game; how much quicker the four go isn't
 known until Bob's next run.
 
 **They wait while their player arrives** (2026-11-26, Bob's mark in the Praetorium: "bots did not wait for all players

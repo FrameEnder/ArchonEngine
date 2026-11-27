@@ -143,6 +143,13 @@ fn bot_choice(
     };
     let (action, on_self) = crate::server::bot_rotation::choose(&view)?;
     let known = around.known.iter().find(|known| known.id == action)?;
+    // One on its target has to reach it from here (it may act from beyond its attack range: `BOT_ROTATION_REACH`.)
+    if !on_self
+        && known.hostile
+        && crate::server::party_bot::out_of_reach(known.range, around.distance)
+    {
+        return None;
+    }
     let left = view
         .known
         .iter()
@@ -167,6 +174,10 @@ fn bot_choice(
     };
     Some((action, target))
 }
+
+/// How far (`rotation_distance`) a party bot with a rotation script looks to act on its target: a ranged attack's 25
+/// yalms between the edges.
+const BOT_ROTATION_REACH: f32 = 26.0;
 
 /// How far a bot's rotation sees its target (`BotView::distance`, `View:in_melee`): from its edge, as if its hitbox were
 /// a player's (`PLAYER_HITBOX_RADIUS`), so a big one's edge is as near as a small one's.
@@ -1702,6 +1713,11 @@ pub fn npc_behavior(
                     .contains(&spawn.common.layout_id);
             let was_after_someone = matches!(current_target, Some(NpcTarget::Actor(_)));
             let can_take_action; // FIXME: this is kind of stupid because enemies can do ranged attacks, etc.
+            // A party bot with a rotation script (`bot_rotation`) uses it from farther than its attack range: what it
+            // picks has to reach (`bot_choice`), so a melee bot kept off its target (out of an area attack, or held off)
+            // uses its ranged attack (Unmend, Harpe) rather than standing idle (Bob, 2026-11-27: "they would also try
+            // their best to use distance attacks if they can't get in close".)
+            let mut reaches_with_rotation = false;
             if let Some(current_target) = current_target {
                 let target_pos;
                 match &current_target {
@@ -1766,6 +1782,12 @@ pub fn npc_behavior(
                         (None, NpcTarget::Position(_)) => current_path.is_empty(),
                     };
                     can_take_action = in_reach && pending_action.is_none();
+                    reaches_with_rotation = pending_action.is_none()
+                        && matches!(current_target, NpcTarget::Actor(_))
+                        && bot_surroundings
+                            .get(id)
+                            .is_some_and(|around| around.distance <= BOT_ROTATION_REACH)
+                        && in_sight(sight.as_deref(), spawn.common.position.0, target_pos);
 
                     let current_pos = spawn.common.position.0;
                     // Standing in range of who it's after: forget the path, so it sets off from where it stands when
@@ -1951,6 +1973,10 @@ pub fn npc_behavior(
             // Not for a second after seizing up with paralysis (`server/paralysis.rs`.)
             let paralysed = paralysis_locked.contains(id);
             let at_mounted = mounted_players.contains(&spawn.common.target_id.object_id);
+            let rotation_can_act = (can_take_action || reaches_with_rotation)
+                && !paralysed
+                && !at_mounted
+                && !holds_actions;
             let can_take_action = can_take_action && !paralysed && !at_mounted && !holds_actions;
 
             // Only update the timeline on exact second marks. A timeline that always plays (Sastasha's giant clams opening
@@ -2225,7 +2251,7 @@ pub fn npc_behavior(
 
             // Its class rotation, checked every tick (it keeps its own pace.)
             let mut used_rotation = used_timeline;
-            if can_take_action
+            if rotation_can_act
                 && !used_timeline
                 && let Some(rotation) = &timeline.rotation
                 && spawn.common.target_id.object_id.is_valid()

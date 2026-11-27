@@ -64,8 +64,8 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   turning to their targets (they face the middle). Whether the four "extra" figures Bob saw were the swords that never
   vanished isn't known; the four wait at (-575, 228) from the boss's arrival as retail's did, with the same spawn.
 * **Party bots' damage** (since the change after `343c01038`, `party-bots.md`): the fixes are from one run's capture,
-  untested in game. Not looked at yet: idle stretches of 5-15 s in the Dark Knight's and Reaper's first part (dodging,
-  or out of reach), and whether a bot's damage per hit matches a player's of its level and gear. The four's hitbox
+  untested in game (with them, since the change after `566b65d0c`, the bots act from range when kept off their
+  target). Not looked at yet: whether a bot's damage per hit matches a player's of its level and gear. The four's hitbox
   (from their model) wasn't read, only inferred from the melee bots' choices.
 * **Other scripts naming an EObj ID two objects share**: the Praetorium's was found by Bob's screenshot (the terminal's
   shortcut shown in the first boss's door's place); other duties' scripts haven't been checked against their layouts.

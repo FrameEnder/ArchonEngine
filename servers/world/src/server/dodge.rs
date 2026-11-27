@@ -34,8 +34,10 @@ pub const REACTION_SECONDS: (f32, f32) = (0.2, 0.4);
 /// capture 1cefedf4 of 2026-11-07); Kawari's bots all got out of it, and it hit nobody in two runs of three (Bob's
 /// bundles 20261107-221820 and 20261108-145830). Retail's members set off 1.0-1.4 s into a cast (the module.)
 pub const TOO_QUICK_TO_DODGE: Duration = Duration::from_millis(1000);
-/// How long after the attack has gone off a dodger stays out before it goes back to fighting (retail: 1.3-1.5 s.)
-pub const LINGER: Duration = Duration::from_millis(1300);
+/// How long after the attack has gone off a dodger stays out before it goes back to fighting: an expert's moment
+/// (retail's players stayed 1.3-1.5 s, and so did the bots till 2026-11-27, when Bob saw them "dodge an AOE and just
+/// stand there for a second or two ... very not player like"; they act from where they are meanwhile.)
+pub const LINGER: Duration = Duration::from_millis(300);
 /// How far a dodger looks for a safe spot.
 const SEARCH_RADIUS: f32 = 40.0;
 const SEARCH_STEP: f32 = 0.5;

@@ -86,9 +86,11 @@ function View:aoe(count)
     return self.near_target >= (count or 3)
 end
 
--- In melee range of its target (3 yalms, edges; middle to middle allows the target's hitbox a little.)
+-- In melee range of its target: 3 yalms between the edges and the client's half-yalm allowance (`b.distance` is from
+-- the target's edge, as if its hitbox were a player's: the server's `out_of_reach`.) It was 6 middle to middle, which
+-- had a melee bot choose a weaponskill that couldn't reach where its ranged attack would have (2026-11-27.)
 function View:in_melee()
-    return self.distance <= 6
+    return self.distance <= 4.5
 end
 
 -- Its MP covers the action's cost as the sheet has it (`cost` instead, where its gauge changes it.)

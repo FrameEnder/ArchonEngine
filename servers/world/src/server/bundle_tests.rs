@@ -2632,3 +2632,23 @@ fn party_bots_fight_as_experts() {
     world.instance.untargetable_npcs.insert(phantom);
     assert!(!worth_attacking(&world.instance, phantom, 7715));
 }
+
+/// Bob, 2026-11-27: "they would also try their best to use distance attacks if they can't get in close": a melee bot
+/// kept off its target uses what reaches from where it stands (`BOT_ROTATION_REACH`), and only that (`out_of_reach`):
+/// a weaponskill (Range -1, 3 yalms between the edges) from its target's edge plus a player's hitbox and the allowance,
+/// Unmend (20) from 15, never past it; one on itself (0) anywhere.
+#[test]
+fn a_bot_kept_off_uses_what_reaches() {
+    use crate::server::npc_behavior::rotation_distance;
+    use crate::server::party_bot::{action_reach, out_of_reach};
+    assert_eq!(action_reach(-1), Some(3.0));
+    assert_eq!(action_reach(0), None);
+    assert_eq!(action_reach(20), Some(20.0));
+    // Standing at a 4.5 hitbox's edge plus 3 (`attack_range` + hitbox): a weaponskill reaches.
+    assert!(!out_of_reach(-1, rotation_distance(7.5, 4.5)));
+    // Dodged out to 12 yalms from a player-sized one's middle: no weaponskill, Unmend.
+    assert!(out_of_reach(-1, rotation_distance(12.0, 0.5)));
+    assert!(!out_of_reach(20, rotation_distance(12.0, 0.5)));
+    assert!(out_of_reach(20, rotation_distance(30.0, 0.5)));
+    assert!(!out_of_reach(0, 100.0));
+}
