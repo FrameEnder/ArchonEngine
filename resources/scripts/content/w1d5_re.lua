@@ -910,8 +910,9 @@ function secondPart(director)
             if member ~= nil then
                 d:set_hate(phantom, member.id)
             end
-            -- In the fight (the party goes for them), but rooted and with no auto-attacks: they only cast.
-            d:release_bnpc(phantom)
+            -- Still held by the director (they only cast, as it says), rooted and with no auto-attacks should they be
+            -- let go; on the party's hater list, so the party fights them. (`release_bnpc` is only retail's
+            -- ActorControl 417, not a release from `hold_bnpc`.)
             d:root_bnpc(phantom, PART2_ROOTED)
             d:hold_attacks(phantom, true)
             d:actor_use_action(phantom, 28485)
@@ -1032,7 +1033,10 @@ function secondPartEnds(director)
         phantoms = {}
         d:battle_talk(BOSS3, NAME_BOSS3, PART_AFTER, 0, 5000)
         d:set_targetable(BOSS3, true)
-        d:release_bnpc(BOSS3)
+        -- Let go of the hold of the second part (`hold_bnpc(BOSS3, false)`): `release_bnpc` only sends ActorControl
+        -- 417, so the boss stayed held, with no auto-attack and no 28495, till it fell (Bob's mark of 2026-11-27: "Gaius
+        -- did nothing after his final attack just stood until we killed him", 67 s.)
+        d:hold_bnpc(BOSS3, false)
         d:restart_timeline(BOSS3, PART_AFTER)
         part2_over = true
     end)

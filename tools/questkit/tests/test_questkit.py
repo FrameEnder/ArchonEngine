@@ -1551,6 +1551,8 @@ class PraetoriumSecondPartEndsTest(FrameworkScriptTest):
         phantoms, gauges = self.run_part(50.0)
         self.assertEqual(sorted(a[0] for a in self.named("set_hate")), sorted(phantoms))
         self.assertIn(32908, [a[2] for a in self.named("battle_talk")])
+        # Let go of its hold after the part (Bob's mark of 2026-11-27: "Gaius did nothing after his final attack").
+        self.assertIn([9055066, False], [list(a) for a in self.named("hold_bnpc")])
         used = [a[1] for a in self.named("actor_use_action") if a[0] == 9055066]
         self.assertIn(28499, used)
         self.assertNotIn(28500, used)
@@ -3537,6 +3539,29 @@ class SideTalkTest(unittest.TestCase):
             probe = harness.Harness(script, 1005, params)
             probe.world.quests[1005] = harness.Quest(4, [0] * 6)
             self.assertEqual([p["scene"] for p in probe.talk(base, {}, [])["played"]][:1], [scene])
+
+
+class UltimateWeaponExitsTest(unittest.TestCase):
+    """The Ultimate Weapon (4522): the Praetorium lets out at POPRANGE0 (9168838: (-817.5, -344.13, 0.0)), by the way
+    into the Porta Decumana; the Porta Decumana at POPRANGE2 ((-690, -185.73, 480)), as ZoneInit had it in all of
+    Bob's captures (9ba7d981, 50e72631, 6320ae56). Kawari let the Praetorium out at the second (Bob's mark of
+    2026-11-27: "the ending segment of the trial porta decumana not the transition area")."""
+
+    def exit_after(self, sequence, content):
+        from questkit import harness
+        script = next(repo.QUEST_SCRIPTS.rglob("*_04522.lua"))
+        params = json.loads((repo.FIXTURES / "4522.json").read_text())["params"]
+        probe = harness.Harness(script, 4522, params)
+        probe.world.quests[4522] = harness.Quest(sequence, [0] * 6)
+        probe.duty_cleared(params[content])
+        exits = [task.args[1:] for task in probe.tasks if task.kind == "call" and task.args[0] == "set_duty_exit"]
+        return params["TERRITORYTYPE0"], [(zone, (at["x"], at["y"], at["z"])) for zone, at, *_ in exits]
+
+    def test_each_duty_lets_out_where_retails_did(self):
+        zone, exits = self.exit_after(2, "INSTANCEDUNGEON0")
+        self.assertEqual(exits, [(zone, (-817.5, -344.13, 0.0))])
+        zone, exits = self.exit_after(4, "INSTANCEDUNGEON1")
+        self.assertEqual(exits, [(zone, (-690.0, -185.73, 480.0))])
 
 
 class GreatestStoryTest(unittest.TestCase):

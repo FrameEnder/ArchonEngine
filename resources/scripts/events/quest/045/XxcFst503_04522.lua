@@ -20,11 +20,16 @@
 -- Sequence 255:
 --   ACTOR6 (Minfilia): scene 36 (SET_BASE | INVIS_ENPC | INVIS_AETHERYTE | HIDE_HOTBAR | INVINCIBLE, a yield) -> completed, zone 212
 
--- Both duties (the Praetorium, then the Porta Decumana) let out at POPRANGE2 in TERRITORYTYPE0, where the client asks
--- for the next cutscene (ZoneInit's pop range and position; rotation the client's first. Connor's Chronofoil capture
--- af05916c.)
+-- The Porta Decumana lets out at POPRANGE2 in TERRITORYTYPE0, where the client asks for the next cutscene (ZoneInit's
+-- pop range and position; rotation the client's first. Connor's Chronofoil capture af05916c, and Bob's 9ba7d981.)
 DUTY_EXIT = { x = -690.0, y = -185.73, z = 480.0 }
 DUTY_EXIT_ROTATION = -1.57
+-- The Praetorium lets out at POPRANGE0, by the way into the Porta Decumana: ZoneInit's pop range 9168838 and position
+-- (-817.5, -344.13, 0.0) in all three of Bob's captures (9ba7d981, 50e72631, 6320ae56); the client's first rotation
+-- 0.409. Kawari let both out at POPRANGE2, the Porta Decumana's end (Bob's mark of 2026-11-27: "this is the ending
+-- segment of the trial porta decumana not the transition area where we can interact with the entrance to it".)
+PRAETORIUM_EXIT = { x = -817.5, y = -344.13, z = 0.0 }
+PRAETORIUM_EXIT_ROTATION = 0.409
 
 -- What retail sets UI8A to when a reward window is closed (414, 680, 840, 855, 960.)
 REWARD_CLOSED = 0x11
@@ -87,7 +92,7 @@ end
 function onDutyCleared(content_id, player)
     local sequence = player:get_quest_sequence(EVENT_ID)
     if sequence == 2 and content_id == INSTANCEDUNGEON0 then
-        player:set_duty_exit(TERRITORYTYPE0, DUTY_EXIT, DUTY_EXIT_ROTATION)
+        player:set_duty_exit(TERRITORYTYPE0, PRAETORIUM_EXIT, PRAETORIUM_EXIT_ROTATION)
         player:quest_sequence(EVENT_ID, 3)
     elseif sequence == 4 and content_id == INSTANCEDUNGEON1 then
         player:set_duty_exit(TERRITORYTYPE0, DUTY_EXIT, DUTY_EXIT_ROTATION)

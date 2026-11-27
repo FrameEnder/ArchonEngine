@@ -1761,6 +1761,20 @@ players to leave the cutscene before attacking"):
   its script (`onSceneFinished`) once the last player it went to has finished it (`cutscene_watchers`), not the first.
   Test `everyone_waits_for_a_player_arriving_and_a_cutscene_ends_with_the_last`.
 
+**After the second part** (Bob's mark of 2026-11-27: "Gaius did nothing after his final attack just stood until we
+killed him"): the script let the boss go with `release_bnpc`, which is only retail's ActorControl 417, so the hold of
+the part (`hold_bnpc`) stayed on: no auto-attack, no 28495, 67 s till it fell. Now `hold_bnpc(BOSS3, false)`; its
+timeline goes on from talk 32909 (28495 7.1 s in, then every 30 s: retail's parties had it down 7 to 12 s after the
+first, so nothing else is known of it there). The four stay held as before (they only cast as the director says); the
+`release_bnpc` they had did nothing.
+
+**Where the duty lets out** (same day: "this is the ending segment of the trial porta decumana not the transition area
+where we can interact with the entrance to it"): the Ultimate Weapon (4522) let both its duties out at POPRANGE2 of
+territory 1053, (-690, -185.73, 480), from Connor's capture after the Porta Decumana. Bob's three captures (9ba7d981,
+50e72631, 6320ae56) put the Praetorium's end at POPRANGE0 (ZoneInit's pop range 9168838, position (-817.5, -344.13,
+0.0), the client's first rotation 0.409), by the way into the Porta Decumana; the script does that now
+(`PRAETORIUM_EXIT`). Test `UltimateWeaponExitsTest`.
+
 **The four in turn** (2026-11-27): the party takes them one at a time round the room, (-554.5, 210), (-569.5, 210),
 (-569.5, 230), (-554.5, 230) (`PHANTOMS_IN_TURN`, `focusNextPhantom`, the next as each reaches 1 HP); Bob's bots split
 over them and the gauge filled before the last (`party-bots.md`, "They fight as experts"). Retail's party of players
