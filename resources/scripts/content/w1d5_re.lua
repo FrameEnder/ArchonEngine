@@ -918,6 +918,7 @@ function secondPart(director)
         end
     end)
     at(PART2_PHANTOMS + APPEAR_SNAP, function(d)
+        focusNextPhantom(d)
         for index, phantom in ipairs(phantoms) do
             local spot = PHANTOMS_AT[index]
             local facing = math.atan(BOSS3_MIDDLE.x - spot[1], BOSS3_MIDDLE.z - spot[2])
@@ -1058,11 +1059,30 @@ end
 
 -- The last boss and its four of BNpcBase 14455 at 1 HP: each of the four goes once it's free of its cast (at once, or
 -- 2.2 s after the cast it was in: 17 times in four runs); the boss ends the duty.
+-- The order the party takes the four in (`focusNextPhantom`): round the room by the nearest (15, 20, 15 yalms on).
+PHANTOMS_IN_TURN = { 1, 3, 4, 2 }
+
+-- The party's damage dealers and tank on one of the four at a time, the next as each is down (`focus_bnpc`). Retail's
+-- party (four players, capture 35e30205) had the four down 21, 27, 47 and 53 s in; Kawari's bots, each on whichever
+-- the tank or the four's hate put them on, took 66 to 101 s and the gauge filled (Bob's run of 2026-11-27).
+function focusNextPhantom(director)
+    for _, index in ipairs(PHANTOMS_IN_TURN) do
+        local phantom = phantoms[index]
+        if phantom ~= nil and not floored[phantom] then
+            director:focus_bnpc(phantom)
+            return
+        end
+    end
+end
+
 function lastBossHealth(director, info)
     for _, phantom in ipairs(phantoms) do
         local it = info["actor" .. phantom]
-        if it ~= nil and it.hp <= 1 then
+        if it ~= nil and it.hp <= 1 and not floored[phantom] then
             floored[phantom] = true
+            if part2 then
+                focusNextPhantom(director)
+            end
         end
         if floored[phantom] and not gone[phantom] and D.ticks >= phantoms_free_at then
             gone[phantom] = true

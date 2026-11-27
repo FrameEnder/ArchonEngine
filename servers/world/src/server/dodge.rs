@@ -24,10 +24,11 @@ use crate::{
 /// How far past an area attack's hit edge a dodger stops (retail's stood at 11.0 yalms from a circle they otherwise
 /// left as soon as they could; the hit edge's own grazing allowance is `PLAYER_HITBOX_RADIUS`, in `in_area`.)
 pub const DODGE_MARGIN: f32 = 0.5;
-/// When a dodger sets off after it notices an area attack starting: a moment, a little quicker than retail's (1.0-1.4 s
-/// into the cast in the capture, sampled every 0.31 s; Bob found the bots slow to react, 2026-10-26), or at once when
-/// waiting would leave too little time to get out.
-pub const REACTION_SECONDS: (f32, f32) = (0.5, 0.9);
+/// When a dodger sets off after it notices an area attack starting: a moment, an expert's, well before retail's
+/// players (1.0-1.4 s into the cast in the capture, sampled every 0.31 s; Bob found the bots slow to react, 2026-10-26,
+/// and wanted "experts with quick decisive reactions", 2026-11-27: 0.5-0.9 s before), or at once when waiting would
+/// leave too little time to get out.
+pub const REACTION_SECONDS: (f32, f32) = (0.2, 0.4);
 /// Area attacks cast quicker than this go off before anyone can get out: retail's Duty Support members never dodged
 /// Chudo-Yudo's Lion's Breath (902, a 0.7 s cone at its target), which hit the tank 24 times of 25 (Bob's Chronofoil
 /// capture 1cefedf4 of 2026-11-07); Kawari's bots all got out of it, and it hit nobody in two runs of three (Bob's
@@ -994,7 +995,7 @@ mod tests {
         let until = now + Duration::from_secs_f32(4.7);
         // Plenty of time: after the reaction.
         let at = set_off_at(now, until, 8.0, 6.0, 0.5);
-        assert_eq!(at, now + Duration::from_secs_f32(0.7));
+        assert_eq!(at, now + Duration::from_secs_f32(0.3));
         // A quick cast: at once.
         assert_eq!(
             set_off_at(now, now + Duration::from_secs(1), 8.0, 6.0, 0.5),

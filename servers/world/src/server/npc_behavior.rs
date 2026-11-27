@@ -168,6 +168,13 @@ fn bot_choice(
     Some((action, target))
 }
 
+/// How far a bot's rotation sees its target (`BotView::distance`, `View:in_melee`): from its edge, as if its hitbox were
+/// a player's (`PLAYER_HITBOX_RADIUS`), so a big one's edge is as near as a small one's.
+pub fn rotation_distance(ground: f32, target_hitbox: f32) -> f32 {
+    let player = crate::server::action::PLAYER_HITBOX_RADIUS;
+    (ground - (target_hitbox - player).max(0.0)).max(0.0)
+}
+
 /// How often NPCs auto-attack, in half-second ticks: every 3 seconds, which is what Kawari Bestiary recorded enemies
 /// doing on retail (their hits landed 3.0-3.1 seconds apart.)
 const NPC_AUTO_ATTACK_TICKS: i64 = AUTO_ATTACK_RATE * 2;
@@ -1232,6 +1239,10 @@ pub fn npc_behavior(
             .unwrap_or_default();
         let here = spawn.common.position.0;
         let there = target_actor.map(|actor| actor.position().0).unwrap_or(here);
+        let target_hitbox = match target_actor {
+            Some(NetworkedActor::Npc { timeline, .. }) => timeline.hitbox_radius,
+            _ => 0.5,
+        };
         let ground = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
         let (mut near_target, mut near_self) = (0, 0);
         for (other_id, other) in &instance.actors {
@@ -1245,6 +1256,9 @@ pub fn npc_behavior(
                 && other_spawn
                     .character_data_flags
                     .contains(kawari::ipc::zone::CharacterDataFlag::HOSTILE)
+                // Only what its area attacks would hit: not a director's helpers or one out of reach (the Praetorium's
+                // swords and blades.)
+                && !crate::server::action::beyond_area_actions(instance, *other_id, other)
             {
                 let at = other_spawn.common.position.0;
                 if target_actor.is_some() && ground(at, there) <= BOT_AREA_REACH {
@@ -1261,7 +1275,11 @@ pub fn npc_behavior(
                 target_statuses,
                 near_target,
                 near_self,
-                distance: ground(here, there),
+                // From its target's edge, as if its hitbox were a player's (0.5): the Praetorium's last boss's four
+                // have a model's hitbox big enough that melee bots stood where `View:in_melee` (6 yalms, middle to
+                // middle) said they weren't, and used Unmend and Harpe all through the part (Bob's run of
+                // 2026-11-27: 31 and 32 times.)
+                distance: rotation_distance(ground(here, there), target_hitbox),
                 gauge: bot.gauge.named(),
                 known: bot.known.clone(),
             },

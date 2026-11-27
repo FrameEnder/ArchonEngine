@@ -142,6 +142,36 @@ in its open state). Now only a gimmick the director has put up (`show_eobj`: a b
 `WALL_PATIENCE` way past it, and the log says so (`held up by the gimmick of event object …, which the director hasn't
 touched; on past it`).
 
+**They fight as experts** (2026-11-27, Bob's run of the Praetorium's last boss: "the DPS of the bots are terrible and
+inefficient nothing like a player ... make them experts with quick decisive reactions and perfect understanding of
+their actions"). Against retail's party in capture 35e30205 (a Gunbreaker, a Samurai and a Machinist with Bob, about
+180 damage a second each on the boss and on the four, the four down 21, 27, 47 and 53 s in), Kawari's Dark Knight,
+Reaper and Dancer did 167, 85 and 71 a second on the boss and half that on the four, which went 66, 75, 80 and 101 s
+in, past the gauge's full. What the server's capture of the run showed, and what changed:
+
+* **The Dancer never danced.** Its steps and finishes (Emboite to Pirouette, Single and Double Standard Finish) are no
+  player actions of their own (the hotbar's Standard Step turns into them), so they weren't among what the bot knew
+  (`class_actions`): its rotation chose them, `bot_choice` found them unknown, and it stood out each Standard Step's
+  15 s (84 s of 145 on the boss, 50 of 100 on the four). A job with a rotation script now knows its job's non-player,
+  non-PvP actions with server scripts up to its level as well (`GameData::class_followups`, `is_followup`).
+* **The melee bots used their ranged attacks on the four** (the Dark Knight's Unmend 31 times, the Reaper's Harpe 32):
+  they stood at the four's edge, but `View:in_melee` took 6 yalms middle to middle, which their model's hitbox puts
+  beyond. The rotations' `b.distance` is from the target's edge now, as for a player's hitbox
+  (`rotation_distance`); for a hitbox of 0.5 it's as before.
+* **They split over the four**: the tank took one (each was on one of the party's hater lists, and it provoked them in
+  turn), the others another. The director has the party take them one at a time round the room (`focusNextPhantom`,
+  `PHANTOMS_IN_TURN`); a tank with nothing after it goes for the director's focus with the rest, and no enemy whose
+  auto-attacks the director holds is one to provoke.
+* **They kept hitting ones at 1 HP**, which wait up to 2.2 s to go: an enemy held at its health floor and at it, or
+  untargetable, isn't one they fight (`worth_attacking`).
+* **Area attacks counted the director's helpers** (`near_target`/`near_self` for the rotations): only what an area
+  attack would hit counts (`beyond_area_actions`).
+* **Quicker reactions**: dodges set off 0.2-0.4 s after a cast starts (`REACTION_SECONDS`, 0.5-0.9 before), and the
+  tank answers a loose enemy in about a second.
+
+Test `party_bots_fight_as_experts`; `PraetoriumFourInTurnTest`. Not checked in game; how much quicker the four go isn't
+known until Bob's next run.
+
 **They wait while their player arrives** (2026-11-26, Bob's mark in the Praetorium: "bots did not wait for all players
 to leave the cutscene before attacking"): a player a director moves within a duty (`warp_player_within`) is `arriving`
 until their ZoneIn, at most `ARRIVAL_PATIENCE` (20 s); meanwhile the bots and the enemies wait, as before the duty begins
@@ -411,7 +441,8 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
     three runs by other players (Paladin, Marauder, Warrior) give the numbers:
     * It answers each enemy that's after someone else after one of those tanks' reaction times (`TANK_REACTIONS`: 54
       of them, 2.9 s the median, from an enemy hitting someone else to the tank's next action hitting it), a little
-      quicker since 2026-10-26 (each scaled by `TANK_REACTION_SCALE`, 0.6: 1.7 s the median, Bob found the bots slow), the nearest
+      quicker since 2026-10-26 (each scaled by `TANK_REACTION_SCALE`: 0.6, 1.7 s the median, Bob found the bots slow;
+      0.35, 1.0 s, since 2026-11-27, as an expert), the nearest
       due first: it goes for it and takes it (50,000 enmity above the top of its list, as the quest battle framework's
       tanks do). It used to take one every 10 s.
     * With two or more enemies fighting the party within 5.5 yalms, its area enmity combo (Total Eclipse, Overpower:

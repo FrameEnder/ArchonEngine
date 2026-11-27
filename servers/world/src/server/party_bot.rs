@@ -100,9 +100,10 @@ const TANK_REACTIONS: [f32; 54] = [
     2.1, 2.2, 2.2, 2.5, 2.7, 2.8, 2.8, 2.8, 3.0, 3.2, 3.5, 4.5, 4.5, 4.8, 5.0, 5.1, 5.2, 5.6, 5.8,
     5.8, 5.8, 6.5, 7.5, 8.9, 8.9, 9.2, 9.2, 9.6, 9.6, 12.1, 12.2, 13.0, 13.3, 13.4, 15.4,
 ];
-/// The tank bot answers a little quicker than those players: each reaction time is scaled by this (Bob found the bots
-/// slow to react, 2026-10-26; median 1.7 s instead of 2.9.)
-const TANK_REACTION_SCALE: f32 = 0.6;
+/// The tank bot answers quicker than those players, as an expert: each reaction time is scaled by this (Bob found the
+/// bots slow to react, 2026-10-26, 0.6: median 1.7 s; and wanted "experts with quick decisive reactions", 2026-11-27:
+/// median 1.0 s instead of 2.9.)
+const TANK_REACTION_SCALE: f32 = 0.35;
 /// The tank uses its area enmity combo (Total Eclipse, Overpower) when this many enemies fighting the party are within
 /// its reach: the same runs' tanks made it their main attack whenever two or more were close (Total Eclipse 74 times
 /// to 38 single-target hits; Overpower 62 to 43 and 117 to 37), and rarely with one.
@@ -1080,6 +1081,54 @@ impl GameData {
     }
 }
 
+impl GameData {
+    /// The actions `classjob` (or `parent`) reaches through others it knows by `level` and that the server can perform:
+    /// the sheet's non-player actions of the job (no PvP), as a Dancer's steps and finishes (Emboite to Pirouette,
+    /// Single and Double Standard Finish) after Standard Step. Its rotation script uses them; with them missing from what
+    /// the bot knew, Bob's Dancer bot used Standard Step and stood 15 s each time while it ran out (84 s of 145 of the
+    /// Praetorium's last boss's first part, 2026-11-27).
+    pub(crate) fn class_followups(
+        &mut self,
+        classjob: u8,
+        parent: u8,
+        level: u8,
+        usable: &HashMap<u32, String>,
+    ) -> Vec<ClassAction> {
+        let mut actions = Vec::new();
+        for (id, row) in self.action_sheet.into_iter().flatten_subrows() {
+            if !is_followup(
+                row.IsPlayerAction,
+                row.IsPvP,
+                row.ClassJobLevel,
+                row.ClassJob,
+                classjob,
+                parent,
+                level,
+            ) || !usable.contains_key(&id)
+            {
+                continue;
+            }
+            actions.push(ClassAction {
+                id,
+                level: row.ClassJobLevel,
+                gcd: row.CooldownGroup == crate::server::GCD_GROUP
+                    || row.AdditionalCooldownGroup == crate::server::GCD_GROUP,
+                combo_from: row.ActionCombo as u32,
+                hostile: row.CanTargetHostile,
+                single_target: row.CastType <= 1,
+                heals: !row.CanTargetHostile && (row.CanTargetParty || row.CanTargetAlly),
+                area: row.CastType == 2,
+                range: row.Range,
+                potency: 0,
+                dot_seconds: None,
+                recast: row.Recast100ms as f32 / 10.0,
+                mp_cost: 0,
+            });
+        }
+        actions
+    }
+}
+
 /// The attacks a world bot questing as `classjob` at `level` uses on its quest's enemies (`questing`): its single-target
 /// weaponskills and spells on the GCD that the server has scripts for, the newest three.
 #[allow(dead_code)] // Used by the questing bots as they're wired in (`questing`.)
@@ -2048,6 +2097,13 @@ fn spawn_bot(
     .ok_or("Couldn't work out the bot's stats.")?;
 
     let actions = game_data.class_actions(classjob, parent, level, usable);
+    // What its rotation script reaches through them (a Dancer's steps): only for a job with a script, which picks
+    // them by name; the heuristic rotation goes by `actions` alone.
+    let followups = if crate::server::bot_rotation::has(classjob) {
+        game_data.class_followups(classjob, parent, level, usable)
+    } else {
+        Vec::new()
+    };
     let rotation = build_rotation(&actions);
     let role = BotRole::from_classjob_role(role_column);
     let heal = if role == BotRole::Healer {
@@ -2195,6 +2251,7 @@ fn spawn_bot(
             gauge: Default::default(),
             known: actions
                 .iter()
+                .chain(followups.iter())
                 .map(|action| KnownAction {
                     id: action.id,
                     gcd: action.gcd,
@@ -3952,6 +4009,9 @@ fn update_party(
                 timeline,
                 ..
             } if spawn.common.health_points > 0
+                // Not one that can't be hit, or that the director holds at its floor and is at it (the
+                // Praetorium's four at 1 HP, waiting to go): attacks on it are wasted.
+                && worth_attacking(instance, *id, spawn.common.health_points)
                 && (enmity.keys().any(|hated| members.contains(hated))
                     || instance.party_focus.contains(id)) =>
             {
@@ -4659,9 +4719,13 @@ fn update_party(
                 // the tank goes for it and takes it (`provokes`), the nearest due first; otherwise it keeps on what
                 // it's fighting.
                 let position = spawn.common.position.0;
+                // One whose auto-attacks the director holds (the Praetorium's four: they only cast, on whom they
+                // choose) is nobody's to take from anyone: no provoking it.
                 let loose: Vec<&Engaged> = engaged
                     .iter()
-                    .filter(|enemy| enemy.after != Some(*bot_id))
+                    .filter(|enemy| {
+                        enemy.after != Some(*bot_id) && !instance.attacks_held.contains(&enemy.id)
+                    })
                     .collect();
                 // An enemy that's turned on someone else is one to pull again, from range if it's far.
                 for enemy in &loose {
@@ -4691,7 +4755,18 @@ fn update_party(
                     provokes.push((*bot_id, due));
                     answers.remove(&due);
                 }
+                // With nothing after it, it goes for what the director says first (`Instance::party_focus`), with
+                // the rest; with something after it, it keeps that (the Praetorium's Death Claw was focused while the
+                // tank held the boss.) In Bob's run of 2026-11-27 the tank fought one of the four, the rest another.
+                let holding = engaged.iter().any(|enemy| {
+                    enemy.after == Some(*bot_id) && !instance.attacks_held.contains(&enemy.id)
+                });
                 let target = due
+                    .or_else(|| {
+                        (!holding)
+                            .then(|| focused(&engaged, &instance.party_focus))
+                            .flatten()
+                    })
                     .or(current.filter(|id| is_engaged(*id)))
                     .or_else(|| engaged.first().map(|enemy| enemy.id));
 
@@ -5128,6 +5203,34 @@ fn focused(engaged: &[Engaged], focus: &HashSet<ObjectId>) -> Option<ObjectId> {
         .iter()
         .find(|enemy| focus.contains(&enemy.id))
         .map(|enemy| enemy.id)
+}
+
+/// Whether attacking an enemy does anything: it can be hit, and isn't held at its health floor by the director and at
+/// it (the Praetorium's four at 1 HP wait up to 2.2 s to go; Bob's bots kept hitting them, 2026-11-27.)
+pub(crate) fn worth_attacking(instance: &Instance, id: ObjectId, hp: u32) -> bool {
+    !instance.untargetable_npcs.contains(&id)
+        && instance
+            .health_floors
+            .get(&id)
+            .is_none_or(|floor| hp > *floor)
+}
+
+/// Whether an Action row is one a job reaches through another it knows (`GameData::class_followups`): its job's (or
+/// base class's), learned by `level`, no player action of its own (a hotbar's), no PvP.
+pub(crate) fn is_followup(
+    is_player_action: bool,
+    is_pvp: bool,
+    learned_at: u8,
+    class: i8,
+    classjob: u8,
+    parent: u8,
+    level: u8,
+) -> bool {
+    !is_player_action
+        && !is_pvp
+        && learned_at <= level
+        && class >= 0
+        && (class as u8 == classjob || class as u8 == parent)
 }
 
 /// What the tank is attacking, if it's fighting the party: a tank bot's own target, or the player's.

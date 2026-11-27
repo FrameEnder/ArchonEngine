@@ -2593,3 +2593,42 @@ fn everyone_waits_for_a_player_arriving_and_a_cutscene_ends_with_the_last() {
     world.instance.cutscene_watchers = [one, ObjectId(0x1000_0099)].into();
     assert!(last_to_finish(&mut world.instance, one));
 }
+
+/// Bob's run of 2026-11-27 (the Praetorium's last boss): "the DPS of the bots are terrible and inefficient". Four things
+/// it showed, each kept here:
+/// * the Dancer's steps and finishes are no player actions of their own, so the bot never knew them: it used Standard
+///   Step and stood 15 s each time (84 s of the first part's 145): `is_followup` lets its rotation have them;
+/// * the four's hitbox put the melee bots past `View:in_melee`'s 6 yalms middle to middle while at their edge: Unmend
+///   31 times, Harpe 32: `rotation_distance` measures from the edge;
+/// * one of the four at its floor (1 HP) or untargetable is no use to hit: `worth_attacking`;
+/// * a tank with nothing after it goes for the director's focus with the rest, and provokes none whose attacks the
+///   director holds.
+#[test]
+fn party_bots_fight_as_experts() {
+    use crate::server::npc_behavior::rotation_distance;
+    use crate::server::party_bot::{is_followup, worth_attacking};
+    // Emboite (no player action, Dancer's, level 15) for a level 50 Dancer; not a player action, PvP, another job's or
+    // one past its level.
+    assert!(is_followup(false, false, 15, 38, 38, 38, 50));
+    assert!(!is_followup(true, false, 15, 38, 38, 38, 50));
+    assert!(!is_followup(false, true, 15, 38, 38, 38, 50));
+    assert!(!is_followup(false, false, 15, 31, 38, 38, 50));
+    assert!(!is_followup(false, false, 60, 38, 38, 38, 50));
+    assert!(!is_followup(false, false, 15, -1, 38, 38, 50));
+
+    // At a 4.5 yalm hitbox's edge plus 3: in melee; a player-sized one's distance as before.
+    assert!(rotation_distance(7.5, 4.5) <= 6.0);
+    assert_eq!(rotation_distance(5.0, 0.5), 5.0);
+    assert_eq!(rotation_distance(1.0, 4.5), 0.0);
+
+    let mut world = TestWorld::new();
+    world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let phantom = world.enemy(ENEMY, [2.0, 0.0, 2.0], 7715);
+    assert!(worth_attacking(&world.instance, phantom, 7715));
+    world.instance.health_floors.insert(phantom, 1);
+    assert!(worth_attacking(&world.instance, phantom, 2));
+    assert!(!worth_attacking(&world.instance, phantom, 1));
+    world.instance.health_floors.clear();
+    world.instance.untargetable_npcs.insert(phantom);
+    assert!(!worth_attacking(&world.instance, phantom, 7715));
+}

@@ -1761,6 +1761,11 @@ players to leave the cutscene before attacking"):
   its script (`onSceneFinished`) once the last player it went to has finished it (`cutscene_watchers`), not the first.
   Test `everyone_waits_for_a_player_arriving_and_a_cutscene_ends_with_the_last`.
 
+**The four in turn** (2026-11-27): the party takes them one at a time round the room, (-554.5, 210), (-569.5, 210),
+(-569.5, 230), (-554.5, 230) (`PHANTOMS_IN_TURN`, `focusNextPhantom`, the next as each reaches 1 HP); Bob's bots split
+over them and the gauge filled before the last (`party-bots.md`, "They fight as experts"). Retail's party of players
+had them down 21, 27, 47 and 53 s in: in pairs.
+
 **The last room's floor isn't in the navmesh** (same marks: "bots are falling left and right"): the floor the last boss
 is fought on is the gimmick of event object 4334405 (EObj 2001766, its bound shared group 4175265), which sits in a layer
 of the old Praetorium's layer set (82292, territory 224), so neither Kawari nor retail spawns it; its shared group is in

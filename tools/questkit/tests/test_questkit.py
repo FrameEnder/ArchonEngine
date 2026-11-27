@@ -1566,6 +1566,36 @@ class PraetoriumSecondPartEndsTest(FrameworkScriptTest):
         self.assertNotIn(28499, used)
 
 
+class PraetoriumFourInTurnTest(FrameworkScriptTest):
+    """The party goes for the four one at a time, round the room (`focusNextPhantom`): Bob's bots split over them and
+    took 66 to 101 s where retail's party took 53 (Bob's run of 2026-11-27)."""
+
+    SCRIPT = "w1d5_re.lua"
+
+    def test_one_at_a_time_round_the_room(self):
+        g = self.lua.globals()
+        g.D.fight = 3
+        g.bringLastBoss(self.director)
+        phantoms = [g.phantoms[i] for i in range(1, 5)]
+        player = {"x": -560, "y": -268, "z": 220, "id": 1}
+        boss = {"x": -566, "y": -268, "z": 213, "hp": 9000, "max_hp": 93255}
+        self.update({"player": player, 9055066: boss})
+        del self.calls[:]
+        g.secondPart(self.director)
+        down = []
+        for tick in range(1, 160):
+            info = {"player": player, 9055066: boss}
+            # One more down every 10 s once they're out.
+            for n, index in enumerate((1, 3, 4, 2)):
+                if tick >= 20 + 20 * n:
+                    down.append(index) if index not in down else None
+            for index in down:
+                info["actor%d" % phantoms[index - 1]] = {"x": 0, "y": 0, "z": 0, "hp": 1, "max_hp": 7715}
+            self.update(info)
+        focused = [a[0] for a in self.named("focus_bnpc")]
+        self.assertEqual(focused, [phantoms[0], phantoms[2], phantoms[3], phantoms[1]])
+
+
 class PraetoriumShortcutTest(FrameworkScriptTest):
     """The first boss's door (2000789, layout 9058468) is named by its layout ID: the shortcut by the magitek terminal
     (9058476) has the same EObj ID, and the server took either for it, so the shortcut showed after the first boss's
