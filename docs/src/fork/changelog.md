@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-27 | — | Dungeons (the Porta Decumana's helpers at the pulls and the cutscenes; the rows fade).
+| 2026-11-27 | — | Quest battles (The Ultimate Weapon's last battle: orbs, the two fours, actions at no one).
+| 2026-11-27 | `638940042` | Dungeons (the Porta Decumana's helpers at the pulls and the cutscenes; the rows fade).
 | 2026-11-27 | `84ebbad36` | Party bots (a ranged weapon's reach); dungeons (the Porta Decumana's four and the actions at no one); quests (4522's passage); known issues.
 | 2026-11-27 | `d33a082cf` | Dungeons (the Praetorium's last boss after its second part; where the Praetorium lets out).
 | 2026-11-27 | `984d51d0f` | Party bots (out of reach they use what reaches; a moment after a dodge); known issues.
@@ -685,7 +686,8 @@ Commits on `Latest-Quest` (and, since 2026-11-03, `test-pending`) since the fork
 
 | Commit | Change |
 |---|---|
-| — | **The Porta Decumana's helpers and rows as retail's** (Bob's 9ba7d981). At each pull the helpers (and the three, 0.04 s on) draw and go into battle (ActorControl 0 `[1, 1]`, 4 `[1]`); as each cutscene begins they're let go (417, `release_bnpc`); the rows fade (607) 1.02 s after their last leap. `questkit duty-sim 830` passes. |
+| — | **The Ultimate Weapon's last battle's orbs and fours as retail's** (Bob's 9ba7d981). The orbs fall 5.05 s into their cast and fade 8 s on, without a Defeated log, and those casting as the boss falls are stopped; the four of base 14697 go into and out of battle round each cast; the four of base 14699 left standing go with 47, 607 and 1.38 s later; 29336 and 29780 at no one. `questkit battle-sim` passes. |
+| `638940042` | **The Porta Decumana's helpers and rows as retail's** (Bob's 9ba7d981). At each pull the helpers (and the three, 0.04 s on) draw and go into battle (ActorControl 0 `[1, 1]`, 4 `[1]`); as each cutscene begins they're let go (417, `release_bnpc`); the rows fade (607) 1.02 s after their last leap. `questkit duty-sim 830` passes. |
 | `84ebbad36` | **Ranged bots' weaponskills reach, 4522's passage between the duties, and the Porta Decumana's four** (Bob's marks of 2026-11-27). The sheet's Range -1 is the user's weapon's: a bow's, gun's or chakrams' 25 (`weapon_range`), not 3, so the Machinist bot no longer only auto-attacks from more than 4.5 yalms; EOBJECT1, the passage to the Praetorium in 1053, takes the party between the duties as retail's YesNo scenes do (14 and 18 to POPRANGE0, 23 to POPRANGE2); the Porta Decumana's four: the first to reach someone bursts at itself and the one across fades (ActorControls 47, 607 and 2, Kill 1 s on); 28628 and 29018 at no one (`cast_aims.json`); the four of base 14590 drop their target 1.07 s into their cast. Tests `a_ranged_bot_s_weaponskills_reach_as_far_as_its_gun`, `UltimateWeaponExitsTest.test_the_passage_goes_between_the_duties`. |
 | `d33a082cf` | **The Praetorium's last boss fights after its second part, and the duty lets out where retail's did** (Bob's marks of 2026-11-27). The script let the boss go with `release_bnpc` (only ActorControl 417), so it stayed held and did nothing for 67 s: `hold_bnpc(BOSS3, false)`. The Ultimate Weapon lets the Praetorium out at POPRANGE0 of 1053 ((-817.5, -344.13, 0.0), Bob's three captures), not the Porta Decumana's exit. Tests `UltimateWeaponExitsTest`, `PraetoriumSecondPartEndsTest`. |
 | `984d51d0f` | **Party bots act from range when kept off their target** (Bob, 2026-11-27). A bot with a rotation script uses it up to 26 yalms from its target's edge, with only what reaches (`out_of_reach`, the sheet's Range): a melee bot out of an area attack uses its ranged attack rather than standing; `View:in_melee` is 4.5 from the edge, as the server's reach; a dodger goes back 0.3 s after the attack (`LINGER`, 1.3 s). Test `a_bot_kept_off_uses_what_reaches`. |

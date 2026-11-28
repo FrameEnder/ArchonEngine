@@ -116,7 +116,10 @@ T_CONTROL_63_ON = 178.1
 T_SHADES_TARGETABLE = 179.3
 T_GAUGE_FULL = 215.1
 T_KNOCK_DOWN = 216.0
-T_SHADES_GONE = 222.0
+T_SHADES_GO = 221.86
+T_SHADES_FADE = 222.30
+T_SHADES_GONE = 223.68
+CONTROL_SHADE_GOES = 47
 T_MIDDLE_CAST = 218.4
 T_MIDDLE_END = 221.3
 T_FELL = 251.9
@@ -275,6 +278,8 @@ part = 0
 helpers = {}
 statues = {}
 shades = {}
+-- Which of them were felled (by their spot, nearest where one fell.)
+shades_fallen = {}
 next_helper = 0
 boss = nil
 ally = nil
@@ -326,8 +331,10 @@ end
 function reset()
     part = 0
     later = {}
+    live_orbs = {}
     next_helper = 0
     shades = {}
+    shades_fallen = {}
     ally = nil
     pulled_at = nil
 end
@@ -370,15 +377,46 @@ function helperCast(director, row)
     end
 end
 
+-- The orbs fall 5.05 s after their cast begins (ActorControl 14 and 2 `[2]`, and no Defeated: `kill_bnpc` would log
+-- one) and fade 8.0 s after (39), every one of the 43 in Bob's 9ba7d981; those still casting as the boss falls have the
+-- cast stopped and fall then (15 `[540, 1, 29333, 1]`, 14, 2 `[2]`: the eight of its last wave.)
+CONTROL_KILL = 14
+CONTROL_MODE = 2
+CONTROL_FADE = 39
+CAST_STOPPED_DEAD = 540
+ORB_FALLS_AFTER_CAST = 5.05
+ORB_FADES_AFTER_FALL = 8.0
+live_orbs = {}
+
+function orbFalls(director, orb)
+    director:actor_control(orb, CONTROL_KILL, {})
+    director:actor_control(orb, CONTROL_MODE, { 2 })
+end
+
 function orbWave(director, spots)
     local orbs = {}
     for i, spot in ipairs(spots) do
         orbs[i] = director:spawn_bnpc(ORB, spot[1], FLOOR_Y, spot[2], spot[3]) or ORB
         director:hold_bnpc(orbs[i])
     end
+    live_orbs = orbs
     after(ORB_CASTS_AFTER, function(d)
+        orbs.casting = true
         for _, orb in ipairs(orbs) do
             d:actor_use_action(orb, ACTION_ORB)
+        end
+    end)
+    after(ORB_CASTS_AFTER + ORB_FALLS_AFTER_CAST, function(d)
+        for _, orb in ipairs(orbs) do
+            orbFalls(d, orb)
+        end
+        if live_orbs == orbs then
+            live_orbs = {}
+        end
+    end)
+    after(ORB_CASTS_AFTER + ORB_FALLS_AFTER_CAST + ORB_FADES_AFTER_FALL, function(d)
+        for _, orb in ipairs(orbs) do
+            d:actor_control(orb, CONTROL_FADE, {})
         end
     end)
     after(ORB_GONE_AFTER, function(d)
@@ -386,13 +424,29 @@ function orbWave(director, spots)
     end)
 end
 
+-- Each time, as they're put at their spots, they draw and go into battle with no target (ActorControl 0 `[1, 1]`, 4
+-- `[1]`, SetTarget naming 0), and 2.04 s after their going timeline out of it again (0 `[0, 1, 1]`, 4 `[0]`, SetTarget
+-- 0): all 28 times of the four in Bob's 9ba7d981.
+CONTROL_WEAPON = 0
+CONTROL_BATTLE = 4
+STATUE_OUT_OF_BATTLE_AFTER = 2.04
 function statuesCast(director)
     local spots = STATUE_SPOTS[math.random(#STATUE_SPOTS)]
     for i, statue in ipairs(statues) do
         local spot = spots[i]
         director:warp_bnpc(statue, spot[1], FLOOR_Y, spot[2], spot[3])
+        director:actor_control(statue, CONTROL_WEAPON, { 1, 1 })
+        director:actor_control(statue, CONTROL_BATTLE, { 1 })
+        director:aim_bnpc(statue, 0)
         director:play_action_timeline(statue, TIMELINE_STATUE_OUT)
     end
+    after(STATUE_OUT_BEFORE + STATUE_GONE_AFTER + STATUE_OUT_OF_BATTLE_AFTER, function(d)
+        for _, statue in ipairs(statues) do
+            d:actor_control(statue, CONTROL_WEAPON, { 0, 1, 1 })
+            d:actor_control(statue, CONTROL_BATTLE, { 0 })
+            d:aim_bnpc(statue, 0)
+        end
+    end)
     after(STATUE_OUT_BEFORE, function(d)
         for _, statue in ipairs(statues) do
             d:actor_use_action(statue, ACTION_STATUE)
@@ -451,9 +505,31 @@ function middle(director)
         d:actor_use_action(helperAt(d, MIDDLE.x, MIDDLE.z, 0.0), ACTION_KNOCK_DOWN, player_id)
     end)
     after(T_MIDDLE_CAST - T_MIDDLE, function(d) d:actor_use_action(boss, ACTION_MIDDLE_CAST, boss) end)
+    -- Those still standing go as the corners of the Porta Decumana do: ActorControl 47, FadeOut (607 `[itself, 1, 0,
+    -- 100]`) 0.44 s later and gone 1.38 s after that (the three Bob left, 9ba7d981); one felled before goes as the
+    -- fallen do.
+    after(T_SHADES_GO - T_MIDDLE, function(d)
+        for i, shade in ipairs(shades) do
+            if not shades_fallen[i] then
+                d:actor_control(shade, CONTROL_SHADE_GOES, {})
+            end
+        end
+    end)
+    after(T_SHADES_FADE - T_MIDDLE, function(d)
+        for i, shade in ipairs(shades) do
+            if not shades_fallen[i] then
+                d:fade_out_bnpc(shade)
+            end
+        end
+    end)
     after(T_SHADES_GONE - T_MIDDLE, function(d)
-        d:despawn_bnpc(SHADE)
+        for i, shade in ipairs(shades) do
+            if not shades_fallen[i] then
+                d:despawn_bnpc(shade)
+            end
+        end
         shades = {}
+        shades_fallen = {}
     end)
     after(T_MIDDLE_END - T_MIDDLE, function(d)
         part = "falling"
@@ -601,6 +677,18 @@ function clear(director)
 end
 
 function onActorDeath(director, layout_id, position)
+    if layout_id == SHADE and position ~= nil then
+        local nearest, best = nil, math.huge
+        for i, spot in ipairs(SHADE_SPOTS) do
+            local dx, dz = spot[1] - position.x, spot[2] - position.z
+            if not shades_fallen[i] and dx * dx + dz * dz < best then
+                nearest, best = i, dx * dx + dz * dz
+            end
+        end
+        if nearest ~= nil then
+            shades_fallen[nearest] = true
+        end
+    end
     if layout_id == BOSS and part ~= "over" then
         part = "over"
         later = {}
@@ -609,6 +697,13 @@ function onActorDeath(director, layout_id, position)
         if boss ~= nil then
             director:bnpc_control(BOSS, CONTROL_CANCEL_CAST, { boss })
         end
+        for _, orb in ipairs(live_orbs) do
+            if live_orbs.casting then
+                director:stop_cast(orb, CAST_STOPPED_DEAD)
+            end
+            orbFalls(director, orb)
+        end
+        live_orbs = {}
         director:map_effect(0, MAP_EFFECT_OFF.timeline, MAP_EFFECT_OFF.state)
         clear(director)
         boss = nil

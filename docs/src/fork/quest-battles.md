@@ -1402,6 +1402,13 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
   29333 7.7 s later and go after 22.5 s; the four of base 14697 come out on one of two sets of four spots of the
   arena's edge (19.5 yalms out, at random: A, A, B, B in one run, B, B, B, A in the other) to cast 29762; his 29336
   takes him away and SnapNextMove brings him out 1.8 s later where his next cast begins.
+* **As retail's, since 2026-11-27** (Bob's 9ba7d981): the orbs fall 5.05 s after their cast begins (ActorControl 14
+  and 2 `[2]`, no Defeated log) and fade 8.0 s later (39), and those casting as he falls have the cast stopped and fall
+  then (15 `[540, 1, 29333, 1]`); the four of base 14697 go into battle with no target as they're put out (0 `[1, 1]`,
+  4 `[1]`, SetTarget 0) and out of it 2.04 s after their going timeline (0 `[0, 1, 1]`, 4 `[0]`, SetTarget 0), all 28
+  times; the four of base 14699 still standing at the middle's end go as the Porta Decumana's corners do (47 at
+  221.86, FadeOut 607 at 222.30, gone at 223.68; one felled goes as the fallen); his 29336 and 29780 land at no one
+  (`cast_aims.json`'s `none`).
 * **The middle** (176 to 316 s) is the director's: he can't be targeted; four of base 14699 tethered to the player
   (ActorControl 35) while a gauge climbs (the director's 0x8000000C `[61, n]` to 10000 in 35.7 s); a helper's 29788
   (Attract 68, status 1614), then its 29565 for 9999999, which **fells the player**; 36 s later the ally's 29344
