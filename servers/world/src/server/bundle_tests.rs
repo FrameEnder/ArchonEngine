@@ -2652,3 +2652,20 @@ fn a_bot_kept_off_uses_what_reaches() {
     assert!(out_of_reach(20, rotation_distance(30.0, 0.5)));
     assert!(!out_of_reach(0, 100.0));
 }
+
+/// Bob's mark of 2026-11-27 in the Praetorium, "Cea Moloyn is doing nothing": the Machinist bot's weaponskills (the
+/// sheet's Range -1, its gun's) were taken as a melee weapon's 3 yalms, and from its 6.7-10 yalms it only auto-attacked
+/// for 29 s after Hypercharge. A gun's -1 is 25; a melee weapon's stays 3, and an action's own range stays its own.
+#[test]
+fn a_ranged_bot_s_weaponskills_reach_as_far_as_its_gun() {
+    use crate::server::npc_behavior::rotation_distance;
+    use crate::server::party_bot::{out_of_reach, weapon_range};
+    assert_eq!(weapon_range(-1, true), 25);
+    assert_eq!(weapon_range(-1, false), -1);
+    assert_eq!(weapon_range(12, true), 12);
+    assert_eq!(weapon_range(0, true), 0);
+    // Split Shot at the mark's 6.7 yalms from the boss: in reach for the gun, not for a sword.
+    let there = rotation_distance(6.7, 0.5);
+    assert!(!out_of_reach(weapon_range(-1, true), there));
+    assert!(out_of_reach(weapon_range(-1, false), there));
+}

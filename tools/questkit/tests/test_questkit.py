@@ -3557,6 +3557,21 @@ class UltimateWeaponExitsTest(unittest.TestCase):
         exits = [task.args[1:] for task in probe.tasks if task.kind == "call" and task.args[0] == "set_duty_exit"]
         return params["TERRITORYTYPE0"], [(zone, (at["x"], at["y"], at["z"])) for zone, at, *_ in exits]
 
+    def test_the_passage_goes_between_the_duties(self):
+        # The passage to the Praetorium (EOBJECT1) asks (the client's YesNo scenes 14, 18, 23) and goes to POPRANGE0
+        # before the Porta Decumana, POPRANGE2 after it (Bob's marks of 2026-11-27); "no" stays.
+        from questkit import harness
+        script = next(repo.QUEST_SCRIPTS.rglob("*_04522.lua"))
+        params = json.loads((repo.FIXTURES / "4522.json").read_text())["params"]
+        for sequence, scene, pop, yes in ((3, 14, "POPRANGE0", 1), (4, 18, "POPRANGE0", 1), (6, 23, "POPRANGE2", 1),
+                                          (4, 18, None, 0)):
+            probe = harness.Harness(script, 4522, params)
+            probe.world.quests[4522] = harness.Quest(sequence, [0] * 6)
+            outcome = probe.talk(params["EOBJECT1"], {scene: [yes]})
+            self.assertEqual([p["scene"] for p in outcome["played"]], [scene])
+            moves = [t.args[1:] for t in probe.tasks if t.kind == "call" and t.args[0] == "change_territory_pop_range"]
+            self.assertEqual(moves, [(params["TERRITORYTYPE0"], params[pop])] if pop else [])
+
     def test_each_duty_lets_out_where_retails_did(self):
         zone, exits = self.exit_after(2, "INSTANCEDUNGEON0")
         self.assertEqual(exits, [(zone, (-817.5, -344.13, 0.0))])

@@ -93,6 +93,10 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   36 % (the talk came up to 3.2 s after it), 22 % and 30 % (between 29.7 and 32.9). `stop_cast`, `set_start`, the battle talk's style byte, the rows'
   leaps (`jump_bnpc` for ten at once) and the party warp after the cutscene are new or first used this way: if the
   second fight never begins, look at `onSceneFinished` (scene 3) first.
+  Not yet as retail (2026-11-27): the helpers' 28511 and 28542 went out at themselves as an AoeEffect8 naming the
+  whole party, each with ExecuteCombo (effect 27, value 128, the action); Kawari's aims them at the first of the
+  party with no effects, as an NPC's action has no way yet to name its own side's members with an effect that isn't
+  a hit or a heal.
 * **Duty Support's fourth set** (at 50) fights by what it did in the Porta Decumana alone, a fight that kept breaking
   its turns; its Conjurer's area heals (29321, 29320) are new in the party bot's healer (`party-npcs.md`).
 * **Bob's capture 50e72631** (the same day, the same story again): the Porta Decumana's and the last battle's third

@@ -498,8 +498,26 @@ pub struct KnownAction {
     pub recast: f32,
     pub hostile: bool,
     pub mp_cost: u32,
-    /// The sheet's Range: yalms between the edges (-1 a melee attack's 3, 0 none: on itself or round it.)
+    /// Its Range: yalms between the edges (-1 a melee weapon's 3, 0 none: on itself or round it), a ranged weapon's
+    /// -1 as its 25 (`weapon_range`.)
     pub range: i8,
+}
+
+/// A physical ranged job's weapon's reach (a bow, a gun, chakrams), in yalms between the edges: the official job
+/// guide's 25 for every Bard, Machinist and Dancer weaponskill.
+const RANGED_WEAPON_REACH: i8 = 25;
+
+/// An action's Range as it reaches for whoever uses it (`KnownAction::range`): the sheet's -1 is the user's weapon's,
+/// a melee weapon's 3 yalms or a bow's or gun's 25. Taken as 3 for everyone, Bob's Machinist bot used nothing but its
+/// auto-attack from more than 4.5 yalms off its target's edge (Bob's mark of 2026-11-27 in the Praetorium, "Cea
+/// Moloyn is doing nothing": 29 s of auto-attacks from 6.7-10 yalms after Hypercharge, and stretches of minutes
+/// through the run.)
+pub fn weapon_range(range: i8, ranged_weapon: bool) -> i8 {
+    if range < 0 && ranged_weapon {
+        RANGED_WEAPON_REACH
+    } else {
+        range
+    }
 }
 
 /// How far an action reaches between the user's and its target's edges (`KnownAction::range`), if it's used on
@@ -2279,7 +2297,7 @@ fn spawn_bot(
                     recast: action.recast,
                     hostile: action.hostile,
                     mp_cost: action.mp_cost,
-                    range: action.range,
+                    range: weapon_range(action.range, autoattack == AUTO_ATTACK_RANGED),
                 })
                 .collect(),
             role,

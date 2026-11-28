@@ -172,8 +172,11 @@ in, past the gauge's full. What the server's capture of the run showed, and what
 * **Out of reach, they use what reaches** (Bob, 2026-11-27: the idle stretches are the bots dodging "and just stand
   there for a second or two ... players ... would also try their best to use distance attacks if they can't get in
   close"). A bot with a rotation script uses it from up to 26 yalms of its target's edge (`BOT_ROTATION_REACH`), not
-  only within its attack range; what it picks must reach from there (`out_of_reach`, from the sheet's Range: -1 a
-  weaponskill's 3 yalms between the edges, plus the half-yalm a client allows). So a melee bot kept off its target
+  only within its attack range; what it picks must reach from there (`out_of_reach`, from the sheet's Range: -1 the
+  weapon's, a melee weapon's 3 yalms between the edges and a bow's, gun's or chakrams' 25 (`weapon_range`), plus the
+  half-yalm a client allows; taken as 3 for every job, the Machinist bot only auto-attacked from more than 4.5 yalms
+  off: Bob's mark of 2026-11-27, "Cea Moloyn is doing nothing", 29 s after Hypercharge and minutes at a time through
+  the Praetorium). So a melee bot kept off its target
   (out of an area attack, or by its rows) uses its ranged attack (Unmend, Harpe, Tomahawk, Enpi and the rest, which
   each script already picks when `View:in_melee` says no), and `View:in_melee` agrees with the server: 4.5 from the
   target's edge as `b.distance` measures it (6 middle to middle before, which let a script choose a weaponskill that

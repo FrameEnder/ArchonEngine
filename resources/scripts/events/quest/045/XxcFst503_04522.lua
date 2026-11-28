@@ -31,6 +31,19 @@ DUTY_EXIT_ROTATION = -1.57
 PRAETORIUM_EXIT = { x = -817.5, y = -344.13, z = 0.0 }
 PRAETORIUM_EXIT_ROTATION = 0.409
 
+-- The passage to the Praetorium (EOBJECT1, in Northern Thanalan) between the duties: the client's script asks YesNo
+-- (TEXT_XXCFST503_04522_Q1_000_000) in scenes 14, 18, 23 and 29, the last of each sequence's four from 3 on (the
+-- others are empty), and "yes" goes to TERRITORYTYPE0: before the Porta Decumana where the Praetorium let out (POPRANGE0,
+-- where scene 10 plays at sequence 3), after it where the Porta Decumana let out (POPRANGE2, by Lahabrea). Not seen on
+-- retail (Bob's captures went straight on); which scene goes with which sequence is read from their order, and the
+-- places from the duties' exits (Bob's marks of 2026-11-27: "the passage to the praetorium teleport here should take us
+-- to where the end cutscene of the praetorium would take us".) Sequence 7 (after the last battle) goes to 212, not here.
+PASSAGE = {
+    [3] = { scene = 14, pop_range = "POPRANGE0" },
+    [4] = { scene = 18, pop_range = "POPRANGE0" },
+    [6] = { scene = 23, pop_range = "POPRANGE2" },
+}
+
 -- What retail sets UI8A to when a reward window is closed (414, 680, 840, 855, 960.)
 REWARD_CLOSED = 0x11
 
@@ -57,6 +70,10 @@ function onTalk(target, player)
     elseif sequence == 1 and BASE_ID == ACTOR1 then
         step = 2
         play(player, 2, HIDE_HOTBAR)
+        return
+    elseif BASE_ID == EOBJECT1 and PASSAGE[sequence] ~= nil then
+        step = "passage"
+        play(player, PASSAGE[sequence].scene, HIDE_HOTBAR)
         return
     elseif sequence == 6 and BASE_ID == ACTOR5 then
         step = 7
@@ -129,6 +146,13 @@ function sceneFinished(scene, results, player)
         player:finish_event()
         -- Where retail put the player (ActorSetPos; no pop range of the quest's.)
         player:change_territory(TERRITORYTYPE0, { x = -690.0, y = -185.73, z = 480.0 }, -1.57)
+        return
+    elseif step == "passage" then
+        player:finish_event()
+        local way = PASSAGE[player:get_quest_sequence(EVENT_ID)]
+        if results[1] == 1 and way ~= nil then
+            player:change_territory_pop_range(TERRITORYTYPE0, _G[way.pop_range])
+        end
         return
     elseif step == 7 and scene == 24 then
         play(player, 25, SET_BASE | HIDE_HOTBAR | INVINCIBLE)

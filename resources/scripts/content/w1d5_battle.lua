@@ -524,10 +524,19 @@ function bringFour(director)
     end
 end
 
+-- Their 28989, and 1.07 s into it each drops its target: SetTarget naming 0 (not 0xE0000000), all four at once in Bob's
+-- 9ba7d981.
+FOUR_DROP_TARGET_AFTER = 1.07
 function fourCast(director)
     for _, one in ipairs(four) do
         director:actor_use_action(one, 28989)
     end
+    local these = four
+    D:after(FOUR_DROP_TARGET_AFTER, function(d)
+        for _, one in ipairs(these) do
+            d:aim_bnpc(one, 0)
+        end
+    end)
 end
 
 -- Their casts stopped as the boss's, and they fall.
@@ -619,7 +628,7 @@ function bringCorners(director)
     for i, spot in ipairs(SPOTS_CORNER) do
         local id = director:spawn_bnpc(CORNER, spot[1], FLOOR_2, spot[2], 0.0) or CORNER
         director:hold_bnpc(id)
-        corners[i] = { id = id, x = spot[1], z = spot[2], off_at = D.ticks + CORNER_SETS_OFF * 2, gone = false }
+        corners[i] = { id = id, index = i, x = spot[1], z = spot[2], off_at = D.ticks + CORNER_SETS_OFF * 2, gone = false }
     end
     D:after(CORNER_SETS_OFF, function(d)
         for _, corner in ipairs(corners) do
@@ -628,6 +637,27 @@ function bringCorners(director)
             end
         end
     end)
+end
+
+-- One of the four reaches the party: as retail's did, it bursts round itself (29016 at itself, an area on whoever's
+-- near: ActorControl 2 `[2, 2]` with it, Kill 1.0 s later, its death's log 2 s after that and its fading 6 s after),
+-- and the one at the corner across from it fades away that moment (ActorControl 47 and 607 `[itself, 1, 0, 100]`
+-- 0.09 s before the burst), the two pairs (1, 4) and (2, 3) of `SPOTS_CORNER` in Bob's 9ba7d981 and 6320ae56. Kawari
+-- aimed 29016 at the member and took the corner away, and the other two stayed for the party to fell.
+CORNER_ACROSS = { 4, 3, 2, 1 }
+CONTROL_CORNER_GOES = 47
+CONTROL_MODE = 2
+function cornerReaches(director, corner)
+    corner.gone = true
+    local across = corners[CORNER_ACROSS[corner.index]]
+    if across ~= nil and not across.gone then
+        across.gone = true
+        director:actor_control(across.id, CONTROL_CORNER_GOES, {})
+        director:fade_out_bnpc(across.id)
+    end
+    director:actor_control(corner.id, CONTROL_MODE, { 2, 2 })
+    director:actor_use_action(corner.id, ACTION_CORNER)
+    D:after(1.0, function(d) d:kill_bnpc(corner.id) end)
 end
 
 -- Where each of the four is by now, and whom it has reached.
@@ -642,11 +672,7 @@ function watchCorners(director)
             for _, member in ipairs(D.party) do
                 local mx, mz = member.x - x, member.z - z
                 if not corner.gone and mx * mx + mz * mz <= CORNER_REACH * CORNER_REACH then
-                    corner.gone = true
-                    director:actor_use_action(corner.id, ACTION_CORNER, member.id)
-                    director:delay(1.0)
-                    director:despawn_bnpc(corner.id)
-                    director:delay(0)
+                    cornerReaches(director, corner)
                 end
             end
             -- At the middle (never seen on retail): gone.
