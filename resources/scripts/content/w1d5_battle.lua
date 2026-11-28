@@ -345,6 +345,7 @@ PART_CUTSCENE = 33218
 ROWS_LEAP = { 4.8, 12.5, 19.9 }
 ROWS_CAST_AFTER_LEAP = 1.4
 ROWS_GONE = 22.2
+ROWS_FADE_AFTER_LEAP = 1.02
 ROWS_OF = { { "line", "slant" }, { "slant", "line" }, { "slant", "cross" }, { "slant", "line" }, { "slant", "cross" } }
 ROW_SPACING = 4.0
 ROW_Y = -185.53
@@ -472,6 +473,15 @@ end
 function stopHelpers(director)
     for _, helper in ipairs(helpers) do
         director:stop_cast(helper, CAST_STOPPED)
+    end
+end
+
+-- As each cutscene begins the helpers are let go (ActorControl 417 `[0xE0000000]`, `release_bnpc`), all of them at once
+-- 0.04 s into the scene and taken away 0.4 s after (the 15 of the first fight and the 10 of the second, Bob's
+-- 9ba7d981.)
+function letHelpersGo(director)
+    for _, helper in ipairs(helpers) do
+        director:release_bnpc(helper)
     end
 end
 
@@ -738,6 +748,13 @@ function bringRows(director)
             end)
         end
     end
+    -- They fade (ActorControl 607 `[itself, 1, 0, 100]`) 1.02 s after their last leap and are gone 1.3 s after that
+    -- (every one of the 50 in Bob's 9ba7d981.)
+    D:after(ROWS_LEAP[#ROWS_LEAP] + ROWS_FADE_AFTER_LEAP, function(d)
+        for _, one in ipairs(ten) do
+            d:fade_out_bnpc(one)
+        end
+    end)
     D:after(ROWS_GONE, function(d)
         for _, one in ipairs(ten) do
             d:despawn_bnpc(one)
@@ -845,11 +862,32 @@ end
 
 -- ---- The two bosses ----
 
+-- At each pull the helpers draw their weapons and go into battle with the boss (ActorControl 0 `[1, 1]` then 4 `[1]`,
+-- at the pull: all 15 in the first fight, the 10 of the second), and the three of the first 0.04 s later (Bob's
+-- 9ba7d981).
+CONTROL_WEAPON = 0
+CONTROL_BATTLE = 4
+THREE_IN_BATTLE_AFTER = 0.04
+function intoBattle(director, ids)
+    for _, id in ipairs(ids) do
+        director:actor_control(id, CONTROL_WEAPON, { 1, 1 })
+        director:actor_control(id, CONTROL_BATTLE, { 1 })
+    end
+end
+
 D:boss({ id = 1, layout = BOSS_1, middle = MIDDLE_1, comes_later = true, eobjs_at_setup = false, bgm = false,
     ready = function() return part == "first-wait" end,
     on_pull = function(director)
         part = "first"
         D.helpers = helpers
+        intoBattle(director, helpers)
+        D:after(THREE_IN_BATTLE_AFTER, function(d)
+            local ids = {}
+            for _, id in pairs(three) do
+                ids[#ids + 1] = id
+            end
+            intoBattle(d, ids)
+        end)
         director:party_npc_yell("ranged", LINE_PULL)
         schedule(director, FIRST, "first")
         D:after(ROUND_FIRST, function(d)
@@ -900,6 +938,7 @@ D:boss({ id = 2, layout = BOSS_2, middle = MIDDLE_2, comes_later = true, eobjs_a
     on_pull = function(director)
         part = "second"
         D.helpers = helpers
+        intoBattle(director, helpers)
         schedule(director, SECOND, "second")
     end,
     -- Its health at 0: its cast stopped, the closing cutscene, the duty complete.
@@ -909,6 +948,7 @@ D:boss({ id = 2, layout = BOSS_2, middle = MIDDLE_2, comes_later = true, eobjs_a
             director:bnpc_control(BOSS_2, CONTROL_STOP_CAST, { CAST_STOPPED_DEAD, 1, ACTION_LAST, 1 })
         end
         stopHelpers(director)
+        letHelpersGo(director)
         clear(director)
         boss_2 = nil
         director:set_weather(WEATHER_OWN, WEATHER_FADE, true)
@@ -926,6 +966,7 @@ function cutscene(director)
     D:fell(director, D:bossById(1))
     director:restart_timeline(BOSS_1, PART_CUTSCENE)
     stopHelpers(director)
+    letHelpersGo(director)
     clear(director)
     director:despawn_bnpc(BOSS_1)
     boss_1 = nil
