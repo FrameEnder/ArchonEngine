@@ -1447,6 +1447,12 @@ fn server_logic_tick(
                     .insert(id, (hater_list, enmity_list));
             }
 
+            // The party's NPCs too (`Instance::incapacitated_party`): retail's Duty Support members gaoled with the
+            // player in the Porta Decumana were sent ActorControl 54 with them, and enemies and the party's bots let
+            // them be till the gaol went (Bob's Chronofoil captures 9ba7d981, 6320ae56 and 50e72631.)
+            let mut incapacitation_changes = incapacitation_changes;
+            incapacitation_changes.extend(party_incapacitation_changes(instance));
+
             // Retail's ActorControl 54 (SetTargetable) as an incapacitating status comes and goes (above.)
             for (id, incapacitated) in incapacitation_changes {
                 network.lock().send_ac_in_range_instance(
@@ -4508,4 +4514,29 @@ fn send_festivals(network: &mut NetworkState, ids: [u16; 8], phases: [u16; 8]) {
             DestinationNetwork::ZoneClients,
         );
     }
+}
+
+/// The party's NPCs whose incapacitating status (`modifiers::is_incapacitated`) came or went since the last tick, kept
+/// in `Instance::incapacitated_party`: each with whether it now holds them.
+pub(crate) fn party_incapacitation_changes(instance: &mut Instance) -> Vec<(ObjectId, bool)> {
+    let mut changes = Vec::new();
+    let members: Vec<ObjectId> = instance.party_bots.keys().copied().collect();
+    for id in members {
+        let held = instance
+            .find_actor(id)
+            .and_then(|actor| actor.status_effects())
+            .is_some_and(modifiers::is_incapacitated);
+        if held != instance.incapacitated_party.contains(&id) {
+            if held {
+                instance.incapacitated_party.insert(id);
+            } else {
+                instance.incapacitated_party.remove(&id);
+            }
+            changes.push((id, held));
+        }
+    }
+    instance
+        .incapacitated_party
+        .retain(|id| instance.party_bots.contains_key(id));
+    changes
 }

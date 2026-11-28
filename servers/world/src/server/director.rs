@@ -478,6 +478,10 @@ pub enum LuaDirectorTask {
     SetTargetable {
         who: u32,
         targetable: bool,
+        /// No packet: the server's side alone, for one the client already shows so from its spawn (the Porta
+        /// Decumana's three in the middle, whose display flags 393224 retail's client never let anyone target and
+        /// no action of retail's ever named: Bob's Chronofoil captures 9ba7d981 and 6320ae56.)
+        quiet: bool,
     },
     /// Send a BNpc (actor ID or layout ID) an ActorControl by its category and parameters, for the ones Kawari has no
     /// name for (as `EObjControl`): the Thousand Maws of Toto-Rak's last boss's 30 and 31 as its tail comes off.
@@ -1834,9 +1838,12 @@ impl UserData for LuaDirector {
         );
         methods.add_method_mut(
             "set_targetable",
-            |_, this, (who, targetable): (u32, bool)| {
-                this.tasks
-                    .push(LuaDirectorTask::SetTargetable { who, targetable });
+            |_, this, (who, targetable, quiet): (u32, bool, Option<bool>)| {
+                this.tasks.push(LuaDirectorTask::SetTargetable {
+                    who,
+                    targetable,
+                    quiet: quiet.unwrap_or(false),
+                });
                 Ok(())
             },
         );
@@ -4668,7 +4675,11 @@ pub fn director_tick(
                     },
                 );
             }
-            LuaDirectorTask::SetTargetable { who, targetable } => {
+            LuaDirectorTask::SetTargetable {
+                who,
+                targetable,
+                quiet,
+            } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {
                     tracing::warn!("Failed to find bnpc {who} for SetTargetable!");
                     continue;
@@ -4677,6 +4688,9 @@ pub fn director_tick(
                     instance.untargetable_npcs.remove(&actor_id);
                 } else {
                     instance.untargetable_npcs.insert(actor_id);
+                }
+                if *quiet {
+                    continue;
                 }
                 network.lock().send_ac_in_range_instance(
                     instance,

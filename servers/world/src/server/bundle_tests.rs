@@ -2745,3 +2745,57 @@ fn an_enemy_draws_before_it_shows_its_target_and_only_turns_after() {
     let turned: Vec<String> = world.sent(player).iter().filter_map(kind).collect();
     assert_eq!(turned, [format!("target {}", tank.0)]);
 }
+
+/// Bob's mark of 2026-11-28 in the Porta Decumana ("all was entombed in the granite and the end of the titan phase
+/// didn't end correctly with titan being summoned to die instantly then the Garuda phase didn't start correctly"): the
+/// bots had killed the three that stand unseen in the middle within 27 s of the pull, so Titan was dead when his going
+/// came and Garuda when her part began. A director's quiet `set_targetable(who, false, true)` keeps the party's bots
+/// and every area action off one (retail's three were never named by an action, Bob's Chronofoil captures 9ba7d981 and
+/// 6320ae56). And the gaol (3249) holds the party's NPCs as it holds the player: untargetable while it's on them.
+#[test]
+fn the_unseen_and_the_gaoled_are_left_alone() {
+    use crate::server::action::beyond_area_actions;
+    use crate::server::party_bot::worth_attacking;
+    use crate::server::party_incapacitation_changes;
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let bot = world.player_npc(BOT, player, [2.0, 0.0, 0.0]);
+    let titan = world.enemy(ENEMY, [10.0, 0.0, 0.0], 2589);
+    assert!(worth_attacking(&world.instance, titan, 2589));
+    world.instance.untargetable_npcs.insert(titan);
+    let actor = world.instance.find_actor(titan).unwrap();
+    assert!(beyond_area_actions(&world.instance, titan, actor));
+    assert!(!worth_attacking(&world.instance, titan, 2589));
+
+    if let Some(statuses) = world
+        .instance
+        .find_actor_mut(bot)
+        .and_then(|actor| actor.status_effects_mut())
+    {
+        statuses.add(crate::server::modifiers::PORTA_DECUMANA_GAOL, 0, 0.0, titan);
+    }
+    assert_eq!(
+        party_incapacitation_changes(&mut world.instance),
+        [(bot, true)]
+    );
+    assert!(crate::server::npc_behavior::cannot_be_targeted(
+        &world.instance,
+        bot
+    ));
+    assert!(party_incapacitation_changes(&mut world.instance).is_empty());
+    if let Some(statuses) = world
+        .instance
+        .find_actor_mut(bot)
+        .and_then(|actor| actor.status_effects_mut())
+    {
+        statuses.remove(crate::server::modifiers::PORTA_DECUMANA_GAOL);
+    }
+    assert_eq!(
+        party_incapacitation_changes(&mut world.instance),
+        [(bot, false)]
+    );
+    assert!(!crate::server::npc_behavior::cannot_be_targeted(
+        &world.instance,
+        bot
+    ));
+}

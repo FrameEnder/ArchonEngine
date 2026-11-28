@@ -172,7 +172,11 @@ Applied after an action's script returns, by the server, so scripts only give th
   Gaze, 9 s; retail's petrified allies did nothing for it seven times in ten), as does the Navel's Granite Gaol (292).
   A **player** with one of these is held as retail held them (since 2026-11-09, `server/mod.rs`): the conditions
   SufferingStatusAffliction and SufferingStatusAffliction2, which stop the client moving and acting, and
-  untargetable (ActorControl 54), until it goes ([Dungeons](dungeons.md#the-navel), the gaols).
+  untargetable (ActorControl 54), until it goes ([Dungeons](dungeons.md#the-navel), the gaols). The Porta Decumana's
+  gaol (3249) is one too (since 2026-11-28), and a **party NPC** with one is untargetable the same way: ActorControl 54
+  as it comes and goes, and enemies, the party's bots and area actions leave it be while it holds them
+  (`Instance::incapacitated_party`, `npc_behavior::cannot_be_targeted`; retail's three Duty Support members gaoled with
+  the player, every run).
 * **A player who dies mid-cast** stops casting (since 2026-11-10): the Casting condition goes off as they die, and no
   CancelCast is sent, as retail (four deaths 0.4-0.8 s into Cure and Stone casts in Bob's Chronofoil captures: the
   Condition sent at the death had InCombat and the duty's two, no Casting; no ActorControl 15 followed). Kawari

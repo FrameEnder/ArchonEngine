@@ -286,6 +286,10 @@ pub struct Instance {
     /// leave them be, as retail's Duty Support members let Titan go as he leapt and while his Heart stood (Bob's
     /// Chronofoil capture 650dbfd8.)
     pub untargetable_npcs: HashSet<ObjectId>,
+    /// The party's NPCs a status holds (`modifiers::is_incapacitated`: a gaol), shown untargetable while it does, as
+    /// the players are (ActorControl 54: retail's three Duty Support members with the player, each time the Porta
+    /// Decumana's first boss gaoled the party, Bob's Chronofoil captures 9ba7d981, 6320ae56 and 50e72631.)
+    pub incapacitated_party: HashSet<ObjectId>,
     /// BNpcs a director has the party's damage dealers go for first (`director:focus_bnpc`), as retail's Duty Support
     /// went for the Praetorium's Death Claw: its damage dealer hit each 2.3 and 4.8 s after it came, and both fell in
     /// 8 to 12 s (Bob's Chronofoil capture 35e30205; Bob, 2026-11-26: "dps should turn focus to it".)

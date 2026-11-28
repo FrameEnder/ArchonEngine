@@ -154,6 +154,9 @@ SPOTS_28991 = { { -788.0, -600.0 }, { -785.0, -613.0 }, { -785.0, -587.0 }, { -7
                 { -772.0, -616.0 }, { -772.0, -584.0 }, { -767.0, -605.0 }, { -767.0, -595.0 }, { -759.0, -613.0 },
                 { -759.0, -587.0 }, { -756.0, -600.0 } }
 -- Where the four of base 14590 came (Connor's run; Bob's had two of them elsewhere near the middle.)
+-- The four come each where one of the party is held (Bob's Chronofoil captures 9ba7d981, 6320ae56 and 50e72631: each of
+-- them on a member's spot, to the tenth of a yalm, and each with that member as its target 1.07 s into its cast);
+-- these spots only for one of them with no one to hold.
 SPOTS_FOUR = { { -777.0, -600.0 }, { -775.8, -596.6 }, { -772.0, -605.0 }, { -769.2, -605.5 } }
 FOUR_Y = -399.73
 -- The edge spots the three cast from, 15 yalms from the middle and facing it (one at random each time: the runs
@@ -191,19 +194,21 @@ FIRST = {
     { 105.1, "back" },
     { 105.7, "talk", 33208, NAME_BOSS, 5000 },
     { 105.9, "fn", "markParty" },
-    { 110.9, "control", BOSS_1, 20, { 325 } },
+    { 109.8, "fn", "gaolParty" },
+    { 110.8, "gain", BOSS_1, 325 },
     { 111.3, "fn", "bringFour" },
     { 111.9, "talk", 33209, NAME_BOSS, 4000 },
     { 116.0, "fn", "fourCast" },
     { 119.9, "talk", 33235, NAME_ALLY, 5000, STYLE_ALLY },
     { 119.9, "map", 4, 2, 1, 105 },
     { 125.9, "talk", 33204, NAME_ALLY, 6000, STYLE_ALLY },
+    { 125.9, "fn", "allyGathers" },
     { 132.0, "fn", "shieldParty" },
     { 132.9, "map", 4, 8, 4, WEATHER_OWN },
     { 134.9, "stop", BOSS_1 },
     { 134.9, "fn", "fourFall" },
     { 134.9, "fn", "lineAsItStops" },
-    { 135.1, "timeline", THREE_A, 4575 },
+    { 135.0, "goes", THREE_A, 4575 },
     { 135.9, "control", BOSS_1, 62, { 1 } },
     { 147.3, "talk", 33205, NAME_BOSS, 5000 },
     { 153.3, "talk", 33206, NAME_BOSS, 5000 },
@@ -237,10 +242,11 @@ FIRST = {
     { 244.7, "talk", 33203, NAME_BOSS, 5000 },
     { 249.7, "map", 4, 2, 1, 105 },
     { 253.7, "talk", 33210, NAME_ALLY, 6000, STYLE_ALLY },
+    { 253.7, "fn", "allyGathers" },
     { 259.8, "fn", "shieldParty" },
     { 261.7, "map", 4, 8, 4, WEATHER_OWN },
     { 262.7, "stop", BOSS_1 },
-    { 263.0, "timeline", THREE_B, 4576 },
+    { 262.75, "goes", THREE_B, 4576 },
     { 263.7, "control", BOSS_1, 49, { 16 } },
     { 275.1, "talk", 33211, NAME_BOSS, 4000 },
     { 280.2, "talk", 33212, NAME_BOSS, 4000 },
@@ -269,11 +275,12 @@ CHAIN = {
     { 14.6, "talk", 33216, NAME_BOSS, 4000 },
     { 17.5, "map", 4, 2, 1, 105 },
     { 20.5, "talk", 33217, NAME_ALLY, 6000, STYLE_ALLY },
+    { 20.5, "fn", "allyGathers" },
     { 26.6, "fn", "shieldParty" },
     { 27.5, "map", 4, 8, 4, WEATHER_OWN },
     { 29.5, "stop", BOSS_1 },
     { 29.5, "fn", "stopHelpers" },
-    { 29.7, "timeline", THREE_C, 4578 },
+    { 29.6, "goes", THREE_C, 4578 },
     { 30.4, "control", BOSS_1, 62, { 0 } },
     { 41.8, "talk", 33218, NAME_BOSS, 5000 },
     { 41.8, "control", BOSS_1, 70, { 8201058 } },
@@ -329,6 +336,7 @@ LAST = {
     { 20.3, "talk", 33225, NAME_ALLY, 5000, STYLE_ALLY },
     { 20.3, "map", 5, 2, 1, 106 },
     { 26.3, "talk", 33226, NAME_ALLY, 6000, STYLE_ALLY },
+    { 26.3, "fn", "allyGathers" },
     { 32.3, "map", 5, 8, 4, WEATHER_OWN },
     { 32.4, "fn", "lastShield" },
     { 53.3, "talk", 33227, NAME_LAST, 4000, STYLE_LAST },
@@ -382,6 +390,7 @@ boss_1 = nil
 boss_2 = nil
 three = {}
 four = {}
+four_holds = {}
 corners = {}
 rounds = 0
 rows = 0
@@ -437,6 +446,11 @@ function bringFirst(director)
     for _, layout in ipairs({ THREE_A, THREE_B, THREE_C }) do
         three[layout] = director:spawn_bnpc(layout) or layout
         director:hold_bnpc(three[layout])
+        -- Nobody's to hit them: retail's client let no one target them (display flags 393224) and no action of
+        -- retail's ever named them, so they were there to cast and to go as each part ends (Bob's Chronofoil captures
+        -- 9ba7d981, 6320ae56). Bob's bots killed all three within 27 s of the pull (2026-11-28), and Titan's going and
+        -- Garuda's part never came. The server's side alone: the client shows them so already.
+        director:set_targetable(three[layout], false, true)
     end
     bringHelpers(director)
 end
@@ -503,6 +517,32 @@ function markParty(director)
 end
 
 -- A helper's 28511 on the whole party (aimed at itself, each member a target: `on_party`) and 28992 on itself, 2.9 s before the long cast is stopped.
+-- The ally's help, on the whole party from no one: as the ally's line comes (33204, 33210, 33217, 33226) status 3013
+-- with no timer, its count 1, then 2 2.01 s on and 3 4.01 s on; as the helper's 28511 or 28542 lands it goes and 3014
+-- comes, 5 s after 28511 (0.49 s after it) and 50 s after 28542 (0.59 s after it, till the duty is done). The player
+-- and the three Duty Support members every time in Bob's Chronofoil captures 9ba7d981 and 6320ae56.
+STATUS_ALLY_GATHERS = 3013
+STATUS_ALLY_SHIELD = 3014
+ALLY_GATHERS_EVERY = { 0.0, 2.01, 4.01 }
+function allyGathers(director)
+    for count, at in ipairs(ALLY_GATHERS_EVERY) do
+        D:after(at, function(d)
+            for _, member in ipairs(D.party) do
+                d:gain_effect(member.id, STATUS_ALLY_GATHERS, count, 0)
+            end
+        end)
+    end
+end
+
+function allyShields(director, after, seconds)
+    D:after(after, function(d)
+        for _, member in ipairs(D.party) do
+            d:lose_effect(member.id, STATUS_ALLY_GATHERS)
+            d:gain_effect(member.id, STATUS_ALLY_SHIELD, 1, seconds)
+        end
+    end)
+end
+
 function shieldParty(director)
     local helper = helperAt(director, MIDDLE_1.x, MIDDLE_1.z)
     if helper == nil then
@@ -510,6 +550,7 @@ function shieldParty(director)
     end
     director:actor_use_action(helper, ACTION_PARTY_SHIELD)
     director:actor_use_action(helper, ACTION_HELPER_SHIELD)
+    allyShields(director, 0.49, 5.0)
 end
 
 function lastShield(director)
@@ -517,6 +558,7 @@ function lastShield(director)
     if helper ~= nil then
         director:actor_use_action(helper, ACTION_PARTY_LAST)
     end
+    allyShields(director, 0.59, 50.0)
     director:party_npc_yell("tank", LINE_LAST_TANK, 0.7)
     director:party_npc_yell("ranged", LINE_LAST_RANGED, 0.9)
 end
@@ -525,37 +567,83 @@ function lineAsItStops(director)
     director:party_npc_yell("healer", LINE_STOPPED_HEALER, 0, "melee", LINE_STOPPED_MELEE)
 end
 
+-- As the boss's 28987 lands the whole party is gaoled: status 3249 on each (no timer), untargetable and doing nothing
+-- till the four fall (`modifiers::PORTA_DECUMANA_GAOL`; the player, the three Duty Support members, every run.)
+STATUS_GAOL = 3249
+-- And the boss's own status 325 from then till they fall (gained 1.0 s after, lost with them.)
+STATUS_BOSS_HOLDS = 325
+gaoled = {}
+function gaolParty(director)
+    gaoled = {}
+    for _, member in ipairs(D.party) do
+        director:gain_effect(member.id, STATUS_GAOL, 0, 0)
+        gaoled[#gaoled + 1] = { id = member.id, x = member.x, z = member.z }
+    end
+end
+
 function bringFour(director)
     four = {}
+    four_holds = {}
     for i, spot in ipairs(SPOTS_FOUR) do
-        four[i] = director:spawn_bnpc(FOUR, spot[1], FOUR_Y, spot[2], 0.0) or FOUR
+        local held = gaoled[i]
+        local x, z = spot[1], spot[2]
+        if held ~= nil then
+            x, z = held.x, held.z
+        end
+        four[i] = director:spawn_bnpc(FOUR, x, FOUR_Y, z, 0.0) or FOUR
+        four_holds[i] = held
         director:hold_bnpc(four[i])
         director:appear_bnpc(four[i], CONTROL_APPEAR_TIMELINE, 0.6)
     end
 end
 
--- Their 28989, and 1.07 s into it each drops its target: SetTarget naming 0 (not 0xE0000000), all four at once in Bob's
--- 9ba7d981.
-FOUR_DROP_TARGET_AFTER = 1.07
+-- Their 28989; 0.89 s into it each has the one it holds on its list (the player's ActorControl 503 naming theirs),
+-- and 0.18 s after turns to them (SetTarget, all four at once.)
+FOUR_HATES_AFTER = 0.89
+FOUR_TURN_AFTER = 1.07
 function fourCast(director)
     for _, one in ipairs(four) do
         director:actor_use_action(one, 28989)
     end
-    local these = four
-    D:after(FOUR_DROP_TARGET_AFTER, function(d)
-        for _, one in ipairs(these) do
-            d:aim_bnpc(one, 0)
+    local these, holds = four, four_holds
+    D:after(FOUR_HATES_AFTER, function(d)
+        for i, one in ipairs(these) do
+            if holds[i] ~= nil then
+                d:set_hate(one, holds[i].id)
+            end
+        end
+    end)
+    D:after(FOUR_TURN_AFTER, function(d)
+        for i, one in ipairs(these) do
+            d:aim_bnpc(one, holds[i] and holds[i].id or 0)
         end
     end)
 end
 
--- Their casts stopped as the boss's, and they fall.
+-- Their casts stopped as the boss's, and they fall: the party is free and the boss's 325 gone, that moment.
 function fourFall(director)
     for _, one in ipairs(four) do
         director:stop_cast(one, CAST_STOPPED_DEAD)
         director:kill_bnpc(one)
     end
     four = {}
+    four_holds = {}
+    for _, held in ipairs(gaoled) do
+        director:lose_effect(held.id, STATUS_GAOL)
+    end
+    gaoled = {}
+    director:lose_effect(boss_1 or BOSS_1, STATUS_BOSS_HOLDS)
+end
+
+-- One of the three goes for good as its part ends: put where the boss comes out, facing east (ActorSetPos at
+-- (-784, -399.735, -600)), and its going timeline 0.09 s later (all three, both of Bob's runs.)
+GOES_SPOT = { x = -784.0, y = -399.735, z = -600.0, rotation = 1.5708 }
+GOES_TIMELINE_AFTER = 0.09
+function threeGoes(director, layout, timeline)
+    director:warp_bnpc(three[layout] or layout, GOES_SPOT.x, GOES_SPOT.y, GOES_SPOT.z, GOES_SPOT.rotation)
+    D:after(GOES_TIMELINE_AFTER, function(d)
+        d:play_action_timeline(three[layout] or layout, timeline)
+    end)
 end
 
 function cutsceneMayCome(director)
@@ -797,6 +885,10 @@ function step(director, row)
         director:bnpc_control(row[3], row[4], row[5])
     elseif what == "timeline" then
         director:play_action_timeline(row[3], row[4])
+    elseif what == "goes" then
+        threeGoes(director, row[3], row[4])
+    elseif what == "gain" then
+        director:gain_effect(row[3] == BOSS_1 and (boss_1 or BOSS_1) or row[3], row[4], 0, 0)
     elseif what == "cast" then
         threeCast(director, row[3], row[4], row[5])
     elseif what == "helpers" then
@@ -949,6 +1041,10 @@ D:boss({ id = 2, layout = BOSS_2, middle = MIDDLE_2, comes_later = true, eobjs_a
         end
         stopHelpers(director)
         letHelpersGo(director)
+        -- The ally's 3014 goes as the closing cutscene comes (both runs.)
+        for _, member in ipairs(D.party) do
+            director:lose_effect(member.id, STATUS_ALLY_SHIELD)
+        end
         clear(director)
         boss_2 = nil
         director:set_weather(WEATHER_OWN, WEATHER_FADE, true)
@@ -1035,6 +1131,11 @@ function onPartyWipe(director)
     end
     D:wipe(director)
     stopHelpers(director)
+    -- Nobody stays gaoled into the next attempt.
+    for _, held in ipairs(gaoled) do
+        director:lose_effect(held.id, STATUS_GAOL)
+    end
+    gaoled = {}
     clear(director)
     director:set_weather(WEATHER_OWN, WEATHER_FADE, true)
     reset()

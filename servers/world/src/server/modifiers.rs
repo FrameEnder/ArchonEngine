@@ -264,7 +264,14 @@ pub fn healing_received_multiplier(statuses: &[u16]) -> f32 {
 /// 650dbfd8): an NPC with one does nothing. Petrification (1, 9 s) is quest battle 61's Stone Gaze's: retail's
 /// petrified allies did nothing for its 9 s seven times in ten (the other three acted within a second, as if it had
 /// been lifted; Bob's Chronofoil captures 130088ec and 3c56e09f.)
-const INCAPACITATED: &[u16] = &[PETRIFICATION, 2, 3, GRANITE_GAOL];
+///
+/// The Porta Decumana's gaol (3249) too: the boss's 28987 put it on the player and the three Duty Support members as
+/// it landed, with no timer, each untargetable and doing nothing (the player's Condition with
+/// SufferingStatusAffliction and SufferingStatusAffliction2) until the four of base 14590 round them fell 25.1 s later
+/// and it went (Bob's Chronofoil captures 9ba7d981, 6320ae56 and 50e72631, all four each time.)
+const INCAPACITATED: &[u16] = &[PETRIFICATION, 2, 3, GRANITE_GAOL, PORTA_DECUMANA_GAOL];
+/// The Porta Decumana's gaol.
+pub const PORTA_DECUMANA_GAOL: u16 = 3249;
 /// Petrification.
 pub const PETRIFICATION: u16 = 1;
 /// The Navel's Granite Gaol.

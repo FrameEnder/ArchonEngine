@@ -2947,7 +2947,7 @@ pub(crate) fn beyond_area_actions(
     id: ObjectId,
     actor: &NetworkedActor,
 ) -> bool {
-    instance.untargetable_npcs.contains(&id)
+    crate::server::npc_behavior::cannot_be_targeted(instance, id)
         || crate::server::launcher::is_launcher(instance, actor)
         || (instance.held_npcs.contains(&id)
             && matches!(actor, NetworkedActor::Npc { spawn, .. }

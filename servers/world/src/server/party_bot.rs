@@ -4039,7 +4039,7 @@ fn update_party(
         .actors
         .iter()
         .filter(|(id, _)| !instance.party_bots.contains_key(id))
-        .filter(|(id, _)| !instance.untargetable_npcs.contains(id))
+        .filter(|(id, _)| !crate::server::npc_behavior::cannot_be_targeted(instance, **id))
         // Nor a launcher (`launcher::is_launcher`: retail's took no hit.)
         .filter(|(_, actor)| !crate::server::launcher::is_launcher(instance, actor))
         .filter_map(|(id, actor)| match actor {
@@ -5248,7 +5248,7 @@ fn focused(engaged: &[Engaged], focus: &HashSet<ObjectId>) -> Option<ObjectId> {
 /// Whether attacking an enemy does anything: it can be hit, and isn't held at its health floor by the director and at
 /// it (the Praetorium's four at 1 HP wait up to 2.2 s to go; Bob's bots kept hitting them, 2026-11-27.)
 pub(crate) fn worth_attacking(instance: &Instance, id: ObjectId, hp: u32) -> bool {
-    !instance.untargetable_npcs.contains(&id)
+    !crate::server::npc_behavior::cannot_be_targeted(instance, id)
         && instance
             .health_floors
             .get(&id)

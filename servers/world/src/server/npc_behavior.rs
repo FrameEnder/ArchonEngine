@@ -2800,12 +2800,20 @@ pub(crate) fn unnoticed(instance: &Instance) -> HashSet<ObjectId> {
         .actors
         .iter()
         .filter(|(id, actor)| {
-            instance.untargetable_npcs.contains(id)
+            cannot_be_targeted(instance, **id)
                 || matches!(actor, NetworkedActor::Npc { spawn, .. }
                     if spawn.common.display_flags.contains(kawari::ipc::zone::DisplayFlag::UNK2))
         })
         .map(|(id, _)| *id)
         .collect()
+}
+
+/// Whether an NPC can't be targeted now: made so by a director (`set_targetable`, or `set_targetable(who, false,
+/// true)` with no packet, for one the client already shows so from its spawn), or one of the party's held by a gaol
+/// (`Instance::incapacitated_party`). The party's bots leave it be and no area action lands on it
+/// (`action::beyond_area_actions`); enemies don't notice it either (`unnoticed`, which adds DisplayFlag 0x8 for them).
+pub(crate) fn cannot_be_targeted(instance: &Instance, id: ObjectId) -> bool {
+    instance.untargetable_npcs.contains(&id) || instance.incapacitated_party.contains(&id)
 }
 
 /// `players_enemies`: the battalions at war with the players' (`GameData::get_battalion_enemies`).
