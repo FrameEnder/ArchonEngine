@@ -352,10 +352,15 @@ PART_CUTSCENE = 33218
 
 -- The rows of base 14593 (from their coming): they leap, cast, leap, cast, leap and go. Which rows the five times
 -- had: "line" is the east-west row, "slant" either diagonal, "cross" two half rows crossed.
-ROWS_LEAP = { 4.8, 12.5, 19.9 }
-ROWS_CAST_AFTER_LEAP = 1.4
-ROWS_GONE = 22.2
-ROWS_FADE_AFTER_LEAP = 1.02
+-- The times are one of the first ten's in Bob's 9ba7d981 (each the same to the tick): its 29018 at 4.96, 12.68 and
+-- 20.59 s, and 0.45 s after each it's at its new spot (SnapNextMove and an ActorMove), not as the action goes out;
+-- its 29019 begins at 6.47 and 14.47 s; the third leap takes it back to where the boss stands, it fades at 21.61 and is
+-- gone at 22.91. Kawari had them at their spots as each leap began and casting a second after.
+ROWS_LEAP = { 4.96, 12.68, 20.59 }
+ROWS_ARRIVE_AFTER_LEAP = 0.45
+ROWS_CAST = { 6.47, 14.47 }
+ROWS_FADE = 21.61
+ROWS_GONE = 22.91
 ROWS_OF = { { "line", "slant" }, { "slant", "line" }, { "slant", "cross" }, { "slant", "line" }, { "slant", "cross" } }
 ROW_SPACING = 4.0
 ROW_Y = -185.53
@@ -368,7 +373,9 @@ ROW_CROSS = { { -687.0, 491.3, -2.356 }, { -692.7, 496.9, -2.356 }, { -712.5, 46
 -- whoever of the party is within 2 yalms.
 FAN_ANGLE = 0.7854
 CORNER_SETS_OFF = 5.0
-CORNER_SPEED = 1.7
+CORNER_MET_FOR = 12.0
+-- (0.6 yalms every 0.31 s in both runs' ActorMoves.)
+CORNER_SPEED = 1.94
 CORNER_REACH = 2.0
 CORNER_WALK = 20 -- ActorMove's speed byte: a walk
 
@@ -748,6 +755,12 @@ function bringCorners(director)
         director:hold_bnpc(id)
         corners[i] = { id = id, index = i, x = spot[1], z = spot[2], off_at = D.ticks + CORNER_SETS_OFF * 2, gone = false }
     end
+    -- Retail's Duty Support members went out to meet them: a corner's burst 5.8 s after the four came, 2 yalms from
+    -- where it began, and another's at 9.6 s (9ba7d981); two at once at 6.0 s (6320ae56); one or two of the party
+    -- caught in each. Kawari's waited in the middle, and each burst caught three (2026-11-28: six hit, retail's three
+    -- and two). The tank to one corner and the damage dealers to its neighbour (not the one across, which fades with
+    -- it), till they're gone.
+    director:party_positions({ tank = SPOTS_CORNER[1], dps = SPOTS_CORNER[2] }, CORNER_MET_FOR)
     D:after(CORNER_SETS_OFF, function(d)
         for _, corner in ipairs(corners) do
             if not corner.gone then
@@ -823,12 +836,19 @@ function rowSpots(kind)
             one_way = (i < 5)
         end
         local facing = angle + (one_way and -1.5708 or 1.5708)
+        -- (Kept within a half turn either way, as retail's own: one diagonal's five at 3.93 went out as 3.14, a
+        -- facing's most in a packet, and their casts' markers lay 45 degrees off where they landed. Bob's marks of
+        -- 2026-11-28, "area of effect was off from its ground markers, and helpers".)
+        if facing > math.pi then
+            facing = facing - 2 * math.pi
+        end
         table.insert(spots, { MIDDLE_2.x + along * math.sin(angle), MIDDLE_2.z + along * math.cos(angle), facing })
     end
     return spots
 end
 
--- Ten of base 14593, where the boss stands.
+-- Ten of base 14593, where the boss stands. Nobody's to hit them: retail's client let no one target them (display
+-- flags 0x4000b) and no action of retail's named any of the 50 (Bob's 9ba7d981); Bob's bots' area attacks did.
 function bringRows(director)
     rows = rows + 1
     local kinds = ROWS_OF[(rows - 1) % #ROWS_OF + 1]
@@ -837,28 +857,37 @@ function bringRows(director)
     for i = 1, 10 do
         ten[i] = director:spawn_bnpc(ROW, at.x, ROW_Y, at.z, 0.0) or ROW
         director:hold_bnpc(ten[i])
+        director:set_targetable(ten[i], false, true)
     end
-    for n, at in ipairs(ROWS_LEAP) do
-        D:after(at, function(d)
-            local spots = kinds[n] and rowSpots(kinds[n]) or nil
-            for i, one in ipairs(ten) do
+    for n, leap in ipairs(ROWS_LEAP) do
+        D:after(leap, function(d)
+            for _, one in ipairs(ten) do
                 d:actor_use_action(one, ACTION_ROW_LEAP)
+            end
+        end)
+        D:after(leap + ROWS_ARRIVE_AFTER_LEAP, function(d)
+            local spots = kinds[n] and rowSpots(kinds[n]) or nil
+            -- (The last leap: back to where the boss is by then.)
+            local back = boss_at or at
+            for i, one in ipairs(ten) do
                 if spots ~= nil then
                     d:jump_bnpc(one, spots[i][1], ROW_Y, spots[i][2], spots[i][3])
+                else
+                    d:jump_bnpc(one, back.x, ROW_Y, back.z, 0.0)
                 end
             end
         end)
-        if kinds[n] ~= nil then
-            D:after(at + ROWS_CAST_AFTER_LEAP, function(d)
-                for _, one in ipairs(ten) do
-                    d:actor_use_action(one, ACTION_ROW_CAST)
-                end
-            end)
-        end
+    end
+    for _, cast in ipairs(ROWS_CAST) do
+        D:after(cast, function(d)
+            for _, one in ipairs(ten) do
+                d:actor_use_action(one, ACTION_ROW_CAST)
+            end
+        end)
     end
     -- They fade (ActorControl 607 `[itself, 1, 0, 100]`) 1.02 s after their last leap and are gone 1.3 s after that
     -- (every one of the 50 in Bob's 9ba7d981.)
-    D:after(ROWS_LEAP[#ROWS_LEAP] + ROWS_FADE_AFTER_LEAP, function(d)
+    D:after(ROWS_FADE, function(d)
         for _, one in ipairs(ten) do
             d:fade_out_bnpc(one)
         end

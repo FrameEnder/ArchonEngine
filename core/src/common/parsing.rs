@@ -42,7 +42,15 @@ pub(crate) fn write_quantized_rotation(quantized: &f32) -> u16 {
     let max = u16::MAX as f32;
     let pi = std::f32::consts::PI;
 
-    (((quantized + pi) / (2.0 * pi)) * max) as u16
+    // (FrameEnder fork: a facing past a half turn is the same facing within it. 3.93 radians went out as 3.14, the
+    // most a u16 holds, 45 degrees off: the Porta Decumana's rows' casts were drawn where they didn't land,
+    // 2026-11-28.)
+    let within = if (-pi..=pi).contains(quantized) {
+        quantized + pi
+    } else {
+        (quantized + pi).rem_euclid(2.0 * pi)
+    };
+    ((within / (2.0 * pi)) * max) as u16
 }
 
 pub(crate) fn read_packed_float(packed: u16) -> f32 {
@@ -101,6 +109,27 @@ mod tests {
     use super::*;
 
     const DATA: [u8; 2] = [0u8, 1u8];
+
+    /// FrameEnder fork, Bob's marks of 2026-11-28 in the Porta Decumana ("area of effect was off from its ground
+    /// markers, and helpers"): a facing of 3.93 radians (a diagonal row's five that face the other way) is -2.36 in a
+    /// packet, not the 3.14 it was cut off at.
+    #[test]
+    fn a_facing_past_a_half_turn_wraps() {
+        let pi = std::f32::consts::PI;
+        for (given, sent) in [
+            (3.927f32, -2.356f32),
+            (-3.927, 2.356),
+            (0.785, 0.785),
+            (-2.356, -2.356),
+            (7.0, 7.0 - 2.0 * pi),
+        ] {
+            let back = read_quantized_rotation(write_quantized_rotation(&given));
+            assert!(
+                (back - sent).abs() < 0.001,
+                "{given} went out as {back}, not {sent}"
+            );
+        }
+    }
 
     #[test]
     fn read_bool_u8() {
