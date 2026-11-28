@@ -1436,6 +1436,18 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
   director has `hold_wipe(held)` (every player down isn't a party wipe meanwhile) and `revive_players()` (the fallen
   get up where they lie with full HP and MP, no loading screen): `LuaDirectorTask::HoldWipe` and `RevivePlayers`,
   `Instance::wipe_held`.
+* **Bob's run of 2026-11-28 against retail's, packet for packet** (the first 166 s; `canon.py` in the session, each
+  packet reduced to who sent it and what it carried, matched within 0.75 s). Fixed from it: every boss action's
+  closing effect (`combat.md`, "An NPC's action closes with its own number"); 29340's and 29341's status 3122 as
+  retail's (`0E E2 EC 01` and `02`, first, parameter 1 and 2; Kawari's parameter was 226, the first of those bytes),
+  and not once 3123 is on the player; the four of base 14697 take the player as their target as they come out and
+  no one 1.0 s after their weapons go (`aim_bnpc(statue, 0)` named a helper, whose layout ID is 0; `aim_bnpc` takes
+  a player's actor ID now); the orbs come at 52.1 and 103.8 s and cast 7.85 s later. **Measured and not yet
+  matched**: retail's NpcYell and DirectorPopupMessage come from the player's own actor with no speaker in the
+  popup's first eight bytes (Kawari's from the boss, naming him); retail's helpers (base 9020) spawn as BattleNpc
+  subkind 11 owned by the boss (Kawari's: 5, no owner) and are put on their spot 0.1 s before each cast (78 of 78;
+  Kawari's in the same tick); the director's clock is its half-second update, so everything on it lands up to half
+  a second off; the second part (312 s on) hasn't been played here yet, so it has only the simulator's check.
 * His health at 0: untargetable, his cast cancelled (ActorControl 537), the map effect off, scene 4 (0x0C002001) in
   a GameComplete event, the quest to sequence 7 and out to the Waking Sands at (-11.07, 0.01, 0.07).
 * Timelines `QB5061Boss_14643`, `QB5061Orb_14644`, `QB5061Ally_14645`, `QB5061Statue_14697`, `QB5061Shade_14699`,

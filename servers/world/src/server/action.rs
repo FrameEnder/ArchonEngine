@@ -1199,6 +1199,22 @@ pub fn execute_action(
             _ => unimplemented!(),
         };
 
+        // A status the script spares those bearing another isn't among the target's effects
+        // (`EffectsBuilder::spare_bearers`.)
+        if let Some(effects_builder) = &mut effects_builder
+            && !effects_builder.spared.is_empty()
+        {
+            let borne = instance
+                .find_actor(request.target.object_id)
+                .map(status_ids)
+                .unwrap_or_default();
+            let spared = effects_builder.spared.clone();
+            effects_builder.effects.retain(|effect| {
+                !matches!(effect.0, TargetEffectKind::GainEffect { effect_id, .. }
+                    if spared.iter().any(|(given, has)| *given == effect_id && borne.contains(has)))
+            });
+        }
+
         // A script's `execute_combo` names the action it's for: the action used (retail's ExecuteCombo shows it.)
         if let Some(effects_builder) = &mut effects_builder {
             for effect in &mut effects_builder.effects {
@@ -2353,11 +2369,47 @@ pub fn execute_action(
                     && !(shown.len() == 1 && aimed_at_someone))
                     || effects_builder.on_party)
                     && shown.len() <= MAX_AOE_PACKET_TARGETS;
+                // An NPC's action closes each target's effects with its own number as a combo's
+                // (`1B 00 00 00 00 80` and the action): every one of an enemy's or a battle's ally's that named a
+                // target in Bob's Chronofoil captures of The Ultimate Weapon's last battle and the Porta Decumana
+                // (114 of 114, 88 of 88, 83 of 83 and 254 of 255, the boss's auto-attacks among them, and each target
+                // of an area: 28 of 30.) Party bots, Duty Support members, pets and chocobos aren't among them.
+                let closes =
+                    data.lock()
+                        .find_actor_instance(from_actor_id)
+                        .is_some_and(|instance| {
+                            closes_with_its_number(instance, from_actor_id, &request)
+                        });
+                let closing = closes.then(|| {
+                    TargetEffect(TargetEffectKind::ExecuteCombo {
+                        sequence: 0,
+                        unk2: 0,
+                        unk3: 0,
+                        unk4: 0,
+                        unk5: 128,
+                        action_id: request.action_id as u16,
+                    })
+                });
                 let effects_of = |effects: &[TargetEffect]| {
                     // The packet only has room for 8 effects per target.
                     let mut packed = [TargetEffect::default(); 8];
-                    let count = effects.len().min(packed.len());
-                    packed[..count].copy_from_slice(&effects[..count]);
+                    let mut count = 0;
+                    for effect in effects {
+                        // (A script's own `execute_combo` is the closing one.)
+                        if closing.is_some()
+                            && matches!(effect.0, TargetEffectKind::ExecuteCombo { .. })
+                        {
+                            continue;
+                        }
+                        if count == packed.len() - usize::from(closing.is_some()) {
+                            break;
+                        }
+                        packed[count] = *effect;
+                        count += 1;
+                    }
+                    if let Some(closing) = closing {
+                        packed[count] = closing;
+                    }
                     packed
                 };
 
@@ -4458,6 +4510,29 @@ fn defences_of(actor: &NetworkedActor) -> Option<modifiers::Defences> {
 
 /// Whether `actor` uses its actions as a player does: a player, or a party bot (not a Duty Support member, whose kit
 /// is retail's members', `party_npc.rs`): the scripts' player branch and players' area actions.
+/// Whether `actor`'s action closes its targets' effects with its own number (see where it's used): an NPC that isn't
+/// one of the party's (a bot, a Duty Support member), a pet or a chocobo.
+pub(crate) fn closes_with_its_number(
+    instance: &Instance,
+    actor: ObjectId,
+    request: &ActionRequest,
+) -> bool {
+    request.action_type == ActionType::Action
+        && !instance.party_bots.contains_key(&actor)
+        && matches!(
+            instance.find_actor(actor),
+            Some(NetworkedActor::Npc { spawn, .. })
+                if !matches!(
+                    spawn.common.object_kind,
+                    ObjectKind::BattleNpc(
+                        BattleNpcSubKind::Pet
+                            | BattleNpcSubKind::Chocobo
+                            | BattleNpcSubKind::NpcPartyMember
+                    )
+                )
+        )
+}
+
 pub fn plays_as_player(instance: &Instance, actor: ObjectId) -> bool {
     matches!(
         instance.find_actor(actor),

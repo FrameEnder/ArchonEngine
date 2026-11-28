@@ -142,6 +142,19 @@ error, so that 29565 and the Porta Decumana's 29024 did nothing). Such an amount
 rolled (no miss, parry, critical hit or variance), scaled for a bot, or lessened by what the one hit has up, and what
 it takes off is all of it.
 
+### An NPC's action closes with its own number (`action::closes_with_its_number`)
+
+Every action of an enemy or a battle's ally that named a target on retail ended that target's effects with
+`1B 00 00 00 00 80` and the action's ID (an ExecuteCombo for itself): 114 of 114, 88 of 88 and 83 of 83 in Bob's three
+runs of The Ultimate Weapon's last battle, 254 of 255 in the Porta Decumana, the bosses' auto-attacks among them, and
+each target of an area (28 of 30). Since 2026-11-28 the server adds it as the packet is put together, for any NPC
+that isn't a party bot, a Duty Support member, a pet or a chocobo (theirs don't have it); a script's own
+`execute_combo` is that one, not a second. Before, only the scripts that asked had it.
+
+`effects:spare_bearers(given, borne)`: the action doesn't give status `given` to a target bearing `borne` (that
+battle's boss's 29340 and 29341 gave 3122 before the ally's 3123 was on the player, never after: 3 of 3 and 0 of 4 in
+each run).
+
 ### Maximum HP from a status (`modifiers::MAX_HP`, `effect::refresh_max_hp`)
 
 A status in `MAX_HP` multiplies its bearer's maximum HP (3123, The Ultimate Weapon's last battle's ally's: 2.0). When

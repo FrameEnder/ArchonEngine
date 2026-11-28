@@ -5173,7 +5173,9 @@ pub fn director_tick(
                     tracing::warn!("Failed to find bnpc {who} to aim!");
                     continue;
                 };
-                let target_id = target.and_then(|target| resolve_bnpc(instance, target));
+                // (A player by their actor ID too: retail's four of base 14697 in The Ultimate Weapon's last battle
+                // took the player as their target as they came out.)
+                let target_id = target.and_then(|target| actor_or_bnpc(instance, target));
                 aim_npc(&mut network.lock(), instance, actor_id, target_id);
             }
             LuaDirectorTask::HoldAttacks { who, held } => {

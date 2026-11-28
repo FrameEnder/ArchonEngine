@@ -3001,3 +3001,64 @@ fn the_last_battle_s_middle_carries_retail_s_effects() {
     assert_eq!(crate::server::modifiers::max_hp_multiplier(&[3123]), 2.0);
     assert_eq!(crate::server::modifiers::max_hp_multiplier(&[2999]), 1.0);
 }
+
+/// Bob's run of The Ultimate Weapon's last battle of 2026-11-28 against his three retail runs of it ("fight is broken,
+/// and not retail like enough"): every one of retail's NPC actions that named a target closed that target's effects
+/// with the action's own number as a combo's, and none of Kawari's did. An enemy's action does; a player's doesn't.
+/// And a status an action spares the bearers of another (the boss's 29340 gave 3122 only before the ally's 3123) is
+/// named by the script.
+#[test]
+fn an_npc_s_action_closes_with_its_own_number() {
+    use crate::lua::EffectsBuilder;
+    use kawari::ipc::zone::{ActionRequest, ActionType};
+    let mut world = TestWorld::new();
+    let player = world.player(0x1000_0001, [0.0, 0.0, 0.0]);
+    let enemy = world.enemy(9161273, [0.0, 0.0, 3.0], 1000);
+    let request = ActionRequest {
+        action_type: ActionType::Action,
+        action_id: 29340,
+        ..Default::default()
+    };
+    assert!(crate::server::action::closes_with_its_number(
+        &world.instance,
+        enemy,
+        &request
+    ));
+    assert!(!crate::server::action::closes_with_its_number(
+        &world.instance,
+        player,
+        &request
+    ));
+    // The script's side of the sparing.
+    let lua = mlua::Lua::new();
+    let constructor = lua
+        .create_function(|_, ()| Ok(EffectsBuilder::default()))
+        .unwrap();
+    lua.globals().set("EffectsBuilder", constructor).unwrap();
+    lua.globals()
+        .set("DAMAGE_TYPE_MAGIC", kawari::ipc::zone::DamageType::Magic)
+        .unwrap();
+    lua.load("function magicalDamage() return 100 end")
+        .exec()
+        .unwrap();
+    let path = format!(
+        "{}/../../resources/scripts/actions/293/QB5061Boss_29340.lua",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    lua.load(std::fs::read_to_string(&path).unwrap())
+        .exec()
+        .unwrap();
+    let do_action: mlua::Function = lua.globals().get("doAction").unwrap();
+    let effects: EffectsBuilder = do_action.call((mlua::Value::Nil, false)).unwrap();
+    assert_eq!(effects.spared, [(3122, 3123)]);
+    assert!(matches!(
+        effects.effects[0].0,
+        kawari::ipc::zone::TargetEffectKind::GainEffect {
+            unk1: 0xE2,
+            unk2: 0xEC,
+            param: 1,
+            effect_id: 3122,
+            ..
+        }
+    ));
+}

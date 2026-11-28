@@ -170,7 +170,7 @@ T_BOSS_BACK = 312.8
 T_TARGETABLE = 315.9
 -- His ActorControl 70s: { seconds from the pull, value } (with NpcYells 13806, 13807, 13806 and 13806, and talk 33701.)
 CONTROL_70S = { { 6.04, 8201621 }, { 159.25, 8201622 }, { 215.13, 8201620 }, { 333.98, 8201621 }, { 499.55, 8201621 } }
-ORB_CASTS_AFTER = 7.7
+ORB_CASTS_AFTER = 7.85 -- (7.9 and 7.8 s after they came, Bob's 9ba7d981)
 ORB_GONE_AFTER = 22.5
 -- What the helpers' 29329 leave (Bob's mark of 2026-11-28: "even simple floor attacks are not being displayed like
 -- Dark Thunder"; Kawari had nothing there, and a 29330 from all seven spots 7.7 s after the cast instead.) Retail,
@@ -308,8 +308,8 @@ BOSS_MOVES = {
 -- The orbs: { seconds from the pull they come, their spots (x, z, facing) }. They cast 29333 7.7 s later and go 22.5 s
 -- after coming.
 ORB_WAVES = {
-    { 52, { { -715.5, 480, 3.14 }, { -712.14, 471.87, 2.36 }, { -712.14, 488.13, -2.36 }, { -708, 480, 1.57 }, { -704, 491.5, -1.57 }, { -700, 480, 1.57 }, { -695.87, 471.87, 0.79 }, { -695.87, 488.13, -0.79 }, { -692.5, 480, -0 } } },
-    { 103.5, { { -715.5, 480, 3.14 }, { -712.14, 471.87, 2.36 }, { -712.14, 488.13, -2.36 }, { -708, 480, 1.57 }, { -704, 491.5, -1.57 }, { -700, 480, 1.57 }, { -695.87, 471.87, 0.79 }, { -695.87, 488.13, -0.79 }, { -692.5, 480, -0 } } },
+    { 52.1, { { -715.5, 480, 3.14 }, { -712.14, 471.87, 2.36 }, { -712.14, 488.13, -2.36 }, { -708, 480, 1.57 }, { -704, 491.5, -1.57 }, { -700, 480, 1.57 }, { -695.87, 471.87, 0.79 }, { -695.87, 488.13, -0.79 }, { -692.5, 480, -0 } } },
+    { 103.8, { { -715.5, 480, 3.14 }, { -712.14, 471.87, 2.36 }, { -712.14, 488.13, -2.36 }, { -708, 480, 1.57 }, { -704, 491.5, -1.57 }, { -700, 480, 1.57 }, { -695.87, 471.87, 0.79 }, { -695.87, 488.13, -0.79 }, { -692.5, 480, -0 } } },
     { 354, { { -715.5, 480, 3.14 }, { -712.14, 471.87, 2.36 }, { -712.14, 488.13, -2.36 }, { -704, 468.5, 1.57 }, { -704, 491.5, -1.57 }, { -695.87, 471.87, 0.79 }, { -695.87, 488.13, -0.79 }, { -692.5, 480, -0 } } },
     { 463.3, { { -715.5, 480, 3.14 }, { -712.14, 471.87, 2.36 }, { -712.14, 488.13, -2.36 }, { -708, 480, 1.57 }, { -704, 468.5, 1.57 }, { -700, 480, 1.57 }, { -695.87, 471.87, 0.79 }, { -695.87, 488.13, -0.79 }, { -692.5, 480, -0 } } },
     { 517.5, { { -715.5, 480, 3.14 }, { -712.14, 471.87, 2.36 }, { -712.14, 488.13, -2.36 }, { -704, 468.5, 1.57 }, { -704, 491.5, -1.57 }, { -695.87, 471.87, 0.79 }, { -695.87, 488.13, -0.79 }, { -692.5, 480, -0 } } },
@@ -589,6 +589,7 @@ end
 CONTROL_WEAPON = 0
 CONTROL_BATTLE = 4
 STATUE_OUT_OF_BATTLE_AFTER = 2.04
+STATUE_TARGET_GONE_AFTER = 1.0
 function statuesCast(director)
     local spots = STATUE_SPOTS[math.random(#STATUE_SPOTS)]
     for i, statue in ipairs(statues) do
@@ -596,14 +597,20 @@ function statuesCast(director)
         director:warp_bnpc(statue, spot[1], FLOOR_Y, spot[2], spot[3])
         director:actor_control(statue, CONTROL_WEAPON, { 1, 1 })
         director:actor_control(statue, CONTROL_BATTLE, { 1 })
-        director:aim_bnpc(statue, 0)
+        -- (The player their target as they come out, and no one 1.0 s after they've put their weapons away: SetTarget
+        -- in Bob's three runs. `aim_bnpc(statue, 0)` named a helper, whose layout ID is 0.)
+        director:aim_bnpc(statue, player_id)
         director:play_action_timeline(statue, TIMELINE_STATUE_OUT)
     end
     after(STATUE_OUT_BEFORE + STATUE_GONE_AFTER + STATUE_OUT_OF_BATTLE_AFTER, function(d)
         for _, statue in ipairs(statues) do
             d:actor_control(statue, CONTROL_WEAPON, { 0, 1, 1 })
             d:actor_control(statue, CONTROL_BATTLE, { 0 })
-            d:aim_bnpc(statue, 0)
+        end
+    end)
+    after(STATUE_OUT_BEFORE + STATUE_GONE_AFTER + STATUE_OUT_OF_BATTLE_AFTER + STATUE_TARGET_GONE_AFTER, function(d)
+        for _, statue in ipairs(statues) do
+            d:aim_bnpc(statue, nil)
         end
     end)
     after(STATUE_OUT_BEFORE, function(d)

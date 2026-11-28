@@ -441,6 +441,11 @@ pub struct EffectsBuilder {
     /// player and the three Duty Support members, each with ExecuteCombo for the action: every one of them in Bob's
     /// 9ba7d981 and 6320ae56) (`on_party`.)
     pub on_party: bool,
+    /// (status given, status borne): the action doesn't give the first to a target bearing the second
+    /// (`spare_bearers`). The Ultimate Weapon's last battle's boss's 29340 and 29341 gave the player status 3122 every
+    /// time before the ally's 3123 was on them and never after (Bob's Chronofoil captures 9ba7d981, 6320ae56 and
+    /// 50e72631: 3 of 3 before, 0 of 4 after, in each.)
+    pub spared: Vec<(u16, u16)>,
 }
 
 /// A barrier an action gives (`EffectsBuilder::barriers`.)
@@ -654,6 +659,11 @@ impl UserData for EffectsBuilder {
         // It lands on the whole party, wherever they are (see `EffectsBuilder::on_party`.)
         methods.add_method_mut("on_party", |_, this, _: ()| {
             this.on_party = true;
+            Ok(())
+        });
+        // A status this action gives isn't given to a target that bears another (`EffectsBuilder::spared`.)
+        methods.add_method_mut("spare_bearers", |_, this, (given, borne): (u16, u16)| {
+            this.spared.push((given, borne));
             Ok(())
         });
         // Players it lands on walk towards the caster for `seconds` (see `EffectsBuilder::walk_to_caster`.)
