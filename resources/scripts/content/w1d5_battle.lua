@@ -78,8 +78,9 @@ BOSS_2 = 9088373
 ROW = 9088374 -- base 14593
 CORNER = 9088375 -- base 14594
 HELPER = 0
--- (Retail had 25 helpers in the first fight and ten in the second; the most at work at once is twelve.)
-HELPER_COUNT = 13
+-- Retail's helpers: 15 with the first boss and ten with the second (Bob's 9ba7d981 and 6320ae56); the most at work
+-- at once is twelve.
+HELPER_COUNT = { first = 15, second = 10 }
 
 NAME_BOSS = 2136
 NAME_ALLY = 2183
@@ -246,6 +247,7 @@ FIRST = {
     { 259.8, "fn", "shieldParty" },
     { 261.7, "map", 4, 8, 4, WEATHER_OWN },
     { 262.7, "stop", BOSS_1 },
+    { 262.7, "lose", BOSS_1, 3012 },
     { 262.75, "goes", THREE_B, 4576 },
     { 263.7, "control", BOSS_1, 49, { 16 } },
     { 275.1, "talk", 33211, NAME_BOSS, 4000 },
@@ -419,10 +421,10 @@ D.in_the_party = function(actor)
     return dx * dx + dz * dz <= ARENA_REACH * ARENA_REACH
 end
 
-function bringHelpers(director)
+function bringHelpers(director, fight)
     local at = middle()
     helpers = {}
-    for i = 1, HELPER_COUNT do
+    for i = 1, HELPER_COUNT[fight] do
         -- (The simulator's spawns return nothing: the layout ID stands in there.)
         helpers[i] = director:spawn_bnpc(HELPER, at.x, floor(), at.z, 0.0) or HELPER
         director:hold_bnpc(helpers[i])
@@ -452,14 +454,26 @@ function bringFirst(director)
         -- Garuda's part never came. The server's side alone: the client shows them so already.
         director:set_targetable(three[layout], false, true)
     end
-    bringHelpers(director)
+    bringHelpers(director, "first")
 end
 
+-- The second arena's barrier round where the party is put (event object 2007457, layout 9088357) and its way out
+-- (2000139, layout 9088358), there as the boss comes. The barrier goes 5.9 s after (ActorControl 106 `[7]`: 5.85 and
+-- 5.98 s in Bob's two runs, 2.8 s after his client was in), and the way out shows as the closing cutscene begins (106
+-- `[0]`). Kawari never took the barrier away: Bob stood walled in where the cutscene left him (2026-11-28, "the last
+-- act ... is not starting this is a soft lock"; the bots' log named the gimmick.)
+SECOND_BARRIER = 9088357
+CONTROL_AS_IT_FELL = 414
+SECOND_WAY_OUT = 9088358
+SECOND_BARRIER_GOES_AFTER = 5.9
 function bringSecond(director)
     attempts_of = "second"
     part = "second-wait"
     boss_2 = director:spawn_bnpc(BOSS_2) or BOSS_2
-    bringHelpers(director)
+    bringHelpers(director, "second")
+    D:after(SECOND_BARRIER_GOES_AFTER, function(d)
+        d:hide_eobj(SECOND_BARRIER)
+    end)
 end
 
 function reset()
@@ -695,8 +709,12 @@ function lineFromBoss(director, action)
 end
 
 -- A helper's cast on each of the party (29012), where they stand.
+-- With Lockon 140 over each of them as the casts begin (ActorControl 34 from each: the player and the three Duty
+-- Support members, every time in Bob's 9ba7d981 and 6320ae56.)
+LOCKON_ON_EVERYONE = 140
+LOCKON_ON_SOMEONE = 62
 function onEveryone(director, action)
-    D:helpersOnEach(director, action, floor())
+    D:helpersOnEach(director, action, floor(), { lockon = LOCKON_ON_EVERYONE })
 end
 
 -- A helper's cast on one of them (29014.)
@@ -708,6 +726,8 @@ function onSomeone(director, action)
     local helper = helperAt(director, member.x, member.z)
     if helper ~= nil then
         director:actor_use_action(helper, action, member.id)
+        -- Lockon 62 over the one it's on (five of five.)
+        D:lockon(director, member.id, LOCKON_ON_SOMEONE)
     end
 end
 
@@ -887,6 +907,8 @@ function step(director, row)
         director:play_action_timeline(row[3], row[4])
     elseif what == "goes" then
         threeGoes(director, row[3], row[4])
+    elseif what == "lose" then
+        director:lose_effect(row[3] == BOSS_1 and (boss_1 or BOSS_1) or row[3], row[4])
     elseif what == "gain" then
         director:gain_effect(row[3] == BOSS_1 and (boss_1 or BOSS_1) or row[3], row[4], 0, 0)
     elseif what == "cast" then
@@ -1041,6 +1063,8 @@ D:boss({ id = 2, layout = BOSS_2, middle = MIDDLE_2, comes_later = true, eobjs_a
         end
         stopHelpers(director)
         letHelpersGo(director)
+        director:show_eobj(SECOND_WAY_OUT)
+        bringThoseAfter(director)
         -- The ally's 3014 goes as the closing cutscene comes (both runs.)
         for _, member in ipairs(D.party) do
             director:lose_effect(member.id, STATUS_ALLY_SHIELD)
@@ -1050,11 +1074,37 @@ D:boss({ id = 2, layout = BOSS_2, middle = MIDDLE_2, comes_later = true, eobjs_a
         director:set_weather(WEATHER_OWN, WEATHER_FADE, true)
         director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
         director:complete_duty()
-        -- (ActionTimeline 73 on it a second after it fell, in both runs.)
+        -- (ActorControl 414 and ActionTimeline 73 on it a second after it fell, in both runs.)
         director:delay(1.0)
+        director:bnpc_control(BOSS_2, CONTROL_AS_IT_FELL, {})
         director:play_action_timeline(BOSS_2, 73)
         director:delay(0)
     end })
+
+-- Who stands in the arena once it's over (the layout's event NPCs, the director's as every one of a duty's): 1042679
+-- 1.5 s after the boss falls, and 2.0 s later one for each Duty Support member who fought it, where the layout has
+-- them (BNpcBase 14658 to 14661 are ENpcBase 1043395 to 1043398: 14658, 14660 and 14661 in Bob's 9ba7d981, 14659 to
+-- 14661 in his 6320ae56). A party of bots that aren't retail's members has none of theirs.
+AFTER_ONE = 9269361
+AFTER_ONE_COMES = 1.5
+AFTER_MEMBERS = { [14658] = 9303322, [14659] = 9303323, [14660] = 9303324, [14661] = 9303325 }
+AFTER_MEMBERS_COME = 3.5
+function bringThoseAfter(director)
+    local theirs = {}
+    for _, member in ipairs(D.party) do
+        if AFTER_MEMBERS[member.base_id] ~= nil then
+            theirs[#theirs + 1] = AFTER_MEMBERS[member.base_id]
+        end
+    end
+    D:after(AFTER_ONE_COMES, function(d)
+        d:spawn_bnpc(AFTER_ONE)
+    end)
+    D:after(AFTER_MEMBERS_COME, function(d)
+        for _, layout in ipairs(theirs) do
+            d:spawn_bnpc(layout)
+        end
+    end)
+end
 
 -- Below the line in the chain: the first fight is over, the cutscene between them.
 function cutscene(director)

@@ -4039,9 +4039,10 @@ fn update_party(
         .actors
         .iter()
         .filter(|(id, _)| !instance.party_bots.contains_key(id))
-        .filter(|(id, _)| !crate::server::npc_behavior::cannot_be_targeted(instance, **id))
-        // Nor a launcher (`launcher::is_launcher`: retail's took no hit.)
-        .filter(|(_, actor)| !crate::server::launcher::is_launcher(instance, actor))
+        // Nor a launcher (`launcher::is_launcher`: retail's took no hit), nor a director's helper: whatever no area
+        // action lands on (`action::beyond_area_actions`). One of Bob's bots felled a helper 2 s into the Porta
+        // Decumana's twelve casts (2026-11-28: its Kill and Defeated in the server's capture.)
+        .filter(|(id, actor)| !crate::server::action::beyond_area_actions(instance, **id, actor))
         .filter_map(|(id, actor)| match actor {
             NetworkedActor::Npc {
                 enmity,

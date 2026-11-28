@@ -2799,3 +2799,39 @@ fn the_unseen_and_the_gaoled_are_left_alone() {
         bot
     ));
 }
+
+/// Bob's marks of 2026-11-28 in the Porta Decumana ("when garuda was downed the ultima weapon should have lost it's
+/// shield effect", and the fight's parts out of step): the first boss's 28993, 28994 and 28995, which take a status
+/// off him as each primal goes, called `effects:lose_effect(STATUS)` with no stack count, a Lua error that stopped the
+/// world's tick each time (the server's log: "panicked handling the tick", four times that run). The count is 0 when
+/// it isn't given, and each script takes its status off.
+#[test]
+fn the_porta_decumana_s_boss_takes_his_statuses_off() {
+    use crate::lua::EffectsBuilder;
+    use kawari::ipc::zone::TargetEffectKind;
+    for (action, status) in [(28993u32, 3009u16), (28994, 3010), (28995, 3011)] {
+        let lua = mlua::Lua::new();
+        let constructor = lua
+            .create_function(|_, ()| Ok(EffectsBuilder::default()))
+            .unwrap();
+        lua.globals().set("EffectsBuilder", constructor).unwrap();
+        let path = format!(
+            "{}/../../resources/scripts/actions/289/PortaDecumanaBoss_{action}.lua",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        lua.load(std::fs::read_to_string(&path).unwrap())
+            .exec()
+            .unwrap();
+        let do_action: mlua::Function = lua.globals().get("doAction").unwrap();
+        let effects: EffectsBuilder = do_action
+            .call((mlua::Value::Nil, false, action))
+            .unwrap_or_else(|error| panic!("{action}: {error}"));
+        assert!(
+            effects.effects.iter().any(|effect| matches!(
+                effect.0,
+                TargetEffectKind::LoseEffect { effect_id, .. } if effect_id == status
+            )),
+            "{action} takes {status} off"
+        );
+    }
+}

@@ -686,7 +686,7 @@ function Dungeon:update(director, health, player_health, info, between)
             -- says who else isn't: the Porta Decumana's, whoever is out of the arena.)
             if not (actor.x == 0 and actor.z == 0) and (self.in_the_party == nil or self.in_the_party(actor)) then
                 table.insert(self.party, { x = actor.x, y = actor.y or 0, z = actor.z, id = actor.id,
-                                           player = key:sub(1, 6) == "player" })
+                                           base_id = actor.base_id or 0, player = key:sub(1, 6) == "player" })
             end
         end
         self:checkSteps(director)

@@ -27,7 +27,8 @@
             "data": {
                 "type": "action",
                 "action_id": 29023,
-                "target": "target"
+                "target": "target",
+                "lockon": 218
             },
             "comment": "8.1 s after the pull (talk 33219) (a 4.7 s cast)"
         },
@@ -198,7 +199,8 @@
             "data": {
                 "type": "action",
                 "action_id": 29023,
-                "target": "target"
+                "target": "target",
+                "lockon": 218
             },
             "comment": "200.0 s after the pull (talk 33219) (a 4.7 s cast)"
         },
@@ -297,7 +299,8 @@
             "data": {
                 "type": "action",
                 "action_id": 29023,
-                "target": "target"
+                "target": "target",
+                "lockon": 218
             },
             "comment": "303.2 s after the pull (talk 33219) (a 4.7 s cast)"
         },

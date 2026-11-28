@@ -1007,6 +1007,9 @@ pub struct ActorInfo {
     /// aimed at, and his Weight of the Land under two of the party other than the one he fights.
     pub actor_id: u32,
     pub target_id: u32,
+    /// An NPC's BNpcBase (0 for a player): which of retail's Duty Support members one of the party is (the Porta
+    /// Decumana's event NPCs after the fight are theirs, one for each who fought it.)
+    pub base_id: u32,
 }
 
 /// A director cutscene's scene parameters after its ID, unless the script gives its own: upstream's, as retail sent
@@ -2450,6 +2453,7 @@ impl DirectorData {
                     entry.set("target", "party")?;
                 }
                 entry.set("id", actor.actor_id)?;
+                entry.set("base_id", actor.base_id)?;
                 if actor.has_target {
                     entry.set("target_id", actor.target_id)?;
                 }
@@ -3127,6 +3131,10 @@ fn update_director(instance: &mut Instance) {
             has_target: target.is_valid(),
             actor_id: actor_id.0,
             target_id: target.0,
+            base_id: match actor {
+                NetworkedActor::Npc { spawn, .. } => spawn.common.base_id,
+                _ => 0,
+            },
         };
         // Every living NPC by its actor ID too ("actor<id>"): several brought out from one layout are one entry
         // by layout (whichever comes first), and a script that spawned them has their IDs (the Praetorium's last
@@ -3157,6 +3165,7 @@ fn update_director(instance: &mut Instance) {
                 has_target: target.is_valid(),
                 actor_id: id.0,
                 target_id: target.0,
+                base_id: 0,
             },
         );
     }
@@ -3184,6 +3193,7 @@ fn update_director(instance: &mut Instance) {
                 has_target: target.is_valid(),
                 actor_id: id.0,
                 target_id: target.0,
+                base_id: common.base_id,
             },
         );
     }

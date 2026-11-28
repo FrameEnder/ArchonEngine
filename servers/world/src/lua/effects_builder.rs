@@ -545,10 +545,13 @@ impl UserData for EffectsBuilder {
         // so we can remove the param arg. Assuming there isn't effects with the same ID but different params?
         methods.add_method_mut(
             "lose_effect",
-            |_, this, (effect_id, effect_param): (u16, u16)| {
+            // (The status's param is 0 if it isn't given: the Porta Decumana's first boss's 28993 to 28995 named
+            // none, and each stopped the world's tick with a Lua error where it should have taken a status off him,
+            // 2026-11-28.)
+            |_, this, (effect_id, effect_param): (u16, Option<u16>)| {
                 this.effects
                     .push(TargetEffect(TargetEffectKind::LoseEffect {
-                        param: effect_param,
+                        param: effect_param.unwrap_or(0),
                         unk: [0; 3],
                         effect_id,
                     }));

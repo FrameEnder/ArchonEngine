@@ -4140,11 +4140,19 @@ pub fn execute_normal_action(
 
                 let func: Function = lua.0.globals().get("doAction").unwrap();
 
-                effects_builder = Some(
-                    // The action's ID too, for scripts registered for several (resources/scripts/gathering/.)
-                    func.call::<EffectsBuilder>((connection_data, in_combo, request.action_id))
-                        .unwrap(),
-                );
+                // The action's ID too, for scripts registered for several (resources/scripts/gathering/.) A script's
+                // error is logged and the action does nothing, where it stopped the whole tick (the Porta Decumana's
+                // first boss's 28993 to 28995, 2026-11-28: every tick they came in was dropped, and what else it
+                // was doing with it.)
+                match func.call::<EffectsBuilder>((connection_data, in_combo, request.action_id)) {
+                    Ok(effects) => effects_builder = Some(effects),
+                    Err(error) => {
+                        tracing::error!(
+                            "Action {}'s script {action_script}: {error}",
+                            request.action_id
+                        )
+                    }
+                }
 
                 Ok(())
             })
