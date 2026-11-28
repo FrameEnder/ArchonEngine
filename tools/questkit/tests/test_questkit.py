@@ -770,6 +770,42 @@ class BattleSimPlayerTest(unittest.TestCase):
                                        for point in away["positions"]["player"]]
         self.assertFalse([1 for _, name, args in last_part(away) if name == "gain_effect" and args[1] == 2194])
 
+    def test_the_last_battles_lightning_is_left_and_goes_off_when_walked_into(self):
+        """Bob, 2026-11-28: "even simple floor attacks are not being displayed like Dark Thunder". Retail (his
+        Chronofoil captures 9ba7d981, 6320ae56 and 50e72631): seven objects of EObj 2012984 4.7 s after the helpers'
+        29329 begin, gone together 19.6 s after (24.6 the second time), and the one a player walked into alone, with a
+        helper's 29330 from its spot. The script had no objects, and 29330 from all seven spots at 7.7 s."""
+        fixture = json.loads((battle_sim.BATTLES / "5061-6320ae56.json").read_text())
+
+        def lightning(fixture):
+            result = battle_sim.simulate(fixture)
+            self.assertIsNone(result.error)
+            calls = result.calls
+            first = next(t for t, name, args in calls if name == "actor_use_action" and args[1:] == [29329])
+            return [(round(t - first, 1), name, args) for t, name, args in calls
+                    if (name in ("spawn_eobj", "eobj_control", "delete_eobj") and args[0] == 2012984)
+                    or (name == "actor_use_action" and args[1:] == [29330])]
+
+        calls = lightning(fixture)
+        spawned = [(t, args) for t, name, args in calls if name == "spawn_eobj"]
+        self.assertEqual(len(spawned), 14)
+        self.assertEqual({t for t, _ in spawned[:7]}, {4.5})
+        self.assertEqual(sorted(args[2] >> 16 for _, args in spawned[:7]), list(range(0x50, 0x57)))
+        self.assertTrue(all(args[2] & 0xFFFF == 3 and args[3:] == [0, 5, 1.571] for _, args in spawned))
+        gone = [t for t, name, args in calls if name == "eobj_control"]
+        self.assertEqual(gone[:7], [19.5] * 7)
+        self.assertEqual(len([1 for _, name, _ in calls if name == "delete_eobj"]), 14)
+        self.assertFalse([1 for _, name, _ in calls if name == "actor_use_action"])
+        # Standing on one of the spots: that one goes off as it comes, alone.
+        on_it = json.loads(json.dumps(fixture))
+        on_it["positions"]["player"] = [[point[0], -694.0, -185.53, 484.0] for point in on_it["positions"]["player"]]
+        calls = lightning(on_it)
+        sprung = [(t, args) for t, name, args in calls if name == "actor_use_action"]
+        self.assertEqual([t for t, _ in sprung[:1]], [4.5])
+        first_controls = [(t, args[3]) for t, name, args in calls if name == "eobj_control" and t < 19.0]
+        self.assertEqual([(t, (at["x"], at["z"])) for t, at in first_controls], [(4.5, (-694.0, 484.0))])
+        self.assertEqual(len([1 for t, name, _ in calls if name == "eobj_control" and t == 19.5]), 6)
+
     def test_heart_of_the_forests_guards_heal_below_65(self):
         """Bob, 2026-11-18: "the balance of this battle seemed a tad different then in retail". Retail's three guards
         never healed the one who prays above 64 % (three runs, his Chronofoil capture 667a68c5: the first Cure 30.6

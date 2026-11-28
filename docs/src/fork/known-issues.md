@@ -83,7 +83,7 @@ From one unsynced run of two players (Bob's capture 84700114, [Dungeons](dungeon
   is called while they lie, that is where to look. Its unknowns are in `quest-battles.md`.
 * **The Porta Decumana** (duty 830) is built from visit 0.18 and Connor's af05916c visit 0.12 (`dungeons.md`) and
   unplayed. Guessed or left out, because neither run shows it: what its last cast (29024, 70.7 s) does if it lands
-  (9999999 here); what the four of base 14594 do if one reaches the middle (it's taken away); whether felling the
+  (9999999 to everyone within 20 yalms here); what the four of base 14594 do if one reaches the middle (it's taken away); whether felling the
   four of base 14590 early matters; the first boss below 22 % before its chain (a floor of 1 HP keeps it standing
   until the cutscene); the second fight after 325.7 s with the boss still above 30 % (the question every 7.6 s
   from 310.3 since 2026-11-18, 29022 every other time); a wipe in either fight (that fight begins again; in the second everyone is sent back to the second

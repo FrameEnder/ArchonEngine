@@ -39,6 +39,53 @@ use crate::{
     },
 };
 
+/// Which of an EObj's objects a director means (`delete_eobj`'s and `eobj_control`'s last argument): one, named by
+/// its EObj or layout ID (nothing given); every one of that EObj (`true`); or the one of them nearest a spot (a
+/// position). The Ultimate Weapon's last battle's helpers leave seven of EObj 2012984 at once, none in the layout:
+/// the one the player walks into goes alone, the rest together (Bob's Chronofoil capture 50e72631.)
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum WhichEObj {
+    One,
+    All,
+    Nearest(Position),
+}
+
+impl WhichEObj {
+    fn from_lua(lua: &mlua::Lua, value: Value) -> Self {
+        match value {
+            Value::Boolean(true) => Self::All,
+            Value::Table(_) => lua
+                .from_value::<Position>(value)
+                .map(Self::Nearest)
+                .unwrap_or(Self::One),
+            _ => Self::One,
+        }
+    }
+
+    pub(crate) fn of(&self, instance: &Instance, id: u32) -> Vec<ObjectId> {
+        match self {
+            Self::One => instance
+                .find_object_by_eobj_or_layout_id(id)
+                .into_iter()
+                .collect(),
+            Self::All => instance.objects_of_eobj(id),
+            Self::Nearest(spot) => instance
+                .objects_of_eobj(id)
+                .into_iter()
+                .filter_map(|actor_id| match instance.find_actor(actor_id) {
+                    Some(NetworkedActor::Object { object, .. }) => {
+                        Some((actor_id, object.position.0.distance(spot.0)))
+                    }
+                    _ => None,
+                })
+                .min_by(|a, b| a.1.total_cmp(&b.1))
+                .map(|(actor_id, _)| actor_id)
+                .into_iter()
+                .collect(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum LuaDirectorTask {
     HideEObj {
@@ -49,6 +96,7 @@ pub enum LuaDirectorTask {
     },
     DeleteEObj {
         base_id: u32,
+        which: WhichEObj,
     },
     /// Spawn an event object of the zone's layout (moved to `position`), or, when the layout has none, one made from
     /// its EObj row alone, as retail spawned Haukke Manor's dropped keys (layout ID 0, the director's handler; Bob's
@@ -63,6 +111,8 @@ pub enum LuaDirectorTask {
         /// Retail's flags byte for it (`SpawnObject::flag_4`: bit 0 not targetable, bit 2 unknown), when the
         /// script gives one.
         flags: Option<u8>,
+        /// Its facing, when the script gives one (the lightning the last battle's helpers leave faced as they did.)
+        rotation: Option<f32>,
     },
     SendVariables,
     AbandonDuty {
@@ -458,6 +508,7 @@ pub enum LuaDirectorTask {
         id: u32,
         category: u32,
         params: [u32; 4],
+        which: WhichEObj,
     },
     /// Fade a BNpc (actor ID or layout ID) out, as retail does before taking away one that leaves without dying
     /// (ActorControl `FadeOut`, 607); the script despawns it a moment later (`despawn_bnpc`.)
@@ -1054,20 +1105,27 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::ShowEObj { base_id });
             Ok(())
         });
-        methods.add_method_mut("delete_eobj", |_, this, base_id: u32| {
-            this.tasks.push(LuaDirectorTask::DeleteEObj { base_id });
-            Ok(())
-        });
+        methods.add_method_mut(
+            "delete_eobj",
+            |lua, this, (base_id, which): (u32, Value)| {
+                this.tasks.push(LuaDirectorTask::DeleteEObj {
+                    base_id,
+                    which: WhichEObj::from_lua(lua, which),
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut(
             "spawn_eobj",
             |lua,
              this,
-             (base_id, position, args2, state, flags): (
+             (base_id, position, args2, state, flags, rotation): (
                 u32,
                 Value,
                 Option<u32>,
                 Option<u8>,
                 Option<u8>,
+                Option<f32>,
             )| {
                 let position: Option<Position> = lua.from_value(position).ok();
                 this.tasks.push(LuaDirectorTask::SpawnEObj {
@@ -1076,6 +1134,7 @@ impl UserData for LuaDirector {
                     args2,
                     state,
                     flags,
+                    rotation,
                 });
                 Ok(())
             },
@@ -2090,7 +2149,7 @@ impl UserData for LuaDirector {
         );
         methods.add_method_mut(
             "eobj_control",
-            |_, this, (id, category, params): (u32, u32, Option<Vec<u32>>)| {
+            |lua, this, (id, category, params, which): (u32, u32, Option<Vec<u32>>, Value)| {
                 let mut four = [0; 4];
                 for (slot, value) in four.iter_mut().zip(params.unwrap_or_default()) {
                     *slot = value;
@@ -2099,6 +2158,7 @@ impl UserData for LuaDirector {
                     id,
                     category,
                     params: four,
+                    which: WhichEObj::from_lua(lua, which),
                 });
                 Ok(())
             },
@@ -3325,20 +3385,24 @@ pub fn director_tick(
                     instance.seal_gimmick(layout_id);
                 }
             }
-            LuaDirectorTask::DeleteEObj { base_id } => {
-                let Some(actor_id) = instance.find_object_by_eobj_or_layout_id(*base_id) else {
+            LuaDirectorTask::DeleteEObj { base_id, which } => {
+                let actor_ids = which.of(instance, *base_id);
+                if actor_ids.is_empty() {
                     tracing::warn!(
                         "Failed to find eobj {base_id} for DeleteEObj, it won't despawn!"
                     );
                     continue;
-                };
-
-                if let Some(NetworkedActor::Object { object, .. }) = instance.find_actor(actor_id) {
-                    let layout_id = object.layout_id;
-                    instance.set_gimmick_gone(layout_id, true);
                 }
-                let mut network = network.lock();
-                network.remove_actor(instance, actor_id);
+                for actor_id in actor_ids {
+                    if let Some(NetworkedActor::Object { object, .. }) =
+                        instance.find_actor(actor_id)
+                    {
+                        let layout_id = object.layout_id;
+                        instance.set_gimmick_gone(layout_id, true);
+                    }
+                    let mut network = network.lock();
+                    network.remove_actor(instance, actor_id);
+                }
             }
             LuaDirectorTask::SpawnEObj {
                 base_id,
@@ -3346,6 +3410,7 @@ pub fn director_tick(
                 args2,
                 state,
                 flags,
+                rotation,
             } => {
                 let object = instance.zone.get_event_object(*base_id).or_else(|| {
                     let targetable = game_data.lock().eobj_targetable(*base_id)?;
@@ -3380,6 +3445,9 @@ pub fn director_tick(
                     if let Some(flags) = flags {
                         object.not_targetable = flags & 1 != 0;
                         object.flag_4 = flags & 4 != 0;
+                    }
+                    if let Some(rotation) = rotation {
+                        object.rotation = *rotation;
                     }
                     instance.insert_object(object.entity_id, object, String::default()); // TODO: insert layer name
                 } else {
@@ -5163,24 +5231,28 @@ pub fn director_tick(
                 id,
                 category,
                 params,
+                which,
             } => {
-                let Some(actor_id) = instance.find_object_by_eobj_or_layout_id(*id) else {
+                let actor_ids = which.of(instance, *id);
+                if actor_ids.is_empty() {
                     tracing::warn!("Failed to find eobj {id} for EObjControl!");
                     continue;
-                };
+                }
                 let mut network = network.lock();
-                network.send_ac_in_range_instance(
-                    instance,
-                    actor_id,
-                    ActorControlCategory::Unknown {
-                        category: *category,
-                        param1: params[0],
-                        param2: params[1],
-                        param3: params[2],
-                        param4: params[3],
-                        param5: 0,
-                    },
-                );
+                for actor_id in actor_ids {
+                    network.send_ac_in_range_instance(
+                        instance,
+                        actor_id,
+                        ActorControlCategory::Unknown {
+                            category: *category,
+                            param1: params[0],
+                            param2: params[1],
+                            param3: params[2],
+                            param4: params[3],
+                            param5: 0,
+                        },
+                    );
+                }
             }
         }
     }

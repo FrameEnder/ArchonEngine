@@ -1508,7 +1508,9 @@ pub fn execute_action(
                 .effects
                 .iter()
                 .filter_map(|effect| match effect.0 {
-                    TargetEffectKind::Damage { amount, .. } => Some(amount as u32),
+                    TargetEffectKind::Damage {
+                        amount, unk3, unk4, ..
+                    } => Some(kawari::ipc::zone::damage_amount(amount, unk3, unk4)),
                     _ => None,
                 })
                 .sum();
@@ -1535,7 +1537,9 @@ pub fn execute_action(
             let damage: u32 = effects
                 .iter()
                 .filter_map(|effect| match effect.0 {
-                    TargetEffectKind::Damage { amount, .. } => Some(amount as u32),
+                    TargetEffectKind::Damage {
+                        amount, unk3, unk4, ..
+                    } => Some(kawari::ipc::zone::damage_amount(amount, unk3, unk4)),
                     _ => None,
                 })
                 .sum();
@@ -1787,7 +1791,9 @@ pub fn execute_action(
                     .effects
                     .iter()
                     .filter_map(|effect| match effect.0 {
-                        TargetEffectKind::Damage { amount, .. } => Some(amount as u32),
+                        TargetEffectKind::Damage {
+                            amount, unk3, unk4, ..
+                        } => Some(kawari::ipc::zone::damage_amount(amount, unk3, unk4)),
                         _ => None,
                     })
                     .sum();
@@ -3179,7 +3185,9 @@ fn apply_area_of_effect(
                 .effects
                 .iter()
                 .filter_map(|effect| match effect.0 {
-                    TargetEffectKind::Damage { amount, .. } => Some(amount as u32),
+                    TargetEffectKind::Damage {
+                        amount, unk3, unk4, ..
+                    } => Some(kawari::ipc::zone::damage_amount(amount, unk3, unk4)),
                     _ => None,
                 })
                 .map(|amount| {
@@ -5135,7 +5143,11 @@ fn scale_npc_heal(effects: &mut [TargetEffect], recorded: f32) {
 /// Multiplies an NPC hit's damage by `factor` (at least 1 a hit.)
 fn scale_damage(effects: &mut [TargetEffect], factor: f32) {
     for effect in effects.iter_mut() {
-        if let TargetEffectKind::Damage { amount, .. } = &mut effect.0 {
+        if let TargetEffectKind::Damage { amount, unk4, .. } = &mut effect.0 {
+            // (An amount past a u16 is what it's given: it's there to fell.)
+            if *unk4 & kawari::ipc::zone::DAMAGE_PAST_U16 != 0 {
+                continue;
+            }
             *amount = (*amount as f32 * factor)
                 .round()
                 .clamp(1.0, u16::MAX as f32) as u16;
@@ -5354,6 +5366,13 @@ pub(crate) fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_per
     let hits = effects
         .iter()
         .any(|effect| matches!(effect.0, TargetEffectKind::Damage { .. }));
+    // (An amount past a u16, retail's 9999999, is what it's given: it doesn't miss, isn't parried and doesn't vary.)
+    let whole = effects.iter().any(|effect| {
+        matches!(effect.0, TargetEffectKind::Damage { unk4, .. } if unk4 & kawari::ipc::zone::DAMAGE_PAST_U16 != 0)
+    });
+    if whole {
+        return;
+    }
     let missed = hits && roll < miss_percent;
     let parried = hits && !missed && roll < miss_percent + NPC_PARRY_PERCENT;
     if missed {
@@ -5443,7 +5462,9 @@ fn hit_area_bystander(
     let damage: u32 = effects
         .iter()
         .filter_map(|effect| match effect.0 {
-            TargetEffectKind::Damage { amount, .. } => Some(amount as u32),
+            TargetEffectKind::Damage {
+                amount, unk3, unk4, ..
+            } => Some(kawari::ipc::zone::damage_amount(amount, unk3, unk4)),
             _ => None,
         })
         .sum();

@@ -10,8 +10,9 @@
 --
 -- The boss (9161273, base 14643, BNpcName 2143, 119119 HP) auto-attacks and casts from his timeline
 -- (`QB5061Boss_14643.json`: the first part from the pull, the second from talk 33704.) Round him:
---   * helpers (base 9020, layout 0; retail had 49) cast where the director puts them (HELPER_CASTS); a helper's 29329
---     is followed by its 29330 from the same spot 7.7 s after it began; 29335 is cast where the player stands;
+--   * helpers (base 9020, layout 0; retail had 49) cast where the director puts them (HELPER_CASTS); each 29329
+--     leaves lightning where it landed (an event object, LIGHTNING) that goes off as the player comes near (a
+--     helper's 29330 from its spot) or goes with the rest; 29335 is cast where the player stands;
 --   * nine or eight orbs (base 14644) come five times, cast 29333 7.7 s later and go 22.5 s after coming (ORB_WAVES);
 --   * four of base 14697 stand out of sight until they cast 29762 from four spots of the arena's edge, 19.5 yalms
 --     from the middle, one of two sets of four (Connor's run: A, A, B, B; Bob's: B, B, B, A: taken at random here);
@@ -37,7 +38,7 @@
 -- same clock); the player's HP doubling with status 3123 (not done); what ActorControls 63, 70 and 35, the director's
 -- 0x8000001A and 0x8000001B and statuses 661, 662, 1614, 2056, 2999, 3122 and 3123 do (sent and given as retail did);
 -- the damage of what never hit anyone (29329, 29333, 29335, 29756, 29760); losing outside the middle (a duty's wipe,
--- as Cape Westwind's.) The helpers' 29330 is used by all seven here; retail's showed only where it caught someone.
+-- as Cape Westwind's.)
 
 START_POSITION = { x = -690.0, y = -185.73, z = 480.0 }
 START_ROTATION = -1.571
@@ -134,7 +135,38 @@ T_TARGETABLE = 315.9
 CONTROL_70S = { { 6.04, 8201621 }, { 159.25, 8201622 }, { 215.13, 8201620 }, { 333.98, 8201621 }, { 499.55, 8201621 } }
 ORB_CASTS_AFTER = 7.7
 ORB_GONE_AFTER = 22.5
-RING_AFTER = 7.7
+-- What the helpers' 29329 leave (Bob's mark of 2026-11-28: "even simple floor attacks are not being displayed like
+-- Dark Thunder"; Kawari had nothing there, and a 29330 from all seven spots 7.7 s after the cast instead.) Retail,
+-- both times in each of Bob's three runs (Chronofoil captures 9ba7d981, 6320ae56 and 50e72631), 4.7 to 4.9 s after
+-- the casts began (0.7 to 0.9 after they landed): seven SpawnObjects of EObj 2012984, flags byte 5, radius 1, facing
+-- as the helpers did, the director their handler, each spot's own second argument, at the spots below (the casts'
+-- to a hundredth of a yalm, the floor's height there.) They stayed 19.6 s from the casts' beginning the first time
+-- (19.59 to 19.62) and 24.6 the second (24.59 to 24.62): ActorControl 106 [7] from each, and DeleteObject 3.1 to 3.4 s
+-- later. The one time a player walked into one (50e72631, 9.6 s after the casts began, 3.6 yalms from its middle in
+-- their last position before it and 4.4 in the one before that: 29330's own reach is 4), that one went alone: its
+-- 106 [7], a helper put on its spot (ActorSetPos) using 29330 on them (744), and its DeleteObject 3.3 s later.
+EOBJ_LIGHTNING = 2012984
+EOBJ_LIGHTNING_FLAGS = 5
+EOBJ_LIGHTNING_FACING = 1.571
+CONTROL_EOBJ_106 = 106
+LIGHTNING_AFTER = 4.7
+LIGHTNING_REACH = 4.0
+LIGHTNING_STAYS = { [16.3] = 19.6, [395.36] = 24.6 } -- by the casts' time in HELPER_CASTS
+LIGHTNING_DELETED_AFTER = 3.2
+LIGHTNING_SPRUNG_DELETED_AFTER = 3.3
+-- { x, y, z, SpawnObject's second argument }
+LIGHTNING = {
+    { -704.0, -185.66, 480.0, 0x00560003 },
+    { -708.0, -185.53, 470.0, 0x00550003 },
+    { -700.0, -185.53, 490.0, 0x00540003 },
+    { -714.0, -185.53, 476.0, 0x00530003 },
+    { -694.0, -185.53, 484.0, 0x00520003 },
+    { -711.0, -185.53, 487.0, 0x00510003 },
+    { -697.0, -185.53, 473.0, 0x00500003 },
+}
+live_lightning = {}
+sprung_lightning = {}
+lightning_leaves = {}
 STATUE_OUT_BEFORE = 2.1
 STATUE_GONE_AFTER = 6.0
 
@@ -332,6 +364,9 @@ function reset()
     part = 0
     later = {}
     live_orbs = {}
+    live_lightning = {}
+    sprung_lightning = {}
+    lightning_leaves = {}
     next_helper = 0
     shades = {}
     shades_fallen = {}
@@ -369,12 +404,99 @@ function helperCast(director, row)
     local helper = helperAt(director, x, z, facing)
     director:actor_use_action(helper, action)
     if action == ACTION_HELPER_RING then
-        after(RING_AFTER, function(d)
-            if part ~= "over" then
-                d:actor_use_action(helper, ACTION_HELPER_RING_AFTER)
-            end
-        end)
+        local wave = row[1]
+        after(LIGHTNING_AFTER, function(d) lightningComes(d, wave, x, z) end)
+        if not lightning_leaves[wave] then
+            lightning_leaves[wave] = true
+            after(LIGHTNING_STAYS[wave] or 19.6, function(d) lightningLeaves(d, wave) end)
+        end
     end
+end
+
+-- The lightning a 29329 leaves where it landed (LIGHTNING.)
+function lightningComes(director, wave, x, z)
+    if part == "over" then
+        return
+    end
+    local spot, nearest = nil, nil
+    for _, row in ipairs(LIGHTNING) do
+        local d = (row[1] - x) ^ 2 + (row[3] - z) ^ 2
+        if nearest == nil or d < nearest then
+            spot, nearest = row, d
+        end
+    end
+    local at = { x = spot[1], y = spot[2], z = spot[3] }
+    director:spawn_eobj(EOBJ_LIGHTNING, at, spot[4], 0, EOBJ_LIGHTNING_FLAGS, EOBJ_LIGHTNING_FACING)
+    table.insert(live_lightning, { at = at, wave = wave })
+end
+
+-- Lightning the player comes within 29330's reach of goes off on them, that one alone.
+function lightningSprung(director)
+    if player_at == nil or part == "over" then
+        return
+    end
+    local left = {}
+    for _, entry in ipairs(live_lightning) do
+        local at = entry.at
+        if (at.x - player_at.x) ^ 2 + (at.z - player_at.z) ^ 2 <= LIGHTNING_REACH ^ 2 then
+            director:eobj_control(EOBJ_LIGHTNING, CONTROL_EOBJ_106, { 7 }, at)
+            local helper = helperAt(director, at.x, at.z, 0.0)
+            director:actor_use_action(helper, ACTION_HELPER_RING_AFTER)
+            entry.sprung = true
+            after(LIGHTNING_SPRUNG_DELETED_AFTER, function(d)
+                -- (Unless the rest have gone since, and it with them.)
+                if not entry.deleted then
+                    entry.deleted = true
+                    d:delete_eobj(EOBJ_LIGHTNING, at)
+                end
+            end)
+            table.insert(sprung_lightning, entry)
+        else
+            table.insert(left, entry)
+        end
+    end
+    live_lightning = left
+end
+
+-- What's left of a volley's lightning goes together.
+function lightningLeaves(director, wave)
+    local theirs, left = {}, {}
+    for _, entry in ipairs(live_lightning) do
+        table.insert(entry.wave == wave and theirs or left, entry)
+    end
+    live_lightning = left
+    if #theirs == 0 or part == "over" then
+        return
+    end
+    for _, entry in ipairs(theirs) do
+        director:eobj_control(EOBJ_LIGHTNING, CONTROL_EOBJ_106, { 7 }, entry.at)
+    end
+    after(LIGHTNING_DELETED_AFTER, function(d)
+        for _, entry in ipairs(theirs) do
+            if not entry.deleted then
+                entry.deleted = true
+                d:delete_eobj(EOBJ_LIGHTNING, entry.at)
+            end
+        end
+    end)
+end
+
+-- None of it outlasts the battle.
+function lightningCleared(director)
+    local any = false
+    for _, list in ipairs({ live_lightning, sprung_lightning }) do
+        for _, entry in ipairs(list) do
+            if not entry.deleted then
+                entry.deleted = true
+                any = true
+            end
+        end
+    end
+    if any then
+        director:delete_eobj(EOBJ_LIGHTNING, true)
+    end
+    live_lightning = {}
+    sprung_lightning = {}
 end
 
 -- The orbs fall 5.05 s after their cast begins (ActorControl 14 and 2 `[2]`, and no Defeated: `kill_bnpc` would log
@@ -648,6 +770,7 @@ function watch(director, health, info)
     if info.player ~= nil then
         player_id = info.player.id
         player_at = { x = info.player.x, y = info.player.y, z = info.player.z }
+        lightningSprung(director)
     end
     local him = info[BOSS]
     if him == nil then
@@ -661,6 +784,7 @@ function watch(director, health, info)
 end
 
 function clear(director)
+    lightningCleared(director)
     director:despawn_bnpc(ORB)
     director:despawn_bnpc(SHADE)
     for _, helper in ipairs(helpers) do

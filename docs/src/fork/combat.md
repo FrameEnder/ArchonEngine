@@ -132,6 +132,16 @@ the real level (retail: a level 6 Conjurer with 34 Mind sends 27; synced to 31, 
 character window shows the gear's bonus; `delay` is the weapon's (2400 for a Maple Wand). Under level sync items are
 capped, see [Level Sync](level-sync.md).
 
+### Damage past 65535 (`core/src/ipc/zone/server/action_effect.rs`)
+
+A Damage effect's amount is a u16; past that, retail puts the amount's high byte in the byte two before it and sets
+0x40 in the byte before it (`damage_fields`, `damage_amount`, `DAMAGE_PAST_U16`): 9999999, The Ultimate Weapon's last
+battle's helper's 29565 on the player, went out as `03 00 00 00 98 40 7F 96` (Bob's Chronofoil capture 9ba7d981).
+`effects:damage(type, amount)` takes any amount up to 0xFFFFFF since 2026-11-28 (a u16 before: 9999999 was a Lua
+error, so that 29565 and the Porta Decumana's 29024 did nothing). Such an amount is what the script gives: it isn't
+rolled (no miss, parry, critical hit or variance), scaled for a bot, or lessened by what the one hit has up, and what
+it takes off is all of it.
+
 ### Damage and healing modifiers (`server/modifiers.rs`)
 
 Applied after an action's script returns, by the server, so scripts only give the base amount and the statuses:

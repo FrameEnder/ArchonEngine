@@ -50,6 +50,11 @@ const DAMAGE_DEALT: &[(u16, f32, f32)] = &[
     // White Mage in quest battle 65, the lost run against the next with it (Chronofoil capture d1c46dff): Stone II
     // 289 a hit (25) against 575 (27), Holy 190 (40) against 405 (26), Aero II 70 against 149.
     (239, 2.0, 2.0),
+    // The Porta Decumana's ally's 3014 (5 s after the helpers' 28511, 50 s after 28542 in the last part): everything
+    // the party did hit for three times as much while it was on them, to the unit where there's no variance (the Duty
+    // Support members' 17235: 1 before, 3 with it, 20 of 20; 17058 9.4 to 28.6; the player's auto-attack 64.6 to
+    // 196.9), in Bob's Chronofoil captures 9ba7d981 and 6320ae56. 3013 before it (its three counts) changed nothing.
+    (3014, 3.0, 3.0),
     // On an enemy, from players:
     (1195, 0.90, 0.95), // Feint
     (1203, 0.95, 0.90), // Addle
@@ -441,11 +446,16 @@ pub fn apply_hit_on_player(
         if let TargetEffectKind::Damage {
             amount,
             damage_type,
+            unk4,
             ..
         } = &mut effect.0
         {
             if invulnerable {
                 effect.0 = TargetEffectKind::Invincible;
+                continue;
+            }
+            // An amount past a u16 (retail's 9999999) is what it's given: nothing takes any of it off.
+            if *unk4 & kawari::ipc::zone::DAMAGE_PAST_U16 != 0 {
                 continue;
             }
             let damage = *amount as f32
@@ -516,6 +526,10 @@ mod tests {
         assert_eq!(damage_dealt_multiplier(&[1041], DamageType::Magic), 1.3);
         assert_eq!(damage_dealt_multiplier(&[1264], DamageType::Slashing), 1.3);
         assert_eq!(damage_dealt_multiplier(&[1265], DamageType::Magic), 1.0);
+        // The Porta Decumana's ally's 3014: three times, whatever the hit; 3013 before it nothing.
+        assert_eq!(damage_dealt_multiplier(&[3014], DamageType::Magic), 3.0);
+        assert_eq!(damage_dealt_multiplier(&[3014], DamageType::Slashing), 3.0);
+        assert_eq!(damage_dealt_multiplier(&[3013], DamageType::Magic), 1.0);
         // The Echo doubles what its player deals and heals, on top of the healer's 30 %.
         assert_eq!(
             damage_dealt_multiplier(&[239, 1041], DamageType::Magic),

@@ -66,8 +66,8 @@ pub use event_start::{EventStart, EventType};
 
 mod action_effect;
 pub use action_effect::{
-    ActionEffect, ActionEffectFlag, DamageElement, DamageKind, DamageType, TargetEffect,
-    TargetEffectKind,
+    ActionEffect, ActionEffectFlag, DAMAGE_PAST_U16, DamageElement, DamageKind, DamageType,
+    TargetEffect, TargetEffectKind, damage_amount, damage_fields,
 };
 
 mod actor_set_pos;

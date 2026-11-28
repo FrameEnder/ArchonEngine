@@ -1139,6 +1139,19 @@ impl Instance {
     /// An EObj ID two objects here share names whichever comes first (the actors' order, which differs instance to
     /// instance): said, so the script names the one it means by layout ID (the Praetorium's 2000789, the first boss's
     /// door and the shortcut by the magitek terminal: the pull showed the shortcut, Bob's marks of 2026-11-26.)
+    /// Every object of an EObj here, in the order they came (their actor IDs): the seven the last battle's helpers'
+    /// 29329 leave, which go together.
+    pub fn objects_of_eobj(&self, base_id: u32) -> Vec<ObjectId> {
+        let mut ids: Vec<ObjectId> = self
+            .actors
+            .iter()
+            .filter(|(_, actor)| matches!(actor, NetworkedActor::Object { object, .. } if object.base_id == base_id))
+            .map(|(id, _)| *id)
+            .collect();
+        ids.sort_by_key(|id| id.0);
+        ids
+    }
+
     pub fn find_object_by_eobj_or_layout_id(&self, id: u32) -> Option<ObjectId> {
         let sharing = self
             .actors

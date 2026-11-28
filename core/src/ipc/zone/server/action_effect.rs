@@ -8,6 +8,31 @@ use crate::{
     ipc::zone::{ActionType, ServerZoneIpcData, ServerZoneIpcSegment},
 };
 
+/// (FrameEnder fork.) A Damage effect's flag for an amount past a u16: its high byte is in `unk3` then. Retail's 9999999
+/// (The Ultimate Weapon's last battle's helper's 29565 on the player) went out as `unk3` 0x98, `unk4` 0x40, amount
+/// 0x967F (Bob's Chronofoil capture 9ba7d981.)
+pub const DAMAGE_PAST_U16: u8 = 0x40;
+
+/// (FrameEnder fork.) A Damage effect's whole amount, from its three fields.
+pub fn damage_amount(amount: u16, unk3: u8, unk4: u8) -> u32 {
+    if unk4 & DAMAGE_PAST_U16 != 0 {
+        ((unk3 as u32) << 16) | amount as u32
+    } else {
+        amount as u32
+    }
+}
+
+/// (FrameEnder fork.) An amount as a Damage effect's (`amount`, `unk3`, `unk4`): past a u16 with its high byte and the
+/// flag, up to 0xFFFFFF.
+pub fn damage_fields(whole: u32) -> (u16, u8, u8) {
+    if whole > u16::MAX as u32 {
+        let whole = whole.min(0xFF_FFFF);
+        (whole as u16, (whole >> 16) as u8, DAMAGE_PAST_U16)
+    } else {
+        (whole as u16, 0, 0)
+    }
+}
+
 #[binrw]
 #[derive(Eq, PartialEq, Clone, Copy, Default)]
 pub struct DamageKind(u8);

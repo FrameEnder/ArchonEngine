@@ -485,7 +485,10 @@ The walls share their EObj ID with a line (2001526 for the first boss's, 2007457
 of both the second's and the third's), so the script names them by layout ID: `hide_eobj`, `show_eobj`,
 `delete_eobj` and the boss arenas now take either (`Instance::find_object_by_eobj_or_layout_id`: the EObj ID first).
 `director:eobj_control(eobj, category, params)` (new) sends an EObj an ActorControl Kawari has no name for (413 for the
-blasts, 409 for the last hall).
+blasts, 409 for the last hall). Where several objects of one EObj are out with no layout ID to tell them apart (the
+seven the last battle's helpers leave, `quest-battles.md`), `eobj_control` and `delete_eobj` take a last argument
+(`director::WhichEObj`, 2026-11-28): `true` for every one of them, or a position for the one nearest it;
+`spawn_eobj`'s sixth argument is the object's facing.
 
 **Coffers** (`treasure_loot`): standing from the start 65 (never opened), 57 (3554) and 58 (3033 or 3035); 52 held 3554,
 3554 and 4310, or 3555 and 4310; 53 3034, 3033 or 3035; 51 31423, 3786, 31428 and 33130, or 3781 and 31427; 59 was
@@ -1605,7 +1608,7 @@ the pull, the bosses' own casts in their timelines (`PortaDecumanaBoss1_14587.js
 * **As the second boss falls**: ActorControl 414 with its ActionTimeline 73 a second after; then the layout's event NPCs, the director's: 1042679 (layout 9269361) 1.5 s after it falls and, 2.0 s later, one for each Duty Support member who fought (BNpcBase 14658 to 14661 are ENpcBase 1043395 to 1043398, layouts 9303322 to 9303325; `nonpop` in the drop-in, `bringThoseAfter`; a party entry's `base_id` is new). A party of Bob's own bots has none of the members'.
 * **Not understood, so not sent**: the player's ActorControl 1540 `[0, 300-330, the boss or the player]` every 3 s or so through the second fight.
 
-**The ally's help** (since 2026-11-28), on the whole party from no one, every time in Bob's 9ba7d981 and 6320ae56: as the ally's line comes (33204 at 125.9, 33210 at 253.7, 33217 20.5 s into the chain, 33226 26.3 s into the second fight's last part) status 3013 with no timer and its count 1, then 2 at 2.01 s and 3 at 4.01 s; as the helper's 28511 lands (0.49 s after it) 3013 goes and 3014 comes for 5 s, and as 28542 lands (0.59 s after) for 50 s, lost as the closing cutscene comes (`allyGathers`, `allyShields`).
+**The ally's help** (since 2026-11-28), on the whole party from no one, every time in Bob's 9ba7d981 and 6320ae56: as the ally's line comes (33204 at 125.9, 33210 at 253.7, 33217 20.5 s into the chain, 33226 26.3 s into the second fight's last part) status 3013 with no timer and its count 1, then 2 at 2.01 s and 3 at 4.01 s; as the helper's 28511 lands (0.49 s after it) 3013 goes and 3014 comes for 5 s, and as 28542 lands (0.59 s after) for 50 s, lost as the closing cutscene comes (`allyGathers`, `allyShields`). **3014 is three times the damage dealt** (since 2026-11-28, `modifiers::DAMAGE_DEALT`; Bob's mark: "I think there was a DPS boost of some kind given by the game during this segment"): everything the party did hit for three times as much while it was on them, to the unit where there's no variance (the Duty Support members' 17235: 1 before, 3 with it; 17058 9.4 to 28.6; the player's auto-attack 64.6 to 196.9), the party's damage a second 595-650 before and 1506-1830 with it, and the boss down 26 and 34 s after it came; 3013 changes nothing.
 
 **At each pull** (since 2026-11-27) the helpers draw their weapons and go into battle with the boss, ActorControl 0 `[1, 1]` then 4 `[1]` (the first fight's 15 at its pull, the three of base 14588, 14589 and 14591 0.04 s later; the second fight's 10 at its), as every one of them did in Bob's 9ba7d981 (`intoBattle`).
 
@@ -1645,7 +1648,7 @@ sends everyone back there (`director:set_start`, new; retail's wasn't seen).
   start), through the cutscene.
 * Duty Support's members were the fourth set: [Party NPCs](party-npcs.md).
 
-**Not known, so guessed or left out** (also in `known-issues.md`): what 29024 does if it lands (9999999 here); what
+**Not known, so guessed or left out** (also in `known-issues.md`): what 29024 does if it lands (9999999 to everyone within its sheet's 20 yalms here, which **lands since 2026-11-28**: the Lua damage took a u16 and the script's error left the 70.7 s cast with nothing at its end, Bob's mark "the attack ultima never went off would have wiped the party if it did"; `combat.md`, "Damage past 65535"); what
 the four of base 14594 do at the middle (gone here; on retail the first to reach someone and the one across always went before); the first boss below 22 % before the chain (a 1 HP floor keeps it standing); the second fight past 325.7 s above
 30 %; what ActorControls 20 `[325]`, 49 `[16]`, 62 and 70 on the bosses and statuses 3009-3012 do (sent and given as
 retail did: **3009 to 3011 are on the first boss from the first, with no timer**, as Kawari Witness saw them when it

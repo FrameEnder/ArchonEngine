@@ -2835,3 +2835,97 @@ fn the_porta_decumana_s_boss_takes_his_statuses_off() {
         );
     }
 }
+
+/// Bob's mark of 2026-11-28 in the Porta Decumana ("the attack ultima never went off would have wiped the party if it
+/// did"): the second boss's 29024 asked for 9999999, the Lua damage took a u16, and the script's error left the cast
+/// with nothing at its end (the same in the last battle's 29565, which is to fell the player.) The amount goes out as
+/// retail's did (its high byte and the flag, `damage_fields`), and what it lands for is all of it.
+#[test]
+fn damage_past_a_u16_lands_whole() {
+    use crate::lua::EffectsBuilder;
+    use kawari::ipc::zone::{DAMAGE_PAST_U16, DamageType, TargetEffectKind, damage_amount};
+    for path in [
+        "290/PortaDecumanaBoss_29024.lua",
+        "295/QB5061Helper_29565.lua",
+    ] {
+        let lua = mlua::Lua::new();
+        let constructor = lua
+            .create_function(|_, ()| Ok(EffectsBuilder::default()))
+            .unwrap();
+        lua.globals().set("EffectsBuilder", constructor).unwrap();
+        lua.globals()
+            .set("DAMAGE_TYPE_MAGIC", DamageType::Magic)
+            .unwrap();
+        let path = format!(
+            "{}/../../resources/scripts/actions/{path}",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        lua.load(std::fs::read_to_string(&path).unwrap())
+            .exec()
+            .unwrap();
+        let do_action: mlua::Function = lua.globals().get("doAction").unwrap();
+        let mut effects: EffectsBuilder = do_action
+            .call((mlua::Value::Nil, false))
+            .unwrap_or_else(|error| panic!("{path}: {error}"));
+        let TargetEffectKind::Damage {
+            amount, unk3, unk4, ..
+        } = effects.effects[0].0
+        else {
+            panic!("{path}: no damage");
+        };
+        // Retail's 9999999: 0x98, 0x40, 0x967F (Bob's Chronofoil capture 9ba7d981.)
+        assert_eq!((amount, unk3, unk4), (0x967F, 0x98, DAMAGE_PAST_U16));
+        assert_eq!(damage_amount(amount, unk3, unk4), 9_999_999);
+        // Nothing takes any of it off: not the roll of an NPC's hit, nor what the one hit has up.
+        crate::server::action::roll_npc_hit(&mut effects.effects, 0.4, 0);
+        crate::server::modifiers::apply_hit_on_player(
+            &mut effects.effects,
+            &[1195],
+            &[1191],
+            19,
+            None,
+        );
+        let TargetEffectKind::Damage {
+            amount, unk3, unk4, ..
+        } = effects.effects[0].0
+        else {
+            panic!("{path}: no damage left");
+        };
+        assert_eq!(damage_amount(amount, unk3, unk4), 9_999_999);
+    }
+    // An ordinary amount is as it was.
+    assert_eq!(kawari::ipc::zone::damage_fields(65_535), (65_535, 0, 0));
+    assert_eq!(kawari::ipc::zone::damage_fields(708), (708, 0, 0));
+}
+
+/// Bob's mark of 2026-11-28 in The Ultimate Weapon's last battle ("even simple floor attacks are not being displayed
+/// like Dark Thunder"): the seven objects the helpers' 29329 leave are one EObj, none in the layout. A director names
+/// one of them by where it is, or all of them (`WhichEObj`).
+#[test]
+fn a_director_names_one_of_an_eobj_s_objects_by_its_spot() {
+    use crate::server::director::WhichEObj;
+    use kawari::common::Position;
+    use kawari::ipc::zone::SpawnObject;
+    let mut world = TestWorld::new();
+    let mut ids = Vec::new();
+    for (x, z) in [(-704.0, 480.0), (-708.0, 470.0), (-694.0, 484.0)] {
+        let object = SpawnObject {
+            base_id: 2012984,
+            entity_id: crate::server::instance::Instance::generate_actor_id(),
+            position: Position(glam::Vec3A::new(x, -185.53, z)),
+            ..Default::default()
+        };
+        ids.push(object.entity_id);
+        world
+            .instance
+            .insert_object(object.entity_id, object, String::default());
+    }
+    let near = WhichEObj::Nearest(Position(glam::Vec3A::new(-695.1, -185.53, 482.0)));
+    assert_eq!(near.of(&world.instance, 2012984), [ids[2]]);
+    let mut all = WhichEObj::All.of(&world.instance, 2012984);
+    all.sort_by_key(|id| id.0);
+    ids.sort_by_key(|id| id.0);
+    assert_eq!(all, ids);
+    assert_eq!(WhichEObj::One.of(&world.instance, 2012984).len(), 1);
+    assert!(WhichEObj::All.of(&world.instance, 2012827).is_empty());
+}

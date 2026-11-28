@@ -1397,8 +1397,16 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
   and the script's tables, generated from Connor's run (78 helper casts with their spots, seven moves, five waves of
   orbs, four casts of the four of base 14697, 13 talks and 5 yells). The pull is his taking the fight up (he had the
   player 5.4 s before the first hit landed in one run).
-* **Round him**: helpers (base 9020) cast where the director puts them, 29335 where the player stands, and 29329 is
-  followed by 29330 from the same spot 7.7 s after it began; nine or eight orbs (base 14644) come five times, cast
+* **Round him**: helpers (base 9020) cast where the director puts them, 29335 where the player stands, and each 29329
+  **leaves lightning** where it landed (since 2026-11-28; Bob's mark "even simple floor attacks are not being
+  displayed like Dark Thunder": Kawari had nothing there, and a 29330 from all seven spots at 7.7 s). Retail, both
+  times in each of Bob's three runs (9ba7d981, 6320ae56, 50e72631): seven SpawnObjects of EObj 2012984 4.7-4.9 s after
+  the casts began (flags byte 5, radius 1, the helpers' facing, the director their handler, second arguments
+  0x00500003 to 0x00560003 by spot), gone together 19.6 s after the casts began the first time and 24.6 the second
+  (ActorControl 106 `[7]` from each, DeleteObject 3.1-3.4 s later). The one a player walked into (50e72631: 3.6 yalms
+  from it in their last position before, 4.4 in the one before that; 29330's sheet reach is 4) went alone: its 106
+  `[7]`, a helper put on its spot using 29330 on them (744), DeleteObject 3.3 s later (`lightningComes`,
+  `lightningSprung`, `lightningLeaves`); nine or eight orbs (base 14644) come five times, cast
   29333 7.7 s later and go after 22.5 s; the four of base 14697 come out on one of two sets of four spots of the
   arena's edge (19.5 yalms out, at random: A, A, B, B in one run, B, B, B, A in the other) to cast 29762; his 29336
   takes him away and SnapNextMove brings him out 1.8 s later where his next cast begins.

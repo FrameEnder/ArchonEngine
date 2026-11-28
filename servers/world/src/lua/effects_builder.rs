@@ -483,14 +483,18 @@ impl UserData for EffectsBuilder {
     fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut(
             "damage",
-            |_, this, (damage_type, amount): (DamageType, u16)| {
+            // (An amount past 65535 goes out as retail's: its high byte and a flag, `damage_fields`. As a u16 it was
+            // a Lua error: the Porta Decumana's 29024 and the last battle's 29565, 9999999 each, did nothing, or
+            // stopped the tick. Bob's mark of 2026-11-28: "the attack ultima never went off".)
+            |_, this, (damage_type, whole): (DamageType, u32)| {
+                let (amount, unk3, unk4) = kawari::ipc::zone::damage_fields(whole);
                 this.effects.push(TargetEffect(TargetEffectKind::Damage {
                     damage_kind: DamageKind::default(),
                     damage_type,
                     damage_element: DamageElement::Unaspected, // Will be filled in later
                     bonus_percent: 0,
-                    unk3: 0,
-                    unk4: 0,
+                    unk3,
+                    unk4,
                     amount,
                 }));
                 Ok(())
