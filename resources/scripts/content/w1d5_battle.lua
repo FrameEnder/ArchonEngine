@@ -502,20 +502,20 @@ function markParty(director)
     end
 end
 
--- A helper's 28511 on the whole party and 28992 on itself, 2.9 s before the long cast is stopped.
+-- A helper's 28511 on the whole party (aimed at itself, each member a target: `on_party`) and 28992 on itself, 2.9 s before the long cast is stopped.
 function shieldParty(director)
     local helper = helperAt(director, MIDDLE_1.x, MIDDLE_1.z)
     if helper == nil then
         return
     end
-    director:actor_use_action(helper, ACTION_PARTY_SHIELD, D.party[1] and D.party[1].id or nil)
+    director:actor_use_action(helper, ACTION_PARTY_SHIELD)
     director:actor_use_action(helper, ACTION_HELPER_SHIELD)
 end
 
 function lastShield(director)
     local helper = helperAt(director, MIDDLE_2.x, MIDDLE_2.z)
     if helper ~= nil then
-        director:actor_use_action(helper, ACTION_PARTY_LAST, D.party[1] and D.party[1].id or nil)
+        director:actor_use_action(helper, ACTION_PARTY_LAST)
     end
     director:party_npc_yell("tank", LINE_LAST_TANK, 0.7)
     director:party_npc_yell("ranged", LINE_LAST_RANGED, 0.9)

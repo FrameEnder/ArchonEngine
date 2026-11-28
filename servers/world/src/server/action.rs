@@ -1199,6 +1199,17 @@ pub fn execute_action(
             _ => unimplemented!(),
         };
 
+        // A script's `execute_combo` names the action it's for: the action used (retail's ExecuteCombo shows it.)
+        if let Some(effects_builder) = &mut effects_builder {
+            for effect in &mut effects_builder.effects {
+                if let TargetEffectKind::ExecuteCombo { action_id, .. } = &mut effect.0
+                    && *action_id == 0
+                {
+                    *action_id = request.action_id as u16;
+                }
+            }
+        }
+
         // Bring NPC damage against players to what retail does, see npc_damage_scale. Hits vary a little, and are
         // sometimes critical.
         // Party bots and party NPCs are hit as players are (`hit_like_a_player`): an enemy's hit on them was worked out
@@ -1343,6 +1354,22 @@ pub fn execute_action(
                 // The target dodged it.
                 effects_builder.effects.clear();
             }
+        }
+
+        // An NPC's action on the whole party (`EffectsBuilder::on_party`): each member gets the effects, wherever they
+        // are, the players first and then the party's NPCs as they came (retail's order, Bob's 9ba7d981), and the NPC
+        // itself nothing.
+        if let Some(effects_builder) = &mut effects_builder
+            && effects_builder.on_party
+            && matches!(actor, NetworkedActor::Npc { .. })
+        {
+            area_bystanders.extend(
+                whole_party(instance)
+                    .into_iter()
+                    .filter(|id| *id != from_actor_id)
+                    .map(|id| (id, effects_builder.effects.clone())),
+            );
+            effects_builder.effects.clear();
         }
 
         // An area attack an NPC casts on itself (retail's invisible helpers marking the ground, as the Copperbell Mines'
@@ -2315,8 +2342,10 @@ pub fn execute_action(
                 // AoeEffect8 for an area action unless it was aimed at someone and landed on exactly one (retail, Bob's
                 // Copperbell Mines captures of 2026-10-25: area attacks that caught no one, several, or were aimed at
                 // the ground went as AoeEffect8, 172 of them; one aimed at someone that caught one, as ActionEffect1.)
-                let use_aoe_packet = (area_action || at_no_one)
-                    && !(shown.len() == 1 && aimed_at_someone)
+                // One on the whole party too, as an AoeEffect8 at its user naming each (`EffectsBuilder::on_party`.)
+                let use_aoe_packet = (((area_action || at_no_one)
+                    && !(shown.len() == 1 && aimed_at_someone))
+                    || effects_builder.on_party)
                     && shown.len() <= MAX_AOE_PACKET_TARGETS;
                 let effects_of = |effects: &[TargetEffect]| {
                     // The packet only has room for 8 effects per target.
@@ -5368,6 +5397,33 @@ pub(crate) fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_per
 /// Lands an enemy's area attack on another player (or NPC of the target's side) inside it: their damage (shown as
 /// flying text, since the ActionEffect packet only carries the target), or an area heal's healing, any statuses,
 /// their new HP, and for an NPC enmity on the attacker as for its target.
+/// Who's in the party here, for an action on all of it (`EffectsBuilder::on_party`): the players, then the party's NPCs
+/// (party bots, Duty Support members) in the order they came (their actor IDs), those still standing.
+pub(crate) fn whole_party(instance: &Instance) -> Vec<ObjectId> {
+    let standing = |id: &ObjectId| {
+        instance
+            .find_actor(*id)
+            .is_some_and(|actor| actor.get_common_spawn().health_points > 0)
+    };
+    let mut players: Vec<ObjectId> = instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+        .map(|(id, _)| *id)
+        .filter(standing)
+        .collect();
+    players.sort_by_key(|id| id.0);
+    let mut npcs: Vec<ObjectId> = instance
+        .party_bots
+        .keys()
+        .copied()
+        .filter(standing)
+        .collect();
+    npcs.sort_by_key(|id| id.0);
+    players.extend(npcs);
+    players
+}
+
 fn hit_area_bystander(
     network: Arc<Mutex<NetworkState>>,
     instance: &mut Instance,

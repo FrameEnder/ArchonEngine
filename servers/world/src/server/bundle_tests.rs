@@ -2669,3 +2669,26 @@ fn a_ranged_bot_s_weaponskills_reach_as_far_as_its_gun() {
     assert!(!out_of_reach(weapon_range(-1, true), there));
     assert!(out_of_reach(weapon_range(-1, false), there));
 }
+
+/// Retail's Porta Decumana helpers' 28511 and 28542 land on the whole party, wherever they are: the player first, then
+/// the three Duty Support members as they came, each a target with the action's ExecuteCombo (Bob's 9ba7d981 and
+/// 6320ae56). Bob, 2026-11-27: build what retail shows instead of noting that Kawari can't yet. Those down and enemies
+/// aren't in it.
+#[test]
+fn an_npc_s_action_on_the_whole_party_names_every_member() {
+    use crate::server::action::whole_party;
+    let mut world = TestWorld::new();
+    let player = world.player(1, [0.0, 4.0, 250.0]);
+    let second = world.player_npc(3, player, [40.0, 4.0, 250.0]);
+    let first = world.player_npc(2, player, [3.0, 4.0, 250.0]);
+    let down = world.player_npc(4, player, [5.0, 4.0, 250.0]);
+    let enemy = world.enemy(5, [1.0, 4.0, 251.0], 1000);
+    if let Some(actor) = world.instance.find_actor_mut(down) {
+        actor.get_common_spawn_mut().health_points = 0;
+    }
+    let party = whole_party(&world.instance);
+    let mut bots = vec![first, second];
+    bots.sort_by_key(|id| id.0);
+    assert_eq!(party, [vec![player], bots].concat());
+    assert!(!party.contains(&enemy) && !party.contains(&down));
+}

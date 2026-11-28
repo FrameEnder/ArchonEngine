@@ -435,6 +435,12 @@ pub struct EffectsBuilder {
     /// in a pose (ActorControl 82 with its value, retail's unknown), for a while: what a Seduced status does. Lady
     /// Amandine's Beguiling Mist (28643) in Haukke Manor (Bob's Chronofoil captures: speed 4, pose 1132, 3.0 s.)
     pub walk_to_caster: Option<WalkToCaster>,
+    /// If true, an NPC's action lands on the whole party (the players and the NPCs in it: party bots, Duty Support
+    /// members) wherever they are, with these effects each, and on nobody else: shown aimed at the NPC itself, each
+    /// member a target. Retail's Porta Decumana helpers' 28511 and 28542 (an AoeEffect8 at the helper naming the
+    /// player and the three Duty Support members, each with ExecuteCombo for the action: every one of them in Bob's
+    /// 9ba7d981 and 6320ae56) (`on_party`.)
+    pub on_party: bool,
 }
 
 /// A barrier an action gives (`EffectsBuilder::barriers`.)
@@ -614,6 +620,11 @@ impl UserData for EffectsBuilder {
             }));
             Ok(())
         });
+        // It lands on the whole party, wherever they are (see `EffectsBuilder::on_party`.)
+        methods.add_method_mut("on_party", |_, this, _: ()| {
+            this.on_party = true;
+            Ok(())
+        });
         // Players it lands on walk towards the caster for `seconds` (see `EffectsBuilder::walk_to_caster`.)
         methods.add_method_mut(
             "walk_to_caster",
@@ -694,7 +705,7 @@ impl UserData for EffectsBuilder {
                     unk3: 0,
                     unk4: 0,
                     unk5: 128,
-                    action_id: 0, // Filled in later
+                    action_id: 0, // The action's, filled in by `execute_action`
                 }));
             Ok(())
         });
