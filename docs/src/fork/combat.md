@@ -142,6 +142,18 @@ error, so that 29565 and the Porta Decumana's 29024 did nothing). Such an amount
 rolled (no miss, parry, critical hit or variance), scaled for a bot, or lessened by what the one hit has up, and what
 it takes off is all of it.
 
+### Maximum HP from a status (`modifiers::MAX_HP`, `effect::refresh_max_hp`)
+
+A status in `MAX_HP` multiplies its bearer's maximum HP (3123, The Ultimate Weapon's last battle's ally's: 2.0). When
+a player's status list changes and the multiplier with it, their connection is told (`FromServer::EchoMultiplier`,
+with the duty's Echo, which raises it the same way) and sends their stats again; `Instance::max_hp_given` holds what
+each was last told. Their HP isn't filled.
+
+**Effect kinds 50 and 73** (`TargetEffectKind::Unknown50`, `Unknown73`; `effects:unknown_effect(kind, value,
+sixth_byte)`): sent as retail sent them in that battle (`32 00 00 00 00 00 01 00` in the ally's 29344,
+`49 00 00 00 00 80 06 00` in the boss's 29754); what they do isn't known. `effects:gain_effect` takes the effect's
+first two bytes as a fourth and fifth argument (150 and 100 there).
+
 ### Damage and healing modifiers (`server/modifiers.rs`)
 
 Applied after an action's script returns, by the server, so scripts only give the base amount and the statuses:

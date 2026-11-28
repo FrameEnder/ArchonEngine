@@ -1,17 +1,18 @@
 -- The Ultimate Weapon's last battle's ally's 29344: no cast, on the fallen player from the middle, 36.3 s after they
--- fell: statuses 3123 (param 150) and 2056, which lasted to the end; the player's HP was twice what it had been from
--- then (not done here), and they got up 24.1 s later (the director's, content/questbattle/5061.lua) (Connor's
--- Chronofoil capture af05916c of 2026-11-09 and Bob's 9ba7d981 of 2026-11-17, two runs.) What the statuses do isn't
--- known.
-local STATUS_1 = 3123
-local STATUS_1_PARAM = 150
-local STATUS_2 = 2056
-local DURATION = 3600.0
+-- fell. Retail's two effects, the same in Bob's Chronofoil captures 9ba7d981, 6320ae56 and 50e72631: kind 50
+-- (`32 00 00 00 00 00 01 00`, meaning unknown) and status 3123 (`0E 96 64 19 00 00 33 0C`: parameter 25, and 150 and
+-- 100 in the two bytes before it), which lasted to the end. 3123 doubles their maximum HP (PlayerStats with it: 2377
+-- to 4754, `modifiers::MAX_HP`). They get up 13.5 s later, the director's (content/questbattle/5061.lua), and
+-- status 2056 comes then.
+local STATUS = 3123
+local STATUS_PARAM = 25
+local STATUS_BYTES = { 150, 100 }
+local DURATION = 0.0
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
-    effects:gain_effect(STATUS_1, STATUS_1_PARAM, DURATION)
-    effects:gain_effect(STATUS_2, 0, DURATION)
+    effects:unknown_effect(50, 1)
+    effects:gain_effect(STATUS, STATUS_PARAM, DURATION, STATUS_BYTES[1], STATUS_BYTES[2])
 
     return effects
 end

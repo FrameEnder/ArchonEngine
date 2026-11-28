@@ -163,7 +163,10 @@ pub(super) fn refresh_echo(network: &Arc<Mutex<NetworkState>>, instance: &mut In
     for id in &players {
         network.lock().send_to_by_actor_id(
             *id,
-            FromServer::EchoMultiplier(multiplier),
+            // (With what their statuses multiply it by, `effect::refresh_max_hp`.)
+            FromServer::EchoMultiplier(
+                multiplier * instance.max_hp_given.get(id).copied().unwrap_or(1.0),
+            ),
             DestinationNetwork::ZoneClients,
         );
     }

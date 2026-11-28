@@ -196,14 +196,43 @@ pub fn process_effects_list(
 
     // Only update the client if absolutely necessary (e.g. an effect is added, removed or changed duration)
     if is_dirty {
-        send_effects_list(network, instance, from_actor_id);
+        send_effects_list(network.clone(), instance, from_actor_id);
 
         let Some(actor) = instance.find_actor_mut(from_actor_id) else {
             return;
         };
 
         actor.status_effects_mut().unwrap().reset_dirty();
+        refresh_max_hp(&network, instance, from_actor_id);
     }
+}
+
+/// A player's maximum HP follows the statuses that multiply it (`modifiers::MAX_HP`): their connection is told the
+/// multiplier (with the duty's Echo, which goes the same way) and sends their stats again, when it has changed.
+pub fn refresh_max_hp(
+    network: &Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    actor_id: ObjectId,
+) {
+    let Some(actor @ NetworkedActor::Player { .. }) = instance.find_actor(actor_id) else {
+        return;
+    };
+    let statuses: Vec<u16> = actor
+        .status_effects()
+        .map(|effects| effects.ids().collect())
+        .unwrap_or_default();
+    let multiplier = crate::server::modifiers::max_hp_multiplier(&statuses);
+    let given = instance.max_hp_given.get(&actor_id).copied().unwrap_or(1.0);
+    if (multiplier - given).abs() < f32::EPSILON {
+        return;
+    }
+    instance.max_hp_given.insert(actor_id, multiplier);
+    let echo = crate::server::duty_finder::echo_multiplier(instance.echo, instance.epic_echo);
+    network.lock().send_to_by_actor_id(
+        actor_id,
+        FromServer::EchoMultiplier(multiplier * echo),
+        DestinationNetwork::ZoneClients,
+    );
 }
 
 /// Gives the actor a new effect. You can also optionally send an ACS, if needed.

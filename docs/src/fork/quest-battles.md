@@ -1420,7 +1420,19 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
 * **The middle** (176 to 316 s) is the director's: he can't be targeted; four of base 14699 tethered to the player
   (ActorControl 35) while a gauge climbs (the director's 0x8000000C `[61, n]` to 10000 in 35.7 s); a helper's 29788
   (Attract 68, status 1614), then its 29565 for 9999999, which **fells the player**; 36 s later the ally's 29344
-  (statuses 3123 and 2056), and 24 s after that the player is up, whole, and the second part begins. For it the
+  (kind 50 and status 3123, which **doubles their maximum HP**: PlayerStats 2377 to 4754, `modifiers::MAX_HP`,
+  `effect::refresh_max_hp`), and 13.5 s after that the player is up, whole; the second part begins at 312.7.
+  **The player through it** (since 2026-11-28, the same in Bob's three runs to a tenth of a second; his marks
+  "lahabrea cutscene broken not displaying at all how it should", "warrior of light not displayed at all how they was
+  in retail", "damage being heard, and seen being taken taken during the scene", "chain vfx still showing around me
+  unlike retail": in his run the 29565 was a Lua error, `combat.md` "Damage past 65535", so they never fell, kept the
+  chains and were up for a scene made for someone lying down): ActorControlSelf 263 `[1]` with 2999 at 221.3 and 240
+  `[0]` at 228.2; ActionTimeline 8548 on them at 246.95, the chains' status 1614 off at 247.3, status 2526 (6196) at
+  248.0; the 29565 at 251.9 (their statuses after: 2999 and the permanent ones); status 2397 (116) from 271.9 to
+  300.7; **up at 301.75** (log message 9344 `[1]`, status 418 for 6 s, ActorControl 1529 `[77]`, status 2056 with
+  parameter 396, which Kawari gave with the 29344); 2999 off and 263 `[0]` at 312.3. The director's log messages
+  10079 (43.2 and 164.45 s) and 10080 (191.77 and 204.3 s) are on the clock too. The boss's 29753, 29754, 29787 and
+  29343 carry retail's effects (their own number as a combo's; 29754 kind 73 first), which were empty. For it the
   director has `hold_wipe(held)` (every player down isn't a party wipe meanwhile) and `revive_players()` (the fallen
   get up where they lie with full HP and MP, no loading screen): `LuaDirectorTask::HoldWipe` and `RevivePlayers`,
   `Instance::wipe_held`.
@@ -1439,7 +1451,7 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
   server takes them off, as the script's durations already did. The player's fall in the middle, as Witness saw it:
   ActorControlSelf 511 `[1]` and 512 as they fell, the director's 0x80000001 `[1]` 4.8 s later.
 * Not known (see the script's header): what happens past 527 s; what the gauge counts and whether felling the four
-  changes anything; the player's HP doubling with status 3123 (not done); what the controls, commands and statuses
+  changes anything; what the controls, commands and statuses
   do; the damage of what never hit anyone.
 
 ### Quest battle 82 — the Summoner's level 50 quest's (`content/questbattle/82.lua`)

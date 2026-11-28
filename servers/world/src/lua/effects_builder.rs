@@ -502,16 +502,40 @@ impl UserData for EffectsBuilder {
         );
         methods.add_method_mut(
             "gain_effect",
-            |_, this, (effect_id, param, duration): (u16, u16, f32)| {
+            // (`unk1` and `unk2`: the effect's first two bytes, where retail's had something: 150 and 100 in The
+            // Ultimate Weapon's last battle's ally's 29344.)
+            |_, this, (effect_id, param, duration, unk1, unk2): (u16, u16, f32, Option<u8>, Option<u8>)| {
                 this.effects
                     .push(TargetEffect(TargetEffectKind::GainEffect {
-                        unk1: 0,
-                        unk2: 0,
+                        unk1: unk1.unwrap_or(0),
+                        unk2: unk2.unwrap_or(0),
                         unk3: 0,
                         effect_id,
                         duration,
                         param,
                     }));
+                Ok(())
+            },
+        );
+        // An effect retail sent that Kawari has no name for, as retail sent it: kind 50 or 73, its sixth byte and
+        // its value (`TargetEffectKind::Unknown50`, `Unknown73`.)
+        methods.add_method_mut(
+            "unknown_effect",
+            |_, this, (kind, value, sixth): (u8, u16, Option<u8>)| {
+                let unk = [0, 0, 0, 0, sixth.unwrap_or(0)];
+                match kind {
+                    50 => this
+                        .effects
+                        .push(TargetEffect(TargetEffectKind::Unknown50 { unk, value })),
+                    73 => this
+                        .effects
+                        .push(TargetEffect(TargetEffectKind::Unknown73 { unk, value })),
+                    _ => {
+                        return Err(mlua::Error::RuntimeError(format!(
+                            "unknown_effect: no effect kind {kind}"
+                        )));
+                    }
+                }
                 Ok(())
             },
         );

@@ -6,6 +6,8 @@ local DAMAGE = 9999999
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
     effects:damage(DAMAGE_TYPE_MAGIC, DAMAGE)
+    -- (Retail's second effect: the action's own number as a combo's.)
+    effects:execute_combo(0)
 
     return effects
 end

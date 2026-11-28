@@ -2929,3 +2929,75 @@ fn a_director_names_one_of_an_eobj_s_objects_by_its_spot() {
     assert_eq!(WhichEObj::One.of(&world.instance, 2012984).len(), 1);
     assert!(WhichEObj::All.of(&world.instance, 2012827).is_empty());
 }
+
+/// Bob's marks of 2026-11-28 in The Ultimate Weapon's last battle ("lahabrea cutscene broken not displaying at all how
+/// it should", "warrior of light not displayed at all how they was in retail"): what retail's actions through its
+/// middle carried, which Kawari's scripts left empty or gave differently. The boss's 29753, 29754, 29787 and 29343
+/// carry their own number as a combo's (29754 kind 73 first); the ally's 29344 kind 50, then status 3123 with
+/// parameter 25 (150 and 100 before it), which doubles the player's maximum HP (his Chronofoil captures 9ba7d981,
+/// 6320ae56 and 50e72631.)
+#[test]
+fn the_last_battle_s_middle_carries_retail_s_effects() {
+    use crate::lua::EffectsBuilder;
+    use kawari::ipc::zone::TargetEffectKind;
+    let run = |path: &str| -> Vec<TargetEffectKind> {
+        let lua = mlua::Lua::new();
+        let constructor = lua
+            .create_function(|_, ()| Ok(EffectsBuilder::default()))
+            .unwrap();
+        lua.globals().set("EffectsBuilder", constructor).unwrap();
+        let path = format!(
+            "{}/../../resources/scripts/actions/{path}",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        lua.load(std::fs::read_to_string(&path).unwrap())
+            .exec()
+            .unwrap();
+        let do_action: mlua::Function = lua.globals().get("doAction").unwrap();
+        let effects: EffectsBuilder = do_action
+            .call((mlua::Value::Nil, false))
+            .unwrap_or_else(|error| panic!("{path}: {error}"));
+        effects.effects.iter().map(|effect| effect.0).collect()
+    };
+    for path in [
+        "297/QB5061Boss_29753.lua",
+        "297/QB5061Boss_29787.lua",
+        "293/QB5061Boss_29343.lua",
+    ] {
+        assert!(
+            matches!(
+                run(path)[..],
+                [TargetEffectKind::ExecuteCombo { unk5: 128, .. }]
+            ),
+            "{path}"
+        );
+    }
+    assert!(matches!(
+        run("297/QB5061Boss_29754.lua")[..],
+        [
+            TargetEffectKind::Unknown73 {
+                unk: [0, 0, 0, 0, 0x80],
+                value: 6
+            },
+            TargetEffectKind::ExecuteCombo { .. }
+        ]
+    ));
+    assert!(matches!(
+        run("293/QB5061Ally_29344.lua")[..],
+        [
+            TargetEffectKind::Unknown50 {
+                unk: [0, 0, 0, 0, 0],
+                value: 1
+            },
+            TargetEffectKind::GainEffect {
+                unk1: 150,
+                unk2: 100,
+                param: 25,
+                effect_id: 3123,
+                ..
+            }
+        ]
+    ));
+    assert_eq!(crate::server::modifiers::max_hp_multiplier(&[3123]), 2.0);
+    assert_eq!(crate::server::modifiers::max_hp_multiplier(&[2999]), 1.0);
+}

@@ -109,6 +109,22 @@ const HP_FLOOR: &[u16] = &[
     810, // Living Dead (Walking Dead's heal back to full isn't done)
 ];
 
+/// Statuses that multiply their bearer's maximum HP: (status, multiplier.)
+const MAX_HP: &[(u16, f32)] = &[
+    // The Ultimate Weapon's last battle's ally's 29344 gives the fallen player 3123: their maximum HP in PlayerStats
+    // went from 2377 to 4754 with it, and stayed (Bob's Chronofoil capture 9ba7d981; 2433 to 4866 in 6320ae56.)
+    (3123, 2.0),
+];
+
+/// How many times their maximum HP someone with these statuses has.
+pub fn max_hp_multiplier(statuses: &[u16]) -> f32 {
+    MAX_HP
+        .iter()
+        .filter(|(id, _)| statuses.contains(id))
+        .map(|(_, multiplier)| *multiplier)
+        .product()
+}
+
 /// Statuses on whoever is healed: (status, multiplier.)
 const HEALING_RECEIVED: &[(u16, f32)] = &[
     (102, 1.10), // Mantra

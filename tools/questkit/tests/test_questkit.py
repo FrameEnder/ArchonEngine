@@ -806,6 +806,39 @@ class BattleSimPlayerTest(unittest.TestCase):
         self.assertEqual([(t, (at["x"], at["z"])) for t, at in first_controls], [(4.5, (-694.0, 484.0))])
         self.assertEqual(len([1 for t, name, _ in calls if name == "eobj_control" and t == 19.5]), 6)
 
+    def test_the_last_battles_player_goes_through_its_middle_as_retail(self):
+        """Bob, 2026-11-28: "lahabrea cutscene broken not displaying at all how it should", "warrior of light not
+        displayed at all how they was in retail", "chain vfx still showing around me unlike retail". Retail's player
+        (three runs): ActionTimeline 8548 and the chains' status 1614 off before the blow that fells them, 2397 as
+        they lie, up at 301.75 with 418 and 2056, 2999 off at 312.3. The script had them up at 312.3 and nothing
+        else."""
+        fixture = json.loads((battle_sim.BATTLES / "5061-9ba7d981.json").read_text())
+        result = battle_sim.simulate(fixture)
+        self.assertIsNone(result.error)
+        pulled = next(t for t, name, args in result.calls if name == "actor_use_action" and args[1:] == [29329]) - 16.3
+        player = battle_sim.PLAYER_ID
+        seen = {}
+        for t, name, args in result.calls:
+            key = None
+            if name == "actor_control" and args[0] == player:
+                key = ("control", args[1], args[2][1])
+            elif name in ("gain_effect", "lose_effect") and args[0] == player:
+                key = (name, args[1])
+            elif name in ("revive_players",) or (name == "log_message" and args[0] in (9344, 10079, 10080)):
+                key = (name, args[0] if args else None)
+            if key is not None:
+                seen.setdefault(key, []).append(round(t - pulled, 1))
+        want = {("control", 263, 1): 221.3, ("control", 240, 0): 228.2, ("control", 407, 8548): 246.95,
+                ("lose_effect", 1614): 247.3, ("gain_effect", 2526): 248.0, ("gain_effect", 2397): 271.9,
+                ("lose_effect", 2397): 300.7, ("log_message", 9344): 301.75, ("gain_effect", 418): 301.75,
+                ("control", 1529, 77): 301.75, ("gain_effect", 2056): 301.75, ("control", 263, 0): 312.3}
+        for key, at in want.items():
+            self.assertIn(key, seen)
+            self.assertAlmostEqual(seen[key][0], at, delta=0.6, msg=str(key))
+        self.assertAlmostEqual(seen[("revive_players", None)][0], 301.75, delta=0.6)
+        self.assertEqual(len(seen[("log_message", 10079)]), 2)
+        self.assertEqual(len(seen[("log_message", 10080)]), 2)
+
     def test_heart_of_the_forests_guards_heal_below_65(self):
         """Bob, 2026-11-18: "the balance of this battle seemed a tad different then in retail". Retail's three guards
         never healed the one who prays above 64 % (three runs, his Chronofoil capture 667a68c5: the first Cure 30.6

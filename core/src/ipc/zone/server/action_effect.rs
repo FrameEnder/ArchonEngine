@@ -158,6 +158,15 @@ pub enum TargetEffectKind {
     /// row until then, which pushed Bob 5 yalms the other way.
     #[brw(magic = 32u8)]
     Attract { unk: [u8; 5], attract_id: u16 },
+    /// (FrameEnder fork.) Kind 50, meaning unknown: first on the fallen player in The Ultimate Weapon's last battle's
+    /// ally's 29344, `32 00 00 00 00 00 01 00`, ahead of the status that doubles their HP (Bob's Chronofoil captures
+    /// 9ba7d981, 6320ae56 and 50e72631.)
+    #[brw(magic = 50u8)]
+    Unknown50 { unk: [u8; 5], value: u16 },
+    /// (FrameEnder fork.) Kind 73, meaning unknown: first in that battle's boss's 29754 on himself,
+    /// `49 00 00 00 00 80 06 00`, as the four he calls come (the same three captures.)
+    #[brw(magic = 73u8)]
+    Unknown73 { unk: [u8; 5], value: u16 },
     /// Seen during mounting.
     #[brw(magic = 39u8)]
     Mount { unk1: u8, unk2: u32, id: u16 },

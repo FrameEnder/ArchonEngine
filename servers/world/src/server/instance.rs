@@ -386,6 +386,8 @@ pub struct Instance {
     pub echo: u16,
     pub epic_echo: u16,
     pub echo_applied: f32,
+    /// The multiplier on maximum HP last sent each player whose statuses raise it (`effect::refresh_max_hp`.)
+    pub max_hp_given: HashMap<ObjectId, f32>,
     /// When the party's current fight began (an enemy hating one of them), for The Echo's three minutes.
     pub fight_started: Option<std::time::Instant>,
     /// How long this content lasts for, if applicable.

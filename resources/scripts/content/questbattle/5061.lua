@@ -27,15 +27,16 @@
 --          uses 29788 on the player (Attract 68, status 1614); 218.4 his 29343 (2.2 s); 221.3 his 29780, 63 [0],
 --          the gauge gone (0x8000000C [61, 0xFFFFFFFF]), status 2999 on the player, the director's 0x8000001A [1, 1]
 --   251.9  a helper's 29565 on the player: 9999999. They fall. 257.2 the music off; 260.7 talk 33713; 279.9 music 81
---   288.1  the ally in the middle: 29344 on the player (statuses 3123 and 2056); talks 33702 and 33703
---   312.3  the player up again, whole: status 2999 off, the director's 0x8000001B [1, 0]; 312.7 talk 33704 and his
+--   288.1  the ally in the middle: 29344 on the player (status 3123, their HP doubled); talks 33702 and 33703
+--   301.75 the player up again, whole (T_PLAYER_KNEELS and the rest, below, are what they go through meanwhile)
+--   312.3  status 2999 off, the director's 0x8000001B [1, 0]; 312.7 talk 33704 and his
 --          second part; 312.8 ActionTimeline 7747; 315.9 music 165 and he can be targeted
 -- His health at 0: he can't be targeted, his cast cancelled (ActorControl 537), the arena's map effect off, the
 -- director's scene 4 in a GameComplete event; then the quest to sequence 7 and out to the Waking Sands.
 --
 -- Not known, so guessed or left out: what happens past 527 s (the second part's points end; nothing follows); what
 -- the gauge counts and whether felling the four of base 14699 changes anything (Connor felled one, Bob none: the
--- same clock); the player's HP doubling with status 3123 (not done); what ActorControls 63, 70 and 35, the director's
+-- same clock); what ActorControls 63, 70 and 35, the director's
 -- 0x8000001A and 0x8000001B and statuses 661, 662, 1614, 2056, 2999, 3122 and 3123 do (sent and given as retail did);
 -- the damage of what never hit anyone (29329, 29333, 29335, 29756, 29760); losing outside the middle (a duty's wipe,
 -- as Cape Westwind's.)
@@ -124,6 +125,42 @@ CONTROL_SHADE_GOES = 47
 T_MIDDLE_CAST = 218.4
 T_MIDDLE_END = 221.3
 T_FELL = 251.9
+-- The player through the middle, the same in Bob's three runs (Chronofoil captures 9ba7d981, 6320ae56 and 50e72631) to
+-- a tenth of a second. Kawari had none of it but 2999 and the getting up, which came at 312.3 (Bob's marks of
+-- 2026-11-28: "lahabrea cutscene broken not displaying at all how it should", "warrior of light not displayed at all
+-- how they was in retail", "chain vfx still showing around me unlike retail"):
+--   221.3  with 2999, ActorControlSelf 263 [1]; 228.2 ActorControlSelf 240 [0]
+--   246.95 ActionTimeline 8548 on them; 247.3 status 1614 (the helper's 29788's) off; 248.0 status 2526 (param 6196)
+--   251.9  the helper's 29565 fells them (2526 isn't in their statuses after; 2999 is)
+--   271.9  status 2397 (param 116), off at 300.7
+--   301.75 they're up, whole (the ally's 3123 has doubled their HP by then): the director's log message 9344 [1],
+--          status 418 for 6 s, ActorControl 1529 [77], status 2056 (param 396)
+--   312.3  2999 off, ActorControlSelf 263 [0], the director's 0x8000001B [1, 0]
+-- What 240, 263, 1529 and the statuses do isn't known: sent and given as retail did.
+T_PLAYER_240 = 228.2
+T_PLAYER_KNEELS = 246.95
+T_CHAINS_OFF = 247.3
+T_PLAYER_2526 = 248.0
+T_PLAYER_2397 = 271.9
+T_PLAYER_2397_OFF = 300.7
+T_PLAYER_UP = 301.75
+CONTROL_PLAYER_263 = 263
+CONTROL_PLAYER_240 = 240
+CONTROL_TIMELINE = 407
+CONTROL_PLAYER_1529 = 1529
+TIMELINE_PLAYER_KNEELS = 8548
+STATUS_CHAINS = 1614
+STATUS_BEFORE_FALL = 2526
+STATUS_BEFORE_FALL_PARAM = 6196
+STATUS_FALLEN = 2397
+STATUS_FALLEN_PARAM = 116
+STATUS_UP = 418
+STATUS_UP_FOR = 6.0
+STATUS_AFTER = 2056
+STATUS_AFTER_PARAM = 396
+LOG_UP = 9344
+-- The director's log messages on the clock (EventLogMessage, no parameters), the same in the three runs.
+LOGS = { { 43.2, 10079 }, { 164.45, 10079 }, { 191.77, 10080 }, { 204.3, 10080 } }
 T_MUSIC_OFF = 257.2
 T_MUSIC_FALLEN = 279.9
 T_ALLY = 288.1
@@ -660,11 +697,41 @@ function middle(director)
         d:command(COMMAND_GAUGE, { GAUGE, GAUGE_GONE })
         if player_id ~= nil then
             d:gain_effect(player_id, STATUS_PLAYER_MIDDLE, 0, 0)
+            d:actor_control(player_id, CONTROL_PLAYER_263, { 1 })
         end
         d:command(COMMAND_MIDDLE_BEGINS, { 1, 1 })
     end)
+    local function toPlayer(at, fn)
+        after(at - T_MIDDLE, function(d)
+            if player_id ~= nil then
+                fn(d, player_id)
+            end
+        end)
+    end
+    toPlayer(T_PLAYER_240, function(d, player) d:actor_control(player, CONTROL_PLAYER_240, { 0 }) end)
+    toPlayer(T_PLAYER_KNEELS, function(d, player)
+        d:actor_control(player, CONTROL_TIMELINE, { TIMELINE_PLAYER_KNEELS })
+    end)
+    toPlayer(T_CHAINS_OFF, function(d, player) d:lose_effect(player, STATUS_CHAINS) end)
+    toPlayer(T_PLAYER_2526, function(d, player)
+        d:gain_effect(player, STATUS_BEFORE_FALL, STATUS_BEFORE_FALL_PARAM, 0)
+    end)
     after(T_FELL - T_MIDDLE, function(d)
         d:actor_use_action(helperAt(d, MIDDLE.x, MIDDLE.z, 0.0), ACTION_FELL, player_id)
+        if player_id ~= nil then
+            d:lose_effect(player_id, STATUS_BEFORE_FALL)
+        end
+    end)
+    toPlayer(T_PLAYER_2397, function(d, player) d:gain_effect(player, STATUS_FALLEN, STATUS_FALLEN_PARAM, 0) end)
+    toPlayer(T_PLAYER_2397_OFF, function(d, player) d:lose_effect(player, STATUS_FALLEN) end)
+    after(T_PLAYER_UP - T_MIDDLE, function(d)
+        d:log_message(LOG_UP, { 1 })
+        d:revive_players()
+        if player_id ~= nil then
+            d:gain_effect(player_id, STATUS_UP, 0, STATUS_UP_FOR)
+            d:actor_control(player_id, CONTROL_PLAYER_1529, { 77 })
+            d:gain_effect(player_id, STATUS_AFTER, STATUS_AFTER_PARAM, 0)
+        end
     end)
     after(T_MUSIC_OFF - T_MIDDLE, function(d) d:set_bgm(BGM_NONE) end)
     after(T_MUSIC_FALLEN - T_MIDDLE, function(d) d:set_bgm(BGM_FALLEN) end)
@@ -675,9 +742,11 @@ function middle(director)
         end
     end)
     after(T_UP - T_MIDDLE, function(d)
+        -- (Should they not be up yet.)
         d:revive_players()
         if player_id ~= nil then
             d:lose_effect(player_id, STATUS_PLAYER_MIDDLE)
+            d:actor_control(player_id, CONTROL_PLAYER_263, { 0 })
         end
         d:command(COMMAND_MIDDLE_ENDS, { 1, 0 })
     end)
@@ -730,6 +799,13 @@ function pull(director)
             of_29756 = of_29756 + 1
         end
         after(at, function(d) helperCast(d, row) end)
+    end
+    for _, log in ipairs(LOGS) do
+        after(log[1], function(d)
+            if part ~= "over" then
+                d:log_message(log[2], {})
+            end
+        end)
     end
     for _, move in ipairs(BOSS_MOVES) do
         after(move[1], function(d) d:jump_bnpc(BOSS, move[2], FLOOR_Y, move[3], move[4]) end)
