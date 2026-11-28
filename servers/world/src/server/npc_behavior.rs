@@ -1534,7 +1534,9 @@ pub fn npc_behavior(
                 *current_target = Some(NpcTarget::Actor(actor));
 
                 spawn.common.target_id.object_id = actor;
-                newly_acquired_targets.push(*id);
+                // Going after someone else mid-fight only turns it (SetTarget); taking the fight up draws and goes
+                // into battle as well (see where they're sent.)
+                newly_acquired_targets.push((*id, current_actor.is_none()));
 
                 // Head for the new target from where we are, instead of finishing the old path.
                 current_path.clear();
@@ -1630,7 +1632,7 @@ pub fn npc_behavior(
                         *current_path_lerp = 0.0;
 
                         spawn.common.target_id.object_id = *target_id;
-                        newly_acquired_targets.push(*id);
+                        newly_acquired_targets.push((*id, true));
                         break;
                     }
                 }
@@ -2707,42 +2709,11 @@ pub fn npc_behavior(
             if let Some(current_target) = current_target
                 && let NpcTarget::Actor(actor) = current_target
             {
-                if newly_acquired_targets.contains(id) {
-                    // Send an ACT for a visual indicator, and stuff.
-                    let mut network = network.lock();
-                    let target = ObjectTypeId {
-                        object_id: *actor,
-                        object_type: ObjectTypeKind::None,
-                    };
-                    network.send_in_range_instance(
-                        *id,
-                        instance,
-                        FromServer::ActorControlTarget(
-                            *id,
-                            target,
-                            ActorControlCategory::SetTarget,
-                        ),
-                        DestinationNetwork::ZoneClients,
-                    );
-
-                    // TODO: does this need to be set somewhere in CommonSpawn too?
-                    network.send_ac_in_range_instance(
-                        instance,
-                        *id,
-                        ActorControlCategory::SetBattle { battle: true },
-                    );
-
-                    // Draw their weapon, so they stay in their battle stance between attacks.
-                    network.send_ac_in_range_instance(
-                        instance,
-                        *id,
-                        ActorControlCategory::ToggleWeapon {
-                            shown: true,
-                            unk_flag: 1,
-                            unk2: 0,
-                        },
-                    );
-
+                if let Some((_, engaging)) = newly_acquired_targets
+                    .iter()
+                    .find(|(acquired, _)| acquired == id)
+                {
+                    show_target_taken(&mut network.lock(), instance, *id, *actor, *engaging);
                     if let Some(director) = &mut instance.directors.first_mut() {
                         director.on_actor_aggro(spawn.common.layout_id, *actor);
                     }
@@ -2755,6 +2726,51 @@ pub fn npc_behavior(
             }
         }
     }
+}
+
+/// An enemy's new target, as the clients see it. Taking the fight up (`engaging`) it draws its weapon, goes into battle
+/// and then shows its target, in that order and in the one tick (ActorControl 0 `[1, 1]`, 4 `[1]`, then SetTarget: all
+/// 34 in Bob's Recorder exports of the Praetorium, the Porta Decumana and The Ultimate Weapon's last battle); going after
+/// someone else in the fight it only shows the new target (15 of 15, none with 0 or 4: the Porta Decumana's second boss
+/// turning to the Duty Support tank 1.03 s after the player pulled him.) Kawari sent SetTarget first, and all three
+/// again at every change of target.
+pub(crate) fn show_target_taken(
+    network: &mut NetworkState,
+    instance: &Instance,
+    id: ObjectId,
+    target: ObjectId,
+    engaging: bool,
+) {
+    if engaging {
+        // Draw their weapon, so they stay in their battle stance between attacks.
+        network.send_ac_in_range_instance(
+            instance,
+            id,
+            ActorControlCategory::ToggleWeapon {
+                shown: true,
+                unk_flag: 1,
+                unk2: 0,
+            },
+        );
+        network.send_ac_in_range_instance(
+            instance,
+            id,
+            ActorControlCategory::SetBattle { battle: true },
+        );
+    }
+    network.send_in_range_instance(
+        id,
+        instance,
+        FromServer::ActorControlTarget(
+            id,
+            ObjectTypeId {
+                object_id: target,
+                object_type: ObjectTypeKind::None,
+            },
+            ActorControlCategory::SetTarget,
+        ),
+        DestinationNetwork::ZoneClients,
+    );
 }
 
 /// Whether an NPC shows no fight yet: neither its target nor its battle stance, nor a place on anyone's hater list (so no

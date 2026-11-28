@@ -2692,3 +2692,56 @@ fn an_npc_s_action_on_the_whole_party_names_every_member() {
     assert_eq!(party, [vec![player], bots].concat());
     assert!(!party.contains(&enemy) && !party.contains(&down));
 }
+
+/// Bob's ask of 2026-11-28 to compare the Porta Decumana's second boss's pull with retail's: retail's enemies taking
+/// the fight up drew, went into battle and showed their target in that order (34 of 34 in his Recorder exports), and
+/// turning to someone else mid-fight only showed the new target (15 of 15: that boss turning to the Duty Support tank
+/// 1.03 s after the player pulled him). Kawari sent SetTarget first, and all three at every change of target.
+#[test]
+fn an_enemy_draws_before_it_shows_its_target_and_only_turns_after() {
+    use crate::server::npc_behavior::show_target_taken;
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let tank = world.player_npc(BOT, player, [2.0, 0.0, 0.0]);
+    let boss = world.enemy(ENEMY, [10.0, 0.0, 0.0], 244634);
+    world.sent(player);
+    let kind = |message: &FromServer| match message {
+        FromServer::ActorControl(from, ActorControlCategory::ToggleWeapon { shown: true, .. })
+            if *from == boss =>
+        {
+            Some("weapon".to_string())
+        }
+        FromServer::ActorControl(from, ActorControlCategory::SetBattle { battle: true })
+            if *from == boss =>
+        {
+            Some("battle".to_string())
+        }
+        FromServer::ActorControlTarget(from, target, ActorControlCategory::SetTarget)
+            if *from == boss =>
+        {
+            Some(format!("target {}", target.object_id.0))
+        }
+        _ => None,
+    };
+    show_target_taken(
+        &mut world.network.lock(),
+        &world.instance,
+        boss,
+        player,
+        true,
+    );
+    let pulled: Vec<String> = world.sent(player).iter().filter_map(kind).collect();
+    assert_eq!(
+        pulled,
+        ["weapon", "battle", &format!("target {}", player.0)]
+    );
+    show_target_taken(
+        &mut world.network.lock(),
+        &world.instance,
+        boss,
+        tank,
+        false,
+    );
+    let turned: Vec<String> = world.sent(player).iter().filter_map(kind).collect();
+    assert_eq!(turned, [format!("target {}", tank.0)]);
+}
